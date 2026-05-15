@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://phone-shop-back-end.onrender.com', // ← https://phone-shop-back-end.onrender.com/
+        target: 'http://localhost:5000', // ← https://phone-shop-back-end.onrender.com/
         changeOrigin: true,
       },
     },
