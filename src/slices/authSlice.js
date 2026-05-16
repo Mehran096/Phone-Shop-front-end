@@ -83,7 +83,7 @@ export const listUsers = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.get('/api/users', config)
+      const { data } = await axios.get(`${API_URL}/users`, config)
       return data
     } catch (error) {
       return rejectWithValue(
@@ -108,7 +108,7 @@ export const deleteUser = createAsyncThunk(
         },
       }
 
-      await axios.delete(`/api/users/${id}`, config)
+      await axios.delete(`${API_URL}/users/${id}`, config)
       return id
     } catch (error) {
       return rejectWithValue(
@@ -129,7 +129,7 @@ export const getUserDetails = createAsyncThunk(
         headers: { Authorization: `Bearer ${userInfo.token}` }
       }
     
-      const { data } = await axios.get(`/api/users/${id}`, config)
+      const { data } = await axios.get(`${API_URL}/users/${id}`, config)
       return data
     
     
@@ -147,7 +147,7 @@ export const updateUser = createAsyncThunk(
       const config = { 
         headers: { Authorization: `Bearer ${userInfo.token}` } 
       }
-      const { data } = await axios.put(`/api/users/${id}`, { name, email, isAdmin }, config)
+      const { data } = await axios.put(`${API_URL}/users/${id}`, { name, email, isAdmin }, config)
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)

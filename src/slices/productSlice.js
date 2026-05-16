@@ -20,7 +20,7 @@ export const getProductDetails = createAsyncThunk(
   'product/getProductDetails',
   async (id, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`/api/products/${id}`)
+      const { data } = await axios.get(`${API_URL}/products/${id}`)
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -41,7 +41,7 @@ export const deleteProduct = createAsyncThunk(
         },
       }
 
-      await axios.delete(`/api/products/${id}`, config)
+      await axios.delete(`${API_URL}/products/${id}`, config)
       return id
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -62,7 +62,7 @@ export const createProduct = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.post('/api/products', productData, config)
+      const { data } = await axios.post(`${API_URL}/products`, productData, config)
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -84,7 +84,7 @@ export const updateProduct = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.put(`/api/products/${id}`, productData, config)
+      const { data } = await axios.put(`${API_URL}/products/${id}`, productData, config)
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
+const API_URL = import.meta.env.VITE_API_URL
 
 export const createOrder = createAsyncThunk(
   'order/createOrder',
@@ -14,7 +15,7 @@ export const createOrder = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.post('/api/orders', order, config)
+      const { data } = await axios.post(`${API_URL}/orders`, order, config)
       return data
     } catch (error) {
       return rejectWithValue(
@@ -34,7 +35,7 @@ export const listMyOrders = createAsyncThunk(
         try {
             const { auth: { userInfo } } = getState()
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.get('/api/orders/myorders', config)
+            const { data } = await axios.get(`${API_URL}/orders/myorders`, config)
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
@@ -49,7 +50,7 @@ export const getOrderDetails = createAsyncThunk(
         try {
             const { auth: { userInfo } } = getState()
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.get(`/api/orders/${id}`, config)
+            const { data } = await axios.get(`${API_URL}/orders/${id}`, config)
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
@@ -64,7 +65,7 @@ export const payOrder = createAsyncThunk(
         try {
             const { auth: { userInfo } } = getState()
             const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.put(`/api/orders/${orderId}/pay`, paymentResult, config)
+            const { data } = await axios.put(`${API_URL}/orders/${orderId}/pay`, paymentResult, config)
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
@@ -79,7 +80,7 @@ export const listOrders = createAsyncThunk(
         try {
             const { auth: { userInfo } } = getState()
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.get('/api/orders', config)
+            const { data } = await axios.get(`${API_URL}/orders`, config)
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
@@ -94,7 +95,7 @@ export const deliverOrder = createAsyncThunk(
         try {
             const { auth: { userInfo } } = getState()
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.put(`/api/orders/${orderId}/deliver`, {}, config)
+            const { data } = await axios.put(`${API_URL}/orders/${orderId}/deliver`, {}, config)
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
