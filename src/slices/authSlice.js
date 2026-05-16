@@ -13,7 +13,7 @@ export const login = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const config = { headers: { 'Content-Type': 'application/json' } }
-      const { data } = await axios.post(`${API_URL}/users/auth` && '/api/users/auth', { email, password }, config)
+      const { data } = await axios.post(`${API_URL}/users/auth`, { email, password }, config)
       localStorage.setItem('userInfo', JSON.stringify(data))
       return data
     } catch (error) {
@@ -27,7 +27,7 @@ export const register = createAsyncThunk(
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
       const config = { headers: { 'Content-Type': 'application/json' } }
-      const { data } = await axios.post(`${API_URL}/users` && 'api/users' , { name, email, password }, config)
+      const { data } = await axios.post(`${API_URL}/users`, { name, email, password }, config)
       localStorage.setItem('userInfo', JSON.stringify(data))
       return data
     } catch (error) {
@@ -60,7 +60,7 @@ export const updateUserProfile = createAsyncThunk(
           Authorization: `Bearer ${userInfo.token}`,
         },
       }
-      const { data } = await axios.put('/api/users/profile', user, config)
+      const { data } = await axios.put(`${API_URL}/users/profile`, user, config)
       localStorage.setItem('userInfo', JSON.stringify(data))
       return data
     } catch (error) {
