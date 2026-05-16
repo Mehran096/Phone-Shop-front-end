@@ -1,23 +1,82 @@
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getProductDetails } from '../slices/productSlice'
 import { addToCart } from '../slices/cartSlice';
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 function ProductScreen() {
     const [qty, setQty] = useState(1);
     const { id } = useParams();
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     const { product, loading, error } = useSelector((state) => state.products);
+    const { userInfo } = useSelector((state) => state.auth)
 
-   useEffect(() => {
-  dispatch(getProductDetails(id))
-}, [dispatch, id])
+    useEffect(() => {
+        dispatch(getProductDetails(id))
+    }, [dispatch, id])
 
     const addToCartHandler = () => {
-        dispatch(addToCart({ ...product, qty }));
-    };
+  if (!userInfo) {
+    toast.warn(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-2">
+          <span>Please register/login to add items to cart</span>
+          <button
+            onClick={() => {
+              closeToast()
+              navigate('/register')
+            }}
+            className="px-3 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700"
+          >
+            Go to Register/Login
+          </button>
+        </div>
+      ),
+      {
+        position: "top-right",
+        autoClose: 5000,
+        closeOnClick: false,
+        draggable: true,
+      }
+    )
+    return
+  }
+  
+  dispatch(addToCart({ ...product, qty }))
+  
+  toast.success(
+    ({ closeToast }) => (
+      <div className="flex flex-col gap-2">
+        <span>{product.name} added to cart</span>
+        <button
+          onClick={() => {
+            closeToast()
+            navigate('/cart')
+          }}
+          className="px-3 py-1.5 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
+        >
+          Go to Cart
+        </button>
+      </div>
+    ),
+    {
+      position: "bottom-right",
+      autoClose: 4000,
+      closeOnClick: false,
+    }
+  )
+}
+
+    //     useEffect(() => {
+    //      if (!userInfo) {
+    //     navigate('/login?redirect=/placeorder')
+    //   }
+
+    //   }, [userInfo, navigate])
 
     if (loading) return <div className="p-8 text-center">Loading...</div>;
     if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
