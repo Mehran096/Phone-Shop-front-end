@@ -12,8 +12,11 @@ function HomeScreen() {
   dispatch(listProducts())
 }, [dispatch])
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  if (loading) return  <div className='flex justify-center items-center h-32'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900'></div>
+              </div>
   if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+     
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">

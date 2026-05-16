@@ -1,5 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+//import { clearCartItems } from './cartSlice'
 import axios from 'axios'
+const API_URL = import.meta.env.VITE_API_URL
+//const  API = 'api'
 
 const userInfoFromStorage = localStorage.getItem('userInfo')
   ? JSON.parse(localStorage.getItem('userInfo'))
@@ -10,7 +13,7 @@ export const login = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const config = { headers: { 'Content-Type': 'application/json' } }
-      const { data } = await axios.post('/api/users/auth', { email, password }, config)
+      const { data } = await axios.post(`${API_URL}/users/auth` && '/api/users/auth', { email, password }, config)
       localStorage.setItem('userInfo', JSON.stringify(data))
       return data
     } catch (error) {
@@ -24,7 +27,7 @@ export const register = createAsyncThunk(
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
       const config = { headers: { 'Content-Type': 'application/json' } }
-      const { data } = await axios.post('/api/users', { name, email, password }, config)
+      const { data } = await axios.post(`${API_URL}/users` && 'api/users' , { name, email, password }, config)
       localStorage.setItem('userInfo', JSON.stringify(data))
       return data
     } catch (error) {
@@ -32,6 +35,19 @@ export const register = createAsyncThunk(
     }
   }
 )
+
+//logout
+// export const logoutUser = createAsyncThunk(
+//   'auth/logout',
+//   async (_, { dispatch }) => {
+//     await fetch(`${API_URL}/users/logout`, {
+//       method: 'POST',
+//       credentials: 'include',
+//     })
+//     dispatch(clearCartItems()) // clear cart on logout
+//     return null
+//   }
+// )
 
 export const updateUserProfile = createAsyncThunk(
   'auth/updateUserProfile',
@@ -177,6 +193,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+    
       .addCase(getUserDetails.pending, (state) => {
         state.loading = true
       })
@@ -234,6 +251,12 @@ const authSlice = createSlice({
         state.loading = false
         state.error = action.payload
       })
+      // .addCase(logoutUser.fulfilled, (state) => {
+      //   state.userInfo = null
+      //   state.loading = false
+      //   state.error = null
+      //   state.success = false
+      // })
   },
 })
 

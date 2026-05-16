@@ -1,73 +1,72 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { setCredentials } from '../slices/authSlice';
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { login } from '../slices/authSlice'
 
 function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
 
-  const { userInfo } = useSelector((state) => state.auth);
+  const { userInfo, loading, error } = useSelector((state) => state.auth)
 
   useEffect(() => {
     if (userInfo) {
-      navigate('/');
+      navigate('/')
     }
-  }, [navigate, userInfo]);
+  }, [navigate, userInfo])
 
   const submitHandler = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch('/api/users/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Important for cookies
-        body: JSON.stringify({ email, password }),
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        dispatch(setCredentials(data));
-        navigate('/');
-      } else {
-        alert(data.message);
-      }
-    } catch (err) {
-      alert('Error logging in');
-    }
-  };
+    e.preventDefault()
+    dispatch(login({ email, password }))
+  }
 
   return (
-    <div className="max-w-md mx-auto mt-10">
-      <h1 className="text-2xl font-bold mb-4">Sign In</h1>
-      <form onSubmit={submitHandler} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Enter email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-        <input
-          type="password"
-          placeholder="Enter password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-        <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded">
-          Sign In
-        </button>
-      </form>
-      <div className="mt-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+  <form onSubmit={submitHandler} className="bg-white p-8 rounded-lg shadow-md w-96">
+    <h2 className="text-2xl font-bold mb-6">Sign In</h2>
+    
+    <input 
+      type="email" 
+      required
+      placeholder="Email"
+      value={email} 
+      onChange={(e) => setEmail(e.target.value)} 
+      className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+    
+    <input 
+      type="password" 
+      required
+      placeholder="Password"
+      value={password} 
+      onChange={(e) => setPassword(e.target.value)} 
+      className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+    
+    <button 
+      type="submit" 
+      disabled={loading}
+      className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+    >
+      {loading ? 'Logging in...' : 'Sign In'}
+    </button>
+    
+    {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
+     <div className="mt-4">
         New Customer? <Link to="/register" className="text-blue-500">Register</Link>
       </div>
-    </div>
-  );
+  </form>
+ 
+</div>
+  )
 }
 
-export default LoginScreen;
+export default LoginScreen
+
+
+{/* <div className="mt-4">
+        New Customer? <Link to="/register" className="text-blue-500">Register</Link>
+      </div> */}
