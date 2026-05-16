@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { listOrders } from '../../slices/orderSlice' 
-import { FaTimes } from 'react-icons/fa'
+import { listOrders, deleteOrder, resetDelete } from '../../slices/orderSlice' 
+import { FaTimes, FaCheck } from 'react-icons/fa'
 
 const OrderListScreen = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const { orders, loading, error } = useSelector((state) => state.order)
+  const { orders, loading, error, successDelete } = useSelector((state) => state.order)
   const { userInfo } = useSelector((state) => state.auth)
 
   useEffect(() => {
@@ -17,71 +17,118 @@ const OrderListScreen = () => {
     } else {
       navigate('/login')
     }
-  }, [dispatch, userInfo, navigate])
 
-  return (
-    <div className='container mx-auto px-4 py-8'>
-      <h1 className='text-3xl font-bold mb-6 text-gray-800'>Orders</h1>
-      {loading ? (
-        <div className='flex justify-center items-center h-64'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900'></div>
-        </div>
-      ) : error ? (
-        <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded'>{error}</div>
-      ) : (
-        <div className='overflow-x-auto shadow-md rounded-lg'>
-          <table className='w-full text-sm text-left text-gray-500'>
-            <thead className='text-xs text-gray-700 uppercase bg-gray-50'>
-              <tr>
-                <th scope='col' className='px-6 py-3'>ID</th>
-                <th scope='col' className='px-6 py-3'>USER</th>
-                <th scope='col' className='px-6 py-3'>DATE</th>
-                <th scope='col' className='px-6 py-3'>TOTAL</th>
-                <th scope='col' className='px-6 py-3'>PAID</th>
-                <th scope='col' className='px-6 py-3'>DELIVERED</th>
-                <th scope='col' className='px-6 py-3'></th>
+    if (successDelete) {
+      dispatch(resetDelete())
+    }
+
+  }, [dispatch, userInfo, navigate, successDelete])
+
+  const deleteHandler = (id) => {
+    if (window.confirm('Delete this order? This cannot be undone.')) {
+      dispatch(deleteOrder(id))
+    }
+  }
+
+ return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">Orders</h1>
+      
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                USER
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                DATE
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                TOTAL
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                PAID
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                DELIVERED
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                ACTIONS
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {orders.map((order) => (
+              <tr key={order._id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
+                  {order._id.substring(0, 8)}...
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
+                  {order.user ? order.user.name : 'Guest / Deleted'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  {order.createdAt.substring(0, 10)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                  ${order.totalPrice.toFixed(2)}
+                </td>
+                
+                {/* PAID Status */}
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  {order.isPaid ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <FaCheck className="mr-1" /> {order.paidAt.substring(0, 10)}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <FaTimes className="mr-1" /> Not Paid
+                    </span>
+                  )}
+                </td>
+                
+                {/* DELIVERED Status */}
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  {order.isDelivered ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <FaCheck className="mr-1" /> {order.deliveredAt.substring(0, 10)}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <FaTimes className="mr-1" /> Not Delivered
+                    </span>
+                  )}
+                </td>
+                
+                {/* Actions */}
+                <td className="px-6 py-4 whitespace-nowrap text-center text-sm space-x-2">
+                  <button
+                    onClick={() => navigate(`/order/${order._id}`)}
+                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-xs font-medium"
+                  >
+                    Details
+                  </button>
+                  <button
+                    onClick={() => deleteHandler(order._id)}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-xs font-medium"
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order._id} className='bg-white border-b hover:bg-gray-50'>
-                  <td className='px-6 py-4 font-medium text-gray-900'>
-                    {order._id.substring(0, 8)}...
-                  </td>
-                  <td className='px-6 py-4'>{order.user?.name}</td>
-                  <td className='px-6 py-4'>{new Date(order.createdAt).toLocaleDateString()}</td>
-                  <td className='px-6 py-4'>${order.totalPrice}</td>
-                  <td className='px-6 py-4'>
-                    {order.isPaid ? (
-                      <span className='text-green-600 font-medium'>
-                        {new Date(order.paidAt).toLocaleDateString()}
-                      </span>
-                    ) : (
-                      <FaTimes className='text-red-600' />
-                    )}
-                  </td>
-                  <td className='px-6 py-4'>
-                    {order.isDelivered ? (
-                      <span className='text-green-600 font-medium'>
-                        {new Date(order.deliveredAt).toLocaleDateString()}
-                      </span>
-                    ) : (
-                      <FaTimes className='text-red-600' />
-                    )}
-                  </td>
-                  <td className='px-6 py-4'>
-                    <Link to={`/order/${order._id}`}>
-                      <button className='font-medium text-blue-600 hover:underline'>
-                        Details
-                      </button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+        
+        {orders.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No orders found
+          </div>
+        )}
+      </div>
     </div>
   )
 }

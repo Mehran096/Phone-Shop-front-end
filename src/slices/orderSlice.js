@@ -3,28 +3,33 @@ import axios from 'axios'
 const API_URL = import.meta.env.VITE_API_URL
 
 export const createOrder = createAsyncThunk(
-  'order/createOrder',
-  async (order, { getState, rejectWithValue }) => {
-    try {
-      const { auth: { userInfo } } = getState() // ← Get token from Redux
-
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`, // ← This line is missing
-        },
+    'order/createOrder',
+    async (order, { getState, rejectWithValue }) => {
+        try {
+            const { auth: { userInfo } } = getState() // ← Get token from Redux
+            
+            if (!userInfo) {
+        return rejectWithValue('You need to be logged in to place an order')
       }
 
-      const { data } = await axios.post(`${API_URL}/orders`, order, config)
-      return data
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message
-      )
+
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${userInfo.token}`, // ← This line is missing
+                },
+            }
+
+            const { data } = await axios.post(`${API_URL}/orders`, order, config)
+            return data
+        } catch (error) {
+            return rejectWithValue(
+                error.response && error.response.data.message
+                    ? error.response.data.message
+                    : error.message
+            )
+        }
     }
-  }
 )
 
 
@@ -103,6 +108,31 @@ export const deliverOrder = createAsyncThunk(
     }
 )
 
+// Delete order - admin only
+export const deleteOrder = createAsyncThunk(
+    'orders/deleteOrder',
+    async (id, { getState, rejectWithValue }) => {
+        try {
+            const { auth: { userInfo } } = getState() 
+
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+            }
+
+            await axios.delete(`${API_URL}/orders/${id}`, config)
+            return id
+        } catch (error) {
+            return rejectWithValue(
+                error.response && error.response.data.message
+                    ? error.response.data.message
+                    : error.message
+            )
+        }
+    }
+)
+
 const orderSlice = createSlice({
     name: 'order',
     initialState: {
@@ -114,6 +144,7 @@ const orderSlice = createSlice({
         error: null,
         successPay: false,
         successDeliver: false,
+        successDelete: false,
     },
     reducers: {
         resetMyOrders: (state) => {
@@ -129,6 +160,9 @@ const orderSlice = createSlice({
         },
         resetDeliver: (state) => {
             state.successDeliver = false
+        },
+        resetDelete: (state) => {
+            state.successDelete = false
         },
     },
     extraReducers: (builder) => {
@@ -158,8 +192,21 @@ const orderSlice = createSlice({
             .addCase(deliverOrder.pending, (state) => { state.loading = true })
             .addCase(deliverOrder.fulfilled, (state, action) => { state.loading = false; state.successDeliver = true; state.order = action.payload })
             .addCase(deliverOrder.rejected, (state, action) => { state.loading = false; state.error = action.payload })
+            // Delete order
+            .addCase(deleteOrder.pending, (state) => {
+                state.loading = true
+            })
+            .addCase(deleteOrder.fulfilled, (state, action) => {
+                state.loading = false
+                state.successDelete = true
+                state.orders = state.orders.filter(order => order._id !== action.payload)
+            })
+            .addCase(deleteOrder.rejected, (state, action) => {
+                state.loading = false
+                state.error = action.payload
+            })
     },
 })
 
-export const { resetMyOrders, resetOrder, resetPay, resetDeliver } = orderSlice.actions
+export const { resetMyOrders, resetOrder, resetPay, resetDeliver, resetDelete } = orderSlice.actions
 export default orderSlice.reducer

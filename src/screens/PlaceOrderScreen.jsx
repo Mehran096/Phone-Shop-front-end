@@ -10,6 +10,7 @@ const PlaceOrderScreen = () => {
 
   const cart = useSelector((state) => state.cart)
   const { order, success, error, loading } = useSelector((state) => state.order)
+  const { userInfo } = useSelector((state) => state.auth) 
 
   useEffect(() => {
     if (!cart.shippingAddress.address) {
@@ -25,7 +26,15 @@ const PlaceOrderScreen = () => {
       dispatch(clearCartItems())
       dispatch(resetOrder())
     }
+    
   }, [success, navigate, dispatch, order])
+
+  useEffect(() => {
+     if (!userInfo) {
+    navigate('/login?redirect=/placeorder')
+  }
+    
+  }, [userInfo, navigate])
 
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2)
