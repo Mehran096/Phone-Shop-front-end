@@ -5,6 +5,7 @@ import { saveShippingAddress } from '../slices/cartSlice';
 
 function ShippingScreen() {
   const cart = useSelector((state) => state.cart);
+  //const { loading } = useSelector((state) => state.order)
   const { shippingAddress } = cart;
 
   const [address, setAddress] = useState(shippingAddress?.address || '');
@@ -20,6 +21,14 @@ function ShippingScreen() {
     dispatch(saveShippingAddress({ address, city, postalCode, country }));
     navigate('/payment'); // Next step
   };
+
+  // if (loading) {
+  //   return (
+  //     <div className='flex justify-center items-center h-64'>
+  //       <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900'></div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <div className="max-w-md mx-auto mt-10">

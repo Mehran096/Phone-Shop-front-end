@@ -9,6 +9,7 @@ const OrderScreen = () => {
   const navigate = useNavigate()
 
   const { order = {}, loading, error, successPay, successDeliver } = useSelector((state) => state.order)
+  //console.log(order.user)
   const { userInfo } = useSelector((state) => state.auth)
 
   useEffect(() => {
@@ -51,6 +52,27 @@ const OrderScreen = () => {
   if (!order._id) {
     return <div className='p-4'>Order not found</div>
   }
+
+
+//   const payWithJazzCash = async () => {
+//   const { data } = await axios.post('/api/jazzcash/pay', { orderId })
+
+//   const form = document.createElement('form')
+//   form.method = 'POST'
+//   form.action = data.url
+//   form.style.display = 'none'
+
+//   Object.keys(data.postData).forEach(key => {
+//     const input = document.createElement('input')
+//     input.type = 'hidden'
+//     input.name = key
+//     input.value = data.postData[key]
+//     form.appendChild(input)
+//   })
+
+//   document.body.appendChild(form)
+//   form.submit()
+// }
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -134,6 +156,12 @@ const OrderScreen = () => {
                 Test Pay
               </button>
             )}
+{/* 
+            {!order.isPaid && order.paymentMethod === 'JazzCash' && (
+  <button onClick={payWithJazzCash} className='btn btn-primary'>
+    Pay with JazzCash
+  </button>
+)} */}
 
             {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
               <button
