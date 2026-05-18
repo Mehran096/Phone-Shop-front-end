@@ -51,18 +51,18 @@ export const deleteProduct = createAsyncThunk(
 
 export const createProduct = createAsyncThunk(
   'product/createProduct',
-  async (productData, { getState, rejectWithValue }) => {
+  async (formData, { getState, rejectWithValue }) => {
     try {
       const { auth: { userInfo }} = getState()
 
       const config = {
         headers: {
-          'Content-Type': 'application/json',
+          
           Authorization: `Bearer ${userInfo.token}`,
         },
       }
 
-      const { data } = await axios.post(`${API_URL}/products`, productData, config)
+      const { data } = await axios.post(`${API_URL}/products`, formData, config)
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -73,18 +73,18 @@ export const createProduct = createAsyncThunk(
 // UPDATE PRODUCT - admin only
 export const updateProduct = createAsyncThunk(
   'product/updateProduct',
-  async ({ id, productData }, { getState, rejectWithValue }) => {
+  async ({ id, formData }, { getState, rejectWithValue }) => {
     try {
       const { auth: { userInfo } }= getState()
 
       const config = {
-        headers: {
-          'Content-Type': 'application/json',
+        headers: { 
+          //'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${userInfo.token}`,
         },
       }
 
-      const { data } = await axios.put(`${API_URL}/products/${id}`, productData, config)
+      const { data } = await axios.put(`${API_URL}/products/${id}`, formData, config)
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)

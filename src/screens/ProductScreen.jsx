@@ -14,10 +14,15 @@ function ProductScreen() {
     const dispatch = useDispatch();
     const { product, loading, error } = useSelector((state) => state.products);
     const { userInfo } = useSelector((state) => state.auth)
-
+const [selectedImage, setSelectedImage] = useState(0)
     useEffect(() => {
         dispatch(getProductDetails(id))
     }, [dispatch, id])
+
+    // Reset selected image when product loads
+  useEffect(() => {
+    setSelectedImage(0)
+  }, [product])
 
     const addToCartHandler = () => {
   if (!userInfo) {
@@ -81,16 +86,44 @@ function ProductScreen() {
     if (loading) return <div className="p-8 text-center">Loading...</div>;
     if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
     if (!product || !product.name) return <div className="p-8 text-center">Loading...</div>;
+     // Use images array. Fallback to single image field for old products
+  const images = product.images?.length > 0? product.images : [product.image].filter(Boolean)
 
     return (
         <div className="max-w-4xl mx-auto p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full object-contain" />
-                </div>
+                 {/* Image Gallery */}
+        <div>
+          {/* Main Image */}
+          <div className="border rounded-lg overflow-hidden mb-4 bg-white">
+            {images[selectedImage] && (
+              <img
+                src={images[selectedImage]}
+                alt={product.name}
+                className="w-full h-96 object-contain"
+              />
+            )}
+          </div>
+
+          {/* Thumbnails - only show if more than 1 image */}
+          {images.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  onClick={() => setSelectedImage(idx)}
+                  className={`w-20 h-20 object-cover border-2 rounded cursor-pointer flex-shrink-0 ${
+                    selectedImage === idx
+                     ? 'border-blue-600'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                  alt={`${product.name} ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
                 <div>
                     <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
                     <p className="text-gray-600 mb-2">{product.brand}</p>

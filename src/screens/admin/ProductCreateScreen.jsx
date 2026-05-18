@@ -9,7 +9,7 @@ const ProductCreateScreen = () => {
 
   const [name, setName] = useState('')
   const [price, setPrice] = useState(0)
-  const [image, setImage] = useState('')
+  const [images, setImages] = useState([])
   const [brand, setBrand] = useState('')
   const [category, setCategory] = useState('')
   const [countInStock, setCountInStock] = useState(0)
@@ -26,18 +26,17 @@ const ProductCreateScreen = () => {
 
   const submitHandler = (e) => {
     e.preventDefault()
-    //console.log('Sending:', { name, price, image, brand, category, countInStock, description }) // debug
-    dispatch(
-      createProduct({
-        name,
-        price: Number(price),
-        image,
-        brand,
-        category,
-        countInStock: Number(countInStock),
-        description,
-      })
-    )
+    const formData = new FormData()
+    formData.append('name', name)
+    formData.append('price', price)
+    formData.append('brand', brand)
+    formData.append('category', category)
+    formData.append('countInStock', countInStock)
+    formData.append('description', description)
+    for (let i = 0; i < images.length; i++) {
+      formData.append('images', images[i])
+    }
+    dispatch(createProduct(formData))
   }
 
   const inputClass = "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -82,7 +81,7 @@ const labelClass = "block text-sm font-medium text-gray-700"
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className={labelClass}>Image URL</label>
             <input
               type="text"
@@ -91,7 +90,7 @@ const labelClass = "block text-sm font-medium text-gray-700"
               className= {inputClass}
               required
             />
-          </div>
+          </div> */}
 
           <div>
             <label className={labelClass}>Brand</label>
@@ -135,6 +134,11 @@ const labelClass = "block text-sm font-medium text-gray-700"
               className= {inputClass}
               required
             ></textarea>
+          </div>
+          <div>
+              
+            <input type="file" multiple accept="image/*" onChange={(e) => setImages(e.target.files)}
+          className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:bg-blue-50 file:text-blue-700" />
           </div>
 
           <button

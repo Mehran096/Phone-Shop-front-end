@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { getProductDetails, updateProduct } from '../../slices/productSlice'
+import { getProductDetails, updateProduct, resetProductUpdate } from '../../slices/productSlice'
 
 const ProductEditScreen = () => {
   const { id } = useParams()
@@ -10,7 +10,7 @@ const ProductEditScreen = () => {
 
   const [name, setName] = useState('')
   const [price, setPrice] = useState(0)
-  const [image, setImage] = useState('')
+  const [images, setImages] = useState(null)
   const [brand, setBrand] = useState('')
   const [category, setCategory] = useState('')
   const [countInStock, setCountInStock] = useState(0)
@@ -28,7 +28,7 @@ const ProductEditScreen = () => {
       } else {
         setName(product.name)
         setPrice(product.price)
-        setImage(product.image)
+         
         setBrand(product.brand)
         setCategory(product.category)
         setCountInStock(product.countInStock)
@@ -39,20 +39,22 @@ const ProductEditScreen = () => {
 
   const submitHandler = (e) => {
     e.preventDefault()
-    dispatch(
-      updateProduct({
-        id,
-        productData: {
-          name,
-          price,
-          image,
-          brand,
-          category,
-          countInStock,
-          description,
-        },
-      })
-    )
+
+    const formData = new FormData()
+    formData.append('name', name)
+    formData.append('price', price)
+    formData.append('description', description)
+     formData.append('brand', brand)
+     formData.append('category', category)
+     formData.append('countInStock', countInStock)
+
+    if (images) {
+      for (let i = 0; i < images.length; i++) {
+        formData.append('images', images[i])
+      }
+    }
+
+    dispatch(updateProduct({ id, formData }))
   }
   
 const inputClass = "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -94,15 +96,7 @@ const labelClass = "block text-sm font-medium text-gray-700"
               />
             </div>
 
-            <div>
-              <label className={labelClass}>Image URL</label>
-              <input
-                type="text"
-                value={image || ''}
-                onChange={(e) => setImage(e.target.value)}
-                className={inputClass}
-              />
-            </div>
+            
 
             <div>
               <label className={labelClass}>Brand</label>
@@ -143,6 +137,19 @@ const labelClass = "block text-sm font-medium text-gray-700"
                 className={inputClass}
               ></textarea>
             </div>
+
+            <div>
+            <label className="block text-sm font-medium mb-1">
+              Images - Upload new images to replace old ones
+            </label>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => setImages(e.target.files)}
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
 
             <button
               type="submit"
