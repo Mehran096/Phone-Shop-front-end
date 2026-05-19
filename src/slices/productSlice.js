@@ -92,6 +92,56 @@ export const updateProduct = createAsyncThunk(
   }
 )
 
+// Create review
+export const createProductReview = createAsyncThunk(
+  'product/createReview',
+  async ({ id, rating, comment }, { getState, rejectWithValue }) => {
+    try {
+      const { auth: { userInfo } } = getState()
+
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      }
+
+      const { data } = await axios.post(
+        `${API_URL}/products/${id}/reviews`,
+        { rating, comment },
+        config
+      )
+      return data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  }
+)
+
+// 1. Add the thunk for specs
+// export const updateProductSpecs = createAsyncThunk(
+//   'product/updateSpecs',
+//   async ({ id, specs }, { getState, rejectWithValue }) => {
+//     try {
+//       const { auth: { userInfo }} = getState()
+//       const config = {
+//         headers: {
+//           'Content-Type': 'application/json',
+//           Authorization: `Bearer ${userInfo.token}`,
+//         },
+//       }
+//       const { data } = await axios.put(
+//         `${API_URL}/products/${id}/specs`,
+//         { specs },
+//         config
+//       )
+//       return data
+//     } catch (error) {
+//       return rejectWithValue(error.response?.data?.message || error.message)
+//     }
+//   }
+// )
+
 const productSlice = createSlice({
   name: 'product',
   initialState: {
@@ -102,6 +152,8 @@ const productSlice = createSlice({
     successDelete: false,
     successCreate: false,
     successUpdate: false,
+    successReview: false,
+    reviewError: null,
   },
   reducers: {
     resetProductCreate: (state) => {
@@ -116,6 +168,10 @@ const productSlice = createSlice({
     },
     resetProductDetails: (state) => {
       state.product = null
+    },
+     resetReview: (state) => {
+      state.successReview = false
+      state.reviewError = null
     },
   },
   extraReducers: (builder) => {
@@ -189,6 +245,28 @@ const productSlice = createSlice({
         state.loading = false
         state.error = action.payload
       })
+      // Create Review
+      .addCase(createProductReview.pending, (state) => {
+        state.reviewError = null
+      })
+      .addCase(createProductReview.fulfilled, (state) => {
+        state.successReview = true
+      })
+      .addCase(createProductReview.rejected, (state, action) => {
+        state.reviewError = action.payload
+      })
+    //   .addCase(updateProductSpecs.pending, (state) => {
+    //   state.loading = true
+    // })
+    // .addCase(updateProductSpecs.fulfilled, (state, action) => {
+    //   state.loading = false
+    //   state.product = action.payload // update the product in state
+    //   state.successUpdate = true
+    // })
+    // .addCase(updateProductSpecs.rejected, (state, action) => {
+    //   state.loading = false
+    //   state.error = action.payload
+    // })
   },
 })
 
@@ -196,7 +274,8 @@ export const {
   resetProductCreate, 
   resetProductUpdate, 
   resetProductDelete, 
-  resetProductDetails 
+  resetProductDetails,
+  resetReview
 } = productSlice.actions
 
 export default productSlice.reducer
