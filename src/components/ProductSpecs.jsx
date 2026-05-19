@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useUpdateProductSpecsMutation } from '../slices/productsApiSlice'
+import React, { useEffect } from 'react'
 import { toast } from 'react-toastify'
 
 const ProductSpecs = ({ product, isAdmin }) => {
@@ -7,7 +8,9 @@ const ProductSpecs = ({ product, isAdmin }) => {
   const [specs, setSpecs] = useState(product?.specs || {})
   
   const [updateSpecs, { isLoading }] = useUpdateProductSpecsMutation()
-
+useEffect(() => {
+    setSpecs(product?.specs || {})
+  }, [product])
   const handleChange = (e) => {
     setSpecs({ ...specs, [e.target.name]: e.target.value })
   }
