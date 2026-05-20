@@ -211,7 +211,7 @@ const [selectedImage, setSelectedImage] = useState(0)
             </div> 
 
         {/* Reviews Section */}
-      <div className="border-t pt-8">
+      <div className="border-t pt-8 m-4">
         <h2 className="text-2xl font-bold mb-6">Reviews</h2>
 
         {reviewError && <p className="text-red-500 mb-4">{reviewError}</p>}

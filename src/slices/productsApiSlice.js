@@ -15,7 +15,26 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Product'],
     }),
+
+    getProducts: builder.query({
+  query: ({ keyword = '', pageNumber = 1 }) => ({
+    url: `${API_URL}/products`,
+    params: { keyword, pageNumber },
+  }),
+  providesTags: ['Product'],
+  keepUnusedDataFor: 5,
+}),
+
+deleteProduct: builder.mutation({
+      query: (productId) => ({
+        url: `${API_URL}/products/${productId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Product'], // this makes the list refetch after delete
+    }),
   }),
 })
 
-export const { useGetProductDetailsQuery, useUpdateProductSpecsMutation } = productsApiSlice
+
+
+export const { useGetProductDetailsQuery, useUpdateProductSpecsMutation, useGetProductsQuery,  useDeleteProductMutation,} = productsApiSlice

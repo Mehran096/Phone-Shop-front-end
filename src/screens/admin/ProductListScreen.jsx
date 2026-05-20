@@ -1,17 +1,37 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import {
-  listProducts,
-  deleteProduct,
+  listProducts, 
   createProduct,
   resetProductCreate,
   resetProductDelete
 } from '../../slices/productSlice'
+import { useGetProductsQuery, useDeleteProductMutation } from '../../slices/productsApiSlice'
+import Paginate from '../../components/Paginate'
+import { toast } from 'react-toastify'
+
 
 const ProductListScreen = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+
+  const [pageNumber, setPageNumber] = useState(1)
+  
+  const { data, isLoading, refetch } = useGetProductsQuery({ 
+    pageNumber,
+    pageSize: 6
+  })
+  const [deleteProduct, { isLoading: loadingDelete }] = useDeleteProductMutation()
+
+
+  const productList = data?.products || []
+  const page = data?.page || 1
+  const pages = data?.pages || 1
+  const handlePageChange = (num) => {
+    setPageNumber(num)
+  }
+
 
   const {
     products,
@@ -43,12 +63,16 @@ const ProductListScreen = () => {
     }
   }, [dispatch, navigate, userInfo, successCreate, successDelete, product])
 
-  const deleteHandler = (id) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      dispatch(deleteProduct(id))
+  const deleteHandler = async (id) => {
+  if (window.confirm('Are you sure you want to delete this product?')) {
+    try {
+      await deleteProduct(id).unwrap()
+      toast.success('Product deleted')
+    } catch (err) {
+      toast.error(err?.data?.message || err.error)
     }
   }
-
+}
   const createProductHandler = () => {
     dispatch(createProduct())
   }
@@ -102,7 +126,7 @@ const ProductListScreen = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
+                {productList.map((product) => (
                   <tr key={product._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {product._id}
@@ -137,7 +161,14 @@ const ProductListScreen = () => {
                 ))}
               </tbody>
             </table>
+           
           </div>
+          <Paginate 
+            pages={pages} 
+            page={page} 
+            isAdmin={true}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
     </div>

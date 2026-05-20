@@ -4,11 +4,14 @@ import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../slices/authSlice'
 import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown } from 'react-icons/fa'
 import { clearCartItems } from '../slices/cartSlice'
+//import {SearchBox} from './SearchBox'
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [userDropdown, setUserDropdown] = useState(false)
   const [adminDropdown, setAdminDropdown] = useState(false)
+  const [keyword, setKeyword] = useState('')
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -23,18 +26,50 @@ const Header = () => {
     setUserDropdown(false)
   }
 
+  const submitHandler = (e) => {
+    e.preventDefault()
+    if (keyword.trim()) {
+      navigate(`/search/${keyword}`)
+      setKeyword('')
+      setIsMenuOpen(false)
+    } else {
+      navigate('/')
+    }
+  }
+
   const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0)
 
   return (
-    <header className='bg-gray-900 text-white shadow-lg'>
+    <header className='bg-white shadow-md sticky top-0 z-50'>
       <nav className='container mx-auto px-4'>
         <div className='flex justify-between items-center h-16'>
           {/* Logo */}
-          <Link to='/' className='text-2xl font-bold text-blue-400 hover:text-blue-300'>
+          <Link to='/'  className='text-2xl font-bold text-gray-900'>
             PhoneStore
           </Link>
-
-          {/* Desktop Menu */}
+          {/* search bar */}
+           {/* Desktop Search Bar */}
+          <form onSubmit={submitHandler} className='hidden md:flex flex-1 max-w-md mx-8'>
+            <div className='relative w-full'>
+              <input
+                 
+                type='text'
+                name='q'
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder='Search products...'
+                className='w-full px-4 py-2 border-gray-300 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500'
+              />
+              <button
+                type='submit'
+                className='absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition-colors'
+              >
+                Search
+              </button>
+            </div>
+          </form>
+          {/* <SearchBox/> */}
+          {/* Desktop Menu */} 
           <div className='hidden md:flex items-center space-x-6'>
             <Link to='/cart' className='flex items-center gap-2 hover:text-blue-400 relative'>
               <FaShoppingCart />
@@ -131,6 +166,25 @@ const Header = () => {
         {/* Mobile Menu */}
         {isOpen && (
           <div className='md:hidden pb-4 space-y-2'>
+            {/* Mobile Search */}
+            <form onSubmit={submitHandler}>
+              <div className='relative'>
+                <input
+                  type='text'
+                  name='q'
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder='Search products...'
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                />
+                <button
+                  type='submit'
+                  className='absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700'
+                >
+                  Search
+                </button>
+              </div>
+            </form>
             <Link 
               to='/cart' 
               className='flex items-center gap-2 py-2 hover:text-blue-400'
@@ -139,6 +193,7 @@ const Header = () => {
               <FaShoppingCart />
               Cart {cartCount > 0 && `(${cartCount})`}
             </Link>
+
 
             {userInfo ? (
               <>

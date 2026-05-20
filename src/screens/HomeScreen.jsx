@@ -1,59 +1,85 @@
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { listProducts } from '../slices/productSlice'
-import { Link } from 'react-router-dom';
-import HeroBanner from '../components/HeroBanner'
+import { useParams, Link } from 'react-router-dom'
+import Product from '../components/Product'
+import Paginate from '../components/Paginate'
+import { useGetProductsQuery } from '../slices/productsApiSlice'
 
+const HomeScreen = () => {
+  const { keyword, pageNumber } = useParams()
+  
+  const { data, isLoading, error } = useGetProductsQuery({ 
+    keyword: keyword || '', 
+    pageNumber: Number(pageNumber) || 1 
+  })
 
-
-function HomeScreen() {
-  const dispatch = useDispatch();
-  const { products, loading, error } = useSelector((state) => state.products);
-
-
-  useEffect(() => {
-    dispatch(listProducts())
-  }, [dispatch])
-
-  if (loading) return <div className='flex justify-center items-center h-32'>
-    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900'></div>
-  </div>
-  if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <HeroBanner />
-      <h1 className="text-3xl font-bold text-center mb-8">Latest Phones</h1>
+    <div className='container mx-auto px-4 py-8'>
+      {/* Banner */}
+      <div className="w-full mb-8">
+        <img 
+          src="https://images.unsplash.com/photo-1648962492009-0bd1122f61d7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGNlbGwlMjBwaG9uZXN8ZW58MHx8MHx8fDA%3D" 
+          alt="Phone Banner"
+          className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover rounded-lg"
+        />
+      </div>
+      {/* Back button when searching */}
+      {keyword && (
+        <Link 
+          to='/' 
+          className='inline-block mb-6 text-blue-600 hover:text-blue-800 font-medium'
+        >
+          ← Go Back
+        </Link>
+      )}
 
-      {products && products.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-gray-500 text-lg">No products found</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {products?.map((product) => (
-            <Link to={`/product/${product._id}`} key={product._id}>
-              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                <div className="h-64 bg-gray-200">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-contain p-4" />
-                </div>
-                <div className="p-4">
-                  <h2 className="text-xl font-semibold mb-1">{product.name}</h2>
-                  <p className="text-gray-600 text-sm mb-2">{product.brand}</p>
-                  <div className="flex justify-between items-center mt-4">
-                    <p className="text-2xl font-bold text-blue-600">${product.price}</p>
-                    <span className="text-sm text-gray-500">Stock: {product.countInStock}</span>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
+      <h1 className='text-3xl font-bold text-gray-900 mb-8 text-center'>
+        {keyword ? `Search Results for "${keyword}"` : 'Latest Phones'}
+      </h1>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className='flex justify-center items-center h-64'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
         </div>
       )}
+
+      {/* Error State */}
+      {error && (
+        <div className='bg-red-50 border-red-200 text-red-700 px-4 py-3 rounded-lg text-center'>
+          {error?.data?.message || error.error || 'Something went wrong'}
+        </div>
+      )}
+
+      {/* Data Loaded State */}
+      {!isLoading && !error && data && (
+        <>
+          {/* No Products Found */}
+          {data.products?.length === 0 ? (
+            <div className='text-center py-12'>
+              <p className='text-gray-500 text-lg'>No products found</p>
+            </div>
+          ) : (
+            <>
+              {/* Products Grid */}
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+                {data.products.map((product) => (
+                  <Product key={product._id} product={product} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {data.pages > 1 && (
+                <Paginate 
+                  pages={data.pages} 
+                  page={data.page} 
+                  keyword={keyword || ''} 
+                />
+              )}
+            </>
+          )}
+        </>
+      )}
     </div>
-  );
+  )
 }
 
-export default HomeScreen;
+export default HomeScreen
