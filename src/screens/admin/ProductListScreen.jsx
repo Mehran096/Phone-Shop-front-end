@@ -20,7 +20,7 @@ const ProductListScreen = () => {
   const [deleteProduct, { isLoading: loadingDelete }] = useDeleteProductMutation()
  const [createProduct, { isLoading: loadingCreate }] = useCreateProductMutation()
 
-  const productList = data?.products || []
+  
   const page = data?.page || 1
   const pages = data?.pages || 1
   const handlePageChange = (num) => {
@@ -116,7 +116,7 @@ const ProductListScreen = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {productList?.map((product) => (
+                {data?.products?.map((product) => (
                   <tr key={product._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {product._id}

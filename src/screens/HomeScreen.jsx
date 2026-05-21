@@ -53,7 +53,7 @@ const HomeScreen = () => {
       {!isLoading && !error && data && (
         <>
           {/* No Products Found */}
-          {data?.length === 0 ? (
+          {data.products.length === 0 ? (
             <div className='text-center py-12'>
               <p className='text-gray-500 text-lg'>No products found</p>
             </div>
