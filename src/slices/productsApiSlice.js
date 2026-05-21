@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL
 export const productsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getProductDetails: builder.query({
-      query: (id) => `${API_URL}/products/${id}`,
+      query: (id) =>({ url:`${API_URL}/products/${id}`, params:{id}}),
       keepUnusedDataFor: 5,
     }),
     updateProductSpecs: builder.mutation({

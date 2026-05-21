@@ -53,7 +53,7 @@ const HomeScreen = () => {
       {!isLoading && !error && data && (
         <>
           {/* No Products Found */}
-          {data.products?.length === 0 ? (
+          {data?.products?.length === 0 ? (
             <div className='text-center py-12'>
               <p className='text-gray-500 text-lg'>No products found</p>
             </div>
@@ -61,7 +61,7 @@ const HomeScreen = () => {
             <>
               {/* Products Grid */}
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
-                {data.products.map((product) => (
+                {data?.products?.map((product) => (
                   <Product key={product._id} product={product} />
                 ))}
               </div>
