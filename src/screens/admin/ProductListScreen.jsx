@@ -1,29 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
-import {
-  listProducts, 
-  createProduct,
-  resetProductCreate,
-  resetProductDelete
-} from '../../slices/productSlice'
-import { useGetProductsQuery, useDeleteProductMutation } from '../../slices/productsApiSlice'
+//import { useDispatch, useSelector } from 'react-redux'
+ 
+import { useGetProductsQuery, useDeleteProductMutation, useCreateProductMutation } from '../../slices/productsApiSlice'
 import Paginate from '../../components/Paginate'
 import { toast } from 'react-toastify'
 
 
 const ProductListScreen = () => {
-  const dispatch = useDispatch()
+  //const dispatch = useDispatch()
   const navigate = useNavigate()
 
   const [pageNumber, setPageNumber] = useState(1)
   
-  const { data, isLoading, refetch } = useGetProductsQuery({ 
+  const { data, isLoading, refetch, isError } = useGetProductsQuery({ 
     pageNumber,
     pageSize: 6
   })
   const [deleteProduct, { isLoading: loadingDelete }] = useDeleteProductMutation()
-
+ const [createProduct, { isLoading: loadingCreate }] = useCreateProductMutation()
 
   const productList = data?.products || []
   const page = data?.page || 1
@@ -33,35 +28,22 @@ const ProductListScreen = () => {
   }
 
 
-  const {
-    products,
-    product,
-    loading,
-    error,
-    successDelete,
-    successCreate
-  } = useSelector((state) => state.products)
+  // const { 
+  //   product,
+  //   loading,
+  //   error,
+  //   successDelete,
+  //   successCreate
+  // } = useSelector((state) => state.products)
 
-  const { userInfo } = useSelector((state) => state.auth)
+//   const { userInfo } = useSelector((state) => state.auth)
 
-  useEffect(() => {
-    if (!userInfo?.isAdmin) {
-      navigate('/login')
-    }
+//   useEffect(() => {
+//     if (!userInfo?.isAdmin) {
+//       navigate('/login')
+//     }
 
-    if (successCreate) {
-      dispatch(resetProductCreate())
-      navigate(`/admin/product/${products._id}/edit`)
-    }
-
-    if (successDelete) {
-      dispatch(resetProductDelete())
-    }
-
-    if (!successCreate) {
-      dispatch(listProducts())
-    }
-  }, [dispatch, navigate, userInfo, successCreate, successDelete, product])
+//  }, [ navigate])
 
   const deleteHandler = async (id) => {
   if (window.confirm('Are you sure you want to delete this product?')) {
@@ -73,9 +55,17 @@ const ProductListScreen = () => {
     }
   }
 }
-  const createProductHandler = () => {
-    dispatch(createProduct())
-  }
+  // const createProductHandler = async () => {
+  //   if (window.confirm('Create a sample product?')) {
+  //     try {
+  //       await createProduct().unwrap()
+  //       refetch()
+  //       toast.success('Product created')
+  //     } catch (err) {
+  //       toast.error(err?.data?.message || err.error)
+  //     }
+  //   }
+  // }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -95,11 +85,11 @@ const ProductListScreen = () => {
         </Link>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="text-center py-10">Loading...</div>
-      ) : error ? (
+      ) : isError ? (
         <div className="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+          {isError}
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -126,7 +116,7 @@ const ProductListScreen = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {productList.map((product) => (
+                {productList?.map((product) => (
                   <tr key={product._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {product._id}

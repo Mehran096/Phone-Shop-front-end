@@ -4,8 +4,23 @@ const API_URL = import.meta.env.VITE_API_URL
 export const productsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getProductDetails: builder.query({
-      query: (id) =>({ url:`${API_URL}/products/${id}`, params:{id}}),
+      query: (id) =>({ url:`${API_URL}/products/${id}`}),
       keepUnusedDataFor: 5,
+    }),
+    createProduct: builder.mutation({
+      query: () => ({
+        url: `/api/products`,
+        method: 'POST'
+      }),
+      invalidatesTags: ['Products']
+    }),
+    updateProduct: builder.mutation({
+      query: (data) => ({
+        url: `/api/products/${data.productId}`,
+        method: 'PUT',
+        body: data
+      }),
+      invalidatesTags: ['Products']
     }),
     updateProductSpecs: builder.mutation({
       query: ({ id, specs }) => ({
@@ -37,4 +52,11 @@ deleteProduct: builder.mutation({
 
 
 
-export const { useGetProductDetailsQuery, useUpdateProductSpecsMutation, useGetProductsQuery,  useDeleteProductMutation,} = productsApiSlice
+export const { 
+  useGetProductDetailsQuery,
+  useCreateProductMutation, 
+  useUpdateProductMutation,
+   useUpdateProductSpecsMutation,
+  useGetProductsQuery,
+    useDeleteProductMutation,
+    } = productsApiSlice
