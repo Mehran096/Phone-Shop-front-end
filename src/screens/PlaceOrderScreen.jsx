@@ -1,27 +1,32 @@
 import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
-import { createOrder, resetOrder } from '../slices/orderSlice'
+import { useDispatch, useSelector } from 'react-redux' 
 import { clearCartItems } from '../slices/cartSlice' 
+import { createCheckoutSession, createOrder, resetOrder} from '../slices/orderSlice'
+//import { createOrder } from '../slices/orderCreateSlice'
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
   const cart = useSelector((state) => state.cart)
-  const { order, success, error, loading } = useSelector((state) => state.order)
+  
+   
+ const { order, success, error, loading } = useSelector((state) => state.order)
   //const { userInfo } = useSelector((state) => state.auth) 
+  console.log('orderCreate state:', useSelector((state) => state.createOrder))
 
   useEffect(() => {
-    if (!cart.shippingAddress.address) {
+    if (!cart?.shippingAddress?.address) {
       navigate('/shipping')
-    } else if (!cart.paymentMethod) {
+    } else if (!cart?.paymentMethod) {
       navigate('/payment')
     }
-  }, [cart.paymentMethod, cart.shippingAddress.address, navigate])
+  }, [cart?.paymentMethod, cart?.shippingAddress?.address, navigate])
 
   useEffect(() => {
-    if (success) {
+    console.log('order state:', order)
+    if (success && order?._id) {
       navigate(`/order/${order._id}`)
       dispatch(clearCartItems())
       dispatch(resetOrder())
@@ -42,7 +47,7 @@ const PlaceOrderScreen = () => {
 
   // Don't mutate cart - create new variables
   const itemsPrice = addDecimals(
-    cart.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+    cart?.cartItems?.reduce((acc, item) => acc + item.price * item.qty, 0)
   )
   const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
   const taxPrice = addDecimals(Number((0.15 * itemsPrice).toFixed(2)))
@@ -52,19 +57,110 @@ const PlaceOrderScreen = () => {
     Number(taxPrice)
   ).toFixed(2)
 
-  const placeOrderHandler = () => {
-    dispatch(
-      createOrder({
-        orderItems: cart.cartItems,
+//   const placeOrderHandler = async () => {
+      
+//   try {
+//     const session = await dispatch(createCheckoutSession({
+//       orderItems: cart.cartItems.map(item => ({
+//         product: item._id,  // <-- this is the missing field
+//         name: item.name,
+//         qty: item.qty,
+//         price: item.price,
+//         image: item.image,
+//       })),
+//       shippingAddress: cart.shippingAddress,
+//       paymentMethod: cart.paymentMethod,
+//       itemsPrice: cart.itemsPrice,
+//       taxPrice: cart.taxPrice,
+//       shippingPrice: cart.shippingPrice,
+//       totalPrice: cart.totalPrice,
+//     })).unwrap()
+//     navigate(`/order/${createdOrder._id}`)
+//     dispatch(clearCartItems())
+//     window.location.href = session.url
+//   } catch (err) {
+//     console.error(err)
+//   }
+// }
+const placeOrderHandler = async () => {
+  console.log('Handler fired')
+  try {
+    if (cart.paymentMethod === 'Cash on Delivery') {
+      // COD: create order directly, no Stripe
+       console.log('Cart items before order:', cart.cartItems)
+      const createdOrder = await dispatch(createOrder({
+        orderItems: cart.cartItems.map(item => ({
+          product: item.product,
+          name: item.name,
+          qty: item.qty,
+          price: item.price,
+          image: item.image,
+        })),
         shippingAddress: cart.shippingAddress,
         paymentMethod: cart.paymentMethod,
-        itemsPrice,
-        shippingPrice,
-        taxPrice,
-        totalPrice,
-      })
-    )
+        itemsPrice: cart.itemsPrice,
+        taxPrice: cart.taxPrice,
+        shippingPrice: cart.shippingPrice,
+        totalPrice: cart.totalPrice,
+      })).unwrap();
+
+      navigate(`/order/${createdOrder._id}`);
+
+    } else {
+      // Stripe: create order + checkout session
+      const createdOrder = await dispatch(createCheckoutSession({
+        orderItems: cart.cartItems.map(item => ({
+          product: item.product,
+          name: item.name,
+          qty: item.qty,
+          price: item.price,
+          image: item.image,
+        })),
+        shippingAddress: cart.shippingAddress,
+        paymentMethod: cart.paymentMethod,
+        itemsPrice: cart.itemsPrice,
+        taxPrice: cart.taxPrice,
+        shippingPrice: cart.shippingPrice,
+        totalPrice: cart.totalPrice,
+      })).unwrap();
+       dispatch(clearCartItems())
+      window.location.href = createdOrder.url; // redirect to Stripe
+    }
+  } catch (err) {
+    console.log(err);
   }
+};
+
+
+
+// const placeOrderHandler = async () => {
+//   const res = await dispatch(createOrder({
+//     orderItems: cart.cartItems,
+//     shippingAddress: cart.shippingAddress,
+//     paymentMethod: cart.paymentMethod,
+//     itemsPrice: cart.itemsPrice,
+//     taxPrice: cart.taxPrice,
+//     shippingPrice: cart.shippingPrice,
+//     totalPrice: cart.totalPrice,
+//   })).unwrap()
+
+//   // res._id is the new order ID
+//   navigate(`/order/${res._id}`)
+// }
+
+  // const placeOrderHandler = () => {
+  //   dispatch(
+  //     createOrder({
+  //       orderItems: cart.cartItems,
+  //       shippingAddress: cart.shippingAddress,
+  //       paymentMethod: cart.paymentMethod,
+  //       itemsPrice,
+  //       shippingPrice,
+  //       taxPrice,
+  //       totalPrice,
+  //     })
+  //   )
+  // }
 
   if (loading) {
     return (
@@ -86,8 +182,8 @@ const PlaceOrderScreen = () => {
               <h2 className="text-2xl font-bold mb-4">Shipping</h2>
               <p>
                 <span className="font-semibold">Address: </span>
-                {cart.shippingAddress.address}, {cart.shippingAddress.city}{' '}
-                {cart.shippingAddress.postalCode}, {cart.shippingAddress.country}
+                {cart?.shippingAddress?.address}, {cart?.shippingAddress?.city}{' '}
+                {cart?.shippingAddress?.postalCode}, {cart?.shippingAddress?.country}
               </p>
             </div>
 
@@ -96,20 +192,20 @@ const PlaceOrderScreen = () => {
               <h2 className="text-2xl font-bold mb-4">Payment Method</h2>
               <p>
                 <span className="font-semibold">Method: </span>
-                {cart.paymentMethod}
+                {cart?.paymentMethod}
               </p>
             </div>
 
             {/* Order Items */}
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-4">Order Items</h2>
-              {cart.cartItems.length === 0 ? (
+              {cart?.cartItems?.length === 0 ? (
                 <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
                   Your cart is empty
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {cart.cartItems.map((item, index) => (
+                  {cart?.cartItems?.map((item, index) => (
                     <div key={index} className="flex items-center gap-4 pb-4 border-b border-gray-200 last:border-0">
                       <div className="w-16 h-16 flex-shrink-0">
                         <img
@@ -169,7 +265,8 @@ const PlaceOrderScreen = () => {
 
             <button
               type="button"
-              disabled={cart.cartItems.length === 0 || loading}
+              //disabled={loading}
+              disabled={cart?.cartItems?.length === 0 || loading}
               onClick={placeOrderHandler}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >

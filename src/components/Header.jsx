@@ -16,7 +16,7 @@ const Header = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const { cartItems } = useSelector((state) => state.cart)
+  const { cartItems } = useSelector((state) => state.cart);
   const { userInfo } = useSelector((state) => state.auth)
 
   const logoutHandler = () => {
@@ -37,7 +37,7 @@ const Header = () => {
     }
   }
 
-  const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0)
+  const cartCount = cartItems?.reduce((acc, item) => acc + item.qty, 0) || 0;
 
   return (
     <header className='bg-white shadow-md sticky top-0 z-50'>

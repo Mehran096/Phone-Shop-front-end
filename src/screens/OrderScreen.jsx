@@ -2,6 +2,8 @@ import React, { useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { getOrderDetails, payOrder, deliverOrder, resetPay, resetDeliver } from '../slices/orderSlice'
+// import { getOrderDetails, payOrder, deliverOrder, resetPay, resetDeliver } 
+//   from '../slices/orderDetailSlice'
 
 const OrderScreen = () => {
   const { id: orderId } = useParams()
@@ -9,10 +11,12 @@ const OrderScreen = () => {
   const navigate = useNavigate()
 
   const { order = {}, loading, error, successPay, successDeliver } = useSelector((state) => state.order)
+  // const { order, loading, error } = useSelector((state) => state.orderDetail)
   //console.log(order.user)
   const { userInfo } = useSelector((state) => state.auth)
 
   useEffect(() => {
+    //console.log('orderId from URL:', orderId)
     if (!userInfo) {
       navigate('/login')
       return
@@ -54,25 +58,25 @@ const OrderScreen = () => {
   }
 
 
-//   const payWithJazzCash = async () => {
-//   const { data } = await axios.post('/api/jazzcash/pay', { orderId })
+  //   const payWithJazzCash = async () => {
+  //   const { data } = await axios.post('/api/jazzcash/pay', { orderId })
 
-//   const form = document.createElement('form')
-//   form.method = 'POST'
-//   form.action = data.url
-//   form.style.display = 'none'
+  //   const form = document.createElement('form')
+  //   form.method = 'POST'
+  //   form.action = data.url
+  //   form.style.display = 'none'
 
-//   Object.keys(data.postData).forEach(key => {
-//     const input = document.createElement('input')
-//     input.type = 'hidden'
-//     input.name = key
-//     input.value = data.postData[key]
-//     form.appendChild(input)
-//   })
+  //   Object.keys(data.postData).forEach(key => {
+  //     const input = document.createElement('input')
+  //     input.type = 'hidden'
+  //     input.name = key
+  //     input.value = data.postData[key]
+  //     form.appendChild(input)
+  //   })
 
-//   document.body.appendChild(form)
-//   form.submit()
-// }
+  //   document.body.appendChild(form)
+  //   form.submit()
+  // }
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -93,7 +97,7 @@ const OrderScreen = () => {
               </div>
             ) : (
               <div className='mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded'>
-                Not Delivered
+                    Order will be delivered very soon...
               </div>
             )}
           </div>
@@ -147,16 +151,24 @@ const OrderScreen = () => {
             <div className='flex justify-between font-bold text-lg border-t pt-2'>
               <span>Total</span><span>${order.totalPrice}</span>
             </div>
+            {userInfo?.isAdmin && order.paymentMethod === 'Cash on Delivery' && !order.isPaid && (
+              <button 
+              onClick={successPaymentHandler}
+              className='w-full mt-4 bg-blue-600 text-white py-2 rounded hover:bg-blue-700'
+              >
+                Mark as Paid
+              </button>
+            )}
 
-            {!order.isPaid && userInfo && (
+            {/* {!order.isPaid && userInfo && (
               <button
                 onClick={successPaymentHandler}
                 className='w-full mt-4 bg-blue-600 text-white py-2 rounded hover:bg-blue-700'
               >
                 Test Pay
               </button>
-            )}
-{/* 
+            )} */}
+            {/* 
             {!order.isPaid && order.paymentMethod === 'JazzCash' && (
   <button onClick={payWithJazzCash} className='btn btn-primary'>
     Pay with JazzCash

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { savePaymentMethod } from '../slices/cartSlice';
-
+ 
 function PaymentScreen() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -16,7 +16,7 @@ function PaymentScreen() {
     }
   }, [shippingAddress, navigate]);
 
-  const [paymentMethod, setPaymentMethod] = useState('PayPal');
+  const [paymentMethod, setPaymentMethod] = useState('Stripe');
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -32,11 +32,11 @@ function PaymentScreen() {
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              value="PayPal"
-              checked={paymentMethod === 'PayPal'}
+              value="Stripe"
+              checked={paymentMethod === 'Stripe'}
               onChange={(e) => setPaymentMethod(e.target.value)}
             />
-            <span>PayPal or Credit Card</span>
+            <span>Stripe or Credit Card</span>
           </label>
         </div>
         
@@ -44,8 +44,8 @@ function PaymentScreen() {
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              value="CashOnDelivery"
-              checked={paymentMethod === 'CashOnDelivery'}
+              value="Cash on Delivery"
+              checked={paymentMethod === 'Cash on Delivery'}
               onChange={(e) => setPaymentMethod(e.target.value)}
             />
             <span>Cash on Delivery</span>

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
 function CartScreen() {
-  const { cartItems } = useSelector((state) => state.cart);
+const { cartItems } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const checkoutHandler = () => {
@@ -18,26 +18,26 @@ function CartScreen() {
   };
 
   const updateQtyHandler = (id, qty) => {
-    dispatch(updateCartQty({ _id: id, qty: Number(qty) }));
+    dispatch(updateCartQty({ product: id, qty: Number(qty) }));
   };
 
 
-  const cartSubtotal = cartItems.reduce((acc, item) => acc + item.qty * item.price, 0);
-  const cartItemsCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
+  const cartSubtotal = cartItems?.reduce((acc, item) => acc + item.qty * item.price, 0);
+  const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
 
   return (
     <div className="max-w-4xl mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Shopping Cart</h1>
 
-      {cartItems.length === 0 ? (
+      {cartItems?.length === 0 ? (
         <p>
           Your cart is empty <Link to="/" className="text-blue-600 hover:underline">Go Back</Link>
         </p>
       ) : (
         <>
           <div className="space-y-4 mb-6">
-            {cartItems.map((item) => (
-              <div key={item._id} className="flex justify-between items-center border p-4 rounded">
+            {cartItems?.map((item, index) => (
+              <div key={`${item.product}-${index}`} className="flex justify-between items-center border p-4 rounded">
                 <div className="flex items-center gap-4">
                   <img src={item.image} alt={item.name} className="w-16 h-16 object-contain" />
                   <div>
@@ -48,7 +48,7 @@ function CartScreen() {
                       <p className="text-sm text-gray-600">${item.price}</p>
                       <select
                         value={item.qty}
-                        onChange={(e) => updateQtyHandler(item._id, e.target.value)}
+                        onChange={(e) => updateQtyHandler(item.product, e.target.value)}
                         className="border rounded px-2 py-1"
                       >
                         {[...Array(item.countInStock).keys()].map((x) => (
@@ -61,7 +61,7 @@ function CartScreen() {
                   </div>
                 </div>
                 <button
-                  onClick={() => removeFromCartHandler(item._id)}
+                  onClick={() => removeFromCartHandler(item.product)}
                   className="text-red-500 hover:underline"
                 >
                   Remove
