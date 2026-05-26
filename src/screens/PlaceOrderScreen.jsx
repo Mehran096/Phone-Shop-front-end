@@ -14,7 +14,7 @@ const PlaceOrderScreen = () => {
    
  const { order, success, error, loading } = useSelector((state) => state.order)
   //const { userInfo } = useSelector((state) => state.auth) 
-  console.log('orderCreate state:', useSelector((state) => state.createOrder))
+  //console.log('orderCreate state:', useSelector((state) => state.createOrder))
 
   useEffect(() => {
     if (!cart?.shippingAddress?.address) {
@@ -25,7 +25,7 @@ const PlaceOrderScreen = () => {
   }, [cart?.paymentMethod, cart?.shippingAddress?.address, navigate])
 
   useEffect(() => {
-    console.log('order state:', order)
+   // console.log('order state:', order)
     if (success && order?._id) {
       navigate(`/order/${order._id}`)
       dispatch(clearCartItems())
@@ -50,7 +50,12 @@ const PlaceOrderScreen = () => {
     cart?.cartItems?.reduce((acc, item) => acc + item.price * item.qty, 0)
   )
   const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
-  const taxPrice = addDecimals(Number((0.15 * itemsPrice).toFixed(2)))
+  // Apply tax only if payment method is CashOnDelivery
+const taxPrice = addDecimals(
+  cart.paymentMethod === 'Cash on Delivery'
+    ? Number((0.15 * itemsPrice).toFixed(2))
+    : 0
+)
   const totalPrice = (
     Number(itemsPrice) +
     Number(shippingPrice) +
@@ -83,11 +88,11 @@ const PlaceOrderScreen = () => {
 //   }
 // }
 const placeOrderHandler = async () => {
-  console.log('Handler fired')
+  
   try {
     if (cart.paymentMethod === 'Cash on Delivery') {
       // COD: create order directly, no Stripe
-       console.log('Cart items before order:', cart.cartItems)
+       //console.log('Cart items before order:', cart.cartItems)
       const createdOrder = await dispatch(createOrder({
         orderItems: cart.cartItems.map(item => ({
           product: item.product,
@@ -247,10 +252,12 @@ const placeOrderHandler = async () => {
                 <span className="text-gray-600">Shipping</span>
                 <span className="font-semibold">${shippingPrice}</span>
               </div>
+              {taxPrice > 0 && (
               <div className="flex justify-between pb-3 border-b border-gray-200">
                 <span className="text-gray-600">Tax</span>
                 <span className="font-semibold">${taxPrice}</span>
               </div>
+)}
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
                 <span>${totalPrice}</span>

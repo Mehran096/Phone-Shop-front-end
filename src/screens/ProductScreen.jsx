@@ -9,6 +9,8 @@ import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { useGetProductDetailsQuery } from '../slices/productsApiSlice'
 import ProductSpecs from '../components/ProductSpecs'
+import Zoom from 'react-medium-image-zoom'
+import 'react-medium-image-zoom/dist/styles.css'
 
 function ProductScreen() {
     const [qty, setQty] = useState(1);
@@ -130,44 +132,58 @@ const [selectedImage, setSelectedImage] = useState(0)
     ? product.reviews.find(r => r.user.toString() === userInfo._id.toString())
     : null
 
+
+const getCloudinaryUrl = (url, width = 800) => {
+  if (!url || !url.includes('/upload/')) return url
+  return url.replace('/upload/', `/upload/q_auto,f_auto,w_${width}/`)
+}
+
+
+    //return
     return (
         <div className="max-w-4xl mx-auto p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  {/* Image Gallery */}
+         {/* Image Gallery */}
         <div>
-          {/* Main Image */}
+          
+          {/* Main Image with Zoom */}
           <div className="border rounded-lg overflow-hidden mb-4 bg-white">
-            {images[selectedImage]? (
-    <img 
-      src={images[selectedImage]} 
-      alt={product.name} 
-      className="w-full h-96 object-contain" 
-    />
-  ) : (
-    <div className="w-full h-96 flex items-center justify-center bg-gray-100 text-gray-500">
-      No Image
-    </div>
-  )}
+            {images[selectedImage] ? (
+              <Zoom>
+                <img
+                  src={getCloudinaryUrl(images[selectedImage], 1200)}
+                  alt={product.name}
+                  className="w-full h-96 object-contain cursor-zoom-in"
+                />
+              </Zoom>
+            ) : (
+              <div className="w-full h-96 flex items-center justify-center bg-gray-100 text-gray-500">
+                No Image
+              </div>
+            )}
           </div>
 
           {/* Thumbnails */}
-{images.length > 1 && (
-  <div className="flex gap-2 overflow-x-auto pb-2">
-    {images.map((img, idx) => (
-      img && (
-        <img
-          key={idx}
-          src={img}
-          onClick={() => setSelectedImage(idx)}
-          className={`w-20 h-20 object-cover border-2 rounded cursor-pointer ${
-            selectedImage === idx? 'border-blue-600' : 'border-gray-200'
-          }`}
-          alt={`${product.name} ${idx + 1}`}
-        />
-      )
-    ))}
+          {images.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {images.map((img, idx) => (
+                img && (
+                  <img
+                    key={idx}
+                    src={getCloudinaryUrl(img, 200)}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`w-20 h-20 object-cover border-2 rounded cursor-pointer ${
+                      selectedImage === idx ? 'border-blue-600' : 'border-gray-200'
+                    }`}
+                    alt={`${product.name} ${idx + 1}`}
+                  />
+                )
+              ))}
             </div>
           )}
+          
+       
         </div>
                 <div>
                     <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
