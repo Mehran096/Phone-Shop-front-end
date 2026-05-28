@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import HomeScreen from './screens/HomeScreen';
 import ProductScreen from './screens/ProductScreen';
 import Header from './components/Header';
+import Footer from './components/Footer' 
 import CartScreen from './screens/CartScreen';
 import ShippingScreen from './screens/ShippingScreen';
 import PaymentScreen from './screens/PaymentScreen';
@@ -17,19 +18,29 @@ import UserListScreen from './screens/admin/UserListScreen';
 import UserEditScreen from './screens/admin/UserEditScreen';
 import MyOrdersScreen from './screens/MyOrdersScreen'
 import ProductCreateScreen from './screens/admin/ProductCreateScreen'
+import AllProductsScreen from './screens/AllProductsScreen'
+import FAQScreen from './screens/FAQScreen'
+import ReturnRefundScreen from './screens/ReturnRefundScreen'
+import ContactScreen from './screens/ContactScreen'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+
 
 
 function App() {
   return (
     <>
+     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="py-4">
+      <main className="flex-grow">
           <Routes><Route path="/" element={<HomeScreen />} />
+          <Route path='/products' element={<AllProductsScreen />} />
           <Route path='/search/:keyword' element={<HomeScreen />} />
-<Route path='/page/:pageNumber' element={<HomeScreen />} />
+<Route path='/page/:pageNumber' element={<HomeScreen />} /> 
 <Route path='/search/:keyword/page/:pageNumber' element={<HomeScreen />} />
+<Route path='/faq' element={<FAQScreen />} />
+<Route path='/returns' element={<ReturnRefundScreen />} />
+<Route path='/contact' element={<ContactScreen />} />
           <Route path="/product/:id" element={<ProductScreen />} />
           <Route path="/cart" element={<CartScreen />} />
           <Route path="/shipping" element={<ShippingScreen />} />
@@ -40,6 +51,7 @@ function App() {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/profile" element={<ProfileScreen />} />
           <Route path='/myorders' element={<MyOrdersScreen />} />
+          
           //admin route
           <Route path="/admin/orderlist" element={<OrderListScreen />} />
           <Route path="/admin/productlist" element={<ProductListScreen />} />
@@ -52,6 +64,8 @@ function App() {
         </Routes>
          <ToastContainer />
       </main>
+       <Footer />
+       </div>
     </>
   );
 }

@@ -2,9 +2,9 @@ import { useParams, Link } from 'react-router-dom'
 import Product from '../components/Product'
 import Paginate from '../components/Paginate'
 import { useGetProductsQuery } from '../slices/productsApiSlice'
-import HeroBanner from '../components/HeroBanner'
+ 
 
-const HomeScreen = () => {
+const AllProductsScreen = () => {
   const { keyword, pageNumber } = useParams()
   
   const { data, isLoading, error } = useGetProductsQuery({ 
@@ -14,7 +14,7 @@ const HomeScreen = () => {
 
   return (
     <>
-     <HeroBanner />   
+         
     <div className='container mx-auto px-4 py-8'>
       {/* Banner */}
      
@@ -81,4 +81,4 @@ const HomeScreen = () => {
   )
 }
 
-export default HomeScreen
+export default AllProductsScreen

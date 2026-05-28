@@ -4,8 +4,10 @@ const HeroBanner = () => {
     
       
     
-     <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-gradient-to-b from-black via-gray-900 to-gray-700 text-white">
-      <div className="max-w-6xl mx-auto px-4 py-12 lg:py-20 flex-col items-center text-center">
+     {/* <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-gradient-to-b from-black via-gray-900 to-gray-700 text-white">
+      <div className="max-w-6xl mx-auto px-4 py-12 lg:py-20 flex-col items-center text-center"> */}
+      <div className="relative w-full bg-gradient-to-b from-black via-gray-900 to-black">
+  <div className="max-w-6xl mx-auto px-4 py-12 lg:py-20 flex-col items-center text-center">
         
         <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-3 px-2">
           PhoneStore Pro Max
