@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import Product from '../components/Product'
 import Paginate from '../components/Paginate'
 import { useGetProductsQuery } from '../slices/productsApiSlice'
+import HeroBanner from '../components/HeroBanner'
 
 const HomeScreen = () => {
   const { keyword, pageNumber } = useParams()
@@ -12,15 +13,25 @@ const HomeScreen = () => {
   })
 
   return (
+    <>
+     <HeroBanner />   
     <div className='container mx-auto px-4 py-8'>
       {/* Banner */}
-      <div className="w-full mb-8">
+     
+      {/* <div className="w-full mb-8">
         <img 
           src="https://images.unsplash.com/photo-1648962492009-0bd1122f61d7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGNlbGwlMjBwaG9uZXN8ZW58MHx8MHx8fDA%3D" 
           alt="Phone Banner"
           className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover rounded-lg"
         />
       </div>
+      <div className="w-screen -mx-4 sm:mx-0 sm:w-full">
+  <img 
+    src="https://images.unsplash.com/photo-1648962492009-0bd1122f61d7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGNlbGwlMjBwaG9uZXN8ZW58MHx8MHx8fDA%3D" 
+    alt="Banner"
+    className="w-full h-48 sm:h-64 object-cover rounded-none sm:rounded-2xl"
+  />
+</div> */}
       {/* Back button when searching */}
       {keyword && (
         <Link 
@@ -79,6 +90,7 @@ const HomeScreen = () => {
         </>
       )}
     </div>
+    </>
   )
 }
 

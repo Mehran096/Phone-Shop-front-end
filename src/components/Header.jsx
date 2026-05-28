@@ -44,9 +44,20 @@ const Header = () => {
       <nav className='container mx-auto px-4'>
         <div className='flex justify-between items-center h-16'>
           {/* Logo */}
-          <Link to='/'  className='text-2xl font-bold text-gray-900'>
-            PhoneStore
-          </Link>
+          <Link to='/' className='flex items-center'>
+  {/* Desktop logo - hidden on mobile */}
+  <img 
+    src='/assets/logo-horizontal.png' 
+    alt='PhoneStore'
+    className='hidden md:block h-14 w-auto'
+  />
+  {/* Mobile logo - hidden on desktop */}
+  <img 
+    src='/assets/logo-stacked.png' 
+    alt='PhoneStore'
+    className='block md:hidden h-16 w-auto'
+  />
+</Link>
           {/* search bar */}
            {/* Desktop Search Bar */}
           <form onSubmit={submitHandler} className='hidden md:flex flex-1 max-w-md mx-8'>
