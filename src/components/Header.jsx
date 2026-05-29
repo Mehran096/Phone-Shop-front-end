@@ -49,7 +49,7 @@ const Header = () => {
   <img 
     src='/assets/logo-horizontal.png' 
     alt='PhoneStore'
-    className='hidden md:block h-14 w-auto'
+    className='hidden md:block h-20 w-auto'
   />
   {/* Mobile logo - hidden on desktop */}
   <img 

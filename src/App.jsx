@@ -24,6 +24,7 @@ import ReturnRefundScreen from './screens/ReturnRefundScreen'
 import ContactScreen from './screens/ContactScreen'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+ 
 
 
 
@@ -31,7 +32,7 @@ function App() {
   return (
     <>
      <div className="flex flex-col min-h-screen">
-      <Header />
+      <Header /> 
       <main className="flex-grow">
           <Routes><Route path="/" element={<HomeScreen />} />
           <Route path='/products' element={<AllProductsScreen />} />
