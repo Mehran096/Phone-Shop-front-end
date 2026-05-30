@@ -27,12 +27,12 @@ const Header = () => {
   }
 
   useEffect(() => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = 'unset'
-  }
-}, [isOpen])
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
   const submitHandler = (e) => {
     e.preventDefault()
@@ -53,17 +53,18 @@ const Header = () => {
         <div className='flex justify-between items-center h-16'>
           {/* Logo */}
 
-           <Link to='/' className='hidden md:flex items-center  flex-shrink-0 pr-6'>
-      <img 
-        src='/assets/logo-horizontal.png' 
-        alt='PhoneStore'
-        className='h-16 w-16' 
-      />
-      <div className='flex flex-col'>
-        <span className='text-xl font-bold text-white leading-none'>PhoneStore</span>
-        <span className='text-xs text-gray-400 leading-none'>Your Phone, Our Passion</span>
-      </div>
-    </Link>
+          <Link to='/' className='hidden md:flex items-center  flex-shrink-0 pr-6'>
+            <img
+              src='/assets/logo-horizontal.png'
+              alt='PhoneStore'
+              className='h-16 w-16'
+            />
+            <div className='flex flex-col'>
+              <span className='text-xl font-bold text-white leading-none'>PhoneStore</span>
+              <span className='text-xs text-gray-400 leading-none'>Your Phone, Our Passion</span>
+            </div>
+          </Link>
+          {/* Mobile logo - hidden on desktop */}
           <Link to='/' className='flex items-center pr-7'>
             {/* Desktop logo - hidden on mobile */}
             {/* <img
@@ -75,7 +76,7 @@ const Header = () => {
             <img
               src='/assets/logo-horizontal.png'
               alt='PhoneStore'
-              className='block md:hidden h-16 w-auto'
+              className='block md:hidden h-14 w-auto'
             />
           </Link>
           {/* search bar */}
