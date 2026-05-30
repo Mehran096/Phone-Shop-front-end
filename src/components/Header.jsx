@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../slices/authSlice'
-import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown } from 'react-icons/fa'
+import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaSearch } from 'react-icons/fa'
+//import { MdOutlineYoutubeSearchedFor } from "react-icons/md";
 import { clearCartItems } from '../slices/cartSlice'
 //import {SearchBox} from './SearchBox'
 
@@ -94,9 +95,9 @@ const Header = () => {
               />
               <button
                 type='submit'
-                className='absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition-colors'
+                className='absolute right-2 top-1/2 -translate-y-1/2 bg-white-600 px-3 py-1 text-bold rounded-md transition-colors'
               >
-                Search
+               <FaSearch className='text-gray-500 w-5 h-5' /> 
               </button>
             </div>
           </form>
@@ -211,9 +212,9 @@ const Header = () => {
                 />
                 <button
                   type='submit'
-                  className='absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700'
+                  className='absolute right-2 top-1/2 -translate-y-1/2 bg-white-600 text-white px-3 py-1 rounded-md'
                 >
-                  Search
+                  <FaSearch className='text-gray-500 w-5 h-5' /> 
                 </button>
               </div>
             </form>
