@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../slices/authSlice'
@@ -11,7 +11,7 @@ const Header = () => {
   const [userDropdown, setUserDropdown] = useState(false)
   const [adminDropdown, setAdminDropdown] = useState(false)
   const [keyword, setKeyword] = useState('')
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  //const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -21,17 +21,25 @@ const Header = () => {
 
   const logoutHandler = () => {
     dispatch(logout())
-     dispatch(clearCartItems())
+    dispatch(clearCartItems())
     navigate('/login')
     setUserDropdown(false)
   }
+
+  useEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = 'unset'
+  }
+}, [isOpen])
 
   const submitHandler = (e) => {
     e.preventDefault()
     if (keyword.trim()) {
       navigate(`/search/${keyword}`)
       setKeyword('')
-      setIsMenuOpen(false)
+      setIsOpen(false)
     } else {
       navigate('/')
     }
@@ -40,30 +48,42 @@ const Header = () => {
   const cartCount = cartItems?.reduce((acc, item) => acc + item.qty, 0) || 0;
 
   return (
-    <header className='bg-white shadow-md sticky top-0 z-50'>
-      <nav className='container mx-auto px-4'>
+    <header className='bg-gray-900  shadow-md sticky top-0 z-50 text-white h-16'>
+      <nav className='container mx-auto px-1'>
         <div className='flex justify-between items-center h-16'>
           {/* Logo */}
-          <Link to='/' className='flex items-center'>
-  {/* Desktop logo - hidden on mobile */}
-  <img 
-    src='/assets/logo-horizontal.png' 
-    alt='PhoneStore'
-    className='hidden md:block h-20 w-auto'
-  />
-  {/* Mobile logo - hidden on desktop */}
-  <img 
-    src='/assets/logo-stacked.png' 
-    alt='PhoneStore'
-    className='block md:hidden h-16 w-auto'
-  />
-</Link>
+
+           <Link to='/' className='hidden md:flex items-center  flex-shrink-0 pr-6'>
+      <img 
+        src='/assets/logo-horizontal.png' 
+        alt='PhoneStore'
+        className='h-16 w-16' 
+      />
+      <div className='flex flex-col'>
+        <span className='text-xl font-bold text-white leading-none'>PhoneStore</span>
+        <span className='text-xs text-gray-400 leading-none'>Your Phone, Our Passion</span>
+      </div>
+    </Link>
+          <Link to='/' className='flex items-center pr-7'>
+            {/* Desktop logo - hidden on mobile */}
+            {/* <img
+              src='/assets/logo-horizontal.png'
+              alt='PhoneStore'
+              className='hidden md:block h-14 w-auto'
+            /> */}
+            {/* Mobile logo - hidden on desktop */}
+            <img
+              src='/assets/logo-horizontal.png'
+              alt='PhoneStore'
+              className='block md:hidden h-16 w-auto'
+            />
+          </Link>
           {/* search bar */}
-           {/* Desktop Search Bar */}
+          {/* Desktop Search Bar */}
           <form onSubmit={submitHandler} className='hidden md:flex flex-1 max-w-md mx-8'>
             <div className='relative w-full'>
               <input
-                 
+
                 type='text'
                 name='q'
                 value={keyword}
@@ -80,8 +100,8 @@ const Header = () => {
             </div>
           </form>
           {/* <SearchBox/> */}
-          {/* Desktop Menu */} 
-          <div className='hidden md:flex items-center space-x-6'>
+          {/* Desktop Menu */}
+          <div className='hidden md:flex items-center space-x-6 pr-5'>
             <Link to='/cart' className='flex items-center gap-2 hover:text-blue-400 relative'>
               <FaShoppingCart />
               Cart
@@ -94,7 +114,7 @@ const Header = () => {
 
             {userInfo ? (
               <div className='relative'>
-                <button 
+                <button
                   onClick={() => setUserDropdown(!userDropdown)}
                   className='flex items-center gap-2 hover:text-blue-400'
                 >
@@ -104,14 +124,14 @@ const Header = () => {
                 </button>
                 {userDropdown && (
                   <div className='absolute right-0 mt-2 w-48 bg-white text-gray-900 rounded-md shadow-lg py-1 z-50'>
-                    <Link 
-                      to='/profile' 
+                    <Link
+                      to='/profile'
                       className='block px-4 py-2 hover:bg-gray-100'
                       onClick={() => setUserDropdown(false)}
                     >
                       Profile
                     </Link>
-                    <button 
+                    <button
                       onClick={logoutHandler}
                       className='block w-full text-left px-4 py-2 hover:bg-gray-100'
                     >
@@ -129,7 +149,7 @@ const Header = () => {
 
             {userInfo && userInfo.isAdmin && (
               <div className='relative'>
-                <button 
+                <button
                   onClick={() => setAdminDropdown(!adminDropdown)}
                   className='flex items-center gap-2 hover:text-blue-400'
                 >
@@ -138,22 +158,22 @@ const Header = () => {
                 </button>
                 {adminDropdown && (
                   <div className='absolute right-0 mt-2 w-48 bg-white text-gray-900 rounded-md shadow-lg py-1 z-50'>
-                    <Link 
-                      to='/admin/userlist' 
+                    <Link
+                      to='/admin/userlist'
                       className='block px-4 py-2 hover:bg-gray-100'
                       onClick={() => setAdminDropdown(false)}
                     >
                       Users
                     </Link>
-                    <Link 
-                      to='/admin/productlist' 
+                    <Link
+                      to='/admin/productlist'
                       className='block px-4 py-2 hover:bg-gray-100'
                       onClick={() => setAdminDropdown(false)}
                     >
                       Products
                     </Link>
-                    <Link 
-                      to='/admin/orderlist' 
+                    <Link
+                      to='/admin/orderlist'
                       className='block px-4 py-2 hover:bg-gray-100'
                       onClick={() => setAdminDropdown(false)}
                     >
@@ -166,9 +186,9 @@ const Header = () => {
           </div>
 
           {/* Mobile menu button */}
-          <button 
+          <button
             onClick={() => setIsOpen(!isOpen)}
-            className='md:hidden text-2xl'
+            className='md:hidden text-2xl mr-5'
           >
             {isOpen ? <FaTimes /> : <FaBars />}
           </button>
@@ -176,10 +196,10 @@ const Header = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className='md:hidden pb-4 space-y-2'>
+          <div className='md:hidden pl-5 fixed top-16 left-0 right-0 bottom-0 bg-gray-900 z-50 overflow-y-auto'>
             {/* Mobile Search */}
             <form onSubmit={submitHandler}>
-              <div className='relative'>
+              <div className='relative pr-1'>
                 <input
                   type='text'
                   name='q'
@@ -196,8 +216,8 @@ const Header = () => {
                 </button>
               </div>
             </form>
-            <Link 
-              to='/cart' 
+            <Link
+              to='/cart'
               className='flex items-center gap-2 py-2 hover:text-blue-400'
               onClick={() => setIsOpen(false)}
             >
@@ -208,24 +228,24 @@ const Header = () => {
 
             {userInfo ? (
               <>
-                <Link 
-                  to='/profile' 
+                <Link
+                  to='/profile'
                   className='flex items-center gap-2 py-2 hover:text-blue-400'
                   onClick={() => setIsOpen(false)}
                 >
                   <FaUser />
                   Profile
                 </Link>
-                <button 
-                  onClick={() => {logoutHandler(); setIsOpen(false)}}
+                <button
+                  onClick={() => { logoutHandler(); setIsOpen(false) }}
                   className='flex items-center gap-2 py-2 hover:text-blue-400'
                 >
                   Logout
                 </button>
               </>
             ) : (
-              <Link 
-                to='/login' 
+              <Link
+                to='/login'
                 className='flex items-center gap-2 py-2 hover:text-blue-400'
                 onClick={() => setIsOpen(false)}
               >

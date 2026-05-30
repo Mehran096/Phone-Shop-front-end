@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import HomeScreen from './screens/HomeScreen';
 import ProductScreen from './screens/ProductScreen';
 import Header from './components/Header';
@@ -22,6 +22,7 @@ import AllProductsScreen from './screens/AllProductsScreen'
 import FAQScreen from './screens/FAQScreen'
 import ReturnRefundScreen from './screens/ReturnRefundScreen'
 import ContactScreen from './screens/ContactScreen'
+import { useEffect } from 'react' 
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
  
@@ -29,6 +30,12 @@ import 'react-toastify/dist/ReactToastify.css'
 
 
 function App() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0) // Scroll to top on route change
+  }, [pathname])
+
   return (
     <>
      <div className="flex flex-col min-h-screen">
