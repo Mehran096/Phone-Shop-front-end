@@ -165,6 +165,7 @@ const UserListScreen = () => {
                         <FaEdit />
                       </Link>
                       <button
+                       disabled={user.isAdmin} 
                         onClick={() => deleteHandler(user._id)}
                         className='text-red-600 hover:text-red-800'
                       >
