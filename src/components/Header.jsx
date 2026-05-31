@@ -54,7 +54,7 @@ const Header = () => {
         <div className='flex justify-between items-center h-16'>
           {/* Logo */}
 
-          <Link to='/' className='hidden md:flex items-center  flex-shrink-0 pr-6'>
+          <Link to='/' className='hidden md:flex items-center  flex-shrink-0'>
             <img
               src='/assets/logo-horizontal.png'
               alt='PhoneStore'
@@ -160,6 +160,14 @@ const Header = () => {
                 </button>
                 {adminDropdown && (
                   <div className='absolute right-0 mt-2 w-48 bg-white text-gray-900 rounded-md shadow-lg py-1 z-50'>
+                    <Link
+          to='/admin'
+          className='block px-4 py-2 hover:bg-gray-100 font-semibold text-blue-600'
+          onClick={() => setAdminDropdown(false)}
+        >
+          Dashboard
+        </Link>
+         <hr className="my-1" />
                     <Link
                       to='/admin/userlist'
                       className='block px-4 py-2 hover:bg-gray-100'

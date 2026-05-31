@@ -1,16 +1,20 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import Product from '../components/Product'
 import Paginate from '../components/Paginate'
 import { useGetProductsQuery } from '../slices/productsApiSlice'
 import HeroBanner from '../components/HeroBanner'
 
 const HomeScreen = () => {
-  const { keyword, pageNumber } = useParams()
-  
-  const { data, isLoading, error } = useGetProductsQuery({ 
-    keyword: keyword || '', 
-    pageNumber: Number(pageNumber) || 1 
+  const { keyword } = useParams() // keyword still comes from /search/:keyword
+  const [searchParams] = useSearchParams()
+
+  const pageNumber = Number(searchParams.get('page')) || 1
+
+  const { data, isLoading, error } = useGetProductsQuery({
+    keyword: keyword || '',
+    pageNumber: pageNumber
   })
+
 
   return (
     <>

@@ -11,6 +11,8 @@ import OrderScreen from './screens/OrderScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import AdminDashboard from './screens/admin/AdminDashboard'
+import AdminRoute from './components/AdminRoute'
 import OrderListScreen from './screens/admin/OrderListScreen';
 import ProductListScreen from './screens/admin/ProductListScreen';
 import ProductEditScreen from './screens/admin/ProductEditScreen';
@@ -60,13 +62,16 @@ function App() {
           <Route path="/profile" element={<ProfileScreen />} />
           <Route path='/myorders' element={<MyOrdersScreen />} />
           
-          //admin route
-          <Route path="/admin/orderlist" element={<OrderListScreen />} />
-          <Route path="/admin/productlist" element={<ProductListScreen />} />
-          <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />
-          <Route path="/admin/userlist" element={<UserListScreen />} />
-          <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
-          <Route path="/admin/product/create" element={<ProductCreateScreen />} />
+        {/* Admin Routes */}
+<Route path="" element={<AdminRoute />}>
+  <Route path="/admin" element={<AdminDashboard />} />
+  <Route path="/admin/productlist" element={<ProductListScreen />} />
+  <Route path="/admin/product/create" element={<ProductCreateScreen />} />
+  <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />
+  <Route path="/admin/orderlist" element={<OrderListScreen />} />
+  <Route path="/admin/userlist" element={<UserListScreen />} />
+  <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
+</Route>
          
           
         </Routes>

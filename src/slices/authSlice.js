@@ -71,7 +71,7 @@ export const updateUserProfile = createAsyncThunk(
 // GET ALL USERS - Admin only
 export const listUsers = createAsyncThunk(
   'user/listUsers',
-  async (_, { getState, rejectWithValue }) => {
+  async ({ keyword = '', pageNumber = 1 }, { getState, rejectWithValue }) => {
     try {
       const {
         auth: { userInfo },
@@ -79,7 +79,11 @@ export const listUsers = createAsyncThunk(
 
       const config = {
         headers: {
-          Authorization: `Bearer ${userInfo.token}`, // ← Must send token
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+        params: {
+          keyword,
+          pageNumber,
         },
       }
 
@@ -165,7 +169,9 @@ const authSlice = createSlice({
     successDelete: false,
     success: false,
     userDetails: null,
-    successUpdate: false
+    successUpdate: false,
+    page: 1,
+    pages: 1,
   },
   reducers: {
     setCredentials: (state, action) => {
@@ -210,16 +216,18 @@ const authSlice = createSlice({
         state.successUpdate = true
       })
       .addCase(listUsers.pending, (state) => {
-        state.loading = true
-      })
-      .addCase(listUsers.fulfilled, (state, action) => {
-        state.loading = false
-        state.users = action.payload
-      })
-      .addCase(listUsers.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
+  state.loading = true
+})
+.addCase(listUsers.fulfilled, (state, action) => {
+  state.loading = false
+  state.users = action.payload.users
+  state.page = action.payload.page
+  state.pages = action.payload.pages
+})
+.addCase(listUsers.rejected, (state, action) => {
+  state.loading = false
+  state.error = action.payload
+})
       // DELETE USER
       .addCase(deleteUser.pending, (state) => {
         state.loading = true

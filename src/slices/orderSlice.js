@@ -91,17 +91,26 @@ export const payOrder = createAsyncThunk(
 
 // 4. GET ALL ORDERS - ADMIN ONLY - THIS IS THE ONE YOU'RE MISSING
 export const listOrders = createAsyncThunk(
-    'order/listOrders',
-    async (_, { getState, rejectWithValue }) => {
-        try {
-            const { auth: { userInfo } } = getState()
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.get(`${API_URL}/orders`, config)
-            return data
-        } catch (error) {
-            return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-        }
+  'orders/listOrders',
+  async ({ pageNumber = 1, keyword = '' }, { getState, rejectWithValue }) => {
+    try {
+      const { auth: { userInfo } } = getState()
+      
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      }
+      
+      const { data } = await axios.get(
+        `${API_URL}/orders?pageNumber=${pageNumber}&keyword=${keyword}`,
+        config
+      )
+      return data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message)
     }
+  }
 )
 
 // 5. MARK ORDER AS DELIVERED - ADMIN ONLY
@@ -194,6 +203,8 @@ const orderSlice = createSlice({
         successPay: false,
         successDeliver: false,
         successDelete: false,
+        page: 1,
+        pages: 1,
     },
     reducers: {
         resetMyOrders: (state) => {
@@ -239,7 +250,12 @@ const orderSlice = createSlice({
             .addCase(payOrder.fulfilled, (state, action) => { state.loading = false; state.successPay = true; state.order = action.payload })
             .addCase(payOrder.rejected, (state, action) => { state.loading = false; state.error = action.payload })
             .addCase(listOrders.pending, (state) => { state.loading = true; state.error = null })
-            .addCase(listOrders.fulfilled, (state, action) => { state.loading = false; state.orders = action.payload })
+           .addCase(listOrders.fulfilled, (state, action) => {
+  state.loading = false
+  state.orders = action.payload.orders
+  state.page = action.payload.page
+  state.pages = action.payload.pages
+})
             .addCase(listOrders.rejected, (state, action) => { state.loading = false; state.error = action.payload })
             .addCase(deliverOrder.pending, (state) => { state.loading = true })
             .addCase(deliverOrder.fulfilled, (state, action) => { state.loading = false; state.successDeliver = true; state.order = action.payload })
