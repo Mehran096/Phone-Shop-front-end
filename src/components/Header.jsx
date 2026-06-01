@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams,} from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../slices/authSlice'
 import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaSearch } from 'react-icons/fa'
 //import { MdOutlineYoutubeSearchedFor } from "react-icons/md";
 import { clearCartItems } from '../slices/cartSlice'
-//import {SearchBox} from './SearchBox'
+ import SearchBox from './SearchBox'
+ 
 
 const Header = () => {
-  const [isOpen, setIsOpen] = useState(false)
+  //const [isOpen, setIsOpen] = useState(false)
   const [userDropdown, setUserDropdown] = useState(false)
   const [adminDropdown, setAdminDropdown] = useState(false)
-  const [keyword, setKeyword] = useState('')
-  //const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false) 
+    
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  
+// const keyword = searchParams.get('keyword') || ''
+// const pageNumber = Number(searchParams.get('pageNumber')) || 1
 
   const { cartItems } = useSelector((state) => state.cart);
   const { userInfo } = useSelector((state) => state.auth)
@@ -25,26 +29,19 @@ const Header = () => {
     dispatch(clearCartItems())
     navigate('/login')
     setUserDropdown(false)
+    setIsMobileMenuOpen(false)
   }
 
   useEffect(() => {
-    if (isOpen) {
+    if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = 'unset'
     }
-  }, [isOpen])
+  }, [isMobileMenuOpen])
 
-  const submitHandler = (e) => {
-    e.preventDefault()
-    if (keyword.trim()) {
-      navigate(`/search/${keyword}`)
-      setKeyword('')
-      setIsOpen(false)
-    } else {
-      navigate('/')
-    }
-  }
+  
+    const closeMobileMenu = () => setIsMobileMenuOpen(false)
 
   const cartCount = cartItems?.reduce((acc, item) => acc + item.qty, 0) || 0;
 
@@ -82,16 +79,22 @@ const Header = () => {
           </Link>
           {/* search bar */}
           {/* Desktop Search Bar */}
-          <form onSubmit={submitHandler} className='hidden md:flex flex-1 max-w-md mx-8'>
+           
+          {/* Desktop Search - Hidden on mobile */}
+          <div className='hidden md:flex flex-1 justify-center mx-8 max-w-md'>
+            <SearchBox onSearchComplete={closeMobileMenu} />
+          </div>
+        
+          {/* <form onSubmit={submitHandler} className='hidden md:flex flex-1 max-w-md mx-8'>
             <div className='relative w-full'>
               <input
 
                 type='text'
                 name='q'
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                value={searchParams}
+                onChange={(e) => setSearchParams(e.target.value)}
                 placeholder='Search products...'
-                className='w-full px-4 py-2 border-gray-300 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500'
+                className='w-full px-4 py-2 border-gray-300 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
               />
               <button
                 type='submit'
@@ -100,7 +103,8 @@ const Header = () => {
                <FaSearch className='text-gray-500 w-5 h-5' /> 
               </button>
             </div>
-          </form>
+          </form> */}
+           
           {/* <SearchBox/> */}
           {/* Desktop Menu */}
           <div className='hidden md:flex items-center space-x-6 pr-5'>
@@ -196,40 +200,23 @@ const Header = () => {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className='md:hidden text-2xl mr-5'
+          <button 
+            className='md:hidden text-2xl pr-5'
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isOpen ? <FaTimes /> : <FaBars />}
+            {isMobileMenuOpen? <FaTimes /> : <FaBars />}
           </button>
         </div>
 
         {/* Mobile Menu */}
-        {isOpen && (
-          <div className='md:hidden pl-5 fixed top-16 left-0 right-0 bottom-0 bg-gray-900 z-50 overflow-y-auto'>
-            {/* Mobile Search */}
-            <form onSubmit={submitHandler}>
-              <div className='relative pr-1'>
-                <input
-                  type='text'
-                  name='q'
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  placeholder='Search products...'
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-                />
-                <button
-                  type='submit'
-                  className='absolute right-2 top-1/2 -translate-y-1/2 bg-white-600 text-white px-3 py-1 rounded-md'
-                >
-                  <FaSearch className='text-gray-500 w-5 h-5' /> 
-                </button>
-              </div>
-            </form>
+        {isMobileMenuOpen && (
+          <div className='md:hidden pl-5 fixed top-16 left-0 right-0 bottom-0 bg-gray-900 z-50 overflow-y-auto'> 
+             {/* Mobile Search - Only one here */}
+            <SearchBox onSearchComplete={closeMobileMenu} />
             <Link
               to='/cart'
               className='flex items-center gap-2 py-2 hover:text-blue-400'
-              onClick={() => setIsOpen(false)}
+              onClick={() => closeMobileMenu(false)}
             >
               <FaShoppingCart />
               Cart {cartCount > 0 && `(${cartCount})`}
@@ -241,13 +228,13 @@ const Header = () => {
                 <Link
                   to='/profile'
                   className='flex items-center gap-2 py-2 hover:text-blue-400'
-                  onClick={() => setIsOpen(false)}
+                 onClick={closeMobileMenu}
                 >
                   <FaUser />
                   Profile
                 </Link>
                 <button
-                  onClick={() => { logoutHandler(); setIsOpen(false) }}
+                  onClick={() => { logoutHandler(); closeMobileMenu(false) }}
                   className='flex items-center gap-2 py-2 hover:text-blue-400'
                 >
                   Logout
@@ -257,7 +244,7 @@ const Header = () => {
               <Link
                 to='/login'
                 className='flex items-center gap-2 py-2 hover:text-blue-400'
-                onClick={() => setIsOpen(false)}
+                onClick={closeMobileMenu}
               >
                 <FaUser />
                 Sign In
@@ -267,9 +254,9 @@ const Header = () => {
             {userInfo && userInfo.isAdmin && (
               <div className='border-t border-gray-700 pt-2 mt-2'>
                 <div className='text-gray-400 text-sm mb-1'>Admin</div>
-                <Link to='/admin/userlist' className='block py-2 hover:text-blue-400' onClick={() => setIsOpen(false)}>Users</Link>
-                <Link to='/admin/productlist' className='block py-2 hover:text-blue-400' onClick={() => setIsOpen(false)}>Products</Link>
-                <Link to='/admin/orderlist' className='block py-2 hover:text-blue-400' onClick={() => setIsOpen(false)}>Orders</Link>
+                <Link to='/admin/userlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Users</Link>
+                    <Link to='/admin/productlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Products</Link>
+                    <Link to='/admin/orderlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Orders</Link>
               </div>
             )}
           </div>
