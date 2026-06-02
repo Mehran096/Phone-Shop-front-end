@@ -1,62 +1,81 @@
 import { apiSlice } from './apiSlice'
 const API_URL = import.meta.env.VITE_API_URL
+const PRODUCTS_URL = `${API_URL}/products`
 
 export const productsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getProductDetails: builder.query({
-      query: (id) =>({ url:`${API_URL}/products/${id}`}),
+    getProducts: builder.query({
+      query: ({ keyword = '', pageNumber = 1, category = '' }) => ({
+        url: PRODUCTS_URL,
+        params: { keyword, pageNumber, category },
+      }),
       keepUnusedDataFor: 5,
+      providesTags: ['Products'],
     }),
+
+    getProductDetails: builder.query({
+      query: (id) => ({
+        url: `${PRODUCTS_URL}/${id}`,
+      }),
+      keepUnusedDataFor: 5,
+      providesTags: (result, error, id) => [{ type: 'Product', id }],
+    }),
+
     createProduct: builder.mutation({
-      query: () => ({
-        url: `/api/products`,
-        method: 'POST'
-      }),
-      invalidatesTags: ['Products']
-    }),
-    updateProduct: builder.mutation({
       query: (data) => ({
-        url: `/api/products/${data.productId}`,
-        method: 'PUT',
-        body: data
+        url: PRODUCTS_URL,
+        method: 'POST',
+        body: data, // FormData
       }),
-      invalidatesTags: ['Products']
+      invalidatesTags: ['Products'],
     }),
+
+    updateProduct: builder.mutation({
+      query: ({ productId, formData }) => ({
+        url: `${PRODUCTS_URL}/${productId}`,
+        method: 'PUT',
+        body: formData,
+      }),
+      invalidatesTags: (result, error, arg) => [
+        'Products',
+        { type: 'Product', id: arg.productId },
+      ],
+    }),
+
     updateProductSpecs: builder.mutation({
       query: ({ id, specs }) => ({
-        url: `${API_URL}/products/${id}/specs`,
+        url: `${PRODUCTS_URL}/${id}/specs`,
         method: 'PUT',
         body: { specs },
       }),
-      invalidatesTags: ['Product'],
+      invalidatesTags: (result, error, arg) => [{ type: 'Product', id: arg.id }],
     }),
 
-    getProducts: builder.query({
-  query: ({ keyword = '', pageNumber = 1 }) => ({
-    url: `${API_URL}/products`,
-    params: { keyword, pageNumber },
-  }),
-  providesTags: ['Product'],
-  keepUnusedDataFor: 5,
-}),
-
-deleteProduct: builder.mutation({
-      query: (productId) => ({
-        url: `${API_URL}/products/${productId}`,
+    deleteProduct: builder.mutation({
+      query: (id) => ({
+        url: `${PRODUCTS_URL}/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Product'], // this makes the list refetch after delete
+      invalidatesTags: ['Products'],
+    }),
+
+    createProductReview: builder.mutation({
+      query: ({ productId, rating, comment }) => ({
+        url: `${PRODUCTS_URL}/${productId}/reviews`,
+        method: 'POST',
+        body: { rating, comment },
+      }),
+      invalidatesTags: (result, error, arg) => [{ type: 'Product', id: arg.productId }],
     }),
   }),
 })
 
-
-
-export const { 
-  useGetProductDetailsQuery,
-  useCreateProductMutation, 
-  useUpdateProductMutation,
-   useUpdateProductSpecsMutation,
+export const {
   useGetProductsQuery,
-    useDeleteProductMutation,
-    } = productsApiSlice
+  useGetProductDetailsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useUpdateProductSpecsMutation,
+  useDeleteProductMutation,
+  useCreateProductReviewMutation, // <-- new
+} = productsApiSlice

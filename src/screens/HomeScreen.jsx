@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import Product from '../components/Product'
+import { useSelector } from 'react-redux'
 import Paginate from '../components/Paginate'
 import { useGetProductsQuery } from '../slices/productsApiSlice'
 import HeroBanner from '../components/HeroBanner'
@@ -13,6 +14,7 @@ const HomeScreen = () => {
   const keyword = searchParams.get('keyword') || '' 
   const pageNumber = Number(searchParams.get('pageNumber')) || 1 
   
+  const { userInfo } = useSelector((state) => state.auth)
 
   const { data, isLoading, error } = useGetProductsQuery({
     keyword: keyword || '',
@@ -77,7 +79,7 @@ const brands = ['Apple', 'Samsung', 'Google', 'OnePlus']
     <>
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8'>
         {data.products.map((product) => (
-          <Product key={product._id} product={product} />
+          <Product key={product._id} product={product} userInfo={userInfo} />
         ))}
       </div>
       

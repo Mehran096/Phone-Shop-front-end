@@ -1,338 +1,353 @@
-import { useEffect } from 'react';
-import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useParams, useNavigate, data } from 'react-router-dom';
-import { getProductDetails, createProductReview, resetReview } from '../slices/productSlice'
+import { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import {
+  useGetProductDetailsQuery,
+  useCreateProductReviewMutation,
+} from '../slices/productsApiSlice'
+import { addToCart } from '../slices/cartSlice'
+import Loader from '../components/Loader'
+import Message from '../components/Message'
 import Rating from '../components/Rating'
-import { addToCart } from '../slices/cartSlice';
+import { FaEdit, FaCheck, FaShoppingCart } from 'react-icons/fa'
 import { toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import { useGetProductDetailsQuery } from '../slices/productsApiSlice'
-import ProductSpecs from '../components/ProductSpecs'
-import Zoom from 'react-medium-image-zoom'
-import 'react-medium-image-zoom/dist/styles.css'
 
-function ProductScreen() {
-    const [qty, setQty] = useState(1);
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const [rating, setRating] = useState(0)
+const ProductScreen = () => {
+  const { id: productId } = useParams()
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const { userInfo } = useSelector((state) => state.auth)
+  const { data: product, isLoading, error, refetch } = useGetProductDetailsQuery(productId)
+  const [createProductReview, { isLoading: loadingProductReview }] = useCreateProductReviewMutation()
+
+  const [selectedColor, setSelectedColor] = useState(null)
+  const [mainImage, setMainImage] = useState('/images/placeholder-phone.jpg') // Default to placeholder
+  const [qty, setQty] = useState(1)
+  const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
-  const [isEditing, setIsEditing] = useState(false) // NEW
-  const { data: producted } = useGetProductDetailsQuery(id)
 
-    const { product, loading, error, successReview, reviewError } = useSelector((state) => state.products);
-    const { userInfo } = useSelector((state) => state.auth)
-const [selectedImage, setSelectedImage] = useState(0)
-
-
-    useEffect(() => {
-    if (successReview) {
-      alert('Review submitted successfully')
-      setRating(0)
-      setComment('')
-      setIsEditing(false)
-      dispatch(resetReview())
-      dispatch(getProductDetails(id)) // reload product to show new review + rating
-    }
-    dispatch(getProductDetails(id))
-  }, [dispatch, id, successReview])
-
-  //edit reviews
-  const handleEditClick = () => {
-    setRating(userAlreadyReviewed.rating)
-    setComment(userAlreadyReviewed.comment)
-    setIsEditing(true)
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
-  }
-
-//creating reviews
-  const submitReviewHandler = (e) => {
-    e.preventDefault()
-    if (!rating) {
-      alert('Please select a rating')
-      return
-    }
-    dispatch(createProductReview({ id, rating: Number(rating), comment }))
-  }
-
-    // Reset selected image when product loads
   useEffect(() => {
-    setSelectedImage(0)
+    if (product) {
+      if (product.colors?.length > 0) {
+        const firstColor = product.colors[0]
+        setSelectedColor(firstColor)
+        setMainImage(firstColor.images?.[0] || product.image || '/images/placeholder-phone.jpg')
+      } else {
+        setMainImage(product.image || '/images/placeholder-phone.jpg')
+      }
+    }
   }, [product])
 
-    const addToCartHandler = () => {
-  if (!userInfo) {
-    toast.warn(
-      ({ closeToast }) => (
-        <div className="flex flex-col gap-2">
-          <span>Please register/login to add items to cart</span>
-          <button
-            onClick={() => {
-              closeToast()
-              navigate('/register')
-            }}
-            className="px-3 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700"
-          >
-            Go to Register/Login
-          </button>
-        </div>
-      ),
-      {
-        position: "top-right",
-        autoClose: 5000,
-        closeOnClick: false,
-        draggable: true,
-      }
-    )
-    return
+  const selectColorHandler = (color) => {
+    setSelectedColor(color)
+    setMainImage(color.images?.[0] || product.image || '/images/placeholder-phone.jpg')
+    setQty(1)
   }
-  
-  dispatch(addToCart({ ...product, qty }))
-  
-  toast.success(
-    ({ closeToast }) => (
-      <div className="flex flex-col gap-2">
-        <span>{product.name} added to cart</span>
-        <button
-          onClick={() => {
-            closeToast()
-            navigate('/cart')
-          }}
-          className="px-3 py-1.5 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
-        >
-          Go to Cart
-        </button>
-      </div>
-    ),
-    {
-      position: "bottom-right",
-      autoClose: 4000,
-      closeOnClick: false,
+
+  const addToCartHandler = () => {
+    if (product.colors?.length > 0 &&!selectedColor) {
+      toast.error('Please select a color')
+      return
     }
-  )
-}
 
-    //     useEffect(() => {
-    //      if (!userInfo) {
-    //     navigate('/login?redirect=/placeorder')
-    //   }
+    dispatch(addToCart({
+      product: product._id,
+      name: product.name,
+      image: mainImage,
+      price: selectedColor?.price || product.price,
+      color: selectedColor?.name || '',
+      hexCode: selectedColor?.hexCode || '',
+      countInStock: selectedColor?.countInStock || product.countInStock,
+      qty,
+    }))
+    navigate('/cart')
+  }
 
-    //   }, [userInfo, navigate])
+  const submitReviewHandler = async (e) => {
+    e.preventDefault()
+    try {
+      await createProductReview({
+        productId,
+        rating,
+        comment,
+      }).unwrap()
+      refetch()
+      toast.success('Review submitted')
+      setRating(0)
+      setComment('')
+    } catch (err) {
+      toast.error(err?.data?.message || err.error)
+    }
+  }
 
-    if (loading) return <div className="p-8 text-center">Loading...</div>;
-    if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
-    if (!product || !product.name) return <div className="p-8 text-center">Loading...</div>;
-     // Use images array. Fallback to single image field for old products
-  const images = product.images?.length > 0? product.images : [product.image].filter(Boolean)
+  if (isLoading) return <Loader />
+  if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>
 
-  // Check if current user already reviewed
-  const userAlreadyReviewed = userInfo 
-    ? product.reviews.find(r => r.user.toString() === userInfo._id.toString())
-    : null
+  const currentStock = selectedColor?.countInStock?? product.countInStock?? 0
+  const currentPrice = selectedColor?.price?? product.price?? 0
 
+  return (
+    <div className='max-w-7xl mx-auto px-4 py-8'>
+      <Link to='/' className='text-blue-600 hover:text-blue-800 mb-6 inline-block font-medium'>
+        ← Go Back
+      </Link>
 
-const getCloudinaryUrl = (url, width = 800) => {
-  if (!url || !url.includes('/upload/')) return url
-  return url.replace('/upload/', `/upload/q_auto,f_auto,w_${width}/`)
-}
-
-
-    //return
-    return (
-        <div className="max-w-4xl mx-auto p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 {/* Image Gallery */}
-         {/* Image Gallery */}
-        <div>
-          
-          {/* Main Image with Zoom */}
-          <div className="border rounded-lg overflow-hidden mb-4 bg-white">
-            {images[selectedImage] ? (
-              <Zoom>
+      <div className='bg-white rounded-xl shadow-lg overflow-hidden'>
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 md:p-8'>
+          {/* Left: Images */}
+          <div>
+            <div className='bg-gray-50 rounded-xl overflow-hidden mb-4 aspect-square flex items-center justify-center'>
+              {mainImage && (
                 <img
-                  src={getCloudinaryUrl(images[selectedImage], 1200)}
+                  src={mainImage}
                   alt={product.name}
-                  className="w-full h-96 object-contain cursor-zoom-in"
+                  className='w-full h-full object-contain p-4'
+                  onError={(e) => { e.target.src = '/images/placeholder-phone.jpg' }}
                 />
-              </Zoom>
-            ) : (
-              <div className="w-full h-96 flex items-center justify-center bg-gray-100 text-gray-500">
-                No Image
+              )}
+            </div>
+
+            {/* Image Thumbnails */}
+            {selectedColor?.images?.length > 1 && (
+              <div className='flex gap-3 overflow-x-auto pb-2'>
+                {selectedColor.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setMainImage(img)}
+                    className={`flex-shrink-0 w-20 h-20 bg-gray-50 rounded-lg border-2 p-1 transition-all ${
+                      mainImage === img? 'border-blue-600 shadow-md' : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`${product.name} ${idx + 1}`}
+                      className='w-full h-full object-contain'
+                    />
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Thumbnails */}
-          {images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {images.map((img, idx) => (
-                img && (
-                  <img
-                    key={idx}
-                    src={getCloudinaryUrl(img, 200)}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`w-20 h-20 object-cover border-2 rounded cursor-pointer ${
-                      selectedImage === idx ? 'border-blue-600' : 'border-gray-200'
-                    }`}
-                    alt={`${product.name} ${idx + 1}`}
-                  />
-                )
+          {/* Right: Details */}
+          <div className='flex flex-col'>
+            <h1 className='text-3xl md:text-4xl font-bold text-gray-900 mb-3'>{product.name}</h1>
+
+            <div className='flex items-center gap-3 mb-6'>
+              <Rating value={product.rating || 0} text={`${product.numReviews || 0} reviews`} />
+            </div>
+
+            {/* Specifications Box - matches your screenshot */}
+            <div className='mb-6 bg-gray-50 rounded-xl p-5 border border-gray-100'>
+              <div className='flex justify-between items-center mb-4'>
+                <h3 className='text-lg font-semibold text-gray-900'>Specifications</h3>
+                {userInfo?.isAdmin && (
+                  <Link
+                    to={`/admin/product/${product._id}/edit`}
+                    className='bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2 font-medium'
+                  >
+                    <FaEdit className='text-xs' /> Edit
+                  </Link>
+                )}
+              </div>
+
+              {product.specs && Object.values(product.specs).some(v => v)? (
+                <div className='grid grid-cols-2 gap-x-6 gap-y-4'>
+                  {product.specs.storage && (
+                    <div>
+                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Storage</div>
+                      <div className='font-semibold text-gray-900 mt-0.5'>{product.specs.storage}</div>
+                    </div>
+                  )}
+                  {product.specs.ram && (
+                    <div>
+                      <div className='text-xs text-gray-500 uppercase tracking-wide'>RAM</div>
+                      <div className='font-semibold text-gray-900 mt-0.5'>{product.specs.ram}</div>
+                    </div>
+                  )}
+                  {product.specs.display && (
+                    <div>
+                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Display</div>
+                      <div className='font-semibold text-gray-900 mt-0.5'>{product.specs.display}</div>
+                    </div>
+                  )}
+                  {product.specs.battery && (
+                    <div>
+                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Battery</div>
+                      <div className='font-semibold text-gray-900 mt-0.5'>{product.specs.battery}</div>
+                    </div>
+                  )}
+                  {product.specs.camera && (
+                    <div>
+                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Camera</div>
+                      <div className='font-semibold text-gray-900 mt-0.5'>{product.specs.camera}</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className='text-gray-500 text-sm'>No specifications added</p>
+              )}
+            </div>
+
+            {/* Color Selection */}
+            {product.colors?.length > 1 && (
+              <div className='mb-6'>
+                <h3 className='font-semibold mb-3 text-gray-900'>
+                  Color: <span className='text-blue-600'>{selectedColor?.name}</span>
+                </h3>
+                <div className='flex flex-wrap gap-3'>
+                  {product.colors.map((color, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => selectColorHandler(color)}
+                      className={`relative w-14 h-14 rounded-full border-3 transition-all duration-200 ${
+                        selectedColor?.name === color.name
+                      ? 'border-blue-600 ring-4 ring-blue-100 scale-110'
+                          : 'border-gray-300 hover:border-gray-400 hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color.hexCode }}
+                      title={color.name}
+                    >
+                      {selectedColor?.name === color.name && (
+                        <FaCheck className='text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg drop-shadow-md' />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div>
+
+            <div className='text-5xl font-bold text-blue-600 mb-4'>
+              ${currentPrice}
+            </div>
+
+            {/* Stock Status */}
+            <div className='mb-6'>
+              <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
+                currentStock > 0? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${currentStock > 0? 'bg-green-500' : 'bg-red-500'}`}></span>
+                {currentStock > 0? `In Stock (${currentStock})` : 'Out of Stock'}
+              </span>
+            </div>
+
+            {/* Qty + Add to Cart */}
+            {currentStock > 0 && (
+              <div className='flex gap-3 mb-6'>
+                <select
+                  value={qty}
+                  onChange={(e) => setQty(Number(e.target.value))}
+                  className='px-4 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold focus:border-blue-600 focus:outline-none'
+                >
+                  {[...Array(Math.min(currentStock, 10)).keys()].map((x) => (
+                    <option key={x + 1} value={x + 1}>
+                      Qty: {x + 1}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={addToCartHandler}
+                  className='flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-200'
+                >
+                  <FaShoppingCart /> Add to Cart
+                </button>
+              </div>
+            )}
+
+            {/* Description */}
+            <div className='pt-6 border-t border-gray-100'>
+              <h3 className='font-semibold mb-2 text-gray-900'>Description</h3>
+              <p className='text-gray-600 leading-relaxed'>{product.description}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className='mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8'>
+        {/* Reviews List */}
+        <div>
+          <h2 className='text-2xl font-bold mb-6 text-gray-900'>Customer Reviews</h2>
+          {Array.isArray(product.reviews) && product.reviews.length > 0? (
+            <div className='space-y-4'>
+              {product.reviews.map((review) => (
+                <div key={review._id} className='border border-gray-200 rounded-xl p-5 bg-white shadow-sm'>
+                  <div className='flex items-center justify-between mb-3'>
+                    <div className='flex items-center gap-3'>
+                      <div className='w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600'>
+                        {review.name[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <strong className='text-gray-900'>{review.name}</strong>
+                        <Rating value={review.rating} />
+                      </div>
+                    </div>
+                    <p className='text-xs text-gray-500'>
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <p className='text-gray-700'>{review.comment}</p>
+                </div>
               ))}
             </div>
+          ) : (
+            <Message>No reviews yet. Be the first!</Message>
           )}
-          
-       
         </div>
-                <div>
-                    <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-                     <ProductSpecs product={producted} isAdmin={userInfo?.isAdmin} />
-                    <p className="text-gray-600 mb-2">{product.brand}</p>
-                    <p className="text-2xl font-bold text-blue-600 mb-4">${product.price}</p>
-                    <p className="mb-4">{product.description}</p>
-                    <div className="mb-4">
-                        <Rating value={product.rating} text={`${product.numReviews} reviews`} />
-                    </div>
-                    <div className="mb-4">
-                        <span className="font-semibold">Stock:</span> {product.countInStock}
-                    </div>
-                    {/* selector */}
-                    {product.countInStock > 0 && (
-                        <div className="flex items-center mb-4">
-                            <span className="mr-2">Qty:</span>
-                            <select
-                                value={qty}
-                                onChange={(e) => setQty(Number(e.target.value))}
-                                className="border rounded px-2 py-1"
-                            >
-                                {[...Array(product.countInStock).keys()].map((x) => (
-                                    <option key={x + 1} value={x + 1}>
-                                        {x + 1}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
 
-                    {/* selector */}
-                    <button
-                        className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-                        onClick={addToCartHandler}
-                        disabled={product.countInStock === 0}
-                    >
-                        {product.countInStock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                    </button>
-                </div>
-            </div> 
-
-        {/* Reviews Section */}
-      <div className="border-t pt-8 m-4">
-        <h2 className="text-2xl font-bold mb-6">Reviews</h2>
-
-        {reviewError && <p className="text-red-500 mb-4">{reviewError}</p>}
-        {product.reviews.length === 0 && <p className="mb-6">No reviews yet</p>}
-
-        <div className="space-y-4 mb-8">
-          {product.reviews.map(review => (
-            <div key={review._id} className="border-b pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <strong>{review.name}</strong>
-                  <Rating value={review.rating} />
-                  <p className="text-sm text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</p>
-                </div>
-                {/* Show Edit button only for current user's review */}
-                {userInfo && review.user.toString() === userInfo._id.toString() && !isEditing && (
-                  <button 
-                    onClick={handleEditClick}
-                    className="text-sm text-blue-600 hover:underline"
-                  >
-                    Want to Edit your reviews
-                  </button>
-                )}
-              </div>
-              <p className="mt-2">{review.comment}</p>
-            </div>
-          
-          ))}
-          </div>
-      </div>
-
-       
-        
-
-        
-
-        {/* Review Form - show if not reviewed OR if editing */}
-        {userInfo && (!userAlreadyReviewed || isEditing) && (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-xl font-semibold mb-4">
-              {isEditing ? 'Edit Your Review' : 'Write a Review'}
-            </h3>
-            <form onSubmit={submitReviewHandler} className="space-y-4">
-              <div>
-                <label className="block mb-1">Rating</label>
-                <select 
-                  value={rating} 
-                  onChange={(e) => setRating(e.target.value)} 
-                  className="border rounded px-3 py-2 w-full"
+        {/* Write Review */}
+        <div>
+          <h2 className='text-2xl font-bold mb-6 text-gray-900'>Write a Review</h2>
+          {loadingProductReview && <Loader />}
+          {userInfo? (
+            <form onSubmit={submitReviewHandler} className='bg-white p-6 rounded-xl border border-gray-200 shadow-sm'>
+              <div className='mb-5'>
+                <label className='block mb-2 font-semibold text-gray-900'>Rating</label>
+                <select
                   required
+                  value={rating}
+                  onChange={(e) => setRating(Number(e.target.value))}
+                  className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-600 focus:outline-none'
                 >
-                  <option value="">Select...</option>
-                  <option value="5">5 - Excellent</option>
-                  <option value="4">4 - Good</option>
-                  <option value="3">3 - Average</option>
-                  <option value="2">2 - Poor</option>
-                  <option value="1">1 - Terrible</option>
+                  <option value=''>Select rating...</option>
+                  <option value='1'>1 - Poor</option>
+                  <option value='2'>2 - Fair</option>
+                  <option value='3'>3 - Good</option>
+                  <option value='4'>4 - Very Good</option>
+                  <option value='5'>5 - Excellent</option>
                 </select>
               </div>
-              <div>
-                <label className="block mb-1">Comment</label>
+              <div className='mb-5'>
+                <label className='block mb-2 font-semibold text-gray-900'>Comment</label>
                 <textarea
+                  required
+                  rows='4'
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  rows="3"
-                  className="border rounded px-3 py-2 w-full"
-                  required
-                />
+                  className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-600 focus:outline-none'
+                  placeholder='Share your experience...'
+                ></textarea>
               </div>
-              <div className="flex gap-3">
-                <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-                  {isEditing ? 'Update Review' : 'Submit Review'}
-                </button>
-                {isEditing && (
-                  <button 
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-400"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
+              <button
+                disabled={loadingProductReview}
+                type='submit'
+                className='w-full bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 font-semibold transition-colors'
+              >
+                Submit Review
+              </button>
             </form>
-          </div>
-        )}
-
-       {/* Message if user already reviewed and not editing */}
-        {userInfo && userAlreadyReviewed && !isEditing && (
-          <div className="bg-green-50 border-green-200 text-green-700 p-4 rounded-lg">
-            You’ve already reviewed this product. Use the Edit button on your review to update it.
-          </div>
-        )}
-
-         {/* Message if not logged in */}
-        {!userInfo && (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <p>Please <a href="/login" className="text-blue-600 underline">sign in</a> to write a review</p>
-          </div>
-        )}
+          ) : (
+            <Message>
+              Please <Link to='/login' className='text-blue-600 font-semibold'>sign in</Link> to write a review
+            </Message>
+          )}
+        </div>
       </div>
-    
-    
-        
-    );
+    </div>
+  )
 }
 
-export default ProductScreen;
+export default ProductScreen

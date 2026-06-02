@@ -10,13 +10,13 @@ import { toast } from 'react-toastify'
 const ProductListScreen = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('keyword') || '')
-  
+
   const keyword = searchParams.get('keyword') || ''
   const pageNumber = Number(searchParams.get('pageNumber')) || 1
 
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetProductsQuery({
+  const { data, isLoading, error } = useGetProductsQuery({
     keyword,
     pageNumber,
   })
@@ -29,41 +29,30 @@ const ProductListScreen = () => {
   }, [keyword])
 
   const deleteHandler = async (id) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+    if (window.confirm('Delete this product? This will also delete all images from Cloudinary.')) {
       try {
-        await deleteProduct(id)
+        await deleteProduct(id).unwrap()
         toast.success('Product deleted')
-        refetch()
       } catch (err) {
         toast.error(err?.data?.message || err.error)
       }
     }
   }
 
-  // const createProductHandler = async () => {
-  //   if (window.confirm('Are you sure you want to create a new product?')) {
-  //     try {
-  //       await createProduct()
-  //       refetch()
-  //       toast.success('Product created')
-  //     } catch (err) {
-  //       toast.error(err?.data?.message || err.error)
-  //     }
-  //   }
-  // }
-
-  const submitHandler = (e) => {
-    e.preventDefault()
-    if (search.trim()) {
-      setSearchParams({ keyword: search.trim(), pageNumber: 1 })
-    } else {
-      setSearchParams({ pageNumber: 1 })
+  const createProductHandler = async () => {
+    if (window.confirm('Create a new sample product?')) {
+      try { 
+        navigate(`/admin/product/create`)
+      } catch (err) {
+        toast.error(err?.data?.message || err.error)
+      }
     }
   }
 
-  const onPageChange = (pageNum) => {
-    const params = { pageNumber: pageNum }
-    if (keyword) params.keyword = keyword
+  const submitHandler = (e) => {
+    e.preventDefault()
+    const params = { pageNumber: 1 }
+    if (search.trim()) params.keyword = search
     setSearchParams(params)
   }
 
@@ -79,7 +68,7 @@ const ProductListScreen = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder='Search products...'
-              className='px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1 lg:w-72'
+              className='px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1'
             />
             {keyword && (
               <button
@@ -100,94 +89,64 @@ const ProductListScreen = () => {
               Search
             </button>
           </form>
-          <Link to='/admin/product/create'>
+
           <button
-            //onClick={createProductHandler}
+            onClick={createProductHandler}
             disabled={loadingCreate}
-            className='bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 justify-center whitespace-nowrap disabled:opacity-50'
+            className='px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50'
           >
             <FaPlus /> Create Product
           </button>
-          </Link>
         </div>
       </div>
 
       {loadingCreate && <Loader />}
       {loadingDelete && <Loader />}
+
       {isLoading? (
         <Loader />
       ) : error? (
-        <Message variant='danger'>{error?.data?.message || error.error}</Message>
+        <Message variant='error'>{error?.data?.message || error.error}</Message>
       ) : (
         <>
           {/* Desktop Table - Hidden on mobile */}
-          <div className='hidden md:block bg-white rounded-lg shadow-md overflow-hidden'>
-            <div className='overflow-x-auto'>
-              <table className='w-full table-auto'>
-                <thead className='bg-gray-100 border-b'>
-                  <tr>
-                    <th className='px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24'>
-                      ID
-                    </th>
-                    <th className='px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>
-                      Name
-                    </th>
-                    <th className='px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>
-                      Price
-                    </th>
-                    <th className='px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell'>
-                      Category
-                    </th>
-                    <th className='px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell'>
-                      Brand
-                    </th>
-                    <th className='px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>
-                      Actions
-                    </th>
+          <div className='hidden md:block overflow-x-auto bg-white rounded-lg shadow'>
+            <table className='w-full table-auto'>
+              <thead className='bg-gray-50 border-b'>
+                <tr>
+                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>ID</th>
+                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>NAME</th>
+                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>PRICE</th>
+                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>CATEGORY</th>
+                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>BRAND</th>
+                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'></th>
+                </tr>
+              </thead>
+              <tbody className='divide-y divide-gray-200'>
+                {data.products.map((product) => (
+                  <tr key={product._id} className='hover:bg-gray-50'>
+                    <td className='px-4 py-3 text-sm text-gray-600'>{product._id.substring(18, 24)}...</td>
+                    <td className='px-4 py-3 text-sm font-medium text-gray-900'>{product.name}</td>
+                    <td className='px-4 py-3 text-sm text-gray-600'>${product.price.toLocaleString()}</td>
+                    <td className='px-4 py-3 text-sm text-gray-600'>{product.category}</td>
+                    <td className='px-4 py-3 text-sm text-gray-600'>{product.brand}</td>
+                    <td className='px-4 py-3 flex gap-2'>
+                      <Link to={`/admin/product/${product._id}/edit`}>
+                        <button className='p-2 text-blue-600 hover:bg-blue-50 rounded transition'>
+                          <FaEdit />
+                        </button>
+                      </Link>
+                      <button
+                        className='p-2 text-red-600 hover:bg-red-50 rounded transition'
+                        onClick={() => deleteHandler(product._id)}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className='divide-y divide-gray-200'>
-                  {data.products.map((product) => (
-                    <tr key={product._id} className='hover:bg-gray-50 transition'>
-                      <td className='px-4 py-4 text-sm text-gray-500 font-mono'>
-                        {product._id.substring(0, 8)}...
-                      </td>
-                      <td className='px-4 py-4 text-sm font-medium text-gray-900'>
-                        <div className='max-w-xs truncate'>{product.name}</div>
-                        <div className='text-gray-500 text-xs lg:hidden mt-1'>
-                          {product.category} • {product.brand}
-                        </div>
-                      </td>
-                      <td className='px-4 py-4 text-sm text-gray-900 font-semibold'>
-                        ${product.price.toLocaleString()}
-                      </td>
-                      <td className='px-4 py-4 text-sm text-gray-600 hidden lg:table-cell'>
-                        {product.category}
-                      </td>
-                      <td className='px-4 py-4 text-sm text-gray-600 hidden lg:table-cell'>
-                        {product.brand}
-                      </td>
-                      <td className='px-4 py-4 text-sm'>
-                        <div className='flex gap-2'>
-                          <Link
-                            to={`/admin/product/${product._id}/edit`}
-                            className='px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs hover:bg-blue-700 transition'
-                          >
-                            <FaEdit className='inline' /> Edit
-                          </Link>
-                          <button
-                            onClick={() => deleteHandler(product._id)}
-                            className='px-3 py-1.5 bg-red-600 text-white rounded-md text-xs hover:bg-red-700 transition'
-                          >
-                            <FaTrash className='inline' /> Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {/* Mobile Cards - Hidden on desktop */}
@@ -203,33 +162,34 @@ const ProductListScreen = () => {
                 <div className='text-sm text-gray-600 space-y-1 mb-3'>
                   <p><span className='font-medium'>Brand:</span> {product.brand}</p>
                   <p><span className='font-medium'>Category:</span> {product.category}</p>
-                  <p className='font-mono text-xs'><span className='font-medium font-sans'>ID:</span> {product._id.substring(0, 8)}...</p>
+                  <p className='font-mono text-xs'><span className='font-medium font-sans'>ID:</span> {product._id.substring(18, 24)}...</p>
                 </div>
                 <div className='flex gap-2'>
                   <Link
                     to={`/admin/product/${product._id}/edit`}
-                    className='flex-1 bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-center text-sm'
+                    className='flex-1 bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-center text-sm flex items-center justify-center gap-1'
                   >
-                    <FaEdit className='inline mr-1' /> Edit
+                    <FaEdit /> Edit
                   </Link>
                   <button
                     onClick={() => deleteHandler(product._id)}
-                    className='flex-1 bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm'
+                    className='flex-1 bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm flex items-center justify-center gap-1'
                   >
-                    <FaTrash className='inline mr-1' /> Delete
+                    <FaTrash /> Delete
                   </button>
                 </div>
               </div>
             ))}
           </div>
 
-          <Paginate
-            pages={data.pages}
-            page={data.page}
-            isAdmin={true}
-            onPageChange={onPageChange}
-            keyword={keyword}
-          />
+          <div className='mt-6'>
+            <Paginate
+              pages={data.pages}
+              page={data.page}
+              keyword={keyword? keyword : ''}
+              isAdmin={true}
+            />
+          </div>
         </>
       )}
     </div>
