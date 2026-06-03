@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import {
   useGetProductDetailsQuery,
   useCreateProductReviewMutation,
+  useUpdateReviewMutation
 } from '../slices/productsApiSlice'
 import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
@@ -26,7 +27,24 @@ const ProductScreen = () => {
   const [qty, setQty] = useState(1)
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
+  //edit review start
+  const [isEditing, setIsEditing] = useState(false);
+const [updateProductReview, { isLoading: loadingUpdateReview }] = useUpdateReviewMutation();
 
+// Get user's existing review for this color
+const userReview = product?.reviews?.find(
+  (r) => r.user === userInfo?._id && r.color === selectedColor?.name
+);
+
+useEffect(() => {
+  if (userReview && isEditing) {
+    setRating(userReview.rating);
+    setComment(userReview.comment);
+  }
+}, [userReview, isEditing]);
+
+
+//edit review end
   useEffect(() => {
     if (product) {
       if (product.colors?.length > 0) {
@@ -81,35 +99,47 @@ const ProductScreen = () => {
   const displayNumReviews = product?.colors?.length > 0 ? filteredReviews.length : product?.numReviews || 0
 
   const submitReviewHandler = async (e) => {
-    e.preventDefault()
+  e.preventDefault();
 
-    if (product?.colors?.length > 0 && !selectedColor) {
-      toast.error('Please select a color to review')
-      return
-    }
+  if (product?.colors?.length > 0 && !selectedColor) {
+    toast.error('Please select a color to review');
+    return;
+  }
 
-    if (!rating) {
-      toast.error('Please select a rating')
-      return
-    }
+  if (!rating) {
+    toast.error('Please select a rating');
+    return;
+  }
 
-    try {
-      console.log('Submitting with color:', selectedColor?.name) // Debug log
+  try {
+    if (isEditing && userReview) {
+      // UPDATE existing review
+      await updateProductReview({
+        productId,
+        rating,
+        comment,
+        color: selectedColor?.name,
+      }).unwrap();
+      toast.success('Review updated successfully');
+      setIsEditing(false);
+    } else {
+      // CREATE new review
       await createProductReview({
         productId,
         rating,
         comment,
-        color: selectedColor?.name // THIS IS THE KEY FIX
-      }).unwrap()
-
-      toast.success('Review submitted successfully')
-      setRating(0)
-      setComment('')
-      refetch() // Force refetch since we have invalidatesTags
-    } catch (err) {
-      toast.error(err?.data?.message || err.error)
+        color: selectedColor?.name,
+      }).unwrap();
+      toast.success('Review submitted successfully');
     }
+    
+    setRating(0);
+    setComment('');
+    refetch();
+  } catch (err) {
+    toast.error(err?.data?.message || err.error);
   }
+};
 
   if (isLoading) return <Loader />
   if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>
@@ -299,90 +329,173 @@ const ProductScreen = () => {
 
 
       {/* Reviews Section */}
-      <div className='mt-10'>
-        <h2 className='text-2xl font-bold mb-4'>
-          Customer Reviews {selectedColor && `for ${selectedColor.name}`}
-        </h2>
+<div className='mt-10'>
+  <h2 className='text-2xl font-bold mb-4'>
+    Customer Reviews {selectedColor && `for ${selectedColor.name}`}
+  </h2>
 
-        {filteredReviews.length === 0 && (
-          <Message>No Reviews for {selectedColor?.name || 'this product'}</Message>
-        )}
+  {filteredReviews.length === 0 && (
+    <Message>No Reviews for {selectedColor?.name || 'this product'}</Message>
+  )}
 
-        <div className='mb-8'>
-          {filteredReviews.map((review) => (
-            <div key={review._id} className='bg-gray-50 p-4 rounded-lg mb-4'>
-              <div className='flex justify-between items-center mb-2'>
-                <strong>{review.name}</strong>
-                <span className='text-sm text-gray-500'>
-                  {new Date(review.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <Rating value={review.rating} />
-              <p className='mt-2 text-gray-700'>{review.comment}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className='bg-white p-6 rounded-lg shadow'>
-          <h3 className='text-xl font-semibold mb-4'>Write a Customer Review</h3>
-
-          {userInfo ? (
-            <form onSubmit={submitReviewHandler}>
-              {selectedColor && (
-                <div className='bg-blue-50 p-3 rounded-lg mb-4'>
-                  <p className='text-sm text-blue-800'>
-                    You are reviewing: <strong>{selectedColor.name}</strong>
-                  </p>
-                </div>
-              )}
-
-              {!selectedColor && product.colors?.length > 0 && (
-                <Message variant='danger'>Please select a color first</Message>
-              )}
-
-              <div className='mb-4'>
-                <label className='block mb-2 font-medium'>Rating</label>
-                <select
-                  className='w-full p-2 border rounded'
-                  value={rating}
-                  onChange={(e) => setRating(Number(e.target.value))}
-                  required
-                >
-                  <option value=''>Select...</option>
-                  <option value='1'>1 - Poor</option>
-                  <option value='2'>2 - Fair</option>
-                  <option value='3'>3 - Good</option>
-                  <option value='4'>4 - Very Good</option>
-                  <option value='5'>5 - Excellent</option>
-                </select>
-              </div>
-
-              <div className='mb-4'>
-                <label className='block mb-2 font-medium'>Comment</label>
-                <textarea
-                  className='w-full p-2 border rounded'
-                  rows='4'
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  required
-                ></textarea>
-              </div>
-
-              <button
-                disabled={loadingProductReview || !selectedColor}
-                type='submit'
-                className='bg-black text-white px-6 py-2 rounded disabled:bg-gray-400'
-              >
-                {loadingProductReview ? 'Submitting...' : 'Submit Review'}
-              </button>
-            </form>
-          ) : (
-            <Message>
-              Please <Link to='/login' className='text-blue-600 underline'>sign in</Link> to write a review
-            </Message>
+  <div className='mb-8'>
+    {filteredReviews.map((review) => (
+      <div key={review._id} className='bg-gray-50 p-4 rounded-lg mb-4'>
+        <div className='flex justify-between items-start mb-2'>
+          <div>
+            <strong>{review.name}</strong>
+            <span className='text-sm text-gray-500 ml-2'>
+              | {new Date(review.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+          {userInfo?._id === review.user && review.color === selectedColor?.name && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className='text-blue-600 text-sm hover:underline font-medium'
+            >
+              Edit
+            </button>
           )}
         </div>
+        <Rating value={review.rating} />
+        <p className='mt-2 text-gray-700'>{review.comment}</p>
       </div>
+    ))}
+  </div>
+
+  {/* CREATE REVIEW FORM */}
+  {userInfo && !userReview && !isEditing && (
+    <div className='bg-white p-6 rounded-lg shadow'>
+      <h3 className='text-xl font-semibold mb-4'>Write a Customer Review</h3>
+      
+      <form onSubmit={submitReviewHandler}>
+        {selectedColor && (
+          <div className='bg-blue-50 p-3 rounded-lg mb-4'>
+            <p className='text-sm text-blue-800'>
+              You are reviewing: <strong>{selectedColor.name}</strong>
+            </p>
+          </div>
+        )}
+
+        {!selectedColor && product?.colors?.length > 0 && (
+          <Message variant='danger'>Please select a color first</Message>
+        )}
+
+        <div className='mb-4'>
+          <label className='block mb-2 font-medium'>Rating</label>
+          <select
+            className='w-full p-2 border rounded'
+            value={rating}
+            onChange={(e) => setRating(Number(e.target.value))}
+            required
+          >
+            <option value=''>Select...</option>
+            <option value='1'>1 - Poor</option>
+            <option value='2'>2 - Fair</option>
+            <option value='3'>3 - Good</option>
+            <option value='4'>4 - Very Good</option>
+            <option value='5'>5 - Excellent</option>
+          </select>
+        </div>
+
+        <div className='mb-4'>
+          <label className='block mb-2 font-medium'>Comment</label>
+          <textarea
+            className='w-full p-2 border rounded'
+            rows='4'
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            required
+          ></textarea>
+        </div>
+
+        <button
+          disabled={loadingProductReview || !selectedColor}
+          type='submit'
+          className='bg-black text-white px-6 py-2 rounded disabled:bg-gray-400 hover:bg-gray-800'
+        >
+          {loadingProductReview ? 'Submitting...' : 'Submit Review'}
+        </button>
+      </form>
+    </div>
+  )}
+
+  {/* EDIT REVIEW FORM */}
+  {userInfo && isEditing && (
+    <div className='bg-white p-6 rounded-lg shadow border-2 border-blue-500'>
+      <h3 className='text-xl font-semibold mb-4'>Edit Your Review</h3>
+      
+      <form onSubmit={submitReviewHandler}>
+        <div className='bg-blue-50 p-3 rounded-lg mb-4'>
+          <p className='text-sm text-blue-800'>
+            Editing review for: <strong>{selectedColor.name}</strong>
+          </p>
+        </div>
+
+        <div className='mb-4'>
+          <label className='block mb-2 font-medium'>Rating</label>
+          <select
+            className='w-full p-2 border rounded'
+            value={rating}
+            onChange={(e) => setRating(Number(e.target.value))}
+            required
+          >
+            <option value=''>Select...</option>
+            <option value='1'>1 - Poor</option>
+            <option value='2'>2 - Fair</option>
+            <option value='3'>3 - Good</option>
+            <option value='4'>4 - Very Good</option>
+            <option value='5'>5 - Excellent</option>
+          </select>
+        </div>
+
+        <div className='mb-4'>
+          <label className='block mb-2 font-medium'>Comment</label>
+          <textarea
+            className='w-full p-2 border rounded'
+            rows='4'
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            required
+          ></textarea>
+        </div>
+
+        <div className='flex gap-3'>
+          <button
+            type='submit'
+            disabled={loadingUpdateReview}
+            className='bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50'
+          >
+            {loadingUpdateReview ? 'Updating...' : 'Update Review'}
+          </button>
+          <button
+            type='button'
+            onClick={() => setIsEditing(false)}
+            className='bg-gray-300 text-gray-800 px-6 py-2 rounded hover:bg-gray-400'
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  )}
+
+  {/* ALREADY REVIEWED MESSAGE */}
+  {userInfo && userReview && !isEditing && (
+    <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
+      <p className='text-sm text-green-800'>
+        ✓ You've already reviewed {selectedColor?.name}. Click "Edit" on your review above to update it.
+      </p>
+    </div>
+  )}
+
+  {/* NOT LOGGED IN */}
+  {!userInfo && (
+    <Message>
+      Please <Link to='/login' className='text-blue-600 underline'>sign in</Link> to write a review
+    </Message>
+  )}
+</div>
     </div>
   )
 }
