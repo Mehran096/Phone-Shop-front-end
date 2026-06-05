@@ -3,23 +3,39 @@ import { removeFromCart } from '../slices/cartSlice';
 import { updateCartQty } from '../slices/cartSlice';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 function CartScreen() {
 const { cartItems } = useSelector((state) => state.cart);
+const { userInfo } = useSelector((state) => state.auth)
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+
   const checkoutHandler = () => {
-    navigate('/shipping'); // was /login?redirect=/shipping if you have auth
-  };
+    if (!userInfo) {
+      toast.info('Please sign in to checkout')
+      navigate('/login?redirect=/shipping') // <- Login wall moved here
+    } else {
+      navigate('/shipping')
+    }
+  }
 
 
-  const removeFromCartHandler = (id) => {
-    dispatch(removeFromCart(id));
-  };
+  const removeFromCartHandler = (item) => {
+  dispatch(removeFromCart({ 
+    product: item.product, // <- This is the product ID you stored in cart
+    color: item.color 
+  }));
+};
 
-  const updateQtyHandler = (id, qty) => {
-    dispatch(updateCartQty({ product: id, qty: Number(qty) }));
-  };
+  const updateQtyHandler = (item, qty) => {
+  dispatch(updateCartQty({ 
+    product: item.product, 
+    color: item.color, 
+    qty: Number(qty) 
+  }));
+};
 
 
   const cartSubtotal = cartItems?.reduce((acc, item) => acc + item.qty * item.price, 0);
@@ -37,18 +53,18 @@ const { cartItems } = useSelector((state) => state.cart);
         <>
           <div className="space-y-4 mb-6">
             {cartItems?.map((item, index) => (
-              <div key={`${item.product}-${index}`} className="flex justify-between items-center border p-4 rounded">
+              <div key={`${item.product}-${item.color}`} className="flex justify-between items-center border p-4 rounded">
                 <div className="flex items-center gap-4">
                   <img src={item.image} alt={item.name} className="w-16 h-16 object-contain" />
                   <div>
-                    <Link to={`/product/${item._id}`} className="font-semibold hover:underline">
+                    <Link to={`/product/${item.product}`} className="font-semibold hover:underline">
                       {item.name}
                     </Link>
                     <div className="flex items-center gap-4">
                       <p className="text-sm text-gray-600">${item.price}</p>
                       <select
                         value={item.qty}
-                        onChange={(e) => updateQtyHandler(item.product, e.target.value)}
+                        onChange={(e) => updateQtyHandler(item, e.target.value)}
                         className="border rounded px-2 py-1"
                       >
                         {[...Array(item.countInStock).keys()].map((x) => (
@@ -61,7 +77,7 @@ const { cartItems } = useSelector((state) => state.cart);
                   </div>
                 </div>
                 <button
-                  onClick={() => removeFromCartHandler(item.product)}
+                  onClick={() => removeFromCartHandler(item)}
                   className="text-red-500 hover:underline"
                 >
                   Remove

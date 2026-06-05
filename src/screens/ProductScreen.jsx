@@ -1,16 +1,24 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import RatingStars from '../components/RatingStars';
 import { useSelector, useDispatch } from 'react-redux'
+import { FaThumbsUp } from 'react-icons/fa';
 import {
   useGetProductDetailsQuery,
   useCreateProductReviewMutation,
-  useUpdateReviewMutation
+  useUpdateReviewMutation,
+  useDeleteReviewMutation,
+  useMarkReviewHelpfulMutation,
+  useAddAdminReplyMutation,
+  useEditAdminReplyMutation,
+  useDeleteAdminReplyMutation,
+  useUploadProductImageMutation
 } from '../slices/productsApiSlice'
 import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
 import Rating from '../components/Rating'
-import { FaEdit, FaCheck, FaShoppingCart } from 'react-icons/fa'
+import { FaEdit, FaCheck, FaTrash, FaShoppingCart } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 
 const ProductScreen = () => {
@@ -21,41 +29,69 @@ const ProductScreen = () => {
   const { userInfo } = useSelector((state) => state.auth)
   const { data: product, isLoading, error, refetch } = useGetProductDetailsQuery(productId)
   const [createProductReview, { isLoading: loadingProductReview }] = useCreateProductReviewMutation()
+  const [deleteProductReview, { isLoading: loadingDeleteReview }] = useDeleteReviewMutation();
+  const [addAdminReply, { isLoading: loadingAdminReply }] = useAddAdminReplyMutation();
+  const [editAdminReply, { isLoading: loadingUpdateReply } ] = useEditAdminReplyMutation();
+  const [deleteAdminReply, { isLoading: loadingDeleteReply}] = useDeleteAdminReplyMutation();
+  const [markHelpful, { isLoading: loadingHelpfulReview }] = useMarkReviewHelpfulMutation();
+  const [uploadProductImage, { isLoading: loadingUpload }] = useUploadProductImageMutation();
+
 
   const [selectedColor, setSelectedColor] = useState(null)
   const [mainImage, setMainImage] = useState('/images/placeholder-phone.jpg') // Default to placeholder
   const [qty, setQty] = useState(1)
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
-  //edit review start
-  const [isEditing, setIsEditing] = useState(false);
-const [updateProductReview, { isLoading: loadingUpdateReview }] = useUpdateReviewMutation();
-
-// Get user's existing review for this color
-const userReview = product?.reviews?.find(
-  (r) => r.user === userInfo?._id && r.color === selectedColor?.name
-);
-
-useEffect(() => {
-  if (userReview && isEditing) {
-    setRating(userReview.rating);
-    setComment(userReview.comment);
-  }
-}, [userReview, isEditing]);
+  const [sortBy, setSortBy] = useState('newest');
+  const [replyText, setReplyText] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [isEditingReply, setIsEditingReply] = useState(null);
+  const [editReplyText, setEditReplyText] = useState('');
+  const [reviewImages, setReviewImages] = useState([]);
+  //const [reviewImageFiles, setReviewImageFiles] = useState([]);
+  const [ratingFilter, setRatingFilter] = useState(0);
 
 
-//edit review end
+  // Edit states
+  const [editingReview, setEditingReview] = useState(null);
+  const [editComment, setEditComment] = useState('');
+  const [editRating, setEditRating] = useState(0);
+  const [editImages, setEditImages] = useState([]);
+
+  const [editColor, setEditColor] = useState(null);
+
+  const startEdit = (review) => {
+    setEditingReview(review);
+    setEditComment(review.comment);
+    setEditRating(review.rating);
+    setEditImages(review.images || []);
+    setEditColor(review.color || null);
+
+  };
+
+  const cancelEdit = () => {
+    setEditingReview(null);
+    setEditComment('');
+    setEditRating(0);
+    setEditImages([]);
+
+  };
+
+  const [updateProductReview, { isLoading: loadingUpdateReview }] = useUpdateReviewMutation();
+
+
+  //edit review end
   useEffect(() => {
     if (product) {
-      if (product.colors?.length > 0) {
+      if (product.colors?.length > 0 && !selectedColor) { // ← Add!selectedColor here
         const firstColor = product.colors[0]
         setSelectedColor(firstColor)
         setMainImage(firstColor.images?.[0] || product.image || '/images/placeholder-phone.jpg')
-      } else {
+      } else if (!product.colors?.length) {
         setMainImage(product.image || '/images/placeholder-phone.jpg')
       }
     }
-  }, [product])
+  }, [product, selectedColor]) // ← Add selectedColor to deps
 
   const selectColorHandler = (color) => {
     setSelectedColor(color)
@@ -64,6 +100,7 @@ useEffect(() => {
   }
 
   const addToCartHandler = () => {
+     
     if (product.colors?.length > 0 && !selectedColor) {
       toast.error('Please select a color')
       return
@@ -79,67 +116,225 @@ useEffect(() => {
       countInStock: selectedColor?.countInStock || product.countInStock,
       qty,
     }))
+    toast.success('Added to cart')
     navigate('/cart')
   }
 
+  //   const colorReviews = useMemo(() => {
+  //   if (!product?.reviews) return [];
+  //   return selectedColor 
+  //     ? product.reviews.filter((r) => r.color === selectedColor.name)
+  //     : product.reviews;
+  // }, [product, selectedColor]);
+
   // Filter reviews by selected color
-  const filteredReviews = useMemo(() => {
-    if (!product?.reviews || !selectedColor) return product?.reviews || []
-    return product.reviews.filter((r) => r.color === selectedColor.name)
-  }, [product?.reviews, selectedColor])
+ const sortedReviews = useMemo(() => {
+  if (!product?.reviews) return [];
+  let reviews = [...product.reviews];
+  
+  if (ratingFilter !== 0) {
+    reviews = reviews.filter(r => r.rating === Number(ratingFilter));
+  }
+  
+  if (sortBy === 'highest') return reviews.sort((a, b) => b.rating - a.rating);
+  if (sortBy === 'lowest') return reviews.sort((a, b) => a.rating - b.rating);
+  return reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}, [product, ratingFilter, sortBy]);
 
-  // Calculate rating for selected color
-  const colorRating = useMemo(() => {
-    if (!selectedColor || filteredReviews.length === 0) return 0
-    return filteredReviews.reduce((acc, item) => acc + item.rating, 0) / filteredReviews.length
-  }, [filteredReviews, selectedColor])
 
-  // Use color rating if colors exist, else use overall rating
-  const displayRating = product?.colors?.length > 0 ? colorRating : product?.rating || 0
-  const displayNumReviews = product?.colors?.length > 0 ? filteredReviews.length : product?.numReviews || 0
+
+  const displayRating = product?.rating || 0;
+  const displayNumReviews = product?.numReviews || 0;
 
   const submitReviewHandler = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    if (!rating) {
+      toast.error('Please select a rating');
+      return;
+    }
+    if (product?.colors?.length > 0 && !selectedColor) {
+      toast.error('Please select a color');
+      return;
+    }
 
-  if (product?.colors?.length > 0 && !selectedColor) {
-    toast.error('Please select a color to review');
-    return;
-  }
-
-  if (!rating) {
-    toast.error('Please select a rating');
-    return;
-  }
-
-  try {
-    if (isEditing && userReview) {
-      // UPDATE existing review
-      await updateProductReview({
-        productId,
-        rating,
-        comment,
-        color: selectedColor?.name,
-      }).unwrap();
-      toast.success('Review updated successfully');
-      setIsEditing(false);
-    } else {
-      // CREATE new review
+    try {
       await createProductReview({
         productId,
         rating,
         comment,
-        color: selectedColor?.name,
+        color: selectedColor?.name || '',
+        images: reviewImages, // <-- Just send the URLs you already have
       }).unwrap();
+
+      refetch();
       toast.success('Review submitted successfully');
+      setRating(0);
+      setComment('');
+      setReviewImages([]);
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
     }
-    
-    setRating(0);
-    setComment('');
-    refetch();
+  };
+
+  // 2. Upload immediately when file selected
+  const uploadEditImageHandler = async (e) => {
+    const files = Array.from(e.target.files);
+    if (editImages.length + files.length > 3) {
+      toast.error('Max 3 images');
+      return;
+    }
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('image', file);
+      try {
+        const res = await uploadProductImage(formData).unwrap();
+        setEditImages((prev) => [...prev, res.image]); // Store URL only
+      } catch (err) {
+        toast.error(err?.data?.message || err.error);
+      }
+    }
+    e.target.value = null;
+  };
+
+  // 3. Submit: just send URLs, no upload loop
+  const submitEditHandler = async (e) => {
+    e.preventDefault();
+
+    if (!editRating) {
+      toast.error('Please select a rating');
+      return;
+    }
+
+    try {
+      await updateProductReview({
+        productId,
+        reviewId: editingReview._id,
+        rating: editRating,
+        comment: editComment,
+        color: editColor,
+        images: editImages, // Already URLs, ready to send
+      }).unwrap();
+      toast.success('Review updated successfully');
+      cancelEdit();
+      refetch();
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
+  };
+
+  // 4. Remove handler
+  const removeEditImage = (index) => {
+    setEditImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const deleteHandler = async (reviewId) => {
+    if (window.confirm('Are you sure you want to delete this review?')) {
+      try {
+        await deleteProductReview({ productId, reviewId }).unwrap();
+        toast.success('Review deleted');
+      } catch (err) {
+        toast.error(err?.data?.message || err.error);
+      }
+    }
+  };
+
+
+
+
+
+  const helpfulHandler = async (reviewId) => {
+  if (!userInfo) {
+    toast.error('Please sign in to vote');
+    return;
+  }
+  try {
+    await markHelpful({ productId: product._id, reviewId }).unwrap();
+    refetch(); // <- ADD THIS LINE to get updated helpfulBy array
+    toast.success('Updated');
   } catch (err) {
     toast.error(err?.data?.message || err.error);
   }
 };
+
+  const submitReplyHandler = async (reviewId) => {
+    if (!replyText.trim()) {
+      toast.error('Reply cannot be empty');
+      return;
+    }
+    try {
+      await addAdminReply({
+        productId,
+        reviewId,
+        replyText,
+      }).unwrap();
+      setReplyText('');
+      setReplyingTo(null);
+      toast.success('Reply posted');
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
+  };
+
+  const updateReplyHandler = async (reviewId) => {
+    try {
+      await editAdminReply({ productId, reviewId, replyText: editReplyText }).unwrap();
+      setIsEditingReply(null);
+      toast.success('Reply updated');
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
+  };
+
+  const deleteReplyHandler = async (reviewId) => {
+    if (window.confirm('Delete this reply?')) {
+      try {
+        await deleteAdminReply({ productId, reviewId }).unwrap();
+        toast.success('Reply deleted');
+      } catch (err) {
+        toast.error(err?.data?.message || err.error);
+      }
+    }
+  };
+
+  const uploadFileHandler = async (e) => {
+    const files = Array.from(e.target.files);
+
+    if (reviewImages.length + files.length > 3) {
+      toast.error('Max 3 images per review');
+      return;
+    }
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const res = await uploadProductImage(formData).unwrap();
+        setReviewImages((prev) => [...prev, res.image]);
+        toast.success('Image uploaded');
+      } catch (err) {
+        toast.error(err?.data?.message || err.error);
+      }
+    }
+    e.target.value = null; // reset input so same file can be uploaded again
+  };
+
+  // For CREATE form - just remove from state, no backend call
+  const removeImage = (imgUrl) => {
+    setReviewImages(reviewImages.filter((x) => x !== imgUrl));
+    // Don't call deleteReviewImage here. Image will be orphaned on Cloudinary.
+    // If you want to delete orphans, run a cleanup cron job on backend
+  };
+
+  // const alreadyReviewed = product?.reviews?.find(
+  //   (r) => r.user === userInfo?._id && r.color === selectedColor?.name
+  // );
+  const alreadyReviewed = product?.reviews?.find(
+    (r) => r.user === userInfo?._id || r.user?._id === userInfo?._id
+  );
+  const showCreateForm = userInfo && !alreadyReviewed && !editingReview;
+  const showAlreadyReviewedMsg = userInfo && alreadyReviewed && !editingReview;
 
   if (isLoading) return <Loader />
   if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>
@@ -262,10 +457,10 @@ useEffect(() => {
                       key={idx}
                       onClick={() => selectColorHandler(color)}
                       className={`relative w-14 h-14 rounded-full border-2 transition-all duration-200 ${selectedColor?.name === color.name
-                          ? 'border-blue-600 ring-4 ring-blue-100 scale-110'
-                          : color.name.toLowerCase() === 'white'
-                            ? 'border-gray-400 hover:border-gray-500 hover:scale-105'
-                            : 'border-gray-300 hover:border-gray-400 hover:scale-105'
+                        ? 'border-blue-600 ring-4 ring-blue-100 scale-110'
+                        : color.name.toLowerCase() === 'white'
+                          ? 'border-gray-400 hover:border-gray-500 hover:scale-105'
+                          : 'border-gray-300 hover:border-gray-400 hover:scale-105'
                         }`}
                       style={{ backgroundColor: color.hexCode }}
                       title={color.name}
@@ -329,173 +524,393 @@ useEffect(() => {
 
 
       {/* Reviews Section */}
-<div className='mt-10'>
-  <h2 className='text-2xl font-bold mb-4'>
-    Customer Reviews {selectedColor && `for ${selectedColor.name}`}
-  </h2>
+      <div className='mt-10'>
 
-  {filteredReviews.length === 0 && (
-    <Message>No Reviews for {selectedColor?.name || 'this product'}</Message>
-  )}
-
-  <div className='mb-8'>
-    {filteredReviews.map((review) => (
-      <div key={review._id} className='bg-gray-50 p-4 rounded-lg mb-4'>
-        <div className='flex justify-between items-start mb-2'>
-          <div>
-            <strong>{review.name}</strong>
-            <span className='text-sm text-gray-500 ml-2'>
-              | {new Date(review.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-          {userInfo?._id === review.user && review.color === selectedColor?.name && (
+        <div className='mt-3 mb-4 flex items-center gap-2 flex-wrap'>
+          <span className='font-medium text-sm'>Filter:</span>
+          {[0, 5, 4, 3, 2, 1].map((star) => (
             <button
-              onClick={() => setIsEditing(true)}
-              className='text-blue-600 text-sm hover:underline font-medium'
+              key={star}
+              type='button'
+              onClick={() => setRatingFilter(star)}
+              className={`px-3 py-1 rounded text-sm border ${ratingFilter === star
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
             >
-              Edit
+              {star === 0 ? 'All' : `${star} ★`}
+            </button>
+          ))}
+          {ratingFilter !== 0 && (
+            <button
+              type='button'
+              onClick={() => setRatingFilter(0)}
+              className='text-sm text-blue-600 hover:underline ml-2'
+            >
+              Clear
             </button>
           )}
         </div>
-        <Rating value={review.rating} />
-        <p className='mt-2 text-gray-700'>{review.comment}</p>
-      </div>
-    ))}
-  </div>
 
-  {/* CREATE REVIEW FORM */}
-  {userInfo && !userReview && !isEditing && (
-    <div className='bg-white p-6 rounded-lg shadow'>
-      <h3 className='text-xl font-semibold mb-4'>Write a Customer Review</h3>
-      
-      <form onSubmit={submitReviewHandler}>
-        {selectedColor && (
-          <div className='bg-blue-50 p-3 rounded-lg mb-4'>
-            <p className='text-sm text-blue-800'>
-              You are reviewing: <strong>{selectedColor.name}</strong>
+        {product?.reviews?.length === 0 && (
+          <Message>No Reviews Yet</Message>
+        )}
+
+         {/* Review List */}
+  <div className='mb-8'>
+    {sortedReviews.length > 0 ? (
+      sortedReviews.map((review) => (
+        <div key={review._id} className='bg-gray-50 p-4 rounded-lg mb-4'>
+          <div className='flex justify-between items-start mb-2'>
+            <div>
+              <strong>{review.name}</strong>
+              {review.color && <span className='text-sm text-gray-500 ml-2'>({review.color})</span>}
+              <span className='text-sm text-gray-500 ml-2'>
+                | {new Date(review.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+            {userInfo?._id === review.user && (
+              <div className='flex gap-3'>
+                <button
+                  onClick={() => startEdit(review)}
+                  className='text-blue-600 text-sm hover:underline font-medium'
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => deleteHandler(review._id)}
+                  disabled={loadingDeleteReview}
+                  className='text-red-600 text-sm hover:underline font-medium disabled:opacity-50'
+                >
+                  {loadingDeleteReview ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            )}
+          </div>
+          
+          <Rating value={review.rating} />
+          <p className='mt-2 text-gray-700'>{review.comment}</p>
+          
+          {review.images?.length > 0 && (
+            <div className='flex gap-2 mt-2 flex-wrap'>
+              {review.images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt='review'
+                  className='w-24 h-24 object-cover rounded border cursor-pointer hover:opacity-80'
+                  onClick={() => window.open(img, '_blank')}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className='mt-2 flex items-center gap-2 text-sm text-gray-600'>
+            <button
+              onClick={() => helpfulHandler(review._id)}
+              disabled={loadingHelpfulReview}
+              className={`flex items-center gap-1 hover:text-blue-600 disabled:opacity-50 ${
+                userInfo && review.helpful?.includes(userInfo._id) ? 'text-blue-600 font-medium' : ''
+              }`}
+            >
+              <FaThumbsUp size={14} />
+              Helpful ({review.helpful?.length || 0})
+            </button>
+          </div>
+
+          {/* Show existing admin reply */}
+          {review.adminReply?.text && (
+            <div className='mt-3 ml-4 pl-3 border-l-2 border-gray-300 bg-gray-50 p-2 rounded'>
+              <div className='flex justify-between items-start'>
+                <div className='flex-1'>
+                  <p className='text-sm font-medium text-gray-800'>
+                    Store Response - {review.adminReply.name}
+                  </p>
+                  {isEditingReply === review._id ? (
+                    <div className='mt-1'>
+                      <textarea
+                        rows='2'
+                        value={editReplyText}
+                        onChange={(e) => setEditReplyText(e.target.value)}
+                        className='w-full border rounded p-1 text-sm'
+                      />
+                      <div className='flex gap-2 mt-1'>
+                        <button
+                          onClick={() => updateReplyHandler(review._id)}
+                          disabled={loadingUpdateReply}
+                          className='bg-green-600 text-white px-2 py-1 rounded text-xs disabled:opacity-50'
+                        >
+                          {loadingUpdateReply ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => setIsEditingReply(null)}
+                          className='text-gray-600 text-xs'
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className='text-sm text-gray-700 mt-1'>{review.adminReply.text}</p>
+                  )}
+                </div>
+                
+                {userInfo?.isAdmin && isEditingReply !== review._id && (
+                  <div className='flex gap-2 ml-2'>
+                    <button
+                      onClick={() => {
+                        setIsEditingReply(review._id);
+                        setEditReplyText(review.adminReply.text);
+                      }}
+                      className='text-blue-600 text-xs hover:underline'
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteReplyHandler(review._id)}
+                      disabled={loadingDeleteReply}
+                      className='text-red-600 text-xs hover:underline disabled:opacity-50'
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Admin reply button + form - for reviews without replies */}
+          {userInfo?.isAdmin && !review.adminReply?.text && (
+            <div className='mt-2'>
+              {replyingTo === review._id ? (
+                <div className='mt-2'>
+                  <textarea
+                    rows='2'
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder='Write admin reply...'
+                    className='w-full border rounded p-2 text-sm'
+                  />
+                  <div className='flex gap-2 mt-1'>
+                    <button
+                      onClick={() => submitReplyHandler(review._id)}
+                      disabled={loadingAdminReply}
+                      className='bg-blue-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50'
+                    >
+                      {loadingAdminReply ? 'Posting...' : 'Post Reply'}
+                    </button>
+                    <button
+                      onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                      className='text-gray-600 text-sm'
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setReplyingTo(review._id)}
+                  className='text-blue-600 text-sm hover:underline mt-1'
+                >
+                  Reply as Admin
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ))
+    ) : product?.reviews?.length > 0 ? (
+      <p className='text-gray-500 py-4'>
+        No {ratingFilter} star reviews yet
+      </p>
+    ) : null}
+  </div>
+ 
+
+        {/* CREATE REVIEW SECTION */}
+        {userInfo && !alreadyReviewed && !editingReview && (
+          <div className='bg-white p-6 rounded-lg shadow mt-6'>
+            <h3 className='text-xl font-semibold mb-4'>Write a Customer Review</h3>
+
+            {selectedColor && (
+              <div className='bg-blue-50 p-3 rounded-lg mb-4'>
+                <p className='text-sm text-blue-800'>
+                  You are reviewing: <strong>{selectedColor.name}</strong>
+                </p>
+              </div>
+            )}
+
+            {!selectedColor && product?.colors?.length > 0 && (
+              <Message variant='danger'>Please select a color first</Message>
+            )}
+
+            <form onSubmit={submitReviewHandler}>
+              <div className='mb-4'>
+                <label className='block mb-2 font-medium'>Rating</label>
+                <RatingStars rating={rating} setRating={setRating} />
+                {rating === 0 && (
+                  <p className='text-red-500 text-sm mt-1'>Please select a rating</p>
+                )}
+              </div>
+
+              <div className='mb-4'>
+                <label className='block mb-2 font-medium'>Comment</label>
+                <textarea
+                  className='w-full p-2 border rounded'
+                  rows='4'
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder='Write your review...'
+                  required
+                />
+              </div>
+
+              <div className='mb-4'>
+                <label className='block mb-2 font-medium'>
+                  Upload Images (Optional, max 3)
+                </label>
+                <input
+                  type='file'
+                  accept='image/*'
+                  multiple
+                  onChange={uploadFileHandler}
+                  disabled={loadingUpload || reviewImages.length >= 3}
+                  className='block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100 cursor-pointer
+            disabled:opacity-50 disabled:cursor-not-allowed'
+                />
+                {loadingUpload && <p className='text-sm text-gray-500 mt-1'>Uploading...</p>}
+
+                {reviewImages.length > 0 && (
+                  <div className='flex gap-2 mt-3 flex-wrap'>
+                    {reviewImages.map((img, idx) => (
+                      <div key={idx} className='relative'>
+                        <img
+                          src={img}
+                          alt='review'
+                          className='w-20 h-20 object-cover rounded border'
+                        />
+                        <button
+                          type='button'
+                          onClick={() => removeImage(img)}
+                          className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs'
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                disabled={
+                  loadingProductReview ||
+                  loadingUpload ||
+                  rating === 0 ||
+                  (product?.colors?.length > 0 && !selectedColor)
+                }
+                type='submit'
+                className='bg-black text-white px-6 py-2 rounded hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed'
+              >
+                {loadingProductReview ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </form>
+          </div>
+        )}
+
+
+
+
+        {/* EDIT REVIEW FORM */}
+        {editingReview && (
+          <div className='bg-white p-6 rounded-lg shadow border-2 border-blue-500'>
+            <h3 className='text-xl font-semibold mb-4'>Edit Your Review</h3>
+
+            <form onSubmit={submitEditHandler}>
+              <div className='mb-4'>
+                <label className='block mb-2 font-medium'>Rating</label>
+                <RatingStars rating={editRating} setRating={setEditRating} />
+                {editRating === 0 && <p className='text-red-500 text-sm mt-1'>Please select a rating</p>}
+              </div>
+
+              <div className='mb-4'>
+                <label className='block mb-2 font-medium'>Comment</label>
+                <textarea
+                  className='w-full p-2 border rounded'
+                  rows='4'
+                  value={editComment} // FIX: use editComment
+                  onChange={(e) => setEditComment(e.target.value)} // FIX: use setEditComment
+                  required
+                />
+              </div>
+
+              <div className='mb-4'>
+                <label className='block mb-2 font-medium'>Upload Images (Optional, max 3)</label>
+                <input
+                  type='file'
+                  multiple
+                  accept='image/*'
+                  onChange={uploadEditImageHandler} // FIX: use uploadEditImageHandler
+                  disabled={loadingUpload}
+                  className='text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700'
+                />
+                {loadingUpload && <p className='text-sm text-gray-500 mt-1'>Uploading...</p>}
+
+                <div className='flex gap-2 mt-3 flex-wrap'>
+                  {editImages.map((img, idx) => ( // FIX: use editImages
+                    <div key={idx} className='relative'>
+                      <img src={img} alt='review' className='w-20 h-20 object-cover rounded border' />
+                      <button
+                        type='button'
+                        onClick={() => removeEditImage(idx)} // FIX: use removeEditImage
+                        className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center'
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type='submit'
+                disabled={loadingUpdateReview}
+                className='bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50'
+              >
+                {loadingUpdateReview ? 'Updating...' : 'Update Review'}
+              </button>
+              <button
+                type='button'
+                onClick={cancelEdit} // FIX: use cancelEdit
+                className='bg-gray-300 text-gray-800 px-6 py-2 rounded hover:bg-gray-400 ml-2'
+              >
+                Cancel
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* ALREADY REVIEWED MESSAGE */}
+        {userInfo && alreadyReviewed && !editingReview && (
+          <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
+            <p className='text-sm text-green-800'>
+              ✓ You've already reviewed this product. Click "Edit" on your review above to update it.
             </p>
           </div>
         )}
 
-        {!selectedColor && product?.colors?.length > 0 && (
-          <Message variant='danger'>Please select a color first</Message>
+        {/* NOT LOGGED IN */}
+        {!userInfo && (
+          <Message>
+            Please <Link to='/login' className='text-blue-600 underline'>sign in</Link> to write a review
+          </Message>
         )}
-
-        <div className='mb-4'>
-          <label className='block mb-2 font-medium'>Rating</label>
-          <select
-            className='w-full p-2 border rounded'
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value))}
-            required
-          >
-            <option value=''>Select...</option>
-            <option value='1'>1 - Poor</option>
-            <option value='2'>2 - Fair</option>
-            <option value='3'>3 - Good</option>
-            <option value='4'>4 - Very Good</option>
-            <option value='5'>5 - Excellent</option>
-          </select>
-        </div>
-
-        <div className='mb-4'>
-          <label className='block mb-2 font-medium'>Comment</label>
-          <textarea
-            className='w-full p-2 border rounded'
-            rows='4'
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            required
-          ></textarea>
-        </div>
-
-        <button
-          disabled={loadingProductReview || !selectedColor}
-          type='submit'
-          className='bg-black text-white px-6 py-2 rounded disabled:bg-gray-400 hover:bg-gray-800'
-        >
-          {loadingProductReview ? 'Submitting...' : 'Submit Review'}
-        </button>
-      </form>
-    </div>
-  )}
-
-  {/* EDIT REVIEW FORM */}
-  {userInfo && isEditing && (
-    <div className='bg-white p-6 rounded-lg shadow border-2 border-blue-500'>
-      <h3 className='text-xl font-semibold mb-4'>Edit Your Review</h3>
-      
-      <form onSubmit={submitReviewHandler}>
-        <div className='bg-blue-50 p-3 rounded-lg mb-4'>
-          <p className='text-sm text-blue-800'>
-            Editing review for: <strong>{selectedColor.name}</strong>
-          </p>
-        </div>
-
-        <div className='mb-4'>
-          <label className='block mb-2 font-medium'>Rating</label>
-          <select
-            className='w-full p-2 border rounded'
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value))}
-            required
-          >
-            <option value=''>Select...</option>
-            <option value='1'>1 - Poor</option>
-            <option value='2'>2 - Fair</option>
-            <option value='3'>3 - Good</option>
-            <option value='4'>4 - Very Good</option>
-            <option value='5'>5 - Excellent</option>
-          </select>
-        </div>
-
-        <div className='mb-4'>
-          <label className='block mb-2 font-medium'>Comment</label>
-          <textarea
-            className='w-full p-2 border rounded'
-            rows='4'
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            required
-          ></textarea>
-        </div>
-
-        <div className='flex gap-3'>
-          <button
-            type='submit'
-            disabled={loadingUpdateReview}
-            className='bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50'
-          >
-            {loadingUpdateReview ? 'Updating...' : 'Update Review'}
-          </button>
-          <button
-            type='button'
-            onClick={() => setIsEditing(false)}
-            className='bg-gray-300 text-gray-800 px-6 py-2 rounded hover:bg-gray-400'
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
-  )}
-
-  {/* ALREADY REVIEWED MESSAGE */}
-  {userInfo && userReview && !isEditing && (
-    <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
-      <p className='text-sm text-green-800'>
-        ✓ You've already reviewed {selectedColor?.name}. Click "Edit" on your review above to update it.
-      </p>
-    </div>
-  )}
-
-  {/* NOT LOGGED IN */}
-  {!userInfo && (
-    <Message>
-      Please <Link to='/login' className='text-blue-600 underline'>sign in</Link> to write a review
-    </Message>
-  )}
-</div>
+      </div>
     </div>
   )
 }

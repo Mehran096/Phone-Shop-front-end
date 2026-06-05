@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { login } from '../slices/authSlice'
+import { clearCartItems } from '../slices/cartSlice'
 
 function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -9,18 +10,31 @@ function LoginScreen() {
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { search } = useLocation()
 
   const { userInfo, loading, error } = useSelector((state) => state.auth)
 
-  useEffect(() => {
-    if (userInfo) {
-      navigate('/')
-    }
-  }, [navigate, userInfo])
+   const sp = new URLSearchParams(search)
+  const redirect = sp.get('redirect') || '/' // <- Get redirect or default to home
 
-  const submitHandler = async (e) => {
+   useEffect(() => {
+    if (userInfo) {
+      navigate(redirect) // <- Changed from navigate('/') to navigate(redirect)
+    }
+  }, [navigate, userInfo, redirect])
+
+ const submitHandler = async (e) => {
     e.preventDefault()
-    dispatch(login({ email, password }))
+    try {
+      await dispatch(login({ email, password })).unwrap()
+      
+      // Simple fix: Clear any guest cart when user logs in
+      dispatch(clearCartItems())
+      toast.success('Logged in successfully')
+      
+    } catch (err) {
+      toast.error(err?.data?.message || err.message || 'Login failed')
+    }
   }
 
   return (

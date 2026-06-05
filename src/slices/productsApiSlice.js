@@ -60,20 +60,66 @@ export const productsApiSlice = apiSlice.injectEndpoints({
     }),
 
     createProductReview: builder.mutation({
-      query: ({ productId, rating, comment, color }) => ({
+      query: ({ productId, rating, comment, color, images }) => ({
         url: `${PRODUCTS_URL}/${productId}/reviews`,
         method: 'POST',
-        body: { rating, comment, color },
+        body: { rating, comment, color, images },
       }),
       invalidatesTags: (result, error, arg) => [{ type: 'Product', id: arg.productId }],
     }),
     updateReview: builder.mutation({
   query: (data) => ({
-    url: `${PRODUCTS_URL}/${data.productId}/reviews`,
+    url: `${PRODUCTS_URL}/${data.productId}/reviews/${data.reviewId}`, // <-- Add /${data.reviewId}
+    method: 'PUT',
+    body: data, // Send rating, comment, images
+  }),
+  invalidatesTags: (result, error, arg) => [{ type: 'Product', id: arg.productId }],
+}),
+deleteReview: builder.mutation({
+  query: ({ productId, reviewId }) => ({
+    url: `${PRODUCTS_URL}/${productId}/reviews/${reviewId}`,
+    method: 'DELETE',
+  }),
+  invalidatesTags: ['Product'],
+}),
+markReviewHelpful: builder.mutation({
+  query: (data) => ({
+    url: `${PRODUCTS_URL}/${data.productId}/reviews/helpful`,
     method: 'PUT',
     body: data,
   }),
   invalidatesTags: ['Product'],
+}),
+addAdminReply: builder.mutation({
+  query: (data) => ({
+    url: `${PRODUCTS_URL}/${data.productId}/reviews/reply`,
+    method: 'PUT',
+    body: data,
+  }),
+  invalidatesTags: ['Product'],
+}),
+editAdminReply: builder.mutation({
+  query: (data) => ({
+    url: `${PRODUCTS_URL}/${data.productId}/reviews/reply/edit`,
+    method: 'PUT',
+    body: data,
+  }),
+  invalidatesTags: ['Product'],
+}),
+deleteAdminReply: builder.mutation({
+  query: (data) => ({
+    url: `${PRODUCTS_URL}/${data.productId}/reviews/reply`,
+    method: 'DELETE',
+    body: data,
+  }),
+  invalidatesTags: ['Product'],
+}),
+uploadProductImage: builder.mutation({
+  query: (data) => ({
+    url: '/upload',
+    method: 'POST',
+    body: data,
+  }),
 }),
   }),
 })
@@ -85,6 +131,12 @@ export const {
   useUpdateProductMutation,
   useUpdateProductSpecsMutation,
   useDeleteProductMutation,
-  useCreateProductReviewMutation, // <-- new
-  useUpdateReviewMutation
+  useCreateProductReviewMutation,
+  useUpdateReviewMutation,
+  useDeleteReviewMutation,
+  useMarkReviewHelpfulMutation,
+  useAddAdminReplyMutation,
+  useEditAdminReplyMutation,
+   useDeleteAdminReplyMutation,
+   useUploadProductImageMutation
 } = productsApiSlice

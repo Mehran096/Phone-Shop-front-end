@@ -14,16 +14,48 @@ const initialState = {
   totalPrice: cartFromStorage?.totalPrice || 0,
 }
 
+// const updateCartPrices = (state) => {
+  
+//   state.itemsPrice = state.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+//   state.shippingPrice = state.itemsPrice > 500 ? 0 : 10
+//   state.taxPrice = Number((0.15 * state.itemsPrice).toFixed(2))
+//   state.totalPrice = (
+//     state.itemsPrice +
+//     state.shippingPrice +
+//     state.taxPrice
+//   ).toFixed(2)
+//   localStorage.setItem('cart', JSON.stringify(state))
+// }
+
 const updateCartPrices = (state) => {
+  // Helper to avoid 0.1 + 0.2 = 0.30000004 bugs
+  const addDecimals = (num) => {
+    return (Math.round(num * 100) / 100).toFixed(2)
+  }
+
+  // Calculate itemsPrice as number first
   state.itemsPrice = state.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+  
+  // Free shipping over 500, else 10
   state.shippingPrice = state.itemsPrice > 500 ? 0 : 10
+  
+  // Tax is 15%
   state.taxPrice = Number((0.15 * state.itemsPrice).toFixed(2))
+  
+  // Now add as numbers, then format to string with 2 decimals
   state.totalPrice = (
-    state.itemsPrice +
-    state.shippingPrice +
-    state.taxPrice
+    Number(state.itemsPrice) +
+    Number(state.shippingPrice) +
+    Number(state.taxPrice)
   ).toFixed(2)
+  
+  // Format itemsPrice and shippingPrice last so they don't break math above
+  state.itemsPrice = addDecimals(state.itemsPrice)
+  state.shippingPrice = addDecimals(state.shippingPrice)
+  state.taxPrice = addDecimals(state.taxPrice)
+
   localStorage.setItem('cart', JSON.stringify(state))
+  return state
 }
 
 const cartSlice = createSlice({
@@ -95,6 +127,10 @@ const cartSlice = createSlice({
       state.cartItems = []
       updateCartPrices(state)
     },
+    setCartItems: (state, action) => { // <- Add this
+  state.cartItems = action.payload
+  updateCartPrices(state)
+},
   },
 })
 
@@ -105,6 +141,7 @@ export const {
   saveShippingAddress,
   savePaymentMethod,
   clearCartItems,
+  setCartItems,
 } = cartSlice.actions
 
 export default cartSlice.reducer
