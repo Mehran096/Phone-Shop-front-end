@@ -1,12 +1,12 @@
 import { apiSlice } from './apiSlice'
-const API_URL = import.meta.env.VITE_API_URL
-const PRODUCTS_URL = `${API_URL}/products`
+ 
+ 
 
 export const productsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query({
       query: ({ keyword = '', pageNumber = 1, category = '' }) => ({
-        url: PRODUCTS_URL,
+        url: '/products',
         params: { keyword, pageNumber, category },
       }),
       keepUnusedDataFor: 5,
@@ -15,7 +15,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
 
     getProductDetails: builder.query({
       query: (id) => ({
-        url: `${PRODUCTS_URL}/${id}`,
+        url: `/products/${id}`,
       }),
       keepUnusedDataFor: 5,
       providesTags: (result, error, id) => [{ type: 'Product', id }],
@@ -23,7 +23,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
 
     createProduct: builder.mutation({
       query: (data) => ({
-        url: PRODUCTS_URL,
+        url: '/products',
         method: 'POST',
         body: data, // FormData
       }),
@@ -32,7 +32,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
 
     updateProduct: builder.mutation({
       query: ({ productId, formData }) => ({
-        url: `${PRODUCTS_URL}/${productId}`,
+        url: `/products/${productId}`,
         method: 'PUT',
         body: formData,
       }),
@@ -44,7 +44,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
 
     updateProductSpecs: builder.mutation({
       query: ({ id, specs }) => ({
-        url: `${PRODUCTS_URL}/${id}/specs`,
+        url: `/products/${id}/specs`,
         method: 'PUT',
         body: { specs },
       }),
@@ -53,7 +53,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
 
     deleteProduct: builder.mutation({
       query: (id) => ({
-        url: `${PRODUCTS_URL}/${id}`,
+        url: `/products/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Products'],
@@ -61,7 +61,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
 
     createProductReview: builder.mutation({
       query: ({ productId, rating, comment, color, images }) => ({
-        url: `${PRODUCTS_URL}/${productId}/reviews`,
+        url: `/products/${productId}/reviews`,
         method: 'POST',
         body: { rating, comment, color, images },
       }),
@@ -69,7 +69,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
     }),
     updateReview: builder.mutation({
   query: (data) => ({
-    url: `${PRODUCTS_URL}/${data.productId}/reviews/${data.reviewId}`, // <-- Add /${data.reviewId}
+    url: `/products/${data.productId}/reviews/${data.reviewId}`, // <-- Add /${data.reviewId}
     method: 'PUT',
     body: data, // Send rating, comment, images
   }),
@@ -77,14 +77,14 @@ export const productsApiSlice = apiSlice.injectEndpoints({
 }),
 deleteReview: builder.mutation({
   query: ({ productId, reviewId }) => ({
-    url: `${PRODUCTS_URL}/${productId}/reviews/${reviewId}`,
+    url: `/products/${productId}/reviews/${reviewId}`,
     method: 'DELETE',
   }),
   invalidatesTags: ['Product'],
 }),
 markReviewHelpful: builder.mutation({
   query: (data) => ({
-    url: `${PRODUCTS_URL}/${data.productId}/reviews/helpful`,
+    url: `/products/${data.productId}/reviews/helpful`,
     method: 'PUT',
     body: data,
   }),
@@ -92,7 +92,7 @@ markReviewHelpful: builder.mutation({
 }),
 addAdminReply: builder.mutation({
   query: (data) => ({
-    url: `${PRODUCTS_URL}/${data.productId}/reviews/reply`,
+    url: `/products/${data.productId}/reviews/reply`,
     method: 'PUT',
     body: data,
   }),
@@ -100,7 +100,7 @@ addAdminReply: builder.mutation({
 }),
 editAdminReply: builder.mutation({
   query: (data) => ({
-    url: `${PRODUCTS_URL}/${data.productId}/reviews/reply/edit`,
+    url: `/products/${data.productId}/reviews/reply/edit`,
     method: 'PUT',
     body: data,
   }),
@@ -108,7 +108,7 @@ editAdminReply: builder.mutation({
 }),
 deleteAdminReply: builder.mutation({
   query: (data) => ({
-    url: `${PRODUCTS_URL}/${data.productId}/reviews/reply`,
+    url: `/products/${data.productId}/reviews/reply`,
     method: 'DELETE',
     body: data,
   }),

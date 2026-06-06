@@ -1,7 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 //import { clearCartItems } from './cartSlice'
-import axios from 'axios'
-const API_URL = import.meta.env.VITE_API_URL
+ 
+import api from '../utils/axios'
+ 
+ 
 //const  API = 'api'
 
 const userInfoFromStorage = localStorage.getItem('userInfo')
@@ -16,8 +18,8 @@ export const login = createAsyncThunk(
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true // <- Add this for cookies
       }
-      const { data } = await axios.post(
-        `${API_URL}/users/auth`, 
+      const { data } = await api.post(
+        `/users/auth`, 
         { email, password }, 
         config
       )
@@ -37,8 +39,8 @@ export const register = createAsyncThunk(
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true // <- Add this for cookies
       }
-      const { data } = await axios.post(
-        `${API_URL}/users`, 
+      const { data } = await api.post(
+        `/users`, 
         { name, email, password }, 
         config
       )
@@ -60,7 +62,7 @@ export const updateUserProfile = createAsyncThunk(
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true // <- Cookie handles auth now
       }
-      const { data } = await axios.put(`${API_URL}/users/profile`, user, config)
+      const { data } = await api.put(`/users/profile`, user, config)
       // localStorage.setItem removed - handle in .fulfilled
       return data
     } catch (error) {
@@ -77,17 +79,9 @@ export const listUsers = createAsyncThunk(
         auth: { userInfo },
       } = getState()
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-        params: {
-          keyword,
-          pageNumber,
-        },
-      }
+       
 
-      const { data } = await axios.get(`${API_URL}/users`, config)
+      const { data } = await api.get(`/users`)
       return data
     } catch (error) {
       return rejectWithValue(
@@ -106,13 +100,9 @@ export const deleteUser = createAsyncThunk(
         auth: { userInfo },
       } = getState()
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
+      
 
-      await axios.delete(`${API_URL}/users/${id}`, config)
+      await api.delete(`/users/${id}`)
       return id
     } catch (error) {
       return rejectWithValue(
@@ -129,11 +119,9 @@ export const getUserDetails = createAsyncThunk(
     try {
       const { auth: { userInfo }
     }= getState()
-      const config = {
-        headers: { Authorization: `Bearer ${userInfo.token}` }
-      }
+       
     
-      const { data } = await axios.get(`${API_URL}/users/${id}`, config)
+      const { data } = await api.get(`/users/${id}`)
       return data
     
     
@@ -148,10 +136,8 @@ export const updateUser = createAsyncThunk(
   async ({ id, name, email, isAdmin }, { getState, rejectWithValue }) => {
     try {
       const { auth: { userInfo }} = getState()
-      const config = { 
-        headers: { Authorization: `Bearer ${userInfo.token}` } 
-      }
-      const { data } = await axios.put(`${API_URL}/users/${id}`, { name, email, isAdmin }, config)
+       
+      const { data } = await api.put(`/users/${id}`, { name, email, isAdmin })
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)

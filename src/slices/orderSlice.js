@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import axios from 'axios'
-import { toast } from 'react-toastify'
  
+import { toast } from 'react-toastify'
+import api from '../utils/axios'
+
 const API_URL = import.meta.env.VITE_API_URL
 
 export const createOrder = createAsyncThunk(
@@ -15,12 +16,7 @@ export const createOrder = createAsyncThunk(
       }
 
 
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${userInfo.token}`,  
-                },
-            }
+             
 
             // Map cartItems to match backend schema
       const orderItems = order.orderItems.map(item => ({
@@ -32,7 +28,7 @@ export const createOrder = createAsyncThunk(
          
       }))
 
-            const { data } = await axios.post(`${API_URL}/orders`, {...order, orderItems}, config)
+            const { data } = await api.post(`/orders`, {...order, orderItems})
              
             return data
         } catch (error) {
@@ -52,8 +48,8 @@ export const listMyOrders = createAsyncThunk(
     async (_, { getState, rejectWithValue }) => {
         try {
             const { auth: { userInfo } } = getState()
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.get(`${API_URL}/orders/myorders`, config)
+            
+            const { data } = await api.get(`/orders/myorders`)
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
@@ -67,8 +63,8 @@ export const getOrderDetails = createAsyncThunk(
     async (id, { getState, rejectWithValue }) => {
         try {
             const { auth: { userInfo } } = getState()
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.get(`${API_URL}/orders/${id}`, config)
+            
+            const { data } = await api.get(`/orders/${id}`)
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
@@ -82,8 +78,8 @@ export const payOrder = createAsyncThunk(
     async ({ orderId, paymentResult }, { getState, rejectWithValue }) => {
         try {
             const { auth: { userInfo } } = getState()
-            const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.put(`${API_URL}/orders/${orderId}/pay`, paymentResult, config)
+             
+            const { data } = await api.put(`/orders/${orderId}/pay`, paymentResult)
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
@@ -98,15 +94,10 @@ export const listOrders = createAsyncThunk(
     try {
       const { auth: { userInfo } } = getState()
       
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
+     
       
-      const { data } = await axios.get(
-        `${API_URL}/orders?pageNumber=${pageNumber}&keyword=${keyword}`,
-        config
+      const { data } = await api.get(
+        `/orders?pageNumber=${pageNumber}&keyword=${keyword}`
       )
       return data
     } catch (error) {
@@ -121,8 +112,8 @@ export const deliverOrder = createAsyncThunk(
     async (orderId, { getState, rejectWithValue }) => {
         try {
             const { auth: { userInfo } } = getState()
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } }
-            const { data } = await axios.put(`${API_URL}/orders/${orderId}/deliver`, {}, config)
+            
+            const { data } = await api.put(`/orders/${orderId}/deliver`, {})
             return data
         } catch (error) {
             return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
@@ -137,13 +128,9 @@ export const deleteOrder = createAsyncThunk(
         try {
             const { auth: { userInfo } } = getState() 
 
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${userInfo.token}`,
-                },
-            }
+            
 
-            await axios.delete(`${API_URL}/orders/${id}`, config)
+            await api.delete(`/orders/${id}`)
             return id
         } catch (error) {
             return rejectWithValue(
@@ -166,17 +153,12 @@ export const createCheckoutSession = createAsyncThunk(
         return rejectWithValue('You need to be logged in')
       }
 
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
+      
 
-      const { data } = await axios.post(
-        `${API_URL}/orders/create-checkout-session`, 
-        orderData, 
-        config
+      const { data } = await api.post(
+        `/orders/create-checkout-session`, 
+        orderData
+         
       )
       
       // Redirect to Stripe checkout
@@ -196,7 +178,7 @@ export const verifyStripeSession = createAsyncThunk(
   'order/verifyStripeSession',
   async (sessionId, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`${API_URL}/orders/verify-session/${sessionId}`)
+      const { data } = await api.get(`/orders/verify-session/${sessionId}`)
       return data
     } catch (error) {
       return rejectWithValue(error.response.data.message)

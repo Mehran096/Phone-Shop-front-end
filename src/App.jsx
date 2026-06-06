@@ -58,7 +58,7 @@ useEffect(() => {
     if (hasMerged) return
     
     try {
-      const { data: userCart } = await api.get('/api/users/cart')
+      const { data: userCart } = await api.get('/users/cart')
       
       if (userCart?.cartItems?.length > 0) {
         // Returning user - load DB cart
@@ -66,7 +66,7 @@ useEffect(() => {
         // REMOVED: toast.success('Loaded your saved cart') 
       } else if (cartItems?.length > 0) {
         // New user - save guest cart to DB
-        await api.post('/api/users/cart', { cartItems } )
+        await api.post('/users/cart', { cartItems } )
         localStorage.removeItem('cart')
         toast.success('Guest cart saved to your account')
       }
