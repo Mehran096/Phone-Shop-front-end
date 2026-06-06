@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { getOrderDetails, payOrder, deliverOrder, resetPay, resetDeliver } from '../slices/orderSlice'
-// import { getOrderDetails, payOrder, deliverOrder, resetPay, resetDeliver } 
-//   from '../slices/orderDetailSlice'
+import Loader from '../components/Loader'
+import Message from '../components/Message'
+import { toast } from 'react-toastify'
 
 const OrderScreen = () => {
   const { id: orderId } = useParams()
@@ -11,16 +12,14 @@ const OrderScreen = () => {
   const navigate = useNavigate()
 
   const { order = {}, loading, error, successPay, successDeliver } = useSelector((state) => state.order)
-  // const { order, loading, error } = useSelector((state) => state.orderDetail)
-  //console.log(order.user)
   const { userInfo } = useSelector((state) => state.auth)
 
   useEffect(() => {
-    //console.log('orderId from URL:', orderId)
     if (!userInfo) {
       navigate('/login')
       return
     }
+
     if (!order._id || successPay || successDeliver || order._id !== orderId) {
       dispatch(resetPay())
       dispatch(resetDeliver())
@@ -28,17 +27,53 @@ const OrderScreen = () => {
     }
   }, [dispatch, orderId, successPay, successDeliver, order._id, userInfo, navigate])
 
-  const deliverHandler = () => {
-    dispatch(deliverOrder(orderId))
+  useEffect(() => { 
+    if (successDeliver) toast.success('Order marked as delivered')
+  }, [successDeliver])
+
+  const deliverHandler = async () => {
+    try {
+      await dispatch(deliverOrder(orderId)).unwrap()
+    } catch (err) {
+      toast.error(err || 'Failed to mark as delivered')
+    }
   }
-  const successPaymentHandler = () => {
+
+  const successPaymentHandler = async () => {
     const paymentResult = {
       id: 'test_pay_' + Date.now(),
       status: 'COMPLETED',
       update_time: new Date().toISOString(),
       email_address: userInfo?.email || 'test@example.com',
     }
-    dispatch(payOrder({ orderId, paymentResult }))
+    try {
+      await dispatch(payOrder({ orderId, paymentResult })).unwrap()
+    } catch (err) {
+      toast.error(err || 'Payment failed')
+    }
+  }
+
+  const getOrderNumber = (id) => {
+    if (!id) return ''
+    return parseInt(id.substring(0, 8), 16) % 9000 + 1001
+  }
+
+  const formatDate = (date) => {
+    if (!date) return ''
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const getOrderStatus = () => {
+    if (order.isDelivered) return { text: 'Delivered', color: 'green' }
+    if (order.isPaid) return { text: 'Shipped', color: 'blue' }
+    if (order.paymentMethod === 'Cash on Delivery') return { text: 'Processing', color: 'yellow' }
+    return { text: 'Awaiting Payment', color: 'red' }
   }
 
   if (loading) {
@@ -49,92 +84,71 @@ const OrderScreen = () => {
     )
   }
 
-  if (error) {
-    return <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded m-4'>{error}</div>
-  }
-
-  if (!order._id) {
-    return <div className='p-4'>Order not found</div>
-  }
-
-
-  //   const payWithJazzCash = async () => {
-  //   const { data } = await axios.post('/api/jazzcash/pay', { orderId })
-
-  //   const form = document.createElement('form')
-  //   form.method = 'POST'
-  //   form.action = data.url
-  //   form.style.display = 'none'
-
-  //   Object.keys(data.postData).forEach(key => {
-  //     const input = document.createElement('input')
-  //     input.type = 'hidden'
-  //     input.name = key
-  //     input.value = data.postData[key]
-  //     form.appendChild(input)
-  //   })
-
-  //   document.body.appendChild(form)
-  //   form.submit()
-  // }
+  if (error) return <Message variant='danger'>{error}</Message>
+  if (!order._id) return <Message variant='danger'>Order not found</Message>
 
   return (
     <div className='container mx-auto px-4 py-8'>
-      <h1 className='text-3xl font-bold mb-4 break-all sm:break-words'>Order {order._id}</h1>
+      <h1 className='text-3xl font-bold mb-2'>Order #{getOrderNumber(order._id)}</h1>
+      <p className='text-gray-500 mb-6'>Placed on {formatDate(order.createdAt)}</p>
+
       <div className='grid md:grid-cols-3 gap-6'>
         <div className='md:col-span-2 space-y-6'>
-          <div className='bg-white p-6 rounded-lg shadow'>
+          {/* Shipping Card */}
+          <div className='bg-white p-6 rounded-lg shadow-md'>
             <h2 className='text-xl font-semibold mb-4'>Shipping</h2>
-            <p><strong>Name:</strong> {order.user?.name}</p>
-            <p><strong>Email:</strong> {order.user?.email}</p>
-            <p>
+            <p className='mb-2'><strong>Name:</strong> {order.user?.name}</p>
+            <p className='mb-2'><strong>Email:</strong> {order.user?.email}</p>
+            <p className='mb-4'>
               <strong>Address:</strong> {order.shippingAddress?.address}, {order.shippingAddress?.city}{' '}
               {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
             </p>
             {order.isDelivered ? (
-              <div className='mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded'>
-                Delivered on {order.deliveredAt && new Date(order.deliveredAt).toLocaleDateString()}
-              </div>
+              <Message variant='success'>Delivered on {formatDate(order.deliveredAt)}</Message>
             ) : (
-              <div className='mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded'>
-                    Order will be delivered very soon...
-              </div>
+              <Message variant='info'>Order is being processed</Message>
             )}
           </div>
 
-          <div className='bg-white p-6 rounded-lg shadow'>
+          {/* Payment Card */}
+          <div className='bg-white p-6 rounded-lg shadow-md'>
             <h2 className='text-xl font-semibold mb-4'>Payment Method</h2>
-            <p><strong>Method:</strong> {order.paymentMethod}</p>
+            <p className='mb-4'><strong>Method:</strong> {order.paymentMethod}</p>
             {order.isPaid ? (
-              <div className='mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded'>
-                Paid on {order.paidAt && new Date(order.paidAt).toLocaleDateString()}
+              <div className='space-y-2'>
+                <Message variant='success'>Paid on {formatDate(order.paidAt)}</Message>
                 {order.paymentResult?.email_address && (
-                  <div className='text-sm mt-1'>Email: {order.paymentResult.email_address}</div>
+                  <p className='text-sm text-gray-600'>Email: {order.paymentResult.email_address}</p>
                 )}
                 {order.paymentResult?.id && (
-                  <div className='text-sm mt-1'>Transaction ID: {order.paymentResult.id}</div>
+                  <p className='text-sm text-gray-600'>Transaction ID: {order.paymentResult.id}</p>
                 )}
               </div>
+            ) : order.paymentMethod === 'Cash on Delivery' ? (
+              <Message variant='warning'>Pay when you receive your order</Message>
             ) : (
-              <div className='mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded'>
-                Not Paid
-              </div>
+              <Message variant='danger'>Not Paid</Message>
             )}
           </div>
 
-          <div className='bg-white p-6 rounded-lg shadow'>
+          {/* Order Items Card */}
+          <div className='bg-white p-6 rounded-lg shadow-md'>
             <h2 className='text-xl font-semibold mb-4'>Order Items</h2>
             {!order.orderItems || order.orderItems.length === 0 ? (
-              <div>Order is empty</div>
+              <Message>Order is empty</Message>
             ) : (
               <div className='space-y-4'>
                 {order.orderItems.map((item) => (
-                  <div key={item.product} className='flex items-center gap-4 border-b pb-4'>
+                  <div key={item.product} className='flex items-center gap-4 border-b pb-4 last:border-b-0'>
                     <img src={item.image} alt={item.name} className='w-16 h-16 object-cover rounded' />
-                    <Link to={`/product/${item.product}`} className='flex-1 text-blue-600 hover:underline'>
-                      {item.name}
-                    </Link>
-                    <div>{item.qty} x ${item.price} = ${(item.qty * item.price).toFixed(2)}</div>
+                    <div className='flex-1'>
+                      <Link to={`/product/${item.product}`} className='text-blue-600 hover:underline font-medium'>
+                        {item.name}
+                      </Link>
+                    </div>
+                    <div className='text-gray-700'>
+                      {item.qty} x ${item.price} = <strong>${(item.qty * item.price).toFixed(2)}</strong>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -142,45 +156,59 @@ const OrderScreen = () => {
           </div>
         </div>
 
-        <div className='bg-white p-6 rounded-lg shadow h-fit'>
-          <h2 className='text-xl font-semibold mb-4'>Order Summary</h2>
-          <div className='space-y-2'>
-            <div className='flex justify-between'><span>Items</span><span>${order.itemsPrice}</span></div>
-            <div className='flex justify-between'><span>Shipping</span><span>${order.shippingPrice}</span></div>
-            <div className='flex justify-between'><span>Tax</span><span>${order.taxPrice}</span></div>
-            <div className='flex justify-between font-bold text-lg border-t pt-2'>
-              <span>Total</span><span>${order.totalPrice}</span>
+        {/* Order Summary */}
+        <div className='md:col-span-1'>
+          <div className='bg-white p-6 rounded-lg shadow-md h-fit'>
+            <h2 className='text-xl font-semibold mb-4'>Order Summary</h2>
+            
+            <div className='mb-4'>
+              {(() => {
+                const status = getOrderStatus()
+                return (
+                  <span className={`bg-${status.color}-100 text-${status.color}-800 px-3 py-1 rounded-full text-sm font-medium`}>
+                    {status.text}
+                  </span>
+                )
+              })()}
             </div>
-            {userInfo?.isAdmin && order.paymentMethod === 'Cash on Delivery' && !order.isPaid && (
-              <button 
-              onClick={successPaymentHandler}
-              className='w-full mt-4 bg-blue-600 text-white py-2 rounded hover:bg-blue-700'
+
+            <div className='space-y-2 mb-6'>
+              <div className='flex justify-between'>
+                <span>Items</span>
+                <span>${order.itemsPrice?.toFixed(2)}</span>
+              </div>
+              <div className='flex justify-between'>
+                <span>Shipping</span>
+                <span>${order.shippingPrice?.toFixed(2)}</span>
+              </div>
+              <div className='flex justify-between'>
+                <span>Tax</span>
+                <span>${order.taxPrice?.toFixed(2)}</span>
+              </div>
+              <hr className='my-2' />
+              <div className='flex justify-between font-bold text-lg'>
+                <span>Total</span>
+                <span>${order.totalPrice?.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {userInfo?.isAdmin && !order.isPaid && (
+              <button
+                type='button'
+                onClick={successPaymentHandler}
+                className='w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 mb-3 transition disabled:opacity-50'
               >
                 Mark as Paid
               </button>
             )}
 
-            {/* {!order.isPaid && userInfo && (
+            {userInfo?.isAdmin && order.isPaid && !order.isDelivered && (
               <button
-                onClick={successPaymentHandler}
-                className='w-full mt-4 bg-blue-600 text-white py-2 rounded hover:bg-blue-700'
-              >
-                Test Pay
-              </button>
-            )} */}
-            {/* 
-            {!order.isPaid && order.paymentMethod === 'JazzCash' && (
-  <button onClick={payWithJazzCash} className='btn btn-primary'>
-    Pay with JazzCash
-  </button>
-)} */}
-
-            {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
-              <button
+                type='button'
                 onClick={deliverHandler}
-                className='w-full mt-4 bg-green-600 text-white py-2 rounded hover:bg-green-700'
+                className='w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:opacity-50'
               >
-                Mark As Delivered
+                Mark as Delivered
               </button>
             )}
           </div>

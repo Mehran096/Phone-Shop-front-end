@@ -1,46 +1,39 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux' 
-import { clearCartItems } from '../slices/cartSlice' 
+import { clearCartItems, resetCart } from '../slices/cartSlice' 
 import { createCheckoutSession, createOrder, resetOrder} from '../slices/orderSlice'
-//import { createOrder } from '../slices/orderCreateSlice'
+ 
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const [orderPlaced, setOrderPlaced] = useState(false)
 
   const cart = useSelector((state) => state.cart)
   
    
  const { order, success, error, loading } = useSelector((state) => state.order)
-  //const { userInfo } = useSelector((state) => state.auth) 
-  //console.log('orderCreate state:', useSelector((state) => state.createOrder))
-
+   
   useEffect(() => {
-    if (!cart?.shippingAddress?.address) {
-      navigate('/shipping')
-    } else if (!cart?.paymentMethod) {
-      navigate('/payment')
-    }
-  }, [cart?.paymentMethod, cart?.shippingAddress?.address, navigate])
-
-  useEffect(() => {
-   // console.log('order state:', order)
-    if (success && order?._id) {
-      navigate(`/order/${order._id}`)
-      dispatch(clearCartItems())
-      dispatch(resetOrder())
-    }
-    
-  }, [success, navigate, dispatch, order])
+  if (!orderPlaced && !cart?.shippingAddress?.address) {
+    navigate('/shipping')
+  } else if (!orderPlaced && !cart?.paymentMethod) {
+    navigate('/payment')
+  }
+}, [cart?.paymentMethod, cart?.shippingAddress?.address, navigate, orderPlaced])
 
   // useEffect(() => {
-  //    if (!userInfo) {
-  //   navigate('/login?redirect=/placeorder')
-  // }
+  //  // console.log('order state:', order)
+  //   if (success && order?._id) {
+  //     navigate(`/order/${order._id}`)
+  //     dispatch(clearCartItems())
+  //     dispatch(resetOrder())
+  //   }
     
-  // }, [userInfo, navigate])
+  // }, [success, navigate, dispatch, order])
 
+   
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2)
   }
@@ -62,37 +55,14 @@ const taxPrice = addDecimals(
     Number(taxPrice)
   ).toFixed(2)
 
-//   const placeOrderHandler = async () => {
-      
-//   try {
-//     const session = await dispatch(createCheckoutSession({
-//       orderItems: cart.cartItems.map(item => ({
-//         product: item._id,  // <-- this is the missing field
-//         name: item.name,
-//         qty: item.qty,
-//         price: item.price,
-//         image: item.image,
-//       })),
-//       shippingAddress: cart.shippingAddress,
-//       paymentMethod: cart.paymentMethod,
-//       itemsPrice: cart.itemsPrice,
-//       taxPrice: cart.taxPrice,
-//       shippingPrice: cart.shippingPrice,
-//       totalPrice: cart.totalPrice,
-//     })).unwrap()
-//     navigate(`/order/${createdOrder._id}`)
-//     dispatch(clearCartItems())
-//     window.location.href = session.url
-//   } catch (err) {
-//     console.error(err)
-//   }
-// }
+ 
 const placeOrderHandler = async () => {
   
   try {
     if (cart.paymentMethod === 'Cash on Delivery') {
       // COD: create order directly, no Stripe
        //console.log('Cart items before order:', cart.cartItems)
+       setOrderPlaced(true)
       const createdOrder = await dispatch(createOrder({
         orderItems: cart.cartItems.map(item => ({
           product: item.product,
@@ -100,6 +70,8 @@ const placeOrderHandler = async () => {
           qty: item.qty,
           price: item.price,
           image: item.image,
+          color: item.color,    
+    hexCode: item.hexCode, 
         })),
         shippingAddress: cart.shippingAddress,
         paymentMethod: cart.paymentMethod,
@@ -109,10 +81,13 @@ const placeOrderHandler = async () => {
         totalPrice: cart.totalPrice,
       })).unwrap();
 
+       
       navigate(`/order/${createdOrder._id}`);
+       dispatch(resetCart());
 
     } else {
       // Stripe: create order + checkout session
+       setOrderPlaced(true)
       const createdOrder = await dispatch(createCheckoutSession({
         orderItems: cart.cartItems.map(item => ({
           product: item.product,
@@ -120,6 +95,8 @@ const placeOrderHandler = async () => {
           qty: item.qty,
           price: item.price,
           image: item.image,
+          color: item.color,    
+          hexCode: item.hexCode, 
         })),
         shippingAddress: cart.shippingAddress,
         paymentMethod: cart.paymentMethod,
@@ -127,45 +104,17 @@ const placeOrderHandler = async () => {
         taxPrice: cart.taxPrice,
         shippingPrice: cart.shippingPrice,
         totalPrice: cart.totalPrice,
-      })).unwrap();
-       dispatch(clearCartItems())
+      })).unwrap(); 
+       
       window.location.href = createdOrder.url; // redirect to Stripe
+      // dispatch(resetCart());
     }
   } catch (err) {
     console.log(err);
   }
 };
 
-
-
-// const placeOrderHandler = async () => {
-//   const res = await dispatch(createOrder({
-//     orderItems: cart.cartItems,
-//     shippingAddress: cart.shippingAddress,
-//     paymentMethod: cart.paymentMethod,
-//     itemsPrice: cart.itemsPrice,
-//     taxPrice: cart.taxPrice,
-//     shippingPrice: cart.shippingPrice,
-//     totalPrice: cart.totalPrice,
-//   })).unwrap()
-
-//   // res._id is the new order ID
-//   navigate(`/order/${res._id}`)
-// }
-
-  // const placeOrderHandler = () => {
-  //   dispatch(
-  //     createOrder({
-  //       orderItems: cart.cartItems,
-  //       shippingAddress: cart.shippingAddress,
-  //       paymentMethod: cart.paymentMethod,
-  //       itemsPrice,
-  //       shippingPrice,
-  //       taxPrice,
-  //       totalPrice,
-  //     })
-  //   )
-  // }
+ 
 
   if (loading) {
     return (

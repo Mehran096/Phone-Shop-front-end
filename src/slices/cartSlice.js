@@ -1,61 +1,47 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-const cartFromStorage = localStorage.getItem('cart')
-  ? JSON.parse(localStorage.getItem('cart'))
-  : null
+// Read from separate localStorage keys - NOT 'cart'
+const cartItemsFromStorage = localStorage.getItem('cartItems')
+  ? JSON.parse(localStorage.getItem('cartItems'))
+  : []
+
+const shippingAddressFromStorage = localStorage.getItem('shippingAddress')
+  ? JSON.parse(localStorage.getItem('shippingAddress'))
+  : {}
+
+const paymentMethodFromStorage = localStorage.getItem('paymentMethod')
+  ? localStorage.getItem('paymentMethod')
+  : 'Stripe'
 
 const initialState = {
-  cartItems: cartFromStorage?.cartItems || [],
-  shippingAddress: cartFromStorage?.shippingAddress || {},
-  paymentMethod: cartFromStorage?.paymentMethod || 'Stripe',
-  itemsPrice: cartFromStorage?.itemsPrice || 0,
-  shippingPrice: cartFromStorage?.shippingPrice || 0,
-  taxPrice: cartFromStorage?.taxPrice || 0,
-  totalPrice: cartFromStorage?.totalPrice || 0,
+  cartItems: cartItemsFromStorage,
+  shippingAddress: shippingAddressFromStorage,
+  paymentMethod: paymentMethodFromStorage,
+  itemsPrice: 0,
+  shippingPrice: 0,
+  taxPrice: 0,
+  totalPrice: 0,
 }
 
-// const updateCartPrices = (state) => {
-  
-//   state.itemsPrice = state.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
-//   state.shippingPrice = state.itemsPrice > 500 ? 0 : 10
-//   state.taxPrice = Number((0.15 * state.itemsPrice).toFixed(2))
-//   state.totalPrice = (
-//     state.itemsPrice +
-//     state.shippingPrice +
-//     state.taxPrice
-//   ).toFixed(2)
-//   localStorage.setItem('cart', JSON.stringify(state))
-// }
-
 const updateCartPrices = (state) => {
-  // Helper to avoid 0.1 + 0.2 = 0.30000004 bugs
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2)
   }
 
-  // Calculate itemsPrice as number first
-  state.itemsPrice = state.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
-  
-  // Free shipping over 500, else 10
-  state.shippingPrice = state.itemsPrice > 500 ? 0 : 10
-  
-  // Tax is 15%
-  state.taxPrice = Number((0.15 * state.itemsPrice).toFixed(2))
-  
-  // Now add as numbers, then format to string with 2 decimals
-  state.totalPrice = (
+  state.itemsPrice = addDecimals(
+    state.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+  )
+
+  state.shippingPrice = addDecimals(state.itemsPrice > 500 ? 0 : 10)
+  state.taxPrice = addDecimals(Number((0.15 * state.itemsPrice).toFixed(2)))
+
+  state.totalPrice = addDecimals(
     Number(state.itemsPrice) +
     Number(state.shippingPrice) +
     Number(state.taxPrice)
-  ).toFixed(2)
-  
-  // Format itemsPrice and shippingPrice last so they don't break math above
-  state.itemsPrice = addDecimals(state.itemsPrice)
-  state.shippingPrice = addDecimals(state.shippingPrice)
-  state.taxPrice = addDecimals(state.taxPrice)
+  )
 
-  localStorage.setItem('cart', JSON.stringify(state))
-  return state
+  localStorage.setItem('cartItems', JSON.stringify(state.cartItems))
 }
 
 const cartSlice = createSlice({
@@ -64,8 +50,7 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (state, action) => {
       const item = action.payload
-      
-      // Key = product + color combination
+
       const existItem = state.cartItems.find(
         (x) => x.product === item.product && x.color === item.color
       )
@@ -76,9 +61,9 @@ const cartSlice = createSlice({
         )
       } else {
         state.cartItems = [
-        ...state.cartItems,
+          ...state.cartItems,
           {
-            product: item.product, // _id
+            product: item.product,
             name: item.name,
             image: item.image,
             price: item.price,
@@ -86,7 +71,7 @@ const cartSlice = createSlice({
             hexCode: item.hexCode || '',
             countInStock: item.countInStock || 0,
             qty: item.qty,
-          }
+          },
         ]
       }
 
@@ -94,7 +79,6 @@ const cartSlice = createSlice({
     },
 
     removeFromCart: (state, action) => {
-      // Now takes { product, color } instead of just product
       const { product, color } = action.payload
       state.cartItems = state.cartItems.filter(
         (x) => !(x.product === product && x.color === color)
@@ -115,22 +99,40 @@ const cartSlice = createSlice({
 
     saveShippingAddress: (state, action) => {
       state.shippingAddress = action.payload
-      localStorage.setItem('cart', JSON.stringify(state))
+      localStorage.setItem('shippingAddress', JSON.stringify(state.shippingAddress))
     },
 
     savePaymentMethod: (state, action) => {
       state.paymentMethod = action.payload
-      localStorage.setItem('cart', JSON.stringify(state))
+      localStorage.setItem('paymentMethod', action.payload)
+    },
+
+    setCartItems: (state, action) => {
+      state.cartItems = action.payload
+      updateCartPrices(state)
     },
 
     clearCartItems: (state) => {
       state.cartItems = []
-      updateCartPrices(state)
+      state.itemsPrice = 0
+      state.shippingPrice = 0
+      state.taxPrice = 0
+      state.totalPrice = 0
+      localStorage.removeItem('cartItems')
     },
-    setCartItems: (state, action) => { // <- Add this
-  state.cartItems = action.payload
-  updateCartPrices(state)
-},
+
+    resetCart: (state) => {
+      state.cartItems = []
+      state.shippingAddress = {}
+      state.paymentMethod = ''
+      state.itemsPrice = 0
+      state.shippingPrice = 0
+      state.taxPrice = 0
+      state.totalPrice = 0
+      localStorage.removeItem('cartItems')
+      localStorage.removeItem('shippingAddress')
+      localStorage.removeItem('paymentMethod')
+    },
   },
 })
 
@@ -142,6 +144,7 @@ export const {
   savePaymentMethod,
   clearCartItems,
   setCartItems,
+  resetCart,
 } = cartSlice.actions
 
 export default cartSlice.reducer

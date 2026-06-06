@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { updateUserProfile, logout } from '../slices/authSlice'
+import { updateUserProfile } from '../slices/authSlice'
 import { listMyOrders } from '../slices/orderSlice'
-import { FaTimes } from 'react-icons/fa'
+import Loader from '../components/Loader'
+import Message from '../components/Message'
+import { toast } from 'react-toastify'
 
 const ProfileScreen = () => {
   const [name, setName] = useState('')
@@ -15,8 +17,10 @@ const ProfileScreen = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const { userInfo, loading: loadingUpdate, error: errorUpdate, success: successUpdate } = useSelector((state) => state.auth)
-  const { myOrders, loading: loadingOrders, error: errorOrders } = useSelector((state) => state.order)
+  const { userInfo, loading: loadingUpdate, error: errorUpdate } =
+    useSelector((state) => state.auth)
+  const { myOrders, loading: loadingOrders, error: errorOrders } =
+    useSelector((state) => state.order)
 
   useEffect(() => {
     if (!userInfo) {
@@ -26,162 +30,176 @@ const ProfileScreen = () => {
       setEmail(userInfo.email)
       dispatch(listMyOrders())
     }
-  }, [dispatch, userInfo, navigate, successUpdate])
+  }, [dispatch, navigate, userInfo])
 
-  const submitHandler = (e) => {
+  const submitHandler = async (e) => {
     e.preventDefault()
+    setMessage(null)
+
     if (password !== confirmPassword) {
       setMessage('Passwords do not match')
-    } else {
-      setMessage(null)
-      dispatch(updateUserProfile({ id: userInfo._id, name, email, password }))
+      return
+    }
+
+    try {
+      const userData = { id: userInfo._id, name, email }
+      if (password) userData.password = password // Only send if changed
+
+      await dispatch(updateUserProfile(userData)).unwrap()
+      toast.success('Profile updated successfully')
+      setPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      setMessage(err || 'Update failed')
+      toast.error(err || 'Update failed')
     }
   }
 
-  const logoutHandler = () => {
-    dispatch(logout())
-    navigate('/login')
-  }
-
   return (
-  <div className='container mx-auto px-4 py-6'>
-    
-    <h1 className='text-2xl md:text-3xl font-bold mb-6'>Profile</h1>
+    <div className='container mx-auto px-4 py-8'>
+      <h1 className='text-3xl font-bold mb-6'>My Account</h1>
 
-    {message && <div className='bg-red-100 text-red-700 p-3 rounded mb-4'>{message}</div>}
-    {errorUpdate && <div className='bg-red-100 text-red-700 p-3 rounded mb-4'>{errorUpdate}</div>}
-    {successUpdate && <div className='bg-green-100 text-green-700 p-3 rounded mb-4'>Profile Updated</div>}
+      <div className='grid lg:grid-cols-3 gap-6'>
+        {/* Left: Profile Card */}
+        <div className='lg:col-span-1'>
+          <div className='bg-white p-6 rounded-lg shadow-md'>
+            <h2 className='text-xl font-semibold mb-4'>Update Profile</h2>
 
-    {/* Stack on mobile, 2 columns on desktop */}
-    <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-      
-      {/* Left: Profile Form */}
-      <div className='lg:col-span-1 bg-white p-5 rounded-lg shadow'>
-        <h2 className='text-xl font-semibold mb-4'>User Profile</h2>
-        
-        <form onSubmit={submitHandler}>
-          <div className='mb-4'>
-            <label className='block text-sm font-medium mb-1'>Name</label>
-            <input
-              type='text'
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className='w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            />
+            {message && <Message variant='danger'>{message}</Message>}
+            {errorUpdate && <Message variant='danger'>{errorUpdate}</Message>}
+
+            <form onSubmit={submitHandler} className='space-y-4'>
+              <div>
+                <label className='block text-sm font-medium mb-1'>Name</label>
+                <input
+                  type='text'
+                  placeholder='Enter name'
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className='w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                  required
+                />
+              </div>
+
+              <div>
+                <label className='block text-sm font-medium mb-1'>Email Address</label>
+                <input
+                  type='email'
+                  placeholder='Enter email'
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className='w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                  required
+                />
+              </div>
+
+              <div>
+                <label className='block text-sm font-medium mb-1'>New Password</label>
+                <input
+                  type='password'
+                  placeholder='Leave blank to keep current'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className='w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                />
+              </div>
+
+              <div>
+                <label className='block text-sm font-medium mb-1'>Confirm Password</label>
+                <input
+                  type='password'
+                  placeholder='Confirm new password'
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className='w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                />
+              </div>
+
+              <button
+                type='submit'
+                disabled={loadingUpdate}
+                className='w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition'
+              >
+                {loadingUpdate ? <Loader /> : 'Update'}
+              </button>
+            </form>
           </div>
+        </div>
 
-          <div className='mb-4'>
-            <label className='block text-sm font-medium mb-1'>Email</label>
-            <input
-              type='email'
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className='w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            />
+        {/* Right: Orders Table */}
+        <div className='lg:col-span-2'>
+          <div className='bg-white p-6 rounded-lg shadow-md'>
+            <h2 className='text-xl font-semibold mb-4'>My Orders</h2>
+
+            {loadingOrders ? (
+              <Loader />
+            ) : errorOrders ? (
+              <Message variant='danger'>{errorOrders}</Message>
+            ) : myOrders?.length === 0 ? (
+              <div className='text-center py-8'>
+                <p className='text-gray-500 mb-4'>You haven't placed any orders yet</p>
+                <Link to='/' className='text-blue-600 hover:underline font-medium'>
+                  Start Shopping
+                </Link>
+              </div>
+            ) : (
+              <div className='overflow-x-auto'>
+                <table className='w-full text-sm'>
+                  <thead className='bg-gray-100'>
+                    <tr>
+                      <th className='px-4 py-3 text-left font-medium text-gray-600 uppercase text-xs'>Order</th>
+                      <th className='px-4 py-3 text-left font-medium text-gray-600 uppercase text-xs'>Date</th>
+                      <th className='px-4 py-3 text-left font-medium text-gray-600 uppercase text-xs'>Total</th>
+                      <th className='px-4 py-3 text-left font-medium text-gray-600 uppercase text-xs'>Status</th>
+                      <th className='px-4 py-3'></th>
+                    </tr>
+                  </thead>
+                  <tbody className='divide-y divide-gray-200'>
+                    {myOrders.map((order, index) => (
+                      <tr key={order._id} className='hover:bg-gray-50'>
+                        <td className='px-4 py-3 font-medium'>#{1001 + index}</td>
+                        <td className='px-4 py-3 text-gray-600'>
+                          {new Date(order.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </td>
+                        <td className='px-4 py-3 font-medium'>${order.totalPrice.toFixed(2)}</td>
+                        <td className='px-4 py-3'>
+                          {order.isDelivered ? (
+                            <span className='bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium'>
+                              Delivered
+                            </span>
+                          ) : order.isPaid ? (
+                            <span className='bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium'>
+                              Shipped
+                            </span>
+                          ) : (
+                            <span className='bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium'>
+                              Processing
+                            </span>
+                          )}
+                        </td>
+                        <td className='px-4 py-3'>
+                          <button
+                            className='text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline'
+                            onClick={() => navigate(`/order/${order._id}`)}
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-
-          <div className='mb-4'>
-            <label className='block text-sm font-medium mb-1'>Password</label>
-            <input
-              type='password'
-              placeholder='Enter new password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className='w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            />
-          </div>
-
-          <div className='mb-4'>
-            <label className='block text-sm font-medium mb-1'>Confirm Password</label>
-            <input
-              type='password'
-              placeholder='Confirm new password'
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className='w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            />
-          </div>
-
-          <button
-            type='submit'
-            disabled={loadingUpdate}
-            className='w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 mb-2'
-          >
-            Update
-          </button>
-
-          <button
-            type='button'
-            onClick={() => {
-              dispatch(logout())
-              navigate('/login')
-            }}
-            className='w-full bg-red-600 text-white py-2 rounded hover:bg-red-700'
-          >
-            Logout
-          </button>
-        </form>
-      </div>
-
-      {/* Right: Orders Table */}
-      <div className='lg:col-span-2'>
-        <h2 className='text-xl font-semibold mb-4'>My Orders</h2>
-        
-        {loadingOrders? (
-          <p>Loading...</p>
-        ) : errorOrders? (
-          <div className='bg-red-100 text-red-700 p-3 rounded'>{errorOrders}</div>
-        ) : (
-          <div className='overflow-x-auto bg-white rounded-lg shadow'>
-            <table className='w-full text-sm'>
-              <thead className='bg-gray-100'>
-                <tr>
-                  <th className='px-4 py-3 text-left'>ID</th>
-                  <th className='px-4 py-3 text-left'>DATE</th>
-                  <th className='px-4 py-3 text-left'>TOTAL</th>
-                  <th className='px-4 py-3 text-left'>PAID</th>
-                  <th className='px-4 py-3 text-left'>DELIVERED</th>
-                  <th className='px-4 py-3'></th>
-                </tr>
-              </thead>
-              <tbody>
-                {myOrders.map((order) => (
-                  <tr key={order._id} className='border-t hover:bg-gray-50'>
-                    <td className='px-4 py-3 truncate max-w-[100px]'>{order._id}</td>
-                    <td className='px-4 py-3'>{order.createdAt.substring(0, 10)}</td>
-                    <td className='px-4 py-3'>${order.totalPrice}</td>
-                    <td className='px-4 py-3'>
-                      {order.isPaid? (
-                        <span className='text-green-600'>{order.paidAt.substring(0, 10)}</span>
-                      ) : (
-                        <span className='text-red-600'><FaTimes /></span>
-                      )}
-                    </td>
-                    <td className='px-4 py-3'>
-                      {order.isDelivered? (
-                        <span className='text-green-600'>{order.deliveredAt.substring(0, 10)}</span>
-                      ) : (
-                        <span className='text-red-600'><FaTimes /></span>
-                      )}
-                    </td>
-                    <td className='px-4 py-3'>
-                      <button
-                        className='bg-gray-200 px-3 py-1 rounded text-sm hover:bg-gray-300'
-                        onClick={() => navigate(`/order/${order._id}`)}
-                      >
-                        Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
 }
 
 export default ProfileScreen

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import {Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { register } from '../slices/authSlice'
+import Loader from '../components/Loader'
+import { toast } from 'react-toastify'
+
 
 function RegisterScreen() {
   const [name, setName] = useState('')
@@ -13,13 +16,17 @@ function RegisterScreen() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
+  const { search } = useLocation()
+  const sp = new URLSearchParams(search)
+  const redirect = sp.get('redirect') || '/'
+
   const { userInfo, loading, error } = useSelector((state) => state.auth)
 
   useEffect(() => {
     if (userInfo) {
-      navigate('/')
+      navigate(redirect) // App.jsx handles cart merge
     }
-  }, [navigate, userInfo])
+  }, [navigate, userInfo, redirect])
 
   const submitHandler = async (e) => {
     e.preventDefault()
@@ -29,8 +36,14 @@ function RegisterScreen() {
       setLocalError('Passwords do not match')
       return
     }
-
-    dispatch(register({ name, email, password }))
+    
+    try {
+      await dispatch(register({ name, email, password })).unwrap()
+      // Success: useEffect will redirect + App.jsx will show cart toast
+    } catch (err) {
+      setLocalError(err || 'Registration failed')
+      toast.error(err || 'Registration failed')
+    }
   }
 
   return (
@@ -39,7 +52,11 @@ function RegisterScreen() {
         <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">
           Create Account
         </h2>
-
+         {(localError || error) && (
+          <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">
+            {localError || error}
+          </div>
+        )}
         <form onSubmit={submitHandler}>
           <div className="mb-4">
             <label className="block text-gray-700 mb-2">Name</label>

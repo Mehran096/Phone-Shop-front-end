@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
+import { toast } from 'react-toastify'
+ 
 const API_URL = import.meta.env.VITE_API_URL
 
 export const createOrder = createAsyncThunk(
@@ -190,6 +192,18 @@ export const createCheckoutSession = createAsyncThunk(
   }
 )
 
+export const verifyStripeSession = createAsyncThunk(
+  'order/verifyStripeSession',
+  async (sessionId, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.get(`${API_URL}/orders/verify-session/${sessionId}`)
+      return data
+    } catch (error) {
+      return rejectWithValue(error.response.data.message)
+    }
+  }
+)
+
 
 const orderSlice = createSlice({
     name: 'order',
@@ -281,6 +295,20 @@ const orderSlice = createSlice({
         state.loading = false
       })
       .addCase(createCheckoutSession.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+      })
+
+      .addCase(verifyStripeSession.pending, (state) => {
+        state.loading = true
+      })
+      .addCase(verifyStripeSession.fulfilled, (state, action) => {
+        state.loading = false
+        state.successPay = true
+        state.order = action.payload // This gets the paid order from backend
+        toast.success('Order paid successfully')
+      })
+      .addCase(verifyStripeSession.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })

@@ -12,9 +12,16 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const config = { headers: { 'Content-Type': 'application/json' } }
-      const { data } = await axios.post(`${API_URL}/users/auth`, { email, password }, config)
-      localStorage.setItem('userInfo', JSON.stringify(data))
+      const config = { 
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true // <- Add this for cookies
+      }
+      const { data } = await axios.post(
+        `${API_URL}/users/auth`, 
+        { email, password }, 
+        config
+      )
+      // localStorage.setItem removed - handle in .fulfilled
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -26,9 +33,16 @@ export const register = createAsyncThunk(
   'auth/register',
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
-      const config = { headers: { 'Content-Type': 'application/json' } }
-      const { data } = await axios.post(`${API_URL}/users`, { name, email, password }, config)
-      localStorage.setItem('userInfo', JSON.stringify(data))
+      const config = { 
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true // <- Add this for cookies
+      }
+      const { data } = await axios.post(
+        `${API_URL}/users`, 
+        { name, email, password }, 
+        config
+      )
+      // localStorage.setItem removed - handle in .fulfilled
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -36,32 +50,18 @@ export const register = createAsyncThunk(
   }
 )
 
-//logout
-// export const logoutUser = createAsyncThunk(
-//   'auth/logout',
-//   async (_, { dispatch }) => {
-//     await fetch(`${API_URL}/users/logout`, {
-//       method: 'POST',
-//       credentials: 'include',
-//     })
-//     dispatch(clearCartItems()) // clear cart on logout
-//     return null
-//   }
-// )
+ 
 
 export const updateUserProfile = createAsyncThunk(
   'auth/updateUserProfile',
-  async (user, { getState, rejectWithValue }) => {
+  async (user, { rejectWithValue }) => {
     try {
-      const { auth: { userInfo } } = getState()
       const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true // <- Cookie handles auth now
       }
       const { data } = await axios.put(`${API_URL}/users/profile`, user, config)
-      localStorage.setItem('userInfo', JSON.stringify(data))
+      // localStorage.setItem removed - handle in .fulfilled
       return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -180,6 +180,7 @@ const authSlice = createSlice({
     },
     logout: (state) => {
       localStorage.removeItem('userInfo')
+      sessionStorage.removeItem('cartMerged')
       state.userInfo = null
       state.loading = false
       state.error = null
@@ -242,19 +243,28 @@ const authSlice = createSlice({
         state.error = action.payload
       })
       .addCase(login.pending, (state) => { state.loading = true; state.error = null })
-      .addCase(login.fulfilled, (state, action) => { state.loading = false; state.userInfo = action.payload })
+      .addCase(login.fulfilled, (state, action) => { 
+  state.loading = false; 
+  state.userInfo = action.payload 
+  localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
+})
       .addCase(login.rejected, (state, action) => { state.loading = false; state.error = action.payload })
 
       .addCase(register.pending, (state) => { state.loading = true; state.error = null })
-      .addCase(register.fulfilled, (state, action) => { state.loading = false; state.userInfo = action.payload })
+      .addCase(register.fulfilled, (state, action) => { 
+  state.loading = false; 
+  state.userInfo = action.payload 
+  localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
+})
       .addCase(register.rejected, (state, action) => { state.loading = false; state.error = action.payload })
 
       .addCase(updateUserProfile.pending, (state) => { state.loading = true; state.success = false })
       .addCase(updateUserProfile.fulfilled, (state, action) => {
-        state.loading = false
-        state.userInfo = action.payload
-        state.success = true
-      })
+  state.loading = false
+  state.userInfo = action.payload
+  state.success = true
+  localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
+})
       .addCase(updateUserProfile.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload

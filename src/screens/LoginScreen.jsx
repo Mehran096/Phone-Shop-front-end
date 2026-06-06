@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { login } from '../slices/authSlice'
-import { clearCartItems } from '../slices/cartSlice'
+import { clearCartItems, setCartItems } from '../slices/cartSlice'
+import { toast } from 'react-toastify'
+import axios from 'axios'
 
 function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -24,18 +26,14 @@ function LoginScreen() {
   }, [navigate, userInfo, redirect])
 
  const submitHandler = async (e) => {
-    e.preventDefault()
-    try {
-      await dispatch(login({ email, password })).unwrap()
-      
-      // Simple fix: Clear any guest cart when user logs in
-      dispatch(clearCartItems())
-      toast.success('Logged in successfully')
-      
-    } catch (err) {
-      toast.error(err?.data?.message || err.message || 'Login failed')
-    }
+  e.preventDefault()
+  try {
+    await dispatch(login({ email, password })).unwrap()
+    // Merge happens automatically in App.js useEffect
+  } catch (err) {
+    toast.error(err?.data?.message || err.message)
   }
+}
 
   return (
    <div className='min-h-screen bg-gray-100 flex flex-col justify-center py-6 px-4 sm:px-6'>
