@@ -1,42 +1,35 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { login } from '../slices/authSlice'
+import { forgotPassword } from '../slices/authSlice'
 import { toast } from 'react-toastify'
-import { FaEye, FaEyeSlash } from 'react-icons/fa'
 
-function LoginScreen() {
+function ForgotPasswordScreen() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
 
   const dispatch = useDispatch()
-  const navigate = useNavigate()
   const { search } = useLocation()
 
-  const { userInfo, loading, error } = useSelector((state) => state.auth)
+  const { loading, error, success, message } = useSelector((state) => state.auth)
 
   const sp = new URLSearchParams(search)
-  const redirect = sp.get('redirect') || '/'
-
-  useEffect(() => {
-    if (userInfo) {
-      navigate(redirect)
-    }
-  }, [navigate, userInfo, redirect])
+  const redirect = sp.get('redirect') || '/login'
 
   useEffect(() => {
     if (error) {
       toast.error(error)
     }
-  }, [error])
+    if (success) {
+      toast.success(message || 'Reset link sent. Check your inbox')
+    }
+  }, [error, success, message])
 
   const submitHandler = (e) => {
     e.preventDefault()
-    if (!email ||!password) {
-      return toast.error('Please fill all fields')
+    if (!email) {
+      return toast.error('Please enter your email')
     }
-    dispatch(login({ email, password }))
+    dispatch(forgotPassword(email))
   }
 
   return (
@@ -44,10 +37,10 @@ function LoginScreen() {
       <div className="mx-auto w-full max-w-md">
         <div className="text-center">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
-            Sign in to <span className="text-blue-600">PhoneStore</span>
+            Forgot your password?
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Your Phone, Our Passion
+            No worries. Enter your email and we'll send you a reset link.
           </p>
         </div>
 
@@ -74,54 +67,12 @@ function LoginScreen() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <div className="mt-1 relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base sm:text-sm pr-10"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                  >
-                    {showPassword? (
-                      <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                      <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end">
-                <div className="text-sm">
-                  <Link
-                    to={redirect? `/forgot-password?redirect=${redirect}` : '/forgot-password'}
-                    className="font-medium text-blue-600 hover:text-blue-500"
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
-              </div>
-
-              <div>
                 <button
                   type="submit"
                   disabled={loading}
                   className="flex w-full justify-center rounded-lg border border-transparent bg-blue-600 py-2.5 px-4 text-base sm:text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading? 'Signing in...' : 'Sign In'}
+                  {loading? 'Sending...' : 'Send Reset Link'}
                 </button>
               </div>
             </form>
@@ -132,16 +83,16 @@ function LoginScreen() {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">New to PhoneStore?</span>
+                  <span className="bg-white px-2 text-gray-500">Remember your password?</span>
                 </div>
               </div>
 
               <div className="mt-6">
                 <Link
-                  to={redirect? `/register?redirect=${redirect}` : '/register'}
+                  to={redirect? `/login?redirect=${redirect}` : '/login'}
                   className="flex w-full justify-center rounded-lg border border-gray-300 bg-white py-2.5 px-4 text-base sm:text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
                 >
-                  Create an account
+                  Back to Sign In
                 </Link>
               </div>
             </div>
@@ -152,4 +103,4 @@ function LoginScreen() {
   )
 }
 
-export default LoginScreen
+export default ForgotPasswordScreen

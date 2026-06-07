@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 //import { clearCartItems } from './cartSlice'
- 
+
 import api from '../utils/axios'
- 
- 
+
+
 //const  API = 'api'
 
 const userInfoFromStorage = localStorage.getItem('userInfo')
@@ -14,13 +14,13 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const config = { 
+      const config = {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true // <- Add this for cookies
       }
       const { data } = await api.post(
-        `/users/auth`, 
-        { email, password }, 
+        `/users/auth`,
+        { email, password },
         config
       )
       // localStorage.setItem removed - handle in .fulfilled
@@ -35,13 +35,13 @@ export const register = createAsyncThunk(
   'auth/register',
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
-      const config = { 
+      const config = {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true // <- Add this for cookies
       }
       const { data } = await api.post(
-        `/users`, 
-        { name, email, password }, 
+        `/users`,
+        { name, email, password },
         config
       )
       // localStorage.setItem removed - handle in .fulfilled
@@ -52,7 +52,31 @@ export const register = createAsyncThunk(
   }
 )
 
- 
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email, { rejectWithValue }) => {
+    try {
+      const { data } = await api.post('/users/forgotpassword', { email })
+      return data.message
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  }
+)
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async ({ token, password }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.put(`/users/resetpassword/${token}`, { password })
+      return data.message
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  }
+)
+
+
 
 export const updateUserProfile = createAsyncThunk(
   'auth/updateUserProfile',
@@ -79,7 +103,7 @@ export const listUsers = createAsyncThunk(
         auth: { userInfo },
       } = getState()
 
-       
+
 
       const { data } = await api.get(`/users`)
       return data
@@ -100,7 +124,7 @@ export const deleteUser = createAsyncThunk(
         auth: { userInfo },
       } = getState()
 
-      
+
 
       await api.delete(`/users/${id}`)
       return id
@@ -118,25 +142,25 @@ export const getUserDetails = createAsyncThunk(
   async (id, { getState, rejectWithValue }) => {
     try {
       const { auth: { userInfo }
-    }= getState()
-       
-    
+      } = getState()
+
+
       const { data } = await api.get(`/users/${id}`)
       return data
-    
-    
+
+
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
     }
-  
-})
+
+  })
 //update user
 export const updateUser = createAsyncThunk(
   'auth/updateUser',
   async ({ id, name, email, isAdmin }, { getState, rejectWithValue }) => {
     try {
-      const { auth: { userInfo }} = getState()
-       
+      const { auth: { userInfo } } = getState()
+
       const { data } = await api.put(`/users/${id}`, { name, email, isAdmin })
       return data
     } catch (error) {
@@ -156,6 +180,7 @@ const authSlice = createSlice({
     success: false,
     userDetails: null,
     successUpdate: false,
+     message: null,
     page: 1,
     pages: 1,
   },
@@ -171,6 +196,7 @@ const authSlice = createSlice({
       state.loading = false
       state.error = null
       state.success = false
+      state.message = null
     },
     resetUpdate: (state) => {
       state.success = false
@@ -181,12 +207,12 @@ const authSlice = createSlice({
       state.error = null
     },
     resetUserUpdate: (state) => {
-    state.successUpdate = false
-  },
+      state.successUpdate = false
+    },
   },
   extraReducers: (builder) => {
     builder
-    
+
       .addCase(getUserDetails.pending, (state) => {
         state.loading = true
       })
@@ -203,18 +229,18 @@ const authSlice = createSlice({
         state.successUpdate = true
       })
       .addCase(listUsers.pending, (state) => {
-  state.loading = true
-})
-.addCase(listUsers.fulfilled, (state, action) => {
-  state.loading = false
-  state.users = action.payload.users
-  state.page = action.payload.page
-  state.pages = action.payload.pages
-})
-.addCase(listUsers.rejected, (state, action) => {
-  state.loading = false
-  state.error = action.payload
-})
+        state.loading = true
+      })
+      .addCase(listUsers.fulfilled, (state, action) => {
+        state.loading = false
+        state.users = action.payload.users
+        state.page = action.payload.page
+        state.pages = action.payload.pages
+      })
+      .addCase(listUsers.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+      })
       // DELETE USER
       .addCase(deleteUser.pending, (state) => {
         state.loading = true
@@ -229,38 +255,62 @@ const authSlice = createSlice({
         state.error = action.payload
       })
       .addCase(login.pending, (state) => { state.loading = true; state.error = null })
-      .addCase(login.fulfilled, (state, action) => { 
-  state.loading = false; 
-  state.userInfo = action.payload 
-  localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
-})
+      .addCase(login.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userInfo = action.payload
+        localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
+      })
       .addCase(login.rejected, (state, action) => { state.loading = false; state.error = action.payload })
 
       .addCase(register.pending, (state) => { state.loading = true; state.error = null })
-      .addCase(register.fulfilled, (state, action) => { 
-  state.loading = false; 
-  state.userInfo = action.payload 
-  localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
-})
+      .addCase(register.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userInfo = action.payload
+        localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
+      })
       .addCase(register.rejected, (state, action) => { state.loading = false; state.error = action.payload })
 
       .addCase(updateUserProfile.pending, (state) => { state.loading = true; state.success = false })
       .addCase(updateUserProfile.fulfilled, (state, action) => {
-  state.loading = false
-  state.userInfo = action.payload
-  state.success = true
-  localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
-})
+        state.loading = false
+        state.userInfo = action.payload
+        state.success = true
+        localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
+      })
       .addCase(updateUserProfile.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
-      // .addCase(logoutUser.fulfilled, (state) => {
-      //   state.userInfo = null
-      //   state.loading = false
-      //   state.error = null
-      //   state.success = false
-      // })
+
+      .addCase(forgotPassword.pending, (state) => {
+  state.loading = true
+  state.error = null
+  state.success = false
+})
+.addCase(forgotPassword.fulfilled, (state, action) => {
+  state.loading = false
+  state.success = true
+  state.message = action.payload
+})
+.addCase(forgotPassword.rejected, (state, action) => {
+  state.loading = false
+  state.error = action.payload
+  state.success = false
+})
+.addCase(resetPassword.pending, (state) => {
+  state.loading = true
+  state.error = null
+})
+.addCase(resetPassword.fulfilled, (state, action) => {
+  state.loading = false
+  state.success = true
+  state.message = action.payload
+})
+.addCase(resetPassword.rejected, (state, action) => {
+  state.loading = false
+  state.error = action.payload
+})
+
   },
 })
 

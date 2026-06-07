@@ -1,43 +1,36 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { register } from '../slices/authSlice'
+import { resetPassword } from '../slices/authSlice'
 import { toast } from 'react-toastify'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 
-function RegisterScreen() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+function ResetPasswordScreen() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const dispatch = useDispatch()
+  const { token } = useParams()
   const navigate = useNavigate()
-  const { search } = useLocation()
+  const dispatch = useDispatch()
 
-  const { userInfo, loading, error } = useSelector((state) => state.auth)
-
-  const sp = new URLSearchParams(search)
-  const redirect = sp.get('redirect') || '/'
-
-  useEffect(() => {
-    if (userInfo) {
-      navigate(redirect) // App.jsx handles cart merge
-    }
-  }, [navigate, userInfo, redirect])
+  const { loading, error, success, message } = useSelector((state) => state.auth)
 
   useEffect(() => {
     if (error) {
       toast.error(error)
     }
-  }, [error])
+    if (success) {
+      toast.success(message || 'Password reset successful')
+      setTimeout(() => navigate('/login'), 2000)
+    }
+  }, [error, success, message, navigate])
 
   const submitHandler = (e) => {
     e.preventDefault()
-
-    if (!name ||!email ||!password ||!confirmPassword) {
+    
+    if (!password ||!confirmPassword) {
       return toast.error('Please fill all fields')
     }
     if (password!== confirmPassword) {
@@ -47,7 +40,7 @@ function RegisterScreen() {
       return toast.error('Password must be at least 6 characters')
     }
 
-    dispatch(register({ name, email, password }))
+    dispatch(resetPassword({ token, password }))
   }
 
   return (
@@ -55,57 +48,19 @@ function RegisterScreen() {
       <div className="mx-auto w-full max-w-md">
         <div className="text-center">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
-            Create your <span className="text-blue-600">PhoneStore</span> account
+            Reset your password
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Join us and find your next phone
+            Enter your new password below
           </p>
         </div>
 
         <div className="mt-8">
           <div className="bg-white py-8 px-6 shadow-xl rounded-xl border border-gray-200 sm:px-10">
-            <form className="space-y-5" onSubmit={submitHandler}>
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Full name
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base sm:text-sm"
-                    placeholder="John Doe"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email address
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base sm:text-sm"
-                    placeholder="you@example.com"
-                  />
-                </div>
-              </div>
-
+            <form className="space-y-6" onSubmit={submitHandler}>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
+                  New password
                 </label>
                 <div className="mt-1 relative">
                   <input
@@ -114,6 +69,7 @@ function RegisterScreen() {
                     type={showPassword? 'text' : 'password'}
                     autoComplete="new-password"
                     required
+                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base sm:text-sm pr-10"
@@ -136,7 +92,7 @@ function RegisterScreen() {
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                  Confirm password
+                  Confirm new password
                 </label>
                 <div className="mt-1 relative">
                   <input
@@ -145,6 +101,7 @@ function RegisterScreen() {
                     type={showConfirmPassword? 'text' : 'password'}
                     autoComplete="new-password"
                     required
+                    minLength={6}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base sm:text-sm pr-10"
@@ -171,7 +128,7 @@ function RegisterScreen() {
                   disabled={loading}
                   className="flex w-full justify-center rounded-lg border border-transparent bg-blue-600 py-2.5 px-4 text-base sm:text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading? 'Creating account...' : 'Create Account'}
+                  {loading? 'Resetting...' : 'Reset Password'}
                 </button>
               </div>
             </form>
@@ -182,16 +139,16 @@ function RegisterScreen() {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">Already have an account?</span>
+                  <span className="bg-white px-2 text-gray-500">Changed your mind?</span>
                 </div>
               </div>
 
               <div className="mt-6">
                 <Link
-                  to={redirect? `/login?redirect=${redirect}` : '/login'}
+                  to="/login"
                   className="flex w-full justify-center rounded-lg border border-gray-300 bg-white py-2.5 px-4 text-base sm:text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
                 >
-                  Sign in instead
+                  Back to Sign In
                 </Link>
               </div>
             </div>
@@ -202,4 +159,4 @@ function RegisterScreen() {
   )
 }
 
-export default RegisterScreen
+export default ResetPasswordScreen
