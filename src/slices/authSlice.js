@@ -95,17 +95,33 @@ export const updateUserProfile = createAsyncThunk(
   }
 )
 // GET ALL USERS - Admin only
+// export const listUsers = createAsyncThunk(
+//   'user/listUsers',
+//   async ({ keyword = '', pageNumber = 1 }, { getState, rejectWithValue }) => {
+//     try {
+//       const {
+//         auth: { userInfo },
+//       } = getState()
+
+
+
+//       const { data } = await api.get(`/users`)
+//       return data
+//     } catch (error) {
+//       return rejectWithValue(
+//         error.response?.data?.message || error.message
+//       )
+//     }
+//   }
+// )
 export const listUsers = createAsyncThunk(
   'user/listUsers',
-  async ({ keyword = '', pageNumber = 1 }, { getState, rejectWithValue }) => {
+  async ({ keyword = '', pageNumber = 1 }, { rejectWithValue }) => {
     try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-
-
-      const { data } = await api.get(`/users`)
+      const { data } = await api.get('/users', {
+        params: { keyword, pageNumber },
+        withCredentials: true  // <-- This sends the cookie
+      })
       return data
     } catch (error) {
       return rejectWithValue(

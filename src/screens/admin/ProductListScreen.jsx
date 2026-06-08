@@ -41,7 +41,7 @@ const ProductListScreen = () => {
 
   const createProductHandler = async () => {
     if (window.confirm('Create a new sample product?')) {
-      try { 
+      try {
         navigate(`/admin/product/create`)
       } catch (err) {
         toast.error(err?.data?.message || err.error)
@@ -63,25 +63,27 @@ const ProductListScreen = () => {
 
         <div className='flex flex-col sm:flex-row gap-3 w-full lg:w-auto'>
           <form onSubmit={submitHandler} className='flex gap-2 flex-1 lg:flex-initial'>
-            <input
-              type='text'
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder='Search products...'
-              className='px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1'
-            />
-            {keyword && (
-              <button
-                type='button'
-                onClick={() => {
-                  setSearch('')
-                  setSearchParams({ pageNumber: 1 })
-                }}
-                className='px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition'
-              >
-                Clear
-              </button>
-            )}
+            <div className='relative flex-1'>  
+    <input
+      type='text'
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder='Search products...'
+      className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+    />
+   {search && (
+  <button
+    type='button'
+    onClick={() => {
+      setSearch('')
+      setSearchParams({ pageNumber: 1 })
+    }}
+    className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-3xl font-light leading-none z-10 w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100'
+  >
+    ×
+  </button>
+)}
+  </div>  
             <button
               type='submit'
               className='px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition whitespace-nowrap'
@@ -103,9 +105,9 @@ const ProductListScreen = () => {
       {loadingCreate && <Loader />}
       {loadingDelete && <Loader />}
 
-      {isLoading? (
+      {isLoading ? (
         <Loader />
-      ) : error? (
+      ) : error ? (
         <Message variant='error'>{error?.data?.message || error.error}</Message>
       ) : (
         <>
@@ -186,8 +188,9 @@ const ProductListScreen = () => {
             <Paginate
               pages={data.pages}
               page={data.page}
-              keyword={keyword? keyword : ''}
+              keyword={keyword ? keyword : ''}
               isAdmin={true}
+              pathname="/admin/productlist"
             />
           </div>
         </>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import RatingStars from '../components/RatingStars';
+import ReviewsModal from '../components/ReviewsModal';
 import { useSelector, useDispatch } from 'react-redux'
 import { FaThumbsUp } from 'react-icons/fa';
 import {
@@ -20,6 +21,7 @@ import Message from '../components/Message'
 import Rating from '../components/Rating'
 import { FaEdit, FaCheck, FaTrash, FaShoppingCart } from 'react-icons/fa'
 import { toast } from 'react-toastify'
+
 
 const ProductScreen = () => {
   const { id: productId } = useParams()
@@ -42,7 +44,7 @@ const ProductScreen = () => {
   const [qty, setQty] = useState(1)
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState('helpful');
   const [replyText, setReplyText] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [isEditingReply, setIsEditingReply] = useState(null);
@@ -50,6 +52,7 @@ const ProductScreen = () => {
   const [reviewImages, setReviewImages] = useState([]);
   //const [reviewImageFiles, setReviewImageFiles] = useState([]);
   const [ratingFilter, setRatingFilter] = useState(0);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
 
   // Edit states
@@ -138,6 +141,9 @@ const ProductScreen = () => {
   
   if (sortBy === 'highest') return reviews.sort((a, b) => b.rating - a.rating);
   if (sortBy === 'lowest') return reviews.sort((a, b) => a.rating - b.rating);
+   if (sortBy === 'helpful') return reviews.sort((a, b) => 
+  (b.helpful?.length || 0) - (a.helpful?.length || 0)
+);
   return reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }, [product, ratingFilter, sortBy]);
 
@@ -258,33 +264,37 @@ const ProductScreen = () => {
 };
 
   const submitReplyHandler = async (reviewId) => {
-    if (!replyText.trim()) {
-      toast.error('Reply cannot be empty');
-      return;
-    }
-    try {
-      await addAdminReply({
-        productId,
-        reviewId,
-        replyText,
-      }).unwrap();
-      setReplyText('');
-      setReplyingTo(null);
-      toast.success('Reply posted');
-    } catch (err) {
-      toast.error(err?.data?.message || err.error);
-    }
-  };
+  if (!replyText.trim()) {
+    toast.error('Reply cannot be empty');
+    return;
+  }
+  try {
+    await addAdminReply({
+      productId,
+      reviewId,
+      reply: replyText, // <-- Change key from replyText to reply
+    }).unwrap();
+    setReplyText('');
+    setReplyingTo(null);
+    toast.success('Reply posted');
+  } catch (err) {
+    toast.error(err?.data?.message || err.error);
+  }
+};
 
-  const updateReplyHandler = async (reviewId) => {
-    try {
-      await editAdminReply({ productId, reviewId, replyText: editReplyText }).unwrap();
-      setIsEditingReply(null);
-      toast.success('Reply updated');
-    } catch (err) {
-      toast.error(err?.data?.message || err.error);
-    }
-  };
+ const updateReplyHandler = async (reviewId) => {
+  try {
+    await editAdminReply({ 
+      productId, 
+      reviewId, 
+      reply: editReplyText  // <-- Change from replyText: to reply:
+    }).unwrap();
+    setIsEditingReply(null);
+    toast.success('Reply updated');
+  } catch (err) {
+    toast.error(err?.data?.message || err.error);
+  }
+};
 
   const deleteReplyHandler = async (reviewId) => {
     if (window.confirm('Delete this reply?')) {
@@ -559,7 +569,7 @@ const ProductScreen = () => {
          {/* Review List */}
   <div className='mb-8'>
     {sortedReviews.length > 0 ? (
-      sortedReviews.map((review) => (
+      sortedReviews.slice(0, 3).map((review) => (
         <div key={review._id} className='bg-gray-50 p-4 rounded-lg mb-4'>
           <div className='flex justify-between items-start mb-2'>
             <div>
@@ -619,7 +629,7 @@ const ProductScreen = () => {
           </div>
 
           {/* Show existing admin reply */}
-          {review.adminReply?.text && (
+          {review.adminReply && (review.adminReply.reply || review.adminReply.text) && (
             <div className='mt-3 ml-4 pl-3 border-l-2 border-gray-300 bg-gray-50 p-2 rounded'>
               <div className='flex justify-between items-start'>
                 <div className='flex-1'>
@@ -651,7 +661,9 @@ const ProductScreen = () => {
                       </div>
                     </div>
                   ) : (
-                    <p className='text-sm text-gray-700 mt-1'>{review.adminReply.text}</p>
+                   <p className='text-sm text-gray-700 mt-1'>
+    {review.adminReply.reply || review.adminReply.text}
+  </p>
                   )}
                 </div>
                 
@@ -660,7 +672,7 @@ const ProductScreen = () => {
                     <button
                       onClick={() => {
                         setIsEditingReply(review._id);
-                        setEditReplyText(review.adminReply.text);
+                        setEditReplyText(review.adminReply.reply);
                       }}
                       className='text-blue-600 text-xs hover:underline'
                     >
@@ -680,7 +692,7 @@ const ProductScreen = () => {
           )}
 
           {/* Admin reply button + form - for reviews without replies */}
-          {userInfo?.isAdmin && !review.adminReply?.text && (
+          {userInfo?.isAdmin && !review.adminReply?.reply && (
             <div className='mt-2'>
               {replyingTo === review._id ? (
                 <div className='mt-2'>
@@ -715,15 +727,40 @@ const ProductScreen = () => {
                   Reply as Admin
                 </button>
               )}
-            </div>
+            </div> 
+            
           )}
+
+          
         </div>
+       
       ))
     ) : product?.reviews?.length > 0 ? (
       <p className='text-gray-500 py-4'>
         No {ratingFilter} star reviews yet
       </p>
     ) : null}
+
+   
+
+  {/* Add this right here*/}
+       {product?.reviews?.length > 3 && (
+          <button
+            onClick={() => setShowAllReviews(true)}
+            className="mt-6 px-6 py-2 border-2 border-gray-800 rounded-md hover:bg-gray-100 font-semibold transition w-full sm:w-auto"
+          >
+            See All Reviews ({product.reviews.length})
+          </button>
+        )}
+
+        {showAllReviews && (
+  <ReviewsModal
+    productId={product._id}  // <-- Change this line
+    product={product}
+    onClose={() => setShowAllReviews(false)}
+  />
+)}
+
   </div>
  
 

@@ -59,14 +59,28 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Products'],
     }),
 
+   getProductReviews: builder.query({
+  query: ({ productId, page = 1, limit = 10, color, sort }) => ({
+    url: `/products/${productId}/reviews`,
+    params: { page, limit, color, sort },
+  }),
+  providesTags: (result, error, arg) => [
+    { type: 'Product', id: arg.productId },
+    { type: 'Reviews', id: 'LIST' }, // <-- Change Review to Reviews
+  ],
+}),
+
     createProductReview: builder.mutation({
-      query: ({ productId, rating, comment, color, images }) => ({
-        url: `/products/${productId}/reviews`,
-        method: 'POST',
-        body: { rating, comment, color, images },
-      }),
-      invalidatesTags: (result, error, arg) => [{ type: 'Product', id: arg.productId }],
-    }),
+  query: ({ productId, rating, comment, color, images }) => ({
+    url: `/products/${productId}/reviews`,
+    method: 'POST',
+    body: { rating, comment, color, images },
+  }),
+  invalidatesTags: (result, error, { productId }) => [
+    { type: 'Product', id: productId },
+    { type: 'Reviews', id: 'LIST' }, // <-- Add this or modal won't update
+  ],
+}),
     updateReview: builder.mutation({
   query: (data) => ({
     url: `/products/${data.productId}/reviews/${data.reviewId}`, // <-- Add /${data.reviewId}
@@ -83,36 +97,49 @@ deleteReview: builder.mutation({
   invalidatesTags: ['Product'],
 }),
 markReviewHelpful: builder.mutation({
-  query: (data) => ({
-    url: `/products/${data.productId}/reviews/helpful`,
+  query: ({ productId, reviewId }) => ({
+    url: `/products/${productId}/reviews/${reviewId}/helpful`,
     method: 'PUT',
-    body: data,
   }),
-  invalidatesTags: ['Product'],
+  invalidatesTags: (result, error, { productId }) => [
+    { type: 'Product', id: productId }, // <-- This updates ProductScreen + modal
+  ],
 }),
 addAdminReply: builder.mutation({
-  query: (data) => ({
-    url: `/products/${data.productId}/reviews/reply`,
-    method: 'PUT',
-    body: data,
+  query: ({ productId, reviewId, reply }) => ({
+    url: `/products/${productId}/reviews/${reviewId}/reply`,
+    method: 'POST',
+    body: { reply },
   }),
-  invalidatesTags: ['Product'],
+  invalidatesTags: (result, error, { productId }) => [
+    { type: 'Product', id: productId },
+    { type: 'Reviews', id: 'LIST' },
+    { type: 'Reviews', id: productId },
+  ],
 }),
 editAdminReply: builder.mutation({
-  query: (data) => ({
-    url: `/products/${data.productId}/reviews/reply/edit`,
+  query: ({ productId, reviewId, reply }) => ({ // <-- Destructure properly
+    url: `/products/${productId}/reviews/${reviewId}/reply`, // <-- Add reviewId
     method: 'PUT',
-    body: data,
+    body: { reply }, // <-- Only send reply, not whole data object
   }),
-  invalidatesTags: ['Product'],
+  invalidatesTags: (result, error, { productId }) => [ // <-- Add Reviews tags
+    { type: 'Product', id: productId },
+    { type: 'Reviews', id: 'LIST' },
+    { type: 'Reviews', id: productId },
+  ],
 }),
+
 deleteAdminReply: builder.mutation({
-  query: (data) => ({
-    url: `/products/${data.productId}/reviews/reply`,
+  query: ({ productId, reviewId }) => ({ // <-- Destructure properly
+    url: `/products/${productId}/reviews/${reviewId}/reply`, // <-- Add reviewId
     method: 'DELETE',
-    body: data,
   }),
-  invalidatesTags: ['Product'],
+  invalidatesTags: (result, error, { productId }) => [ // <-- Add Reviews tags
+    { type: 'Product', id: productId },
+    { type: 'Reviews', id: 'LIST' },
+    { type: 'Reviews', id: productId },
+  ],
 }),
 uploadProductImage: builder.mutation({
   query: (data) => ({
@@ -131,6 +158,7 @@ export const {
   useUpdateProductMutation,
   useUpdateProductSpecsMutation,
   useDeleteProductMutation,
+  useGetProductReviewsQuery,
   useCreateProductReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { listUsers, deleteUser } from '../../slices/authSlice'
-import { FaTrash, FaEdit, FaCheck, FaTimes, FaUserShield, FaUser } from 'react-icons/fa'
+import { FaTrash, FaEdit, FaUserShield, FaUser } from 'react-icons/fa'
 import Message from '../../components/Message'
 import Loader from '../../components/Loader'
 import Paginate from '../../components/Paginate'
@@ -29,8 +29,7 @@ const UserListScreen = () => {
     } else {
       navigate('/login')
     }
-     setSearch(keyword)
-  }, [dispatch, navigate, userInfo, keyword, pageNumber, successDelete, keyword])
+  }, [dispatch, navigate, userInfo, keyword, pageNumber, successDelete])
 
   const deleteHandler = (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
@@ -45,7 +44,7 @@ const UserListScreen = () => {
           headers: { Authorization: `Bearer ${userInfo.token}` }
         })
         toast.success('Admin status updated')
-        dispatch(listUsers({ keyword, pageNumber })) // Refetch with Redux instead of reload
+        dispatch(listUsers({ keyword, pageNumber }))
       } catch (error) {
         toast.error(error?.response?.data?.message || error.message)
       }
@@ -71,39 +70,38 @@ const UserListScreen = () => {
 
   return (
     <>
-      <div className='flex justify-between items-center   flex-wrap gap-4 m-4'>
+      <div className='flex justify-between items-center flex-wrap gap-4 m-4'>
         <h1 className='text-2xl font-bold'>Users</h1>
 
-       <form onSubmit={submitHandler} className='flex gap-2 w-full lg:w-auto'>
-    <div className='relative flex-1 lg:w-72'>
-      <input
-        type='text'
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        onFocus={() => setSearch('')} // Clears when you click
-        placeholder='Search by name or email...'
-        className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-      />
-      {search && (
-        <button
-          type='button'
-          onClick={() => {
-            setSearch('')
-            setSearchParams({ pageNumber: 1 })
-          }}
-          className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg leading-none'
-        >
-          ×
-        </button>
-      )}
-    </div>
-    <button
-      type='submit'
-      className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap'
-    >
-      Search
-    </button>
-  </form>
+        <form onSubmit={submitHandler} className='flex gap-2 w-full lg:w-auto'>
+          <div className='relative flex-1 lg:w-72'>
+            <input
+              type='text'
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder='Search by name or email...'
+              className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            />
+            {search && (
+              <button
+                type='button'
+                onClick={() => {
+                  setSearch('')
+                  setSearchParams({ pageNumber: 1 })
+                }}
+                className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-3xl font-light leading-none z-10 w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100'
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <button
+            type='submit'
+            className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap'
+          >
+            Search
+          </button>
+        </form>
       </div>
 
       {loading ? (
@@ -165,9 +163,9 @@ const UserListScreen = () => {
                         <FaEdit />
                       </Link>
                       <button
-                       disabled={user.isAdmin} 
+                        disabled={user._id === userInfo._id}
                         onClick={() => deleteHandler(user._id)}
-                        className='text-red-600 hover:text-red-800'
+                        className='text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed'
                       >
                         <FaTrash />
                       </button>
@@ -184,7 +182,8 @@ const UserListScreen = () => {
             isAdmin={true}
             onPageChange={onPageChange}
             keyword={keyword}
-            baseUrl='/admin/userlist'
+            pathname="/admin/userlist"
+            searchParamName="keyword"
           />
         </>
       )}

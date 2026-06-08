@@ -58,7 +58,7 @@ const OrderListScreen = () => {
         placeholder="Search by Order ID or User..."
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
-        onFocus={() => setKeyword('')} // Clears when you click
+        //onFocus={() => setKeyword('')} // Clears when you click
         className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       {keyword && (
@@ -68,7 +68,7 @@ const OrderListScreen = () => {
             setKeyword('')
             setSearchParams({ page: 1 })
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl"
+          className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-3xl font-light leading-none z-10 w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100'
         >
           ×
         </button>
