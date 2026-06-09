@@ -83,7 +83,7 @@ useEffect(() => {
   }
   
   mergeCartOnLogin()
-}, [userInfo, dispatch]) // Removed cartItems from deps to prevent loop
+}, [userInfo, dispatch])  
 
   return (
     <>
@@ -91,10 +91,8 @@ useEffect(() => {
         <Header />
         <main className="flex-grow">
           <Routes><Route path="/" element={<HomeScreen />} />
-            <Route path='/products' element={<AllProductsScreen />} />
-            {/* <Route path='/search/:keyword' element={<HomeScreen />} />
-            <Route path='/page/:pageNumber' element={<HomeScreen />} />
-            <Route path='/search/:keyword/page/:pageNumber' element={<HomeScreen />} /> */}
+            <Route path='/products' element={<HomeScreen />} />
+            
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/returns' element={<ReturnRefundScreen />} />
             <Route path='/contact' element={<ContactScreen />} />

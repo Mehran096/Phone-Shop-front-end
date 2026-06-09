@@ -86,7 +86,7 @@ const ProductScreen = () => {
   //edit review end
   useEffect(() => {
     if (product) {
-      if (product.colors?.length > 0 && !selectedColor) { // ← Add!selectedColor here
+      if (product.colors?.length > 0 && !selectedColor) {  
         const firstColor = product.colors[0]
         setSelectedColor(firstColor)
         setMainImage(firstColor.images?.[0] || product.image || '/images/placeholder-phone.jpg')
@@ -123,29 +123,37 @@ const ProductScreen = () => {
     navigate('/cart')
   }
 
-  //   const colorReviews = useMemo(() => {
-  //   if (!product?.reviews) return [];
-  //   return selectedColor 
-  //     ? product.reviews.filter((r) => r.color === selectedColor.name)
-  //     : product.reviews;
-  // }, [product, selectedColor]);
+   
 
-  // Filter reviews by selected color
+  // Filter reviews by selected color, user login to show first his review
  const sortedReviews = useMemo(() => {
   if (!product?.reviews) return [];
   let reviews = [...product.reviews];
-  
+
   if (ratingFilter !== 0) {
     reviews = reviews.filter(r => r.rating === Number(ratingFilter));
   }
-  
-  if (sortBy === 'highest') return reviews.sort((a, b) => b.rating - a.rating);
-  if (sortBy === 'lowest') return reviews.sort((a, b) => a.rating - b.rating);
-   if (sortBy === 'helpful') return reviews.sort((a, b) => 
-  (b.helpful?.length || 0) - (a.helpful?.length || 0)
-);
-  return reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-}, [product, ratingFilter, sortBy]);
+
+  // Put user's review first, then apply the selected sort
+  reviews.sort((a, b) => {
+    const aUserId = typeof a.user === 'string' ? a.user : a.user?._id;
+    const bUserId = typeof b.user === 'string' ? b.user : b.user?._id;
+    
+    // Force user's review to top
+    if (userInfo && aUserId === userInfo._id) return -1
+    if (userInfo && bUserId === userInfo._id) return 1
+    
+    // Then apply user's chosen sort
+    if (sortBy === 'highest') return b.rating - a.rating;
+    if (sortBy === 'lowest') return a.rating - b.rating;
+    if (sortBy === 'helpful') return (b.helpful?.length || 0) - (a.helpful?.length || 0);
+    
+    // Default: newest first
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
+  return reviews;
+}, [product, ratingFilter, sortBy, userInfo]);
 
 
 
@@ -337,9 +345,7 @@ const ProductScreen = () => {
     // If you want to delete orphans, run a cleanup cron job on backend
   };
 
-  // const alreadyReviewed = product?.reviews?.find(
-  //   (r) => r.user === userInfo?._id && r.color === selectedColor?.name
-  // );
+  
   const alreadyReviewed = product?.reviews?.find(
     (r) => r.user === userInfo?._id || r.user?._id === userInfo?._id
   );
@@ -351,6 +357,20 @@ const ProductScreen = () => {
 
   const currentStock = selectedColor?.countInStock ?? product.countInStock ?? 0
   const currentPrice = selectedColor?.price ?? product.price ?? 0
+
+  const timeAgo = (date) => {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+ 
+
 
   return (
     <div className='max-w-7xl mx-auto px-4 py-8'>
@@ -661,10 +681,18 @@ const ProductScreen = () => {
                       </div>
                     </div>
                   ) : (
-                   <p className='text-sm text-gray-700 mt-1'>
-    {review.adminReply.reply || review.adminReply.text}
-  </p>
-                  )}
+                      <div className='text-sm text-gray-700 mt-1'>
+                        <p>{review.adminReply.reply || review.adminReply.text}</p>
+                        {review.adminReply.createdAt && (
+
+                          <p className='text-xs text-gray-500 mt-1'>{timeAgo(review.adminReply.createdAt)}</p>
+
+                        )}
+                      </div>
+                  
+
+  
+                )}
                 </div>
                 
                 {userInfo?.isAdmin && isEditingReply !== review._id && (

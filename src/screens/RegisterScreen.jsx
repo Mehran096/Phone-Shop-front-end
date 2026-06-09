@@ -34,21 +34,27 @@ function RegisterScreen() {
     }
   }, [error])
 
-  const submitHandler = (e) => {
-    e.preventDefault()
+  const submitHandler = async (e) => {
+  e.preventDefault()
 
-    if (!name ||!email ||!password ||!confirmPassword) {
-      return toast.error('Please fill all fields')
-    }
-    if (password!== confirmPassword) {
-      return toast.error('Passwords do not match')
-    }
-    if (password.length < 6) {
-      return toast.error('Password must be at least 6 characters')
-    }
-
-    dispatch(register({ name, email, password }))
+  if (!name || !email || !password || !confirmPassword) {
+    return toast.error('Please fill all fields')
   }
+  if (password !== confirmPassword) {
+    return toast.error('Passwords do not match')
+  }
+  if (password.length < 6) {
+    return toast.error('Password must be at least 6 characters')
+  }
+
+  try {
+    await dispatch(register({ name, email, password })).unwrap()
+    toast.success('Welcome to PhoneStore! Thank you for your registration')
+  } catch (err) {
+    // error is already handled by your useEffect, but you can add this as backup
+    toast.error(err?.message || err || 'Registration failed')
+  }
+}
 
   return (
     <div className="bg-gray-50 px-4 py-8 sm:py-12">

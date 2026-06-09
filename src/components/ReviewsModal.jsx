@@ -15,7 +15,7 @@ import Rating from './Rating';
 
 const ReviewsModal = ({ productId, productColor, onClose, product }) => {
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState('newest');
+  const [sort, setSort] = useState('helpful');
   const [colorFilter, setColorFilter] = useState('All');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -25,10 +25,10 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
 
   const { data, isLoading, error, refetch } = useGetProductReviewsQuery({
     productId,
-    page,
-    limit: 10,
-    color: colorFilter === 'All'? '' : colorFilter,
-    sort,
+    //page,
+    limit: 500,
+    // color: colorFilter === 'All'? '' : colorFilter,
+    // sort,
   });
 
   const [markHelpful, { isLoading: loadingHelpful }] = useMarkReviewHelpfulMutation();
@@ -48,7 +48,7 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
     return [...filtered].sort((a, b) => {
       switch (sort) {
         case 'helpful':
-          return b.helpful.length - a.helpful.length;
+          return (b.helpful?.length || 0) - (a.helpful?.length || 0);
         case 'highest':
           return b.rating - a.rating;
         case 'lowest':
@@ -246,14 +246,16 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                                 <>
                                   <p className="text-gray-700 mt-1 break-words">
                                     {review.adminReply.reply}
-                                  </p>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {new Date(review.adminReply.createdAt).toLocaleDateString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                    })}
-                                  </p>
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {review.adminReply?.createdAt
+                                        ? new Date(review.adminReply.createdAt).toLocaleDateString('en-US', {
+                                          year: 'numeric',
+                                          month: 'short',
+                                          day: 'numeric',
+                                        })
+                                        : 'Just now'}
+                                    </p>
                                 </>
                               )}
                             </div>
