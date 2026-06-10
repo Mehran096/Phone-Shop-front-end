@@ -53,7 +53,7 @@ const Header = () => {
 
   return (
     <header className='bg-gray-900 shadow-md sticky top-0 z-50 text-white'>
-      <nav className='container mx-auto px-4'>
+      <nav className='container mx-auto px-2'>
         <div className='flex justify-between items-center h-16'>
           {/* Logo */}
           <Link
@@ -74,12 +74,12 @@ const Header = () => {
           {/* Mobile logo */}
           <Link
             to='/'
-            className='flex md:hidden items-center px-2 py-1 border border-transparent hover:border-white rounded-sm transition-all duration-100'
+            className='flex md:hidden items-center p-1 border border-transparent hover:border-white rounded-sm duration-100'
           >
             <img
               src='/assets/logo-horizontal.png'
               alt='PhoneStore'
-              className='block md:hidden h-14 w-auto'
+              className='h-12 w-auto'
             />
           </Link>
 

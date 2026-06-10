@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import axios from 'axios'
 import { FaBox, FaUsers, FaShoppingCart, FaChartLine, FaPlus } from 'react-icons/fa'
-
+import api from '../../utils/axios';
+ 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({})
   const { userInfo } = useSelector((state) => state.auth)
 
   useEffect(() => {
     const fetchStats = async () => {
-      const { data } = await axios.get('/api/admin/stats', {
+      const { data } = await api.get('/admin/stats', {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       })
       setStats(data)
