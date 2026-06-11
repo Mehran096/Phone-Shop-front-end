@@ -71,31 +71,38 @@ export const productsApiSlice = apiSlice.injectEndpoints({
 }),
 
     createProductReview: builder.mutation({
-  query: ({ productId, rating, comment, color, images }) => ({
-    url: `/products/${productId}/reviews`,
-    method: 'POST',
-    body: { rating, comment, color, images },
-  }),
-  invalidatesTags: (result, error, { productId }) => [
-    { type: 'Product', id: productId },
-    { type: 'Reviews', id: 'LIST' }, // <-- Add this or modal won't update
-  ],
-}),
-    updateReview: builder.mutation({
-  query: (data) => ({
-    url: `/products/${data.productId}/reviews/${data.reviewId}`, // <-- Add /${data.reviewId}
-    method: 'PUT',
-    body: data, // Send rating, comment, images
-  }),
-  invalidatesTags: (result, error, arg) => [{ type: 'Product', id: arg.productId }],
-}),
+      query: ({ productId, rating, comment, color, images }) => ({
+        url: `/products/${productId}/reviews`,
+        method: 'POST',
+        body: { rating, comment, color, images },
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: 'Product', id: productId }, // Refresh product rating
+        { type: 'Reviews', id: 'LIST' }, // Refresh review list
+      ],
+    }),
+
+     updateReview: builder.mutation({
+      query: (data) => ({
+        url: `/products/${data.productId}/reviews/${data.reviewId}`,
+        method: 'PUT',
+        body: data, // Send rating, comment, images
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Product', id: arg.productId }, // Rating might change
+        { type: 'Reviews', id: 'LIST' }, // ADD THIS - refresh list after edit
+      ],
+    }),
 deleteReview: builder.mutation({
-  query: ({ productId, reviewId }) => ({
-    url: `/products/${productId}/reviews/${reviewId}`,
-    method: 'DELETE',
-  }),
-  invalidatesTags: ['Product'],
-}),
+      query: ({ productId, reviewId }) => ({
+        url: `/products/${productId}/reviews/${reviewId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: 'Product', id: productId }, // Rating/numReviews changed
+        { type: 'Reviews', id: 'LIST' }, // ADD THIS - remove from UI
+      ],
+    }),
 markReviewHelpful: builder.mutation({
   query: ({ productId, reviewId }) => ({
     url: `/products/${productId}/reviews/${reviewId}/helpful`,
