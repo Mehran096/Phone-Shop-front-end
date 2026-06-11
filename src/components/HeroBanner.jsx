@@ -1,49 +1,81 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 
 const HeroBanner = () => {
   return (
-    <div className='w-full bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden'>
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='grid grid-cols-1 lg:grid-cols-2 items-center gap-6 lg:gap-8 py-8 md:py-12 lg:py-20'>
-          
-          {/* Text Content */}
-          <div className='text-center lg:text-left order-2 lg:order-1 z-10'>
-            <h1 className='text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-3 md:mb-4 text-white leading-tight'>
-              PhoneStore Pro Max
-            </h1>
-            
-            <div className='text-sm sm:text-base lg:text-lg text-gray-300 mb-5 md:mb-6 space-y-1 sm:space-y-0'>
-              <span className='block sm:inline'>Snapdragon® 8 Elite</span>
-              <span className='hidden sm:inline mx-2'>|</span>
-              <span className='block sm:inline'>Ultra-Slim Design</span>
-              <span className='hidden sm:inline mx-2'>|</span>
-              <span className='block sm:inline'>6000 mAh Battery</span>
+    <section className='w-full'>
+
+      {/* Desktop Banner - Reduced height */}
+      <div className='hidden md:block bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden'>
+        <div className='max-w-7xl mx-auto px-4'>
+          <div className='grid grid-cols-2 gap-8 items-center min-h-[400px] lg:min-h-[440px]'>
+
+            {/* Left: Text */}
+            <div className='text-white space-y-5 py-8 z-10'>
+              <h1 className='text-4xl xl:text-5xl font-bold leading-tight'>
+                PhoneStore Pro Max
+              </h1>
+              <div className='space-y-1.5 text-base text-gray-300'>
+                <p>Snapdragon® 8 Elite</p>
+                <p>Ultra-Slim Design</p>
+                <p>6000 mAh Battery</p>
+              </div>
+              <Link
+                to='/products'
+                className='inline-block bg-white text-slate-900 px-7 py-2.5 rounded-full font-semibold hover:bg-gray-100 transition-all'
+              >
+                Learn More
+              </Link>
             </div>
 
-            <Link 
-              to='/products'
-              className='inline-block bg-white text-black px-5 py-2.5 sm:px-6 sm:py-3 lg:px-8 lg:py-4 rounded-full font-semibold hover:bg-gray-200 transition text-sm sm:text-base'
-            >
-              Learn more
-            </Link>
-          </div>
-
-          {/* Image - Scaled up to hide black padding */}
-          <div className='order-1 lg:order-2 flex justify-center lg:justify-end'>
-            <Link  to='/products'>
-            <div className='w-full max-w-[350px] sm:max-w-[450px] md:max-w-[550px] lg:max-w-[700px] xl:max-w-[850px]'>
+            {/* Right: Image - Bigger but not huge */}
+            <div className='relative h-full flex items-center justify-end'>
               <img
-                src='/assets/HeroBanner.png'
-                alt='PhoneStore Pro Max Phones'
-                className='w-full h-auto scale-125 lg:scale-150 object-contain'
+                src='/assets/desktopBanner.png'
+                alt='PhoneStore Pro Max'
+                className='w-full max-w-lg lg:max-w-xl h-auto object-contain'
               />
             </div>
-            </Link>
+
           </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default HeroBanner
+      {/* Mobile Banner - Keep same */}
+      <div className='md:hidden relative h-[420px] bg-slate-900 overflow-hidden'>
+
+        <img
+          src='/assets/HeroBanner.png'
+          alt='PhoneStore Pro Max'
+          className='absolute inset-0 w-full h-full object-cover'
+        />
+
+        <div className='absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-transparent' />
+
+        <div className='relative h-full flex flex-col justify-end px-6 pb-10 text-center'>
+          <div className='space-y-4 text-white'>
+            <h1 className='text-3xl font-bold leading-tight'>
+              PhoneStore Pro Max
+            </h1>
+
+            <div className='space-y-1 text-sm text-gray-200'>
+              <p>Snapdragon® 8 Elite</p>
+              <p>Ultra-Slim Design</p>
+              <p>6000 mAh Battery</p>
+            </div>
+
+            <Link
+              to='/products'
+              className='inline-block bg-white text-slate-900 px-7 py-2.5 rounded-full font-semibold mt-3'
+            >
+              Learn More
+            </Link>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+  );
+};
+
+export default HeroBanner;
