@@ -15,16 +15,16 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
   return (
     <div className='w-full flex flex-col md:flex-row min-w-0'>
 
-      {/* Desktop Thumbnails - LEFT SIDEBAR */}
+      {/* Desktop Thumbnails - LEFT SIDEBAR - NO SCROLLBAR */}
       {images.length > 1 && (
-        <div className='hidden md:flex flex-col gap-2 w-14 overflow-y-auto scrollbar-thin h-[28rem] mr-3 flex-shrink-0'>
+        <div className='hidden md:flex flex-col gap-2 w-14 overflow-y-auto overflow-x-hidden h-[28rem] mr-3 flex-shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
           {images.map((img, idx) => (
             <button
               key={idx}
               onClick={() => setSelectedIndex(idx)}
-              className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${
+              className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all box-border ${
                 selectedIndex === idx
-              ? 'border-blue-600 shadow-md'
+          ? 'border-blue-600 shadow-md'
                   : 'border-gray-200 hover:border-gray-400'
               }`}
             >
@@ -38,7 +38,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
         </div>
       )}
 
-      {/* Main Image Container - Added max-w-full */}
+      {/* Main Image Container */}
       <div className='flex-1 relative group bg-white rounded-lg border border-gray-100 overflow-hidden aspect-square md:h-[28rem] md:aspect-auto min-w-0 w-full'>
         <div className='w-full h-full flex items-center justify-center p-4'>
           <img
@@ -79,9 +79,9 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
         </div>
       </div>
 
-      {/* Mobile Thumbnails - NO NEGATIVE MARGIN */}
+      {/* Mobile Thumbnails - Hidden scrollbar + fade hint */}
       {images.length > 1 && (
-        <div className='md:hidden mt-3 w-full'>
+        <div className='md:hidden mt-3 w-full relative'>
           <div className='flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
             {images.map((img, idx) => (
               <button
@@ -89,7 +89,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                 onClick={() => setSelectedIndex(idx)}
                 className={`flex-shrink-0 w-16 h-16 bg-gray-50 rounded border-2 p-0.5 transition-all snap-start ${
                   selectedIndex === idx
-               ? 'border-blue-600'
+            ? 'border-blue-600'
                     : 'border-gray-200 hover:border-gray-400'
                 }`}
               >
@@ -101,6 +101,8 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
               </button>
             ))}
           </div>
+
+          <div className='absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none' />
         </div>
       )}
 
@@ -115,15 +117,16 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
             <FaTimes />
           </button>
 
+          {/* Desktop modal thumbs - hidden scrollbar */}
           {images.length > 1 && (
-            <div className='hidden md:flex flex-col gap-2 w-20 p-4 overflow-y-auto bg-gray-50 border-r border-gray-200 flex-shrink-0'>
+            <div className='hidden md:flex flex-col gap-2 w-20 p-4 overflow-y-auto overflow-x-hidden bg-gray-50 border-r border-gray-200 flex-shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
               {images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedIndex(idx)}
-                  className={`w-16 h-16 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${
+                  className={`w-16 h-16 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all box-border ${
                     selectedIndex === idx
-                 ? 'border-blue-600 shadow-md'
+              ? 'border-blue-600 shadow-md'
                       : 'border-gray-200 hover:border-gray-400'
                   }`}
                 >
@@ -178,7 +181,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                     onClick={() => setSelectedIndex(idx)}
                     className={`flex-shrink-0 w-14 h-14 bg-white rounded border-2 p-0.5 snap-start ${
                       selectedIndex === idx
-                   ? 'border-blue-600'
+                ? 'border-blue-600'
                         : 'border-gray-200'
                     }`}
                   >
