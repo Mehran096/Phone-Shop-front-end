@@ -15,7 +15,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
   return (
     <div className='w-full flex flex-col md:flex-row'>
 
-      {/* Desktop Thumbnails - LEFT SIDEBAR - Added mr-3 */}
+      {/* Desktop Thumbnails - LEFT SIDEBAR */}
       {images.length > 1 && (
         <div className='hidden md:flex flex-col gap-2 w-14 overflow-y-auto scrollbar-thin h-[28rem] mr-3'>
           {images.map((img, idx) => (
@@ -24,7 +24,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
               onClick={() => setSelectedIndex(idx)}
               className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${
                 selectedIndex === idx
-         ? 'border-blue-600 shadow-md'
+                ? 'border-blue-600 shadow-md'
                   : 'border-gray-200 hover:border-gray-400'
               }`}
             >
@@ -38,14 +38,16 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
         </div>
       )}
 
-      {/* Main Image Container */}
-      <div className='flex-1 relative group bg-gray-50 rounded-lg border border-gray-100 overflow-hidden aspect-[4/5] md:h-[28rem] md:aspect-auto'>
-        <img
-          src={images[selectedIndex]}
-          alt='Product'
-          className='w-full h-full object-contain cursor-pointer'
-          onClick={() => setIsFullscreen(true)}
-        />
+      {/* Main Image Container - aspect-square on mobile */}
+      <div className='flex-1 relative group bg-white rounded-lg border border-gray-100 overflow-hidden aspect-square md:h-[28rem] md:aspect-auto'>
+        <div className='w-full h-full flex items-center justify-center p-4'>
+          <img
+            src={images[selectedIndex]}
+            alt='Product'
+            className='max-w-full max-h-full object-contain cursor-pointer'
+            onClick={() => setIsFullscreen(true)}
+          />
+        </div>
 
         {/* Nav Arrows */}
         {images.length > 1 && (
@@ -77,37 +79,41 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
         </div>
       </div>
 
-      {/* Mobile Thumbnails - BOTTOM HORIZONTAL */}
+      {/* Mobile Thumbnails - FIXED: wrapper for padding */}
       {images.length > 1 && (
-        <div className='flex md:hidden gap-2 overflow-x-auto pb-1 mt-3'>
-          {images.map((img, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedIndex(idx)}
-              className={`flex-shrink-0 w-16 h-16 bg-gray-50 rounded border-2 p-0.5 transition-all ${
-                selectedIndex === idx
-         ? 'border-blue-600'
-                  : 'border-gray-200 hover:border-gray-400'
-              }`}
-            >
-              <img
-                src={img}
-                alt={`Thumb ${idx + 1}`}
-                className='w-full h-full object-contain'
-              />
-            </button>
-          ))}
+        <div className='md:hidden mt-3'>
+          <div className='flex gap-2 overflow-x-auto pb-2 px-4'>
+            {images.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => setSelectedIndex(idx)}
+                className={`flex-shrink-0 w-16 h-16 bg-gray-50 rounded border-2 p-0.5 transition-all ${
+                  selectedIndex === idx
+                  ? 'border-blue-600'
+                    : 'border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                <img
+                  src={img}
+                  alt={`Thumb ${idx + 1}`}
+                  className='w-full h-full object-contain'
+                />
+              </button>
+            ))}
+            {/* Spacer so last thumb + scrollbar don't cut */}
+            <div className='flex-shrink-0 w-1'></div>
+          </div>
         </div>
       )}
 
-      {/* Fullscreen Modal */}
+      {/* Fullscreen Modal - CENTERED IMAGE */}
       {isFullscreen && (
         <div className='fixed inset-0 bg-white z-50 flex flex-col md:flex-row overflow-hidden'>
 
           {/* Close Button */}
           <button
             onClick={() => setIsFullscreen(false)}
-            className='absolute top-3 right-3 md:top-4 md:right-4 text-gray-800 text-2xl md:text-3xl z-20 hover:text-gray-600 bg-white/90 md:bg-transparent rounded-full p-2 md:p-0 shadow md:shadow-none'
+            className='absolute top-4 right-4 text-gray-800 text-2xl z-20 hover:text-gray-600 bg-white rounded-full p-2 shadow-lg'
           >
             <FaTimes />
           </button>
@@ -121,7 +127,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                   onClick={() => setSelectedIndex(idx)}
                   className={`w-16 h-16 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${
                     selectedIndex === idx
-             ? 'border-blue-600 shadow-md'
+                    ? 'border-blue-600 shadow-md'
                       : 'border-gray-200 hover:border-gray-400'
                   }`}
                 >
@@ -135,12 +141,12 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
             </div>
           )}
 
-          {/* Main Image */}
-          <div className='flex-1 min-h-0 relative flex items-center justify-center p-3 md:p-8'>
+          {/* Main Image - Centered */}
+          <div className='flex-1 min-h-0 relative flex items-center justify-center px-4 md:p-8'>
             <img
               src={images[selectedIndex]}
               alt='Product'
-              className='max-w-full max-h-[calc(100vh-10rem)] md:max-h-full object-contain'
+              className='max-w-full max-h-full object-contain'
               onClick={(e) => e.stopPropagation()}
             />
 
@@ -152,24 +158,24 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                     e.stopPropagation();
                     prevImage();
                   }}
-                  className='absolute left-2 md:left-8 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2.5 md:p-3 text-gray-800 shadow-lg'
+                  className='absolute left-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-3 text-gray-800 shadow-lg'
                 >
-                  <FaChevronLeft className='text-xl md:text-2xl' />
+                  <FaChevronLeft className='text-xl' />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     nextImage();
                   }}
-                  className='absolute right-2 md:right-8 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2.5 md:p-3 text-gray-800 shadow-lg'
+                  className='absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-3 text-gray-800 shadow-lg'
                 >
-                  <FaChevronRight className='text-xl md:text-2xl' />
+                  <FaChevronRight className='text-xl' />
                 </button>
               </>
             )}
           </div>
 
-          {/* Mobile Thumbnails in Modal - Bottom Fixed */}
+          {/* Mobile Thumbnails - Bottom Fixed */}
           {images.length > 1 && (
             <div className='flex md:hidden gap-2 overflow-x-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-gray-50 border-t border-gray-200 flex-shrink-0'>
               {images.map((img, idx) => (
@@ -178,7 +184,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                   onClick={() => setSelectedIndex(idx)}
                   className={`flex-shrink-0 w-14 h-14 bg-white rounded border-2 p-0.5 ${
                     selectedIndex === idx
-             ? 'border-blue-600'
+                    ? 'border-blue-600'
                       : 'border-gray-200'
                   }`}
                 >
@@ -189,6 +195,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                   />
                 </button>
               ))}
+              <div className='flex-shrink-0 w-1'></div>
             </div>
           )}
         </div>
