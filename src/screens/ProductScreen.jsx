@@ -396,17 +396,14 @@ const ProductScreen = () => {
             {/* Left: Thumbnails + Main Image */}
 
             {/* Main 360 Image */}
-            <div className='lg:col-span-7 flex items-start'>
-              <div className='flex-1'>
-                <div className='relative w-full max-w-md'>
-                  <Product360
-                    images={selectedColor?.images || []}
-                    selectedIndex={selectedImageIndex}
-                    setSelectedIndex={setSelectedImageIndex}
-                  />
-                </div>
-              </div>
-            </div>
+           
+             <div className='lg:col-span-7 min-w-0'>   
+        <Product360
+          images={selectedColor?.images || []}
+          selectedIndex={selectedImageIndex}
+          setSelectedIndex={setSelectedImageIndex}
+        />
+      </div>
 
 
 

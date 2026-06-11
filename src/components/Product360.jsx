@@ -13,18 +13,18 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
   };
 
   return (
-    <div className='w-full flex flex-col md:flex-row'>
+    <div className='w-full flex flex-col md:flex-row min-w-0'>
 
       {/* Desktop Thumbnails - LEFT SIDEBAR */}
       {images.length > 1 && (
-        <div className='hidden md:flex flex-col gap-2 w-14 overflow-y-auto scrollbar-thin h-[28rem] mr-3'>
+        <div className='hidden md:flex flex-col gap-2 w-14 overflow-y-auto scrollbar-thin h-[28rem] mr-3 flex-shrink-0'>
           {images.map((img, idx) => (
             <button
               key={idx}
               onClick={() => setSelectedIndex(idx)}
               className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${
                 selectedIndex === idx
-                ? 'border-blue-600 shadow-md'
+              ? 'border-blue-600 shadow-md'
                   : 'border-gray-200 hover:border-gray-400'
               }`}
             >
@@ -38,8 +38,8 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
         </div>
       )}
 
-      {/* Main Image Container - aspect-square on mobile */}
-      <div className='flex-1 relative group bg-white rounded-lg border border-gray-100 overflow-hidden aspect-square md:h-[28rem] md:aspect-auto'>
+      {/* Main Image Container - Added max-w-full */}
+      <div className='flex-1 relative group bg-white rounded-lg border border-gray-100 overflow-hidden aspect-square md:h-[28rem] md:aspect-auto min-w-0 w-full'>
         <div className='w-full h-full flex items-center justify-center p-4'>
           <img
             src={images[selectedIndex]}
@@ -79,17 +79,17 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
         </div>
       </div>
 
-      {/* Mobile Thumbnails - FIXED: wrapper for padding */}
+      {/* Mobile Thumbnails - NO NEGATIVE MARGIN */}
       {images.length > 1 && (
-        <div className='md:hidden mt-3'>
-          <div className='flex gap-2 overflow-x-auto pb-2 px-4'>
+        <div className='md:hidden mt-3 w-full'>
+          <div className='flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
             {images.map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedIndex(idx)}
-                className={`flex-shrink-0 w-16 h-16 bg-gray-50 rounded border-2 p-0.5 transition-all ${
+                className={`flex-shrink-0 w-16 h-16 bg-gray-50 rounded border-2 p-0.5 transition-all snap-start ${
                   selectedIndex === idx
-                  ? 'border-blue-600'
+               ? 'border-blue-600'
                     : 'border-gray-200 hover:border-gray-400'
                 }`}
               >
@@ -100,17 +100,14 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                 />
               </button>
             ))}
-            {/* Spacer so last thumb + scrollbar don't cut */}
-            <div className='flex-shrink-0 w-1'></div>
           </div>
         </div>
       )}
 
-      {/* Fullscreen Modal - CENTERED IMAGE */}
+      {/* Fullscreen Modal */}
       {isFullscreen && (
         <div className='fixed inset-0 bg-white z-50 flex flex-col md:flex-row overflow-hidden'>
 
-          {/* Close Button */}
           <button
             onClick={() => setIsFullscreen(false)}
             className='absolute top-4 right-4 text-gray-800 text-2xl z-20 hover:text-gray-600 bg-white rounded-full p-2 shadow-lg'
@@ -118,7 +115,6 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
             <FaTimes />
           </button>
 
-          {/* Thumbnails - Left Sidebar Desktop Only */}
           {images.length > 1 && (
             <div className='hidden md:flex flex-col gap-2 w-20 p-4 overflow-y-auto bg-gray-50 border-r border-gray-200 flex-shrink-0'>
               {images.map((img, idx) => (
@@ -127,7 +123,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                   onClick={() => setSelectedIndex(idx)}
                   className={`w-16 h-16 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${
                     selectedIndex === idx
-                    ? 'border-blue-600 shadow-md'
+                 ? 'border-blue-600 shadow-md'
                       : 'border-gray-200 hover:border-gray-400'
                   }`}
                 >
@@ -141,7 +137,6 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
             </div>
           )}
 
-          {/* Main Image - Centered */}
           <div className='flex-1 min-h-0 relative flex items-center justify-center px-4 md:p-8'>
             <img
               src={images[selectedIndex]}
@@ -150,7 +145,6 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
               onClick={(e) => e.stopPropagation()}
             />
 
-            {/* Nav Arrows in Modal */}
             {images.length > 1 && (
               <>
                 <button
@@ -175,27 +169,27 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
             )}
           </div>
 
-          {/* Mobile Thumbnails - Bottom Fixed */}
           {images.length > 1 && (
-            <div className='flex md:hidden gap-2 overflow-x-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-gray-50 border-t border-gray-200 flex-shrink-0'>
-              {images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedIndex(idx)}
-                  className={`flex-shrink-0 w-14 h-14 bg-white rounded border-2 p-0.5 ${
-                    selectedIndex === idx
-                    ? 'border-blue-600'
-                      : 'border-gray-200'
-                  }`}
-                >
-                  <img
-                    src={img}
-                    alt={`Thumb ${idx + 1}`}
-                    className='w-full h-full object-contain'
-                  />
-                </button>
-              ))}
-              <div className='flex-shrink-0 w-1'></div>
+            <div className='md:hidden mt-auto bg-gray-50 border-t border-gray-200'>
+              <div className='flex gap-2 overflow-x-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedIndex(idx)}
+                    className={`flex-shrink-0 w-14 h-14 bg-white rounded border-2 p-0.5 snap-start ${
+                      selectedIndex === idx
+                   ? 'border-blue-600'
+                        : 'border-gray-200'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Thumb ${idx + 1}`}
+                      className='w-full h-full object-contain'
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
