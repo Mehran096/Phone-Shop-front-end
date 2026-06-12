@@ -22,7 +22,7 @@ const HomeScreen = () => {
     pageNumber,
   })
 
-  const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme']
+  const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'OPPO', 'ViVO']
 
   return (
     <>
