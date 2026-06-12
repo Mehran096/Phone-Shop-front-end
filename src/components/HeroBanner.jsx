@@ -52,25 +52,25 @@ const HeroBanner = () => {
       </div>
 
       {/* Mobile Banner */}
-      <div className="md:hidden relative h-[420px] bg-slate-900 overflow-hidden">
-        <img
-          src="/assets/HeroBanner.png"
-          alt="Latest Flagship Phones"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center px-4">
-          <h1 className="text-3xl font-bold text-white mb-3">
-            Latest Flagship Phones
-          </h1>
-          <p className="text-gray-200 mb-6">Apple, Samsung, Google & More</p>
-          <Link
-            to="/products"
-            className="bg-white text-slate-900 px-6 py-2.5 rounded-full font-semibold"
-          >
-            Shop Now
-          </Link>
-        </div>
-      </div>
+      <div className="md:hidden relative w-full bg-slate-900 overflow-hidden">
+  <img 
+    src="/assets/HeroBanner.png"
+    alt="Latest Flagship Phones"
+    className="w-full h-auto"
+  />
+  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center px-4">
+    <h1 className="text-3xl font-bold text-white mb-3">
+      Latest Flagship Phones
+    </h1>
+    <p className="text-gray-200 mb-6">Apple, Samsung, Google & More</p>
+    <Link 
+      to="/products"
+      className="bg-white text-slate-900 px-6 py-2.5 rounded-full font-semibold"
+    >
+      Shop Now
+    </Link>
+  </div>
+</div>
     </div>
   )
 }
