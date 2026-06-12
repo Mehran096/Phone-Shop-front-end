@@ -57,7 +57,7 @@ const HeroBanner = () => {
   <img
     src="/assets/HeroBanner.png"
     alt="Latest Flagship Phones"
-    className="w-full min-h-[325px] object-cover object-center"
+    className="w-full min-h-[320px] object-cover object-center"
   />
   <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center px-4">
     <h1 className="text-3xl font-bold text-white mb-3">
