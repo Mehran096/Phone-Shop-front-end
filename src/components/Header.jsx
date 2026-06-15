@@ -3,8 +3,9 @@ import { Link, useNavigate, useSearchParams, useLocation, } from 'react-router-d
 import { useDispatch, useSelector } from 'react-redux'
 
 import { logout } from '../slices/authSlice'
-import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown } from 'react-icons/fa'
+import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaHeart } from 'react-icons/fa'
 import { clearCartItems } from '../slices/cartSlice'
+import { getWishlist, resetWishlist } from '../slices/wishlistSlice'
 import SearchBox from './SearchBox'
 
 const Header = () => {
@@ -20,6 +21,7 @@ const Header = () => {
 
   const currentBrand = searchParams.get('brand')
 
+  const { wishlistItems } = useSelector((state) => state.wishlist)
   const { cartItems } = useSelector((state) => state.cart)
   const { userInfo } = useSelector((state) => state.auth)
 
@@ -29,6 +31,7 @@ const Header = () => {
   const logoutHandler = () => {
     dispatch(logout())
     dispatch(clearCartItems())
+    dispatch(resetWishlist())
     navigate('/login')
     setUserDropdown(false)
     setIsMobileMenuOpen(false)
@@ -38,6 +41,12 @@ const Header = () => {
     navigate(`/products?brand=${brand}`)
     setIsMobileMenuOpen(false)
   }
+
+  useEffect(() => {
+  if (userInfo) {
+    dispatch(getWishlist())
+  }
+}, [dispatch, userInfo])
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -107,6 +116,28 @@ const Header = () => {
                 </span>
               )}
             </Link>
+
+            {/* ADD THIS - Wishlist Link */}
+{userInfo && (
+  <Link
+    to='/wishlist'
+    className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white rounded-sm transition-all duration-100'
+  >
+    <FaHeart className='text-xl' />
+    <div className='flex flex-col leading-tight relative'>
+      <span className='text-xs text-gray-300'>
+        {wishlistItems.length > 0 ? `${wishlistItems.length} Items` : 'Your'}
+      </span>
+      <span className='text-sm font-bold'>Wishlist</span>
+      {wishlistItems.length > 0 && (
+        <span className='absolute -top-1 -right-6 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center'>
+          {wishlistItems.length}
+        </span>
+      )}
+    </div>
+  </Link>
+)}
+
 
             {userInfo ? (
               <div className='relative group'>
@@ -225,6 +256,17 @@ const Header = () => {
               <FaShoppingCart />
               Cart {cartCount > 0 && `(${cartCount})`}
             </Link>
+          {/* wishlist */}
+            {userInfo && (
+        <Link
+          to='/wishlist'
+          className='flex items-center gap-2 py-2 hover:text-red-400 border-t border-gray-700 pt-4 mt-2'
+          onClick={closeMobileMenu}
+        >
+          <FaHeart />
+          Wishlist {wishlistItems.length > 0 && `(${wishlistItems.length})`}
+        </Link>
+      )}
 
             {/* Brands - Mobile */}
             <div className='border-t border-gray-700 pt-4 mt-2'>

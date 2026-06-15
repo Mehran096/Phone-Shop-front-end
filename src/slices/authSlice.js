@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-//import { clearCartItems } from './cartSlice'
-
+ 
 import api from '../utils/axios'
 
 
@@ -94,26 +93,7 @@ export const updateUserProfile = createAsyncThunk(
     }
   }
 )
-// GET ALL USERS - Admin only
-// export const listUsers = createAsyncThunk(
-//   'user/listUsers',
-//   async ({ keyword = '', pageNumber = 1 }, { getState, rejectWithValue }) => {
-//     try {
-//       const {
-//         auth: { userInfo },
-//       } = getState()
-
-
-
-//       const { data } = await api.get(`/users`)
-//       return data
-//     } catch (error) {
-//       return rejectWithValue(
-//         error.response?.data?.message || error.message
-//       )
-//     }
-//   }
-// )
+ 
 export const listUsers = createAsyncThunk(
   'user/listUsers',
   async ({ keyword = '', pageNumber = 1 }, { rejectWithValue }) => {

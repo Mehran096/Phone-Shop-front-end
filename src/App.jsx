@@ -29,6 +29,7 @@ import OrderSuccessScreen from './screens/OrderSuccessScreen';
 import ContactScreen from './screens/ContactScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen'
+import WishlistScreen from './screens/WishlistScreen'
 
 import { setCartItems } from './slices/cartSlice'
 import axios from 'axios'
@@ -109,6 +110,7 @@ useEffect(() => {
             <Route path='/myorders' element={<MyOrdersScreen />} />
             <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
             <Route path="/reset-password/:token" element={<ResetPasswordScreen />} />
+            <Route path="/wishlist" element={<WishlistScreen />} />
 
             {/* Admin Routes */}
             <Route path="" element={<AdminRoute />}>

@@ -23,6 +23,7 @@ import Rating from '../components/Rating'
 import { FaEdit, FaCheck, FaTrash, FaShoppingCart } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import Product360 from '../components/Product360';
+import WishlistButton from '../components/WishlistButton'
 
 
 const ProductScreen = () => {
@@ -478,6 +479,7 @@ const ProductScreen = () => {
                   >
                     <FaShoppingCart /> Add to Cart
                   </button>
+                   <WishlistButton product={product} />
                 </div>
               )}
             </div>

@@ -7,6 +7,7 @@ function ShippingScreen() {
   const cart = useSelector((state) => state.cart);
   //const { loading } = useSelector((state) => state.order)
   const { shippingAddress } = cart;
+   const { userInfo } = useSelector((state) => state.auth)
 
   const [address, setAddress] = useState(shippingAddress?.address || '');
   const [city, setCity] = useState(shippingAddress?.city || '');
@@ -18,7 +19,13 @@ function ShippingScreen() {
 
   const submitHandler = (e) => {
     e.preventDefault();
-    dispatch(saveShippingAddress({ address, city, postalCode, country }));
+    dispatch(saveShippingAddress({ 
+      address, 
+      city, 
+      postalCode, 
+      country,  
+      name: userInfo.name, 
+      email: userInfo.email   }));
     navigate('/payment'); // Next step
   };
 

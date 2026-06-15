@@ -4,7 +4,7 @@ import cartReducer from './slices/cartSlice';
 import authSliceReducer from './slices/authSlice';
 import orderReducer from './slices/orderSlice';
 import { apiSlice } from './slices/apiSlice'
- 
+import wishlistReducer from './slices/wishlistSlice'
 
 export default configureStore({
   reducer: {
@@ -13,6 +13,7 @@ export default configureStore({
     cart: cartReducer,
     auth: authSliceReducer,
     order: orderReducer, 
+     wishlist: wishlistReducer,
 
   },
    middleware: (getDefaultMiddleware) =>

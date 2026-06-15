@@ -28,7 +28,7 @@ const OrderScreen = () => {
   }, [dispatch, orderId, successPay, successDeliver, order._id, userInfo, navigate])
 
   useEffect(() => { 
-    if (successDeliver) toast.success('Order marked as delivered')
+    if (successDeliver) toast.success('Order marked as delivered. Email sent to customer.')
   }, [successDeliver])
 
   const deliverHandler = async () => {
@@ -206,9 +206,10 @@ const OrderScreen = () => {
               <button
                 type='button'
                 onClick={deliverHandler}
+                disabled={loading}
                 className='w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:opacity-50'
               >
-                Mark as Delivered
+                {loading ? 'Marking...' : 'Mark as Delivered'}
               </button>
             )}
           </div>

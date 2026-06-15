@@ -60,11 +60,11 @@ function PaymentScreen() {
 
           {/* Button */}
           <button
-            type="submit"
-            className="w-full bg-slate-700 text-white py-2.5 px-4 rounded-md font-medium hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition duration-200"
-          >
-            Continue
-          </button>
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-semibold mt-6 transition"
+            >
+              Continue
+            </button>
         </form>
       </div>
     </div>
