@@ -22,18 +22,7 @@ const PlaceOrderScreen = () => {
     navigate('/payment')
   }
 }, [cart?.paymentMethod, cart?.shippingAddress?.address, navigate, orderPlaced])
-
-  // useEffect(() => {
-  //  // console.log('order state:', order)
-  //   if (success && order?._id) {
-  //     navigate(`/order/${order._id}`)
-  //     dispatch(clearCartItems())
-  //     dispatch(resetOrder())
-  //   }
-    
-  // }, [success, navigate, dispatch, order])
-
-   
+ 
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2)
   }
@@ -43,12 +32,17 @@ const PlaceOrderScreen = () => {
     cart?.cartItems?.reduce((acc, item) => acc + item.price * item.qty, 0)
   )
   const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
+
   // Apply tax only if payment method is CashOnDelivery
+  //console.log('cart.paymentMethod value:', cart.paymentMethod, typeof cart.paymentMethod)
 const taxPrice = addDecimals(
   cart.paymentMethod === 'Cash on Delivery'
     ? Number((0.15 * itemsPrice).toFixed(2))
     : 0
 )
+
+//console.log('taxPrice after calc:', taxPrice)
+
   const totalPrice = (
     Number(itemsPrice) +
     Number(shippingPrice) +
@@ -75,10 +69,10 @@ const placeOrderHandler = async () => {
         })),
         shippingAddress: cart.shippingAddress,
         paymentMethod: cart.paymentMethod,
-        itemsPrice: cart.itemsPrice,
-        taxPrice: cart.taxPrice,
-        shippingPrice: cart.shippingPrice,
-        totalPrice: cart.totalPrice,
+        itemsPrice: itemsPrice,
+        taxPrice: taxPrice,
+        shippingPrice: shippingPrice,
+        totalPrice: totalPrice,
       })).unwrap();
 
        

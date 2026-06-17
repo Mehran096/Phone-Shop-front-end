@@ -479,7 +479,9 @@ const ProductScreen = () => {
                   >
                     <FaShoppingCart /> Add to Cart
                   </button>
+                  <div className='flex-shrink-0'>
                    <WishlistButton product={product} />
+                  </div>
                 </div>
               )}
             </div>
