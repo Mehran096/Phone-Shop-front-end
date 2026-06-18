@@ -465,11 +465,11 @@ const ProductScreen = () => {
                   <select
                     value={qty}
                     onChange={(e) => setQty(Number(e.target.value))}
-                   className='w-20 flex-shrink-0 px-3 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold text-sm'
+                   className='w-22 flex-shrink-0 px-2 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold text-sm'
     >
                     {[...Array(Math.min(currentStock, 10)).keys()].map((x) => (
                       <option key={x + 1} value={x + 1}>
-                        Qty: {x + 1}
+                         {x + 1}
                       </option>
                     ))}
                   </select>
