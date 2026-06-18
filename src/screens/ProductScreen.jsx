@@ -461,12 +461,12 @@ const ProductScreen = () => {
 
               {/* Qty + Add to Cart - LAST ITEM IN RIGHT COLUMN */}
               {currentStock > 0 && (
-                <div className='flex gap-3 mb-6'>
+                 <div className='flex items-center gap-2 mb-6'>
                   <select
                     value={qty}
                     onChange={(e) => setQty(Number(e.target.value))}
-                    className='px-4 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold focus:border-blue-600 focus:outline-none'
-                  >
+                   className='w-20 flex-shrink-0 px-3 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold text-sm'
+    >
                     {[...Array(Math.min(currentStock, 10)).keys()].map((x) => (
                       <option key={x + 1} value={x + 1}>
                         Qty: {x + 1}

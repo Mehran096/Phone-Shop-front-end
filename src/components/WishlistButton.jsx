@@ -36,7 +36,7 @@ const WishlistButton = ({ product }) => {
   return (
     <button
     onClick={wishlistHandler}
-    className="px-4 py-3 border-2 border-gray-200 rounded-xl hover:bg-gray-50 flex items-center justify-center"
+    className="px-4 py-3 w-full h-full border-2 border-gray-200 rounded-xl hover:bg-gray-50 flex items-center justify-center"
     title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
   >
     {isWishlisted ? (
