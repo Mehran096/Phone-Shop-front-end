@@ -462,6 +462,7 @@ const ProductScreen = () => {
               {/* Qty + Add to Cart - LAST ITEM IN RIGHT COLUMN */}
               {currentStock > 0 && (
                  <div className='flex items-center gap-2 mb-6'>
+                  <label className='text-xs text-gray-500 mb-1 block sm:hidden'>Qty</label>
                   <select
                     value={qty}
                     onChange={(e) => setQty(Number(e.target.value))}
