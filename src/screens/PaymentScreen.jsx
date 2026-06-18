@@ -1,74 +1,103 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { savePaymentMethod } from '../slices/cartSlice';
- 
+import { useState, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { savePaymentMethod } from '../slices/cartSlice'
+import CheckoutSteps from '../components/CheckoutSteps'
+import { toast } from 'react-toastify'
+
 function PaymentScreen() {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  
-  const cart = useSelector((state) => state.cart);
-  const { shippingAddress } = cart;
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const cart = useSelector((state) => state.cart)
+  const { shippingAddress } = cart
 
   useEffect(() => {
     if (!shippingAddress.address) {
-      navigate('/shipping');
+      navigate('/shipping')
     }
-  }, [shippingAddress, navigate]);
+  }, [shippingAddress.address, navigate])
 
-  const [paymentMethod, setPaymentMethod] = useState('Stripe');
+  const [paymentMethod, setPaymentMethod] = useState(cart.paymentMethod || 'Stripe')
 
   const submitHandler = (e) => {
-    e.preventDefault();
-    dispatch(savePaymentMethod(paymentMethod));
-    navigate('/placeorder'); // Next screen
-  };
+    e.preventDefault()
+    if (!paymentMethod) {
+      toast.error('Please select a payment method')
+      return
+    }
+    dispatch(savePaymentMethod(paymentMethod))
+    navigate('/placeorder')
+  }
 
- return (
-    <div className="min-h-screen bg-gray-50 flex items-start justify-center px-4 py-8">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-        
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Payment Method</h1>
+  return (
+    <>
+      <CheckoutSteps step1 step2 step3 />
+      <div className="min-h-screen bg-gray-50 flex items-start justify-center px-4 py-8">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            Payment Method
+          </h1>
 
-        <form onSubmit={submitHandler} className="space-y-4">
-          
-          {/* Stripe Option */}
-          <label className="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="Stripe"
-              checked={paymentMethod === 'Stripe'}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-            />
-            <span className="ml-3 text-gray-700 font-medium">Stripe or Credit Card</span>
-          </label>
+          <form onSubmit={submitHandler} className="space-y-4">
+            {/* Stripe Option */}
+            <label
+              className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
+                paymentMethod === 'Stripe'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-blue-300'
+              }`}
+            >
+              <input
+                type="radio"
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                id="Stripe"
+                name="paymentMethod"
+                value="Stripe"
+                checked={paymentMethod === 'Stripe'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+              <div className="ml-3">
+                <span className="font-medium text-gray-900">Stripe</span>
+                <p className="text-sm text-gray-500">Pay with credit/debit card</p>
+              </div>
+            </label>
 
-          {/* Cash on Delivery Option */}
-          <label className="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="Cash on Delivery"
-              checked={paymentMethod === 'Cash on Delivery'}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-            />
-            <span className="ml-3 text-gray-700 font-medium">Cash on Delivery</span>
-          </label>
+            {/* COD Option - FIXED: value="COD" not "Cash on Delivery" */}
+            <label
+              className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
+                paymentMethod === 'COD'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-blue-300'
+              }`}
+            >
+              <input
+                type="radio"
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                id="COD"
+                name="paymentMethod"
+                value="COD"
+                checked={paymentMethod === 'COD'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+              <div className="ml-3">
+                <span className="font-medium text-gray-900">Cash on Delivery</span>
+                <p className="text-sm text-gray-500">Pay when you receive your order</p>
+              </div>
+            </label>
 
-          {/* Button */}
-          <button
+            <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-semibold mt-6 transition"
+              disabled={!paymentMethod}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed mt-6"
             >
               Continue
             </button>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
-  );
+    </>
+  )
 }
 
-export default PaymentScreen;
+export default PaymentScreen

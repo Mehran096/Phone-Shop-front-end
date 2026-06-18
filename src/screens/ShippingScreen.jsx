@@ -9,6 +9,8 @@ function ShippingScreen() {
   const { shippingAddress } = cart;
    const { userInfo } = useSelector((state) => state.auth)
 
+    
+  // const [phone, setPhone] = useState(shippingAddress?.phone || '')
   const [address, setAddress] = useState(shippingAddress?.address || '');
   const [city, setCity] = useState(shippingAddress?.city || '');
   const [postalCode, setPostalCode] = useState(shippingAddress?.postalCode || '');
@@ -20,6 +22,7 @@ function ShippingScreen() {
   const submitHandler = (e) => {
     e.preventDefault();
     dispatch(saveShippingAddress({ 
+      //phone,
       address, 
       city, 
       postalCode, 
@@ -44,6 +47,21 @@ function ShippingScreen() {
         <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Shipping</h1>
 
         <form onSubmit={submitHandler} className="space-y-4">
+          {/* Phone Number */}
+          {/* <div>
+            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number
+            </label>
+            <input
+              type='tel'
+              id="address"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder='03xx-xxxxxxx'
+            />
+          </div> */}
           
           {/* Address */}
           <div>

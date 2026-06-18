@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux' 
-import { clearCartItems, resetCart } from '../slices/cartSlice' 
-import { createCheckoutSession, createOrder, resetOrder} from '../slices/orderSlice'
- 
+import { useDispatch, useSelector } from 'react-redux'
+import { clearCartItems, resetCart } from '../slices/cartSlice'
+import { createCheckoutSession, createOrder, resetOrder } from '../slices/orderSlice'
+import CheckoutSteps from '../components/CheckoutSteps'
+import Message from '../components/Message'
+import { toast } from 'react-toastify'
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate()
@@ -11,166 +13,133 @@ const PlaceOrderScreen = () => {
   const [orderPlaced, setOrderPlaced] = useState(false)
 
   const cart = useSelector((state) => state.cart)
-  
-   
- const { order, success, error, loading } = useSelector((state) => state.order)
-   
-  useEffect(() => {
-  if (!orderPlaced && !cart?.shippingAddress?.address) {
-    navigate('/shipping')
-  } else if (!orderPlaced && !cart?.paymentMethod) {
-    navigate('/payment')
-  }
-}, [cart?.paymentMethod, cart?.shippingAddress?.address, navigate, orderPlaced])
- 
+  const { order, success, error, loading } = useSelector((state) => state.order)
+
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2)
   }
 
-  // Don't mutate cart - create new variables
-  const itemsPrice = addDecimals(
-    cart?.cartItems?.reduce((acc, item) => acc + item.price * item.qty, 0)
-  )
-  const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
+  // Calculate prices
+const itemsPrice = addDecimals(
+  cart.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+)
+const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
 
-  // Apply tax only if payment method is CashOnDelivery
-  //console.log('cart.paymentMethod value:', cart.paymentMethod, typeof cart.paymentMethod)
+// FIX: Tax only for COD
 const taxPrice = addDecimals(
-  cart.paymentMethod === 'Cash on Delivery'
-    ? Number((0.15 * itemsPrice).toFixed(2))
-    : 0
+  cart.paymentMethod === 'COD' ? Number((0.15 * itemsPrice).toFixed(2)) : 0
 )
 
-//console.log('taxPrice after calc:', taxPrice)
+const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Number(taxPrice))
 
-  const totalPrice = (
-    Number(itemsPrice) +
-    Number(shippingPrice) +
-    Number(taxPrice)
-  ).toFixed(2)
+ useEffect(() => {
+  if (!cart.paymentMethod) {
+    navigate('/payment')
+  }
+  // REMOVED shippingAddress check - causes redirect loop after order success
+}, [cart.paymentMethod, navigate])
 
- 
-const placeOrderHandler = async () => {
-  
+//   useEffect(() => {
+//   if (success && order && orderPlaced) {
+//     if (order.paymentMethod === 'COD') {
+//       navigate(`/order/${order._id}`) // NAVIGATE FIRST
+//       dispatch(clearCartItems())      // CLEAR AFTER
+//       dispatch(resetCart())
+//       dispatch(resetOrder())
+//     }
+//   }
+//   // Stripe: redirect handled in placeOrderHandler
+// }, [success, order, orderPlaced, navigate, dispatch])
+
+ const placeOrderHandler = async () => {
   try {
-    if (cart.paymentMethod === 'Cash on Delivery') {
-      // COD: create order directly, no Stripe
-       //console.log('Cart items before order:', cart.cartItems)
-       setOrderPlaced(true)
-      const createdOrder = await dispatch(createOrder({
-        orderItems: cart.cartItems.map(item => ({
-          product: item.product,
-          name: item.name,
-          qty: item.qty,
-          price: item.price,
-          image: item.image,
-          color: item.color,    
-    hexCode: item.hexCode, 
-        })),
-        shippingAddress: cart.shippingAddress,
-        paymentMethod: cart.paymentMethod,
-        itemsPrice: itemsPrice,
-        taxPrice: taxPrice,
-        shippingPrice: shippingPrice,
-        totalPrice: totalPrice,
-      })).unwrap();
+    const orderData = {
+      orderItems: cart.cartItems.map((item) => ({
+        product: item.product,
+        name: item.name,
+        qty: item.qty,
+        price: item.price,
+        image: item.image,
+        color: item.color,
+        hexCode: item.hexCode,
+      })),
+      shippingAddress: cart.shippingAddress,
+      paymentMethod: cart.paymentMethod,
+      itemsPrice,
+      taxPrice,
+      shippingPrice,
+      totalPrice,
+    }
 
-       
-      navigate(`/order/${createdOrder._id}`);
-       dispatch(resetCart());
-
+    if (cart.paymentMethod === 'COD') {
+      console.log('Sending to backend:', orderData.orderItems)
+      const newOrder = await dispatch(createOrder(orderData)).unwrap() // CAPTURE THE RESPONSE
+      console.log('Order created:', newOrder) // This will show the _id
+      
+      navigate(`/order/${newOrder._id}`) // NAVIGATE USING THE RESPONSE
+      dispatch(clearCartItems())         // CLEAR AFTER NAVIGATE
+      dispatch(resetOrder())             // RESET ORDER STATE
+    } else if (cart.paymentMethod === 'Stripe') {
+      const session = await dispatch(createCheckoutSession(orderData)).unwrap()
+      window.location.href = session.url // Redirect to Stripe
     } else {
-      // Stripe: create order + checkout session
-       setOrderPlaced(true)
-      const createdOrder = await dispatch(createCheckoutSession({
-        orderItems: cart.cartItems.map(item => ({
-          product: item.product,
-          name: item.name,
-          qty: item.qty,
-          price: item.price,
-          image: item.image,
-          color: item.color,    
-          hexCode: item.hexCode, 
-        })),
-        shippingAddress: cart.shippingAddress,
-        paymentMethod: cart.paymentMethod,
-        itemsPrice: cart.itemsPrice,
-        taxPrice: cart.taxPrice,
-        shippingPrice: cart.shippingPrice,
-        totalPrice: cart.totalPrice,
-      })).unwrap(); 
-       
-      window.location.href = createdOrder.url; // redirect to Stripe
-      // dispatch(resetCart());
+      toast.error('Please select a payment method')
     }
   } catch (err) {
-    console.log(err);
+    toast.error(err?.data?.message || err.error || 'Failed to place order')
   }
-};
-
- 
-
-  if (loading) {
-    return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900'></div>
-      </div>
-    )
-  }
+}
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <>
       <CheckoutSteps step1 step2 step3 step4 />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-md">
+      <div className='container mx-auto px-4 py-8'>
+        <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8'>
+          <div className='lg:col-span-2 space-y-6'>
             {/* Shipping */}
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold mb-4">Shipping</h2>
+            <div className='bg-white rounded-lg shadow-md p-6'>
+              <h2 className='text-2xl font-bold mb-4'>Shipping</h2>
               <p>
-                <span className="font-semibold">Address: </span>
-                {cart?.shippingAddress?.address}, {cart?.shippingAddress?.city}{' '}
-                {cart?.shippingAddress?.postalCode}, {cart?.shippingAddress?.country}
+                <span className='font-semibold'>Address: </span>
+                {cart.shippingAddress.address}, {cart.shippingAddress.city}{' '}
+                {cart.shippingAddress.postalCode}, {cart.shippingAddress.country}
               </p>
             </div>
 
             {/* Payment Method */}
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold mb-4">Payment Method</h2>
-              <p>
-                <span className="font-semibold">Method: </span>
-                {cart?.paymentMethod}
-              </p>
+            <div className='bg-white rounded-lg shadow-md p-6'>
+              <h2 className='text-2xl font-bold mb-4'>Payment Method</h2>
+              <p><strong>Method: </strong>{cart.paymentMethod}</p>
             </div>
 
             {/* Order Items */}
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Order Items</h2>
-              {cart?.cartItems?.length === 0 ? (
-                <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
-                  Your cart is empty
-                </div>
+            <div className='bg-white rounded-lg shadow-md p-6'>
+              <h2 className='text-2xl font-bold mb-4'>Order Items</h2>
+              {cart.cartItems.length === 0 ? (
+                <Message>Your cart is empty</Message>
               ) : (
-                <div className="space-y-4">
-                  {cart?.cartItems?.map((item, index) => (
-                    <div key={index} className="flex items-center gap-4 pb-4 border-b border-gray-200 last:border-0">
-                      <div className="w-16 h-16 flex-shrink-0">
+                <div className='space-y-4'>
+                  {cart.cartItems.map((item) => (
+                    <div key={item.product} className='flex items-center gap-4 pb-4 border-b border-gray-200 last:border-0'>
+                      <div className='w-16 h-16 flex-shrink-0'>
                         <img
                           src={item.image}
                           alt={item.name}
-                          className="w-full h-full object-cover rounded"
+                          className='w-full h-full object-cover rounded'
                         />
                       </div>
-                      <div className="flex-1">
-                        <Link 
+                      <div className='flex-1'>
+                        <Link
                           to={`/product/${item.product}`}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
+                          className='text-blue-600 hover:text-blue-800 font-medium'
                         >
                           {item.name}
                         </Link>
+                        {item.color && (
+                          <p className='text-sm text-gray-500'>Color: {item.color}</p>
+                        )}
                       </div>
-                      <div className="text-gray-700">
+                      <div className='text-gray-700'>
                         {item.qty} x ${item.price} = ${addDecimals(item.qty * item.price)}
                       </div>
                     </div>
@@ -179,90 +148,52 @@ const placeOrderHandler = async () => {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Order Summary */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-            <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between pb-3 border-b border-gray-200">
-                <span className="text-gray-600">Items</span>
-                <span className="font-semibold">${itemsPrice}</span>
+          {/* Order Summary */}
+          <div className='lg:col-span-1'>
+            <div className='bg-white rounded-lg shadow-md p-6 sticky top-4'>
+              <h2 className='text-2xl font-bold mb-6'>Order Summary</h2>
+              
+              <div className='space-y-3 mb-6'>
+                <div className='flex justify-between pb-3 border-b border-gray-200'>
+                  <span className='text-gray-600'>Items</span>
+                  <span className='font-semibold'>${itemsPrice}</span>
+                </div>
+                <div className='flex justify-between pb-3 border-b border-gray-200'>
+                  <span className='text-gray-600'>Shipping</span>
+                  <span className='font-semibold'>${shippingPrice}</span>
+                </div>
+                <div className='flex justify-between pb-3 border-b border-gray-200'>
+                  <span className='text-gray-600'>Tax</span>
+                  <span className='font-semibold'>${taxPrice}</span>
+                </div>
+                <div className='flex justify-between pt-3'>
+                  <span className='text-lg font-bold'>Total</span>
+                  <span className='text-lg font-bold'>${totalPrice}</span>
+                </div>
               </div>
-              <div className="flex justify-between pb-3 border-b border-gray-200">
-                <span className="text-gray-600">Shipping</span>
-                <span className="font-semibold">${shippingPrice}</span>
-              </div>
-              {taxPrice > 0 && (
-              <div className="flex justify-between pb-3 border-b border-gray-200">
-                <span className="text-gray-600">Tax</span>
-                <span className="font-semibold">${taxPrice}</span>
-              </div>
-)}
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span>${totalPrice}</span>
-              </div>
+
+              {error && <Message variant='danger'>{error}</Message>}
+
+               {cart.paymentMethod === 'Stripe' && (
+          <p className="text-xs text-gray-500 mb-3 text-center">
+            You'll be redirected to Stripe to complete payment
+          </p>
+        )}
+
+        <button
+          type='button'
+          disabled={cart.cartItems.length === 0 || loading}
+          onClick={placeOrderHandler}
+          className='w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition'
+        >
+          {loading ? 'Processing...' : cart.paymentMethod === 'COD' ? 'Place Order' : 'Proceed to Payment'}
+        </button>
             </div>
-
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="button"
-              //disabled={loading}
-              disabled={cart?.cartItems?.length === 0 || loading}
-              onClick={placeOrderHandler}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Processing...' : 'Place Order'}
-            </button>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-// CheckoutSteps Component with Tailwind
-const CheckoutSteps = ({ step1, step2, step3, step4 }) => {
-  return (
-    <nav className="flex justify-center mb-8">
-      <div className="flex space-x-2 md:space-x-4">
-        <div className={`flex items-center ${step1 ? 'text-blue-600' : 'text-gray-400'}`}>
-          <Link to="/login" className={step1 ? 'hover:text-blue-800' : 'pointer-events-none'}>
-            <span className="hidden md:inline">Sign In</span>
-            <span className="md:hidden">1</span>
-          </Link>
-        </div>
-        <span className="text-gray-400">→</span>
-        <div className={`flex items-center ${step2 ? 'text-blue-600' : 'text-gray-400'}`}>
-          <Link to="/shipping" className={step2 ? 'hover:text-blue-800' : 'pointer-events-none'}>
-            <span className="hidden md:inline">Shipping</span>
-            <span className="md:hidden">2</span>
-          </Link>
-        </div>
-        <span className="text-gray-400">→</span>
-        <div className={`flex items-center ${step3 ? 'text-blue-600' : 'text-gray-400'}`}>
-          <Link to="/payment" className={step3 ? 'hover:text-blue-800' : 'pointer-events-none'}>
-            <span className="hidden md:inline">Payment</span>
-            <span className="md:hidden">3</span>
-          </Link>
-        </div>
-        <span className="text-gray-400">→</span>
-        <div className={`flex items-center ${step4 ? 'text-blue-600' : 'text-gray-400'}`}>
-          <Link to="/placeorder" className={step4 ? 'hover:text-blue-800' : 'pointer-events-none'}>
-            <span className="hidden md:inline">Place Order</span>
-            <span className="md:hidden">4</span>
-          </Link>
-        </div>
-      </div>
-    </nav>
+    </>
   )
 }
 

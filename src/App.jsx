@@ -54,36 +54,36 @@ const dispatch = useDispatch()
 }, [pathname, search])
 
 useEffect(() => {
-  const mergeCartOnLogin = async () => {
-    if (!userInfo) return // Not logged in
+  // const mergeCartOnLogin = async () => {
+  //   if (!userInfo) return // Not logged in
     
-    // Use localStorage instead of sessionStorage so it persists
-    const hasMerged = localStorage.getItem(`cartMerged_${userInfo._id}`)
-    if (hasMerged) return
+  //   // Use localStorage instead of sessionStorage so it persists
+  //   const hasMerged = localStorage.getItem(`cartMerged_${userInfo._id}`)
+  //   if (hasMerged) return
     
-    try {
-      const { data: userCart } = await api.get('/users/cart')
+  //   try {
+  //     const { data: userCart } = await api.get('/users/cart')
       
-      if (userCart?.cartItems?.length > 0) {
-        // Returning user - load DB cart
-        dispatch(setCartItems(userCart.cartItems))
-        // REMOVED: toast.success('Loaded your saved cart') 
-      } else if (cartItems?.length > 0) {
-        // New user - save guest cart to DB
-        await api.post('/users/cart', { cartItems } )
-        localStorage.removeItem('cart')
-        toast.success('Guest cart saved to your account')
-      }
+  //     if (userCart?.cartItems?.length > 0) {
+  //       // Returning user - load DB cart
+  //       dispatch(setCartItems(userCart.cartItems))
+  //       // REMOVED: toast.success('Loaded your saved cart') 
+  //     } else if (cartItems?.length > 0) {
+  //       // New user - save guest cart to DB
+  //       await api.post('/users/cart', { cartItems } )
+  //       localStorage.removeItem('cart')
+  //       toast.success('Guest cart saved to your account')
+  //     }
       
-      // Mark as merged for this user ID
-      localStorage.setItem(`cartMerged_${userInfo._id}`, 'true')
-    } catch (err) {
-      console.error('Cart merge error:', err.message)
-      // REMOVED: toast.error('Cart merge failed') - too noisy on login
-    }
-  }
+  //     // Mark as merged for this user ID
+  //     localStorage.setItem(`cartMerged_${userInfo._id}`, 'true')
+  //   } catch (err) {
+  //     console.error('Cart merge error:', err.message)
+  //     // REMOVED: toast.error('Cart merge failed') - too noisy on login
+  //   }
+  // }
   
-  mergeCartOnLogin()
+  // mergeCartOnLogin()
 }, [userInfo, dispatch])  
 
   return (
