@@ -187,7 +187,7 @@ const authSlice = createSlice({
     },
     logout: (state) => {
       localStorage.removeItem('userInfo')
-      sessionStorage.removeItem('cartMerged')
+      localStorage.removeItem('cart')
       state.userInfo = null
       state.loading = false
       state.error = null

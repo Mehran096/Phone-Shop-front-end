@@ -31,9 +31,10 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import WishlistScreen from './screens/WishlistScreen'
 
+import { FaExclamationTriangle } from 'react-icons/fa'
 import { setCartItems } from './slices/cartSlice'
 import axios from 'axios'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
@@ -45,6 +46,7 @@ import api from './utils/axios';
 
 function App() {
   const { pathname, search } = useLocation()
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
 const dispatch = useDispatch()
   const { userInfo } = useSelector((state) => state.auth)
   const { cartItems } = useSelector((state) => state.cart)
@@ -53,51 +55,78 @@ const dispatch = useDispatch()
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
 }, [pathname, search])
 
-useEffect(() => {
-  // const mergeCartOnLogin = async () => {
-  //   if (!userInfo) return // Not logged in
+ // Sync guest cart to DB on login
+ useEffect(() => {
+  const syncCartOnLogin = async () => {
+    if (!userInfo) return
+
+    const hasMerged = localStorage.getItem(`cartMerged_${userInfo._id}`)
+    if (hasMerged) return
+
+    try {
+      const { data: dbCart } = await api.get('/users/cart', {
+        withCredentials: true
+      })
+
+      // If guest cart has items, merge via backend
+      if (cartItems?.length > 0) {
+        const { data: mergedCart } = await api.post(
+          '/users/cart',
+          { cartItems },
+          { withCredentials: true }
+        )
+        dispatch(setCartItems(mergedCart.cartItems))
+        localStorage.removeItem('cart') // Clear guest cart silently
+      } else {
+        // Just load DB cart
+        dispatch(setCartItems(dbCart.cartItems || []))
+      }
+
+      localStorage.setItem(`cartMerged_${userInfo._id}`, 'true')
+    } catch (err) {
+      console.error('Cart sync error:', err.message)
+      // Fail silently - no toast
+    }
+  }
+
+  syncCartOnLogin()
+}, [userInfo, dispatch]) // Removed cartItems from deps to prevent loops
+
+
+  useEffect(() => {
+    const setOnline = () => setIsOnline(true)
+    const setOffline = () => setIsOnline(false)
     
-  //   // Use localStorage instead of sessionStorage so it persists
-  //   const hasMerged = localStorage.getItem(`cartMerged_${userInfo._id}`)
-  //   if (hasMerged) return
+    window.addEventListener('online', setOnline)
+    window.addEventListener('offline', setOffline)
     
-  //   try {
-  //     const { data: userCart } = await api.get('/users/cart')
-      
-  //     if (userCart?.cartItems?.length > 0) {
-  //       // Returning user - load DB cart
-  //       dispatch(setCartItems(userCart.cartItems))
-  //       // REMOVED: toast.success('Loaded your saved cart') 
-  //     } else if (cartItems?.length > 0) {
-  //       // New user - save guest cart to DB
-  //       await api.post('/users/cart', { cartItems } )
-  //       localStorage.removeItem('cart')
-  //       toast.success('Guest cart saved to your account')
-  //     }
-      
-  //     // Mark as merged for this user ID
-  //     localStorage.setItem(`cartMerged_${userInfo._id}`, 'true')
-  //   } catch (err) {
-  //     console.error('Cart merge error:', err.message)
-  //     // REMOVED: toast.error('Cart merge failed') - too noisy on login
-  //   }
-  // }
-  
-  // mergeCartOnLogin()
-}, [userInfo, dispatch])  
+    return () => {
+      window.removeEventListener('online', setOnline)
+      window.removeEventListener('offline', setOffline)
+    }
+  }, [])
 
   return (
     <>
       <div className="flex flex-col min-h-screen">
-        <Header />
+        <Header isOnline={isOnline} />
+
+        {!isOnline && (
+        <div className='alert alert-warning text-center mb-0 rounded-0'>
+          <FaExclamationTriangle className='me-2' style={{ display: 'inline-block' }} />
+          No internet connection. Some features may not work.
+        </div>
+      )}
+
         <main className="flex-grow">
-          <Routes><Route path="/" element={<HomeScreen />} />
-            <Route path='/products' element={<HomeScreen />} />
+          <Routes>
+            <Route path="/" element={<HomeScreen isOnline={isOnline} />} />
+            <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/returns' element={<ReturnRefundScreen />} />
             <Route path='/contact' element={<ContactScreen />} />
-            <Route path="/product/:id" element={<ProductScreen />} />
+            <Route path="/product/:id" element={<ProductScreen isOnline={isOnline}/>} />
             <Route path="/cart" element={<CartScreen />} />
             <Route path="/shipping" element={<ShippingScreen />} />
             <Route path="/payment" element={<PaymentScreen />} />

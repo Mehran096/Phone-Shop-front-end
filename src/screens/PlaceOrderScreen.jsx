@@ -72,9 +72,9 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
     }
 
     if (cart.paymentMethod === 'COD') {
-      console.log('Sending to backend:', orderData.orderItems)
+      //console.log('Sending to backend:', orderData.orderItems)
       const newOrder = await dispatch(createOrder(orderData)).unwrap() // CAPTURE THE RESPONSE
-      console.log('Order created:', newOrder) // This will show the _id
+      //console.log('Order created:', newOrder) // This will show the _id
       
       navigate(`/order/${newOrder._id}`) // NAVIGATE USING THE RESPONSE
       dispatch(clearCartItems())         // CLEAR AFTER NAVIGATE
@@ -92,8 +92,9 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
 
   return (
     <>
-      <CheckoutSteps step1 step2 step3 step4 />
+      
       <div className='container mx-auto px-4 py-8'>
+        <CheckoutSteps step1 step2 step3 step4 />
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8'>
           <div className='lg:col-span-2 space-y-6'>
             {/* Shipping */}

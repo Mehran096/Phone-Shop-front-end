@@ -43,9 +43,9 @@ const ContactScreen = () => {
           <div className='bg-gray-800 p-5 rounded-lg'>
             <h3 className='text-lg font-semibold mb-3'>Get in Touch</h3>
             <div className='space-y-3 text-gray-300'>
-              <p><span className='font-medium text-white'>Email:</span><br />support@phonestore.com</p>
+              <p><span className='font-medium text-white'>Email:</span><br />support@phone-store.asia</p>
               <p><span className='font-medium text-white'>Phone:</span><br />+92 300 12345--</p>
-              <p><span className='font-medium text-white'>Address:</span><br />Lahore, Pakistan</p>
+              <p><span className='font-medium text-white'>Address:</span><br />Islamabad, Pakistan</p>
               <p><span className='font-medium text-white'>Hours:</span><br />Mon - Sat, 9 AM - 6 PM</p>
             </div>
           </div>

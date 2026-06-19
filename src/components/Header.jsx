@@ -7,8 +7,11 @@ import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaHeart } from 
 import { clearCartItems } from '../slices/cartSlice'
 import { getWishlist, resetWishlist } from '../slices/wishlistSlice'
 import SearchBox from './SearchBox'
+import { FaWifi } from 'react-icons/fa'
+import api from '../utils/axios'
+ 
 
-const Header = () => {
+const Header = ({ isOnline }) => {
   const [userDropdown, setUserDropdown] = useState(false)
   const [adminDropdown, setAdminDropdown] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -25,17 +28,33 @@ const Header = () => {
   const { cartItems } = useSelector((state) => state.cart)
   const { userInfo } = useSelector((state) => state.auth)
 
-  const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'OPPO', 'ViVO']
+  const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'Oppo', 'Vivo']
   const activeBrand = searchParams.get('brand')
 
-  const logoutHandler = () => {
-    dispatch(logout())
-    dispatch(clearCartItems())
-    dispatch(resetWishlist())
-    navigate('/login')
-    setUserDropdown(false)
-    setIsMobileMenuOpen(false)
+  const logoutHandler = async () => {
+  // 1. Clear cart merge flag BEFORE userInfo is wiped
+  if (userInfo?._id) {
+    localStorage.removeItem(`cartMerged_${userInfo._id}`)
+
+    // Wipe DB cart on logout
+    //await api.put('/users/cart', { cartItems: [] }, { withCredentials: true })
   }
+
+  try {
+    await api.post('/users/logout', {}, { withCredentials: true })
+  } catch (err) {
+    console.error('Logout API error:', err.message)
+  }
+
+  
+  // 3. Your existing Redux cleanup
+  dispatch(logout())
+  dispatch(clearCartItems())
+  dispatch(resetWishlist())
+  navigate('/login')
+  setUserDropdown(false)
+  setIsMobileMenuOpen(false)
+}
 
   const handleBrandClick = (brand) => {
     navigate(`/products?brand=${brand}`)
@@ -67,7 +86,8 @@ const Header = () => {
           {/* Logo */}
           <Link
             to='/'
-            className='hidden md:flex items-center flex-shrink-0 px-1 py-0.5 border border-transparent hover:border-white rounded-sm transition-all duration-100'
+            className='hidden md:flex items-center flex-shrink-0 px-1 py-0.5 border border-transparent 
+            hover:border-white rounded-sm transition-all duration-100'
           >
             <img
               src='/assets/logo-horizontal.png'
@@ -94,14 +114,21 @@ const Header = () => {
 
           {/* Desktop Search */}
           <div className='hidden md:flex flex-1 justify-center mx-8 max-w-md'>
-            <SearchBox onSearchComplete={closeMobileMenu} />
-          </div>
+  {isOnline ? (
+    <SearchBox onSearchComplete={closeMobileMenu} />
+  ) : (
+    <div className='bg-gray-700 text-gray-400 px-4 py-2 rounded flex items-center w-full'>
+      <FaWifi className='mr-2' /> Search disabled
+    </div>
+  )}
+</div>
 
           {/* Desktop Menu */}
           <div className='hidden md:flex items-center space-x-6 pr-5'>
             <Link
               to='/cart'
-              className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white rounded-sm transition-all duration-100 text-white relative'
+              className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white
+               rounded-sm transition-all duration-100 text-white relative'
             >
               <FaShoppingCart className='text-xl' />
               <div className='flex flex-col leading-tight'>
@@ -111,7 +138,8 @@ const Header = () => {
                 </span>
               </div>
               {cartCount > 0 && (
-                <span className='absolute -top-1 left-6 bg-orange-400 text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center'>
+                <span className='absolute -top-1 left-6 bg-orange-400 text-black text-xs font-bold rounded-full 
+                h-5 w-5 flex items-center justify-center'>
                   {cartCount}
                 </span>
               )}
@@ -121,7 +149,8 @@ const Header = () => {
 {userInfo && (
   <Link
     to='/wishlist'
-    className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white rounded-sm transition-all duration-100'
+    className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white rounded-sm 
+    transition-all duration-100'
   >
     <FaHeart className='text-xl' />
     <div className='flex flex-col leading-tight relative'>
@@ -130,7 +159,8 @@ const Header = () => {
       </span>
       <span className='text-sm font-bold'>Wishlist</span>
       {wishlistItems.length > 0 && (
-        <span className='absolute -top-1 -right-6 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center'>
+        <span className='absolute -top-1 -right-6 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex 
+        items-center justify-center'>
           {wishlistItems.length}
         </span>
       )}
@@ -141,13 +171,15 @@ const Header = () => {
 
             {userInfo ? (
               <div className='relative group'>
-                <button className='flex items-center gap-2 px-2 py-1 border border-transparent group-hover:border-white rounded-sm transition-all duration-100 text-white'>
+                <button className='flex items-center gap-2 px-2 py-1 border border-transparent group-hover:border-white 
+                rounded-sm transition-all duration-100 text-white'>
                   <FaUser />
                   {userInfo.name}
                   <FaChevronDown className='text-xs' />
                 </button>
 
-                <div className='absolute right-0 mt-0 w-48 bg-white text-gray-900 rounded-sm shadow-lg py-1 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-100'>
+                <div className='absolute right-0 mt-0 w-48 bg-white text-gray-900 rounded-sm shadow-lg py-1 z-50 invisible 
+                group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-100'>
                   <Link
                     to='/profile'
                     className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600'
@@ -164,7 +196,8 @@ const Header = () => {
                 </div>
               </div>
             ) : (
-              <Link to='/login' className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white rounded-sm transition-all duration-100 text-white'>
+              <Link to='/login' className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white 
+              rounded-sm transition-all duration-100 text-white'>
                 <FaUser />
                 Sign In
               </Link>
@@ -172,12 +205,14 @@ const Header = () => {
 
             {userInfo && userInfo.isAdmin && (
               <div className='relative group'>
-                <button className='flex items-center gap-2 px-2 py-1 border border-transparent group-hover:border-white rounded-sm transition-all duration-100 text-white'>
+                <button className='flex items-center gap-2 px-2 py-1 border border-transparent group-hover:border-white 
+                rounded-sm transition-all duration-100 text-white'>
                   Admin
                   <FaChevronDown className='text-xs' />
                 </button>
 
-                <div className='absolute right-0 mt-0 w-48 bg-white text-gray-900 rounded-sm shadow-lg py-1 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-100'>
+                <div className='absolute right-0 mt-0 w-48 bg-white text-gray-900 rounded-sm shadow-lg py-1 z-50 
+                invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-100'>
                   <Link
                     to='/admin'
                     className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600'
@@ -230,7 +265,8 @@ const Header = () => {
               <button
                 key={brand}
                 onClick={() => handleBrandClick(brand)}
-                className={`text-sm px-2 py-1 border border-transparent rounded-sm transition-all duration-100 ${activeBrand === brand
+                className={`text-sm px-2 py-1 border border-transparent rounded-sm transition-all 
+                  duration-100 ${activeBrand === brand
                   ? 'text-white border-white font-bold'  // bold when active
                   : 'text-gray-200 hover:text-white hover:border-white font-normal'
                   }`}
@@ -275,7 +311,8 @@ const Header = () => {
                 <button
                   key={brand}
                   onClick={() => handleBrandClick(brand)}
-                  className={`block w-full text-left py-2 text-lg hover:text-blue-400 ${activeBrand === brand ? 'text-blue-400' : 'text-white'
+                  className={`block w-full text-left py-2 
+                    text-lg hover:text-blue-400 ${activeBrand === brand ? 'text-blue-400' : 'text-white'
                     }`}
                 >
                   {brand}

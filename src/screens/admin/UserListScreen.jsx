@@ -7,8 +7,9 @@ import Message from '../../components/Message'
 import Loader from '../../components/Loader'
 import Paginate from '../../components/Paginate'
 import { toast } from 'react-toastify'
-import axios from 'axios'
-
+import api from '../../utils/axios'
+ 
+ 
 const UserListScreen = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('keyword') || '')
@@ -40,7 +41,7 @@ const UserListScreen = () => {
   const toggleAdminHandler = async (id, isAdmin) => {
     if (window.confirm(`Are you sure you want to ${isAdmin ? 'remove admin' : 'make admin'}?`)) {
       try {
-        await axios.put(`/api/users/${id}/toggleAdmin`, {}, {
+        await api.put(`/users/${id}/toggleAdmin`, {}, {
           headers: { Authorization: `Bearer ${userInfo.token}` }
         })
         toast.success('Admin status updated')

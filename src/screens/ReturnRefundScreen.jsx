@@ -66,7 +66,7 @@ const ReturnRefundScreen = () => {
         <div className='bg-gray-800 p-4 rounded-lg mt-8'>
           <p className='font-medium text-white mb-2'>Need help with a return?</p>
           <p>
-            Contact our support team at <span className='text-blue-400'>support@phonestore.com</span> 
+            Contact our support team at <span className='text-blue-400'>support@phone-store.asia </span> 
             or call <span className='text-blue-400'>+92 300 12345--</span>. We’re available 9 AM - 6 PM, Mon-Sat.
           </p>
         </div>

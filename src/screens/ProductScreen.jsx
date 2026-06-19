@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import RatingStars from '../components/RatingStars';
 import ReviewsModal from '../components/ReviewsModal';
+import OfflineMessage from '../components/OfflineMessage'
 
 import { useSelector, useDispatch } from 'react-redux'
 import { FaThumbsUp } from 'react-icons/fa';
@@ -26,7 +27,7 @@ import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
 
 
-const ProductScreen = () => {
+const ProductScreen = ({ isOnline }) => {
   const { id: productId } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
@@ -86,6 +87,7 @@ const ProductScreen = () => {
   };
 
   const [updateProductReview, { isLoading: loadingUpdateReview }] = useUpdateReviewMutation();
+  
 
   // When color changes, reset to first image
   useEffect(() => {
@@ -361,6 +363,12 @@ const ProductScreen = () => {
   );
   const showCreateForm = userInfo && !alreadyReviewed && !editingReview;
   const showAlreadyReviewedMsg = userInfo && alreadyReviewed && !editingReview;
+
+  
+// This is the key part - check for network error
+ if (!isOnline || error?.status === 'FETCH_ERROR' || error?.error === 'TypeError: Failed to fetch') {
+  return <OfflineMessage refetch={refetch} isOnline={isOnline} />
+}
 
   if (isLoading) return <Loader />
   if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>

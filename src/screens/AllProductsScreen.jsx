@@ -6,7 +6,7 @@ import Loader from '../components/Loader'
 import Message from '../components/Message'
  
 
-const AllProductsScreen = () => {
+const AllProductsScreen = ({ isOnline }) => {
    const [searchParams] = useSearchParams()
   const keyword = searchParams.get('keyword') || '' 
   const pageNumber = Number(searchParams.get('pageNumber')) || 1 

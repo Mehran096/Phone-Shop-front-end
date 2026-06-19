@@ -2,15 +2,19 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { saveShippingAddress } from '../slices/cartSlice';
+import PhoneInput from 'react-phone-number-input'
+import 'react-phone-number-input/style.css'
+import CheckoutSteps from '../components/CheckoutSteps';
+ 
 
 function ShippingScreen() {
   const cart = useSelector((state) => state.cart);
   //const { loading } = useSelector((state) => state.order)
   const { shippingAddress } = cart;
-   const { userInfo } = useSelector((state) => state.auth)
+  const { userInfo } = useSelector((state) => state.auth)
 
-    
-  // const [phone, setPhone] = useState(shippingAddress?.phone || '')
+
+  const [phone, setPhone] = useState(shippingAddress?.phone || '')
   const [address, setAddress] = useState(shippingAddress?.address || '');
   const [city, setCity] = useState(shippingAddress?.city || '');
   const [postalCode, setPostalCode] = useState(shippingAddress?.postalCode || '');
@@ -21,14 +25,15 @@ function ShippingScreen() {
 
   const submitHandler = (e) => {
     e.preventDefault();
-    dispatch(saveShippingAddress({ 
-      //phone,
-      address, 
-      city, 
-      postalCode, 
-      country,  
-      name: userInfo.name, 
-      email: userInfo.email   }));
+    dispatch(saveShippingAddress({
+      phone,
+      address,
+      city,
+      postalCode,
+      country,
+      name: userInfo.name,
+      email: userInfo.email
+    }));
     navigate('/payment'); // Next step
   };
 
@@ -41,28 +46,33 @@ function ShippingScreen() {
   // }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-start justify-center px-4 py-8">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
+    <>
+     
+     <div className="min-h-screen bg-gray-50 flex items-start justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+        <CheckoutSteps step1 step2 />
         
+        <div className="bg-white rounded-lg shadow-md p-6 mt-4">
+        
+
         <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Shipping</h1>
 
         <form onSubmit={submitHandler} className="space-y-4">
           {/* Phone Number */}
-          {/* <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
               Phone Number
             </label>
-            <input
-              type='tel'
-              id="address"
+            <PhoneInput
+              international
+              defaultCountry="PK" // sets default to Pakistan
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={setPhone}
+              className="phone-input" // you'll style this
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder='03xx-xxxxxxx'
             />
-          </div> */}
-          
+          </div>
+
           {/* Address */}
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
@@ -136,7 +146,9 @@ function ShippingScreen() {
           </button>
         </form>
       </div>
+       </div>
     </div>
+    </>
   );
 }
 

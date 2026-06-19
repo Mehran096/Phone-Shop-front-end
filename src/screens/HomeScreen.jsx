@@ -6,9 +6,10 @@ import { useGetProductsQuery } from '../slices/productsApiSlice'
 import HeroBanner from '../components/HeroBanner'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
+import OfflineMessage from '../components/OfflineMessage'
 import { FaShippingFast, FaShieldAlt, FaHeadset } from 'react-icons/fa'
 
-const HomeScreen = () => {
+const HomeScreen = ({ isOnline }) => {
   const [searchParams] = useSearchParams()
   const keyword = searchParams.get('keyword') || ''
   const brand = searchParams.get('brand') || '' // Fix 1: Read brand
@@ -16,13 +17,18 @@ const HomeScreen = () => {
 
   const { userInfo } = useSelector((state) => state.auth)
 
-  const { data, isLoading, error } = useGetProductsQuery({
+  const { data, isLoading, error, refetch } = useGetProductsQuery({
     keyword,
     brand, // Fix 2: Send brand to API
     pageNumber,
   })
 
   const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'OPPO', 'ViVO']
+
+// This is the key part - check for network error
+ if (!isOnline || error?.status === 'FETCH_ERROR' || error?.error === 'TypeError: Failed to fetch') {
+  return <OfflineMessage refetch={refetch} isOnline={isOnline} />
+}
 
   return (
     <>
