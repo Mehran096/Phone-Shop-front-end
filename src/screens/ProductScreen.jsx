@@ -44,6 +44,9 @@ const ProductScreen = ({ isOnline }) => {
 
 
   const [selectedColor, setSelectedColor] = useState(null)
+  
+const [selectedPrice, setSelectedPrice] = useState(0) // ADD THIS
+const [selectedImage, setSelectedImage] = useState('') // ADD THIS
   const [mainImage, setMainImage] = useState('/images/placeholder-phone.jpg') // Default to placeholder
   const [qty, setQty] = useState(1)
   const [rating, setRating] = useState(0)
@@ -87,6 +90,29 @@ const ProductScreen = ({ isOnline }) => {
   };
 
   const [updateProductReview, { isLoading: loadingUpdateReview }] = useUpdateReviewMutation();
+
+
+  // Set default on load - use whole object
+useEffect(() => {
+  if (product?.colors?.length > 0 &&!selectedColor) {
+    const defaultColor = product.colors[0]
+    setSelectedColor(defaultColor) // Object, not string
+  }
+}, [product])
+
+// Update when user clicks color - use whole object
+useEffect(() => {
+  if (selectedColor) {
+    setSelectedPrice(selectedColor.price)
+    setSelectedImage(selectedColor.images?.[0] || product.image)
+    setMainImage(selectedColor.images?.[0] || product.image)
+  }
+}, [selectedColor])
+
+const selectColorHandler = (color) => {
+  setSelectedColor(color) // Object
+  setQty(1)
+}
   
 
   // When color changes, reset to first image
@@ -108,11 +134,11 @@ const ProductScreen = ({ isOnline }) => {
     }
   }, [product, selectedColor]) // ← Add selectedColor to deps
 
-  const selectColorHandler = (color) => {
-    setSelectedColor(color)
-    setMainImage(color.images?.[0] || product.image || '/images/placeholder-phone.jpg')
-    setQty(1)
-  }
+  // const selectColorHandler = (color) => {
+  //   setSelectedColor(color)
+  //   setMainImage(color.images?.[0] || product.image || '/images/placeholder-phone.jpg')
+  //   setQty(1)
+  // }
 
   const addToCartHandler = () => {
 
@@ -458,7 +484,8 @@ const ProductScreen = ({ isOnline }) => {
                         title={color.name}
                       >
                         {selectedColor?.name === color.name && (
-                          <FaCheck className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg drop-shadow ${color.name.toLowerCase() === 'white' ? 'text-gray-700' : 'text-white'
+                          <FaCheck 
+                          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg drop-shadow ${color.name.toLowerCase() === 'white' ? 'text-gray-700' : 'text-white'
                             }`} />
                         )}
                       </button>
@@ -489,7 +516,13 @@ const ProductScreen = ({ isOnline }) => {
                     <FaShoppingCart /> Add to Cart
                   </button>
                   <div className='flex-shrink-0'>
-                   <WishlistButton product={product} />
+                   <WishlistButton
+                      product={product}
+                      selectedColor={selectedColor}
+                      selectedPrice={selectedPrice}
+                      selectedImage={selectedImage || mainImage}
+                      countInStock={selectedColor?.countInStock}
+                    />
                   </div>
                 </div>
               )}
