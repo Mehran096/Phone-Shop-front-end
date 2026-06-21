@@ -32,6 +32,18 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
     if (distance < -minSwipeDistance) prevImage()
   }
 
+  // Lock body scroll when fullscreen open
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isFullscreen])
+
   // Desktop keyboard + ESC for fullscreen
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -55,7 +67,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                 onClick={() => setSelectedIndex(idx)}
                 className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${
                   selectedIndex === idx
-                ? 'border-blue-600 shadow-md scale-105'
+         ? 'border-blue-600 shadow-md scale-105'
                     : 'border-gray-200 hover:border-gray-400'
                 }`}
               >
@@ -65,10 +77,10 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
           </div>
         )}
 
-        {/* Main Image */}
-        <div className='flex-1 relative group bg-white rounded-lg border border-gray-100 overflow-hidden aspect-square md:h-[28rem] md:aspect-auto min-w-0 w-full'>
+        {/* Main Image - AMAZON MOBILE: FIXED ASPECT RATIO */}
+        <div className='flex-1 relative group bg-white rounded-lg border border-gray-100 overflow-hidden min-w-0 w-full aspect-[3/4] md:aspect-auto md:h-[28rem]'>
           <div
-            className='w-full h-full flex items-center justify-center p-4'
+            className='w-full h-full flex items-center justify-center p-6'
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -76,7 +88,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
             <img
               src={images[selectedIndex]}
               alt='Product'
-              className='max-w-full max-h-full object-contain cursor-pointer'
+              className='h-full w-auto max-h-[85%] max-w-[85%] object-contain cursor-pointer'
               onClick={() => setIsFullscreen(true)}
             />
 
@@ -124,11 +136,14 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
               {images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setSelectedIndex(idx)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedIndex(idx)
+                  }}
                   aria-label={`View image ${idx + 1}`}
                   className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-0.5 snap-start transition-all duration-200 ${
                     selectedIndex === idx
-                ? 'border-blue-600 scale-105 shadow-md'
+         ? 'border-blue-600 scale-105 shadow-md'
                       : 'border-gray-200'
                   }`}
                 >
@@ -146,7 +161,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
         )}
       </div>
 
-      {/* Fullscreen Modal - WHITE BACKGROUND */}
+      {/* Fullscreen Modal - KEEP AS IS - WORKING FINE */}
       {isFullscreen && (
         <div
           className='fixed inset-0 bg-white z-50 flex flex-col md:flex-row overflow-hidden'
@@ -173,7 +188,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                   }}
                   className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${
                     selectedIndex === idx
-                ? 'border-blue-600 scale-105 shadow-md'
+         ? 'border-blue-600 scale-105 shadow-md'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
@@ -183,9 +198,9 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
             </div>
           )}
 
-          {/* Fullscreen image + swipe */}
+          {/* Fullscreen image - HARD HEIGHT CAP */}
           <div
-            className='flex-1 relative flex items-center justify-center p-4 bg-white'
+            className='flex-1 relative flex items-center justify-center p-4 md:p-8 bg-white overflow-hidden'
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -194,7 +209,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
             <img
               src={images[selectedIndex]}
               alt='Product'
-              className='max-w-full max-h-full object-contain'
+              className='max-w-full max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-160px)] object-contain'
             />
 
             {/* Desktop modal arrows - BLACK ICONS */}
@@ -246,7 +261,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
                     }}
                     className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-0.5 snap-start ${
                       selectedIndex === idx
-                  ? 'border-blue-600 scale-105 shadow-md'
+         ? 'border-blue-600 scale-105 shadow-md'
                         : 'border-gray-300'
                     }`}
                   >
