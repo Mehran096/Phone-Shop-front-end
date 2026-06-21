@@ -56,10 +56,9 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
     const orderData = {
       orderItems: cart.cartItems.map((item) => ({
         product: item.product,
-        name: item.name,
-        qty: item.qty,
-        price: item.price,
-        image: item.image,
+        
+        qty: item.qty, 
+         
         color: item.color,
         hexCode: item.hexCode,
       })),
@@ -121,7 +120,7 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
               ) : (
                 <div className='space-y-4'>
                   {cart.cartItems.map((item) => (
-                    <div key={item.product} className='flex items-center gap-4 pb-4 border-b border-gray-200 last:border-0'>
+                    <div key={`${item.product}-${item.color}`} className='flex items-center gap-4 pb-4 border-b border-gray-200 last:border-0'>
                       <div className='w-16 h-16 flex-shrink-0'>
                         <img
                           src={item.image}

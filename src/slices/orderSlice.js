@@ -10,22 +10,21 @@ export const createOrder = createAsyncThunk(
     try {
       const orderItems = orderData.orderItems.map(item => ({
         product: item.product,
-        name: item.name,
-        image: item.image,
-        price: item.price,
+        name: item.name, 
         qty: item.qty,
-        color: item.color || '',
-        hexCode: item.hexCode || '',
+        color: item.color,
+        hexCode: item.hexCode,
       }))
 
       const payload = {
         orderItems,
         shippingAddress: orderData.shippingAddress,
-        paymentMethod: orderData.paymentMethod, // USE THE REAL ONE, NOT 'COD'
-        itemsPrice: orderData.itemsPrice,
-        taxPrice: orderData.taxPrice,
-        shippingPrice: orderData.shippingPrice,
-        totalPrice: orderData.totalPrice,
+        paymentMethod: 'COD',
+        //paymentMethod: orderData.paymentMethod, // USE THE REAL ONE, NOT 'COD'
+        // itemsPrice: orderData.itemsPrice,
+        // taxPrice: orderData.taxPrice,
+        // shippingPrice: orderData.shippingPrice,
+        // totalPrice: orderData.totalPrice,
       }
 
       const { data } = await api.post('/orders', payload)
@@ -46,22 +45,20 @@ export const createCheckoutSession = createAsyncThunk(
     try {
       const orderItems = orderData.orderItems.map(item => ({
         product: item.product,
-        name: item.name,
-        image: item.image,
-        price: item.price,
+        name: item.name, 
         qty: item.qty,
-        color: item.color || '',
-        hexCode: item.hexCode || '',
+        color: item.color,
+        hexCode: item.hexCode,
       }))
 
       const payload = {
         orderItems,
         shippingAddress: orderData.shippingAddress,
          paymentMethod: orderData.paymentMethod,
-        itemsPrice: orderData.itemsPrice,
-        shippingPrice: orderData.shippingPrice,
-        taxPrice: orderData.taxPrice,
-        totalPrice: orderData.totalPrice,
+        // itemsPrice: orderData.itemsPrice,
+        // shippingPrice: orderData.shippingPrice,
+        // taxPrice: orderData.taxPrice,
+        // totalPrice: orderData.totalPrice,
       }
 
       const { data } = await api.post('/orders/create-checkout-session', payload)
@@ -142,7 +139,7 @@ export const shipOrder = createAsyncThunk(
   'order/shipOrder',
   async ({ orderId, trackingNumber, carrier }, { rejectWithValue }) => {
     try {
-      const { data } = await api.put(`/orders/${orderId}/deliver`, {
+      const { data } = await api.put(`/orders/${orderId}/markasShipped`, {
         trackingNumber,
         carrier
       })
