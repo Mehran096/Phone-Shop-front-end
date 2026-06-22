@@ -35,19 +35,29 @@ const Product = ({ product, userInfo }) => {
           </h3>
         </Link>
 
-        <div className='flex items-center mt-2'>
-          <div className='flex text-yellow-400'>
-            {[...Array(5)].map((_, i) => (
-              <FaStar
-                key={i}
-                className={`w-4 h-4 ${i < Math.round(product.rating)? 'fill-current' : 'fill-gray-300'}`}
-              />
-            ))}
+        {product.numReviews > 0 && product.rating > 0 && (
+          <div className='flex items-center mt-2'>
+            <div className='flex items-center'>
+              {[...Array(5)].map((_, i) => {
+                const fillPercent = Math.min(Math.max(product.rating - i, 0), 1) * 100
+                return (
+                  <div key={i} className='relative w-4 h-4'>
+                    <FaStar className='w-4 h-4 text-gray-300 absolute' />
+                    <div
+                      className='absolute overflow-hidden'
+                      style={{ width: `${fillPercent}%` }}
+                    >
+                      <FaStar className='w-4 h-4 text-amber-500' />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <span className='text-sm text-blue-600 hover:text-orange-700 hover:underline ml-1 cursor-pointer'>
+              ({product.numReviews})
+            </span>
           </div>
-          <span className='text-sm text-gray-600 ml-2'>
-            {product.numReviews} reviews
-          </span>
-        </div>
+        )}
 
         <div className='flex items-center justify-between mt-3'>
           <span className='text-xl font-bold text-blue-600'>

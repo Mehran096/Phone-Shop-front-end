@@ -21,7 +21,7 @@ import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
 import Rating from '../components/Rating'
-import { FaEdit, FaCheck, FaTrash, FaShoppingCart } from 'react-icons/fa'
+import { FaEdit, FaCheck, FaTrash, FaShoppingCart, FaStar } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
@@ -44,12 +44,15 @@ const ProductScreen = ({ isOnline }) => {
 
 
   const [selectedColor, setSelectedColor] = useState(null)
-  
-const [selectedPrice, setSelectedPrice] = useState(0) // ADD THIS
-const [selectedImage, setSelectedImage] = useState('') // ADD THIS
+
+  const [selectedPrice, setSelectedPrice] = useState(0) // ADD THIS
+  const [selectedImage, setSelectedImage] = useState('') // ADD THIS
   const [mainImage, setMainImage] = useState('/images/placeholder-phone.jpg') // Default to placeholder
   const [qty, setQty] = useState(1)
   const [rating, setRating] = useState(0)
+  const [hoverRating, setHoverRating] = useState(0) // ADD THIS
+//const [headline, setHeadline] = useState('')      // ADD THIS
+const [showReviewForm, setShowReviewForm] = useState(false)
   const [comment, setComment] = useState('')
   const [sortBy, setSortBy] = useState('helpful');
   const [replyText, setReplyText] = useState('');
@@ -93,27 +96,27 @@ const [selectedImage, setSelectedImage] = useState('') // ADD THIS
 
 
   // Set default on load - use whole object
-useEffect(() => {
-  if (product?.colors?.length > 0 &&!selectedColor) {
-    const defaultColor = product.colors[0]
-    setSelectedColor(defaultColor) // Object, not string
-  }
-}, [product])
+  useEffect(() => {
+    if (product?.colors?.length > 0 && !selectedColor) {
+      const defaultColor = product.colors[0]
+      setSelectedColor(defaultColor) // Object, not string
+    }
+  }, [product])
 
-// Update when user clicks color - use whole object
-useEffect(() => {
-  if (selectedColor) {
-    setSelectedPrice(selectedColor.price)
-    setSelectedImage(selectedColor.images?.[0] || product.image)
-    setMainImage(selectedColor.images?.[0] || product.image)
-  }
-}, [selectedColor])
+  // Update when user clicks color - use whole object
+  useEffect(() => {
+    if (selectedColor) {
+      setSelectedPrice(selectedColor.price)
+      setSelectedImage(selectedColor.images?.[0] || product.image)
+      setMainImage(selectedColor.images?.[0] || product.image)
+    }
+  }, [selectedColor])
 
-const selectColorHandler = (color) => {
-  setSelectedColor(color) // Object
-  setQty(1)
-}
-  
+  const selectColorHandler = (color) => {
+    setSelectedColor(color) // Object
+    setQty(1)
+  }
+
 
   // When color changes, reset to first image
   useEffect(() => {
@@ -390,11 +393,11 @@ const selectColorHandler = (color) => {
   const showCreateForm = userInfo && !alreadyReviewed && !editingReview;
   const showAlreadyReviewedMsg = userInfo && alreadyReviewed && !editingReview;
 
-  
-// This is the key part - check for network error
- if (!isOnline || error?.status === 'FETCH_ERROR' || error?.error === 'TypeError: Failed to fetch') {
-  return <OfflineMessage refetch={refetch} isOnline={isOnline} />
-}
+
+  // This is the key part - check for network error
+  if (!isOnline || error?.status === 'FETCH_ERROR' || error?.error === 'TypeError: Failed to fetch') {
+    return <OfflineMessage refetch={refetch} isOnline={isOnline} />
+  }
 
   if (isLoading) return <Loader />
   if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>
@@ -431,14 +434,14 @@ const selectColorHandler = (color) => {
             {/* Left: Thumbnails + Main Image */}
 
             {/* Main 360 Image */}
-           
-             <div className='lg:col-span-7 min-w-0'>   
-        <Product360
-          images={selectedColor?.images || []}
-          selectedIndex={selectedImageIndex}
-          setSelectedIndex={setSelectedImageIndex}
-        />
-      </div>
+
+            <div className='lg:col-span-7 min-w-0'>
+              <Product360
+                images={selectedColor?.images || []}
+                selectedIndex={selectedImageIndex}
+                setSelectedIndex={setSelectedImageIndex}
+              />
+            </div>
 
 
 
@@ -448,8 +451,28 @@ const selectColorHandler = (color) => {
             <div className='lg:col-span-5'>
               <h1 className='text-2xl md:text-3xl font-bold text-gray-900 mb-2'>{product.name}</h1>
 
-              <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div>
-
+              {/* <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div> */}
+              {product.numReviews > 0 && (
+                <div className='flex items-center mt-3 mb-2'>
+                  <div className='flex text-amber-500 gap-0.5'>
+                    {[...Array(5)].map((_, i) => (
+                      <FaStar
+                        key={i}
+                        className={`w-3.5 h-3.5 ${i < Math.floor(product.rating)
+                            ? 'fill-current'
+                            : 'fill-gray-300'
+                          }`}
+                      />
+                    ))}
+                  </div>
+                  <a className='text-xs text-blue-600 ml-1.5 hover:text-orange-600 hover:underline cursor-pointer'>
+                    {product.rating.toFixed(1)}
+                  </a>
+                  <a className='text-xs text-blue-600 ml-1 hover:text-orange-600 hover:underline cursor-pointer'>
+                    ({product.numReviews})
+                  </a>
+                </div>
+              )}
               <div className='text-5xl font-bold text-blue-600 mb-4'>
                 ${currentPrice}
               </div>
@@ -484,9 +507,9 @@ const selectColorHandler = (color) => {
                         title={color.name}
                       >
                         {selectedColor?.name === color.name && (
-                          <FaCheck 
-                          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg drop-shadow ${color.name.toLowerCase() === 'white' ? 'text-gray-700' : 'text-white'
-                            }`} />
+                          <FaCheck
+                            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg drop-shadow ${color.name.toLowerCase() === 'white' ? 'text-gray-700' : 'text-white'
+                              }`} />
                         )}
                       </button>
                     ))}
@@ -496,16 +519,16 @@ const selectColorHandler = (color) => {
 
               {/* Qty + Add to Cart - LAST ITEM IN RIGHT COLUMN */}
               {currentStock > 0 && (
-                 <div className='flex items-center gap-2 mb-6'>
+                <div className='flex items-center gap-2 mb-6'>
                   <label className='text-xs text-gray-500 mb-1 block sm:hidden'>Qty</label>
                   <select
                     value={qty}
                     onChange={(e) => setQty(Number(e.target.value))}
-                   className='w-22 flex-shrink-0 px-2 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold text-sm'
-    >
+                    className='w-22 flex-shrink-0 px-2 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold text-sm'
+                  >
                     {[...Array(Math.min(currentStock, 10)).keys()].map((x) => (
                       <option key={x + 1} value={x + 1}>
-                         {x + 1}
+                        {x + 1}
                       </option>
                     ))}
                   </select>
@@ -516,7 +539,7 @@ const selectColorHandler = (color) => {
                     <FaShoppingCart /> Add to Cart
                   </button>
                   <div className='flex-shrink-0'>
-                   <WishlistButton
+                    <WishlistButton
                       product={product}
                       selectedColor={selectedColor}
                       selectedPrice={selectedPrice}
@@ -837,101 +860,174 @@ const selectColorHandler = (color) => {
         </div>
 
 
-        {/* CREATE REVIEW SECTION */}
-        {userInfo && !alreadyReviewed && !editingReview && (
-          <div className='bg-white p-6 rounded-lg shadow mt-6'>
-            <h3 className='text-xl font-semibold mb-4'>Write a Customer Review</h3>
+      
+{/* CREATE REVIEW SECTION */}
+{/* CREATE REVIEW SECTION */}
+{/* WRITE REVIEW BUTTON - Shows when form is hidden */}
+{userInfo && !alreadyReviewed && !editingReview && !showReviewForm && (
+  <div className='mt-8 pt-8 border-t border-gray-200'>
+    <h3 className='text-lg font-bold text-gray-900 mb-4'>Review this product</h3>
+    <p className='text-sm text-gray-600 mb-4'>
+      Share your thoughts with other customers
+    </p>
+    <button
+      onClick={() => setShowReviewForm(true)}
+      className='bg-white hover:bg-gray-50 text-gray-900 px-6 py-2 rounded-lg border border-gray-300 text-sm font-medium shadow-sm'
+    >
+      Write a customer review
+    </button>
+  </div>
+)}
 
-            {selectedColor && (
-              <div className='bg-blue-50 p-3 rounded-lg mb-4'>
-                <p className='text-sm text-blue-800'>
-                  You are reviewing: <strong>{selectedColor.name}</strong>
-                </p>
-              </div>
-            )}
+{/* CREATE REVIEW FORM - Shows when button clicked */}
+{userInfo && !alreadyReviewed && !editingReview && showReviewForm && (
+  <div className='max-w-2xl bg-white p-6 rounded-lg border border-gray-200 mt-8'>
+    <div className='flex justify-between items-center mb-4 pb-3 border-b border-gray-200'>
+      <h2 className='text-xl font-bold text-gray-900'>
+        Create Review
+      </h2>
+      <button 
+        type='button'
+        onClick={() => setShowReviewForm(false)}
+        className='text-gray-500 hover:text-gray-700 text-2xl leading-none'
+      >
+        ×
+      </button>
+    </div>
 
-            {!selectedColor && product?.colors?.length > 0 && (
-              <Message variant='danger'>Please select a color first</Message>
-            )}
+    {/* Product info */}
+    {selectedColor && (
+      <div className='flex items-center gap-3 mb-6 text-sm'>
+        <img
+          src={mainImage || '/images/placeholder-phone.jpg'}
+          alt={product.name}
+          className='w-12 h-12 object-contain border border-gray-200 rounded bg-white'
+          onError={(e) => { e.target.src = '/images/placeholder-phone.jpg' }}
+        />
+        <div>
+          <p className='text-gray-600'>You are reviewing:</p>
+          <p className='font-medium text-gray-900'>
+            {product.name} - {selectedColor.name}
+          </p>
+        </div>
+      </div>
+    )}
 
-            <form onSubmit={submitReviewHandler}>
-              <div className='mb-4'>
-                <label className='block mb-2 font-medium'>Rating</label>
-                <RatingStars rating={rating} setRating={setRating} />
-                {rating === 0 && (
-                  <p className='text-red-500 text-sm mt-1'>Please select a rating</p>
-                )}
-              </div>
+    {!selectedColor && product?.colors?.length > 0 && (
+      <Message variant='danger'>Please select a color first</Message>
+    )}
 
-              <div className='mb-4'>
-                <label className='block mb-2 font-medium'>Comment</label>
-                <textarea
-                  className='w-full p-2 border rounded'
-                  rows='4'
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder='Write your review...'
-                  required
+    <form onSubmit={submitReviewHandler}>
+      {/* Overall Rating */}
+      <div className='mb-6'>
+        <label className='block text-base font-bold text-gray-900 mb-2'>
+          Overall rating
+        </label>
+        <div className='flex gap-1'>
+          {[1,2,3,4,5].map((star) => (
+            <FaStar
+              key={star}
+              onClick={() => setRating(star)}
+              onMouseEnter={() => setHoverRating(star)}
+              onMouseLeave={() => setHoverRating(0)}
+              className={`w-7 h-7 cursor-pointer transition-colors ${
+                (hoverRating || rating) >= star
+                ? 'text-amber-500'
+                : 'text-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+        {rating === 0 && (
+          <p className='text-xs text-red-600 mt-1'>Please select a rating</p>
+        )}
+      </div>
+
+      {/* Written Review */}
+      <div className='mb-6'>
+        <label className='block text-base font-bold text-gray-900 mb-2'>
+          Add a written review
+        </label>
+        <textarea
+          rows={5}
+          placeholder='What did you like or dislike? What did you use this product for?'
+          className='w-full px-3 py-2 border border-gray-400 rounded shadow-sm focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 text-sm'
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          required
+        />
+      </div>
+
+      {/* Upload Images */}
+      <div className='mb-6'>
+        <label className='block text-base font-bold text-gray-900 mb-2'>
+          Add photos
+        </label>
+        <p className='text-xs text-gray-600 mb-3'>
+          Shoppers find images more helpful than text alone.
+        </p>
+
+        <label className={`
+          inline-block px-4 py-2 rounded-lg border border-gray-400 bg-white text-sm font-medium text-gray-900
+          hover:bg-gray-50 cursor-pointer shadow-sm
+          ${loadingUpload || reviewImages.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''}
+        `}>
+          <input
+            type='file'
+            accept='image/*'
+            multiple
+            onChange={uploadFileHandler}
+            disabled={loadingUpload || reviewImages.length >= 3}
+            className='hidden'
+          />
+          {loadingUpload ? 'Uploading...' : 'Choose files'}
+        </label>
+        <span className='text-xs text-gray-500 ml-3'>
+          {reviewImages.length}/3 photos / (Optional)
+        </span>
+
+        {/* Image Preview Thumbnails */}
+        {reviewImages.length > 0 && (
+          <div className='flex gap-3 mt-4 flex-wrap'>
+            {reviewImages.map((img, idx) => (
+              <div key={idx} className='relative group'>
+                <img
+                  src={img}
+                  alt={`Review ${idx + 1}`}
+                  className='w-16 h-16 object-cover rounded border border-gray-300'
                 />
+                <button
+                  type='button'
+                  onClick={() => removeImage(img)}
+                  className='absolute -top-2 -right-2 bg-gray-700 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity'
+                >
+                  ×
+                </button>
               </div>
-
-              <div className='mb-4'>
-                <label className='block mb-2 font-medium'>
-                  Upload Images (Optional, max 3)
-                </label>
-                <input
-                  type='file'
-                  accept='image/*'
-                  multiple
-                  onChange={uploadFileHandler}
-                  disabled={loadingUpload || reviewImages.length >= 3}
-                  className='block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100 cursor-pointer
-            disabled:opacity-50 disabled:cursor-not-allowed'
-                />
-                {loadingUpload && <p className='text-sm text-gray-500 mt-1'>Uploading...</p>}
-
-                {reviewImages.length > 0 && (
-                  <div className='flex gap-2 mt-3 flex-wrap'>
-                    {reviewImages.map((img, idx) => (
-                      <div key={idx} className='relative'>
-                        <img
-                          src={img}
-                          alt='review'
-                          className='w-20 h-20 object-cover rounded border'
-                        />
-                        <button
-                          type='button'
-                          onClick={() => removeImage(img)}
-                          className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs'
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <button
-                disabled={
-                  loadingProductReview ||
-                  loadingUpload ||
-                  rating === 0 ||
-                  (product?.colors?.length > 0 && !selectedColor)
-                }
-                type='submit'
-                className='bg-black text-white px-6 py-2 rounded hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed'
-              >
-                {loadingProductReview ? 'Submitting...' : 'Submit Review'}
-              </button>
-            </form>
+            ))}
           </div>
         )}
+      </div>
+
+      {/* Submit Button */}
+      <div className='pt-4 border-t border-gray-200'>
+        <button
+          type='submit'
+          disabled={
+            loadingProductReview ||
+            loadingUpload ||
+            rating === 0 ||
+            !comment ||
+            (product?.colors?.length > 0 && !selectedColor)
+          }
+          className='bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-200 text-black px-6 py-2 rounded-full text-sm font-medium shadow-sm disabled:cursor-not-allowed'
+        >
+          {loadingProductReview ? 'Submitting...' : 'Submit'}
+        </button>
+      </div>
+    </form>
+  </div>
+)}
 
 
 
