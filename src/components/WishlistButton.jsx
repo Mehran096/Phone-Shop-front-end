@@ -38,8 +38,10 @@ const WishlistButton = ({ product, selectedColor, selectedPrice, selectedImage, 
       return
     }
 
+    const selectedColorObj = product?.colors?.find(c => c.name === (colorName || selectedColor))
     // DEFINE THESE FIRST - before any if statements that use them
     const colorToSend = colorName || selectedColor || product?.colors?.[0]?.name
+    const hexCodeToSend = selectedColorObj?.hexCode || product?.colors?.[0]?.hexCode || '#000000'
     const priceToSend = selectedPrice || product?.price
     const imageToSend = selectedImage || product?.image
     const stockToSend = countInStock || product?.countInStock || 0 // <-- Added for qty fix
@@ -54,10 +56,12 @@ const WishlistButton = ({ product, selectedColor, selectedPrice, selectedImage, 
       dispatch(removeFromWishlist(wishlistItem._id))
       toast.success('Removed from wishlist')
     } else {
+      console.log('Sending to Redux:', { hexCode: hexCodeToSend })
       dispatch(addToWishlist({
         product: product._id,
         name: product.name,
         color: colorToSend,
+        hexCode: hexCodeToSend,
         image: imageToSend,
         price: priceToSend,
         countInStock: stockToSend, // <-- Added for qty fix

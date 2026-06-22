@@ -51,6 +51,27 @@ export const register = createAsyncThunk(
   }
 )
 
+//google authentication 
+export const loginGoogle = createAsyncThunk(
+  'auth/loginGoogle',
+  async ({ name, email, googleId, photo }, { rejectWithValue }) => {
+    try {
+      const config = {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true,
+      }
+      const { data } = await api.post(
+        '/users/google',
+        { name, email, googleId, photo },
+        config
+      )
+      return data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  }
+)
+
 export const forgotPassword = createAsyncThunk(
   'auth/forgotPassword',
   async (email, { rejectWithValue }) => {
@@ -265,6 +286,21 @@ const authSlice = createSlice({
         localStorage.setItem('userInfo', JSON.stringify(action.payload)) // <- Add this
       })
       .addCase(register.rejected, (state, action) => { state.loading = false; state.error = action.payload })
+
+      //google authentication
+      .addCase(loginGoogle.pending, (state) => {
+  state.loading = true
+  state.error = null
+})
+.addCase(loginGoogle.fulfilled, (state, action) => {
+  state.loading = false
+  state.userInfo = action.payload
+  localStorage.setItem('userInfo', JSON.stringify(action.payload))
+})
+.addCase(loginGoogle.rejected, (state, action) => {
+  state.loading = false
+  state.error = action.payload
+})
 
       .addCase(updateUserProfile.pending, (state) => { state.loading = true; state.success = false })
       .addCase(updateUserProfile.fulfilled, (state, action) => {

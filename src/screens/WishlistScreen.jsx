@@ -35,6 +35,7 @@ const WishlistScreen = () => {
       image: item.image,
       price: item.price,
       color: item.color,
+      hexCode: item.hexCode,
       countInStock: item.countInStock,
       qty: item.qty,
     }))
@@ -50,6 +51,7 @@ const WishlistScreen = () => {
         image: item.image,
         price: item.price,
         color: item.color,
+        hexCode: item.hexCode,
         countInStock: item.countInStock,
       qty: item.qty,
       }))

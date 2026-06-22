@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { login } from '../slices/authSlice'
+import { login, loginGoogle } from '../slices/authSlice'
+import { signInWithPopup } from 'firebase/auth'
+import { auth, googleProvider } from '../firebase'
 import { toast } from 'react-toastify'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
+import { FcGoogle } from 'react-icons/fc'
 
 function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -38,6 +41,29 @@ function LoginScreen() {
     }
     dispatch(login({ email, password }))
   }
+
+  //google authentication
+const signInWithGoogleHandler = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider)
+    
+    // FIX: Destructure primitives only, don't assign result.user to a var
+    const { displayName, email, uid, photoURL } = result.user
+    
+    await dispatch(loginGoogle({
+      name: displayName,
+      email: email,
+      googleId: uid,
+      photo: photoURL
+    })).unwrap()
+    
+    toast.success('Signed in with Google')
+  } catch (error) {
+    // FIX: Don't toast the raw error object - it has circular refs
+    console.error(error)
+    toast.error(error.message || error.code || 'Google sign in failed')
+  }
+}
 
   return (
     <div className="bg-gray-50 px-4 py-8 sm:py-12">
@@ -125,7 +151,27 @@ function LoginScreen() {
                 </button>
               </div>
             </form>
+            {/* OR Divider */}
+<div className='relative my-6'>
+  <div className='absolute inset-0 flex items-center'>
+    <div className='w-full border-t border-gray-300' />
+  </div>
+  <div className='relative flex justify-center text-sm'>
+    <span className='px-2 bg-white text-gray-500'>OR</span>
+  </div>
+</div>
 
+{/* Google Button */}
+<button
+  type='button'
+  onClick={signInWithGoogleHandler}
+  disabled={loading}
+  className='w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-700 py-2.5 rounded-lg border border-gray-300 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed'
+>
+  <FcGoogle className='w-5 h-5' />
+  {loading ? 'Signing in...' : 'Continue with Google'}
+</button>
+              {/* New to PhoneStore? Divider */}
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
