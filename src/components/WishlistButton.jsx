@@ -56,7 +56,7 @@ const WishlistButton = ({ product, selectedColor, selectedPrice, selectedImage, 
       dispatch(removeFromWishlist(wishlistItem._id))
       toast.success('Removed from wishlist')
     } else {
-      console.log('Sending to Redux:', { hexCode: hexCodeToSend })
+      //console.log('Sending to Redux:', { hexCode: hexCodeToSend })
       dispatch(addToWishlist({
         product: product._id,
         name: product.name,
