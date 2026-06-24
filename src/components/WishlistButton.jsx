@@ -39,18 +39,19 @@ const WishlistButton = ({ product, selectedColor, selectedPrice, selectedImage, 
     }
 
     const selectedColorObj = product?.colors?.find(c => c.name === (colorName || selectedColor))
+    //const selectedColorObj = product?.colors?.find(c => c.name === selectedColor)
     // DEFINE THESE FIRST - before any if statements that use them
     const colorToSend = colorName || selectedColor || product?.colors?.[0]?.name
     const hexCodeToSend = selectedColorObj?.hexCode || product?.colors?.[0]?.hexCode || '#000000'
-    const priceToSend = selectedPrice || product?.price
+    const priceToSend = selectedPrice
     const imageToSend = selectedImage || product?.image
-    const stockToSend = countInStock || product?.countInStock || 0 // <-- Added for qty fix
+    const stockToSend = countInStock || 0 // <-- Added for qty fix
 
     // NOW check if color exists
-    if (!colorToSend) {
-      toast.error('Please select a color first')
-      return
-    }
+   if (!colorToSend ||!priceToSend) {
+  toast.error('Please select a color first')
+  return
+}
 
     if (isWishlisted) {
       dispatch(removeFromWishlist(wishlistItem._id))

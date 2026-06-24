@@ -14,7 +14,7 @@ const ProductEditScreen = () => {
   const [updateProduct, { isLoading: loadingUpdate }] = useUpdateProductMutation()
 
   const [name, setName] = useState('')
-  const [price, setPrice] = useState(0)
+  //const [price, setPrice] = useState(0)
   const [brand, setBrand] = useState('')
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
@@ -37,7 +37,7 @@ const ProductEditScreen = () => {
   useEffect(() => {
     if (product) {
       setName(product.name)
-      setPrice(product.price)
+      //setPrice(product.price)
       setBrand(product.brand)
       setCategory(product.category)
       setDescription(product.description)
@@ -179,7 +179,7 @@ const ProductEditScreen = () => {
 
     const formData = new FormData()
     formData.append('name', name)
-    formData.append('price', price)
+    //formData.append('price', price)
     formData.append('brand', brand)
     formData.append('category', category)
     formData.append('description', description)
@@ -228,16 +228,21 @@ const ProductEditScreen = () => {
         {loadingUpdate && <Loader />}
         {isLoading ? <Loader /> : error ? <Message variant='danger'>{error?.data?.message || error.error}</Message> : (
           <form onSubmit={submitHandler} className='space-y-4'>
-            <div>
+            {/* <div>
+              <label className={labelClass}>Name</label>
+              <input type='text' value={name} onChange={(e) => setName(e.target.value)} className={inputClass} required />
+            </div> */}
+
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              {/* <div>
+                <label className={labelClass}>Price</label>
+                <input type='number' value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} required />
+              </div> */}
+              <div>
               <label className={labelClass}>Name</label>
               <input type='text' value={name} onChange={(e) => setName(e.target.value)} className={inputClass} required />
             </div>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div>
-                <label className={labelClass}>Price</label>
-                <input type='number' value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} required />
-              </div>
+            
               <div>
                 <label className={labelClass}>Brand</label>
                 <input type='text' value={brand} onChange={(e) => setBrand(e.target.value)} className={inputClass} required />

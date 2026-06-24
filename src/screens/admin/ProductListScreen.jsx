@@ -129,7 +129,7 @@ const ProductListScreen = () => {
                   <tr key={product._id} className='hover:bg-gray-50'>
                     <td className='px-4 py-3 text-sm text-gray-600'>{product._id.substring(18, 24)}...</td>
                     <td className='px-4 py-3 text-sm font-medium text-gray-900'>{product.name}</td>
-                    <td className='px-4 py-3 text-sm text-gray-600'>${product.price.toLocaleString()}</td>
+                    <td className='px-4 py-3 text-sm text-gray-600'>${product.colors[0].price.toLocaleString()}</td>
                     <td className='px-4 py-3 text-sm text-gray-600'>{product.category}</td>
                     <td className='px-4 py-3 text-sm text-gray-600'>{product.brand}</td>
                     <td className='px-4 py-3 flex gap-2'>
@@ -158,7 +158,7 @@ const ProductListScreen = () => {
                 <div className='flex justify-between items-start mb-2 gap-2'>
                   <h3 className='font-semibold text-lg leading-tight'>{product.name}</h3>
                   <span className='text-xl font-bold text-blue-600 shrink-0'>
-                    ${product.price.toLocaleString()}
+                    ${product.colors[0].price.toLocaleString()}
                   </span>
                 </div>
                 <div className='text-sm text-gray-600 space-y-1 mb-3'>

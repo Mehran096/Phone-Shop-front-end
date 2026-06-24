@@ -61,7 +61,7 @@ const Product = ({ product, userInfo }) => {
 
         <div className='flex items-center justify-between mt-3'>
           <span className='text-xl font-bold text-blue-600'>
-            ${product.price}
+            ${product.colors[0].price}
           </span>
           {product.colors?.length > 1 && (
             <div className='flex gap-1'>

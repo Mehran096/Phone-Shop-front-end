@@ -154,10 +154,10 @@ const [showReviewForm, setShowReviewForm] = useState(false)
       product: product._id,
       name: product.name,
       image: mainImage,
-      price: selectedColor?.price || product.price,
+      price: selectedColor?.price,
       color: selectedColor?.name || '',
       hexCode: selectedColor?.hexCode || '',
-      countInStock: selectedColor?.countInStock || product.countInStock,
+      countInStock: selectedColor?.countInStock,
       qty,
     }))
     toast.success('Added to cart')

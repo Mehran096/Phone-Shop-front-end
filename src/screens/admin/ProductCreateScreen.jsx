@@ -8,10 +8,10 @@ import Loader from '../../components/Loader'
 
 const ProductCreateScreen = () => {
   const [name, setName] = useState('')
-  const [price, setPrice] = useState(0)
+  //const [price, setPrice] = useState(0)
   const [brand, setBrand] = useState('')
   const [category, setCategory] = useState('')
-  const [countInStock, setCountInStock] = useState(0)
+  //const [countInStock, setCountInStock] = useState(0)
   const [description, setDescription] = useState('')
   const [specs, setSpecs] = useState({
     storage: '', ram: '', display: '', battery: '', camera: ''
@@ -101,10 +101,10 @@ const ProductCreateScreen = () => {
     const formData = new FormData()
 
     formData.append('name', name)
-    formData.append('price', price)
+    //formData.append('price', price)
     formData.append('brand', brand)
     formData.append('category', category)
-    formData.append('countInStock', countInStock)
+    //formData.append('countInStock', countInStock)
     formData.append('description', description)
     formData.append('specs', JSON.stringify(specs))
 
@@ -160,7 +160,7 @@ const ProductCreateScreen = () => {
           </div>
         </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+        {/* <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
           <div>
             <label className={labelClass}>Price</label>
             <input
@@ -181,7 +181,7 @@ const ProductCreateScreen = () => {
               required
             />
           </div>
-        </div>
+        </div> */}
 
         <div className='mb-4'>
           <label className={labelClass}>Category</label>
