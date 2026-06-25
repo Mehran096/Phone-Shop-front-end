@@ -126,7 +126,7 @@ const dispatch = useDispatch()
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/returns' element={<ReturnRefundScreen />} />
             <Route path='/contact' element={<ContactScreen />} />
-            <Route path="/product/:id" element={<ProductScreen isOnline={isOnline}/>} />
+            <Route path="/product/:slug" element={<ProductScreen isOnline={isOnline}/>} />
             <Route path="/cart" element={<CartScreen />} />
             <Route path="/shipping" element={<ShippingScreen />} />
             <Route path="/payment" element={<PaymentScreen />} />

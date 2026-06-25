@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import Product from '../components/Product'
 import { useSelector } from 'react-redux'
 import Paginate from '../components/Paginate'
@@ -25,18 +26,54 @@ const HomeScreen = ({ isOnline }) => {
 
   const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'OPPO', 'ViVO']
 
-// This is the key part - check for network error
- if (!isOnline || error?.status === 'FETCH_ERROR' || error?.error === 'TypeError: Failed to fetch') {
-  return <OfflineMessage refetch={refetch} isOnline={isOnline} />
-}
+  // This is the key part - check for network error
+  if (!isOnline || error?.status === 'FETCH_ERROR' || error?.error === 'TypeError: Failed to fetch') {
+    return <OfflineMessage refetch={refetch} isOnline={isOnline} />
+  }
 
   return (
     <>
+      <Helmet>
+        <title>
+          {keyword
+            ? `Search: ${keyword} - Phone-Store`
+            : brand
+              ? `${brand} Mobiles - Phone-Store`
+              : 'Phone-Store - Buy Mobile Phones Online in Pakistan'}
+        </title>
+        <meta
+          name="description"
+          content={keyword || brand
+            ? `Shop ${keyword || brand} mobiles at Phone-Store. Best prices, 1 year warranty, fast delivery in Pakistan.`
+            : 'Phone-Store: Buy latest iPhone, Samsung, Xiaomi, Oppo, Vivo mobiles online in Pakistan. Best prices, 1 year warranty, fast delivery in Peshawar, Karachi, Lahore.'}
+        />
+        <link rel="canonical" href={`https://phone-store.asia${keyword ? `/?keyword=${keyword}` : brand ? `/?brand=${brand}` : ''}`} />
+
+        <meta property="og:title" content={brand ? `${brand} Phones - Phone-Store` : 'Phone-Store - Best Mobile Shop in Pakistan'} />
+        <meta property="og:description" content="Shop iPhone, Samsung, Xiaomi & more. Genuine products, best prices, warranty, fast delivery across Pakistan." />
+        <meta property="og:image" content="https://phone-store.asia/og-home.jpg" />
+        <meta property="og:url" content="https://phone-store.asia" />
+        <meta property="og:type" content="website" />
+
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Phone-Store",
+            "url": "https://phone-store.asia",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://phone-store.asia/?keyword={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          })}
+        </script>
+      </Helmet>
       {/* 1. Hero Section - Hide when filtering */}
-      {!keyword &&!brand && <HeroBanner />}
+      {!keyword && !brand && <HeroBanner />}
 
       {/* 2. Shop by Brand - Only on homepage */}
-      {!keyword &&!brand && (
+      {!keyword && !brand && (
         <section className='py-16 bg-gray-50'>
           <div className='container mx-auto px-4'>
             <h2 className='text-3xl font-bold text-center mb-12'>Shop by Brand</h2>
@@ -75,15 +112,15 @@ const HomeScreen = ({ isOnline }) => {
 
         <h1 className='text-3xl font-bold text-gray-900 mb-8 text-center'>
           {keyword
-         ? `Search Results for "${keyword}"`
+            ? `Search Results for "${keyword}"`
             : brand
-         ? `${brand} Phones` // Fix 5: Show brand in title
+              ? `${brand} Phones` // Fix 5: Show brand in title
               : 'Latest Phones'}
         </h1>
 
-        {isLoading? (
+        {isLoading ? (
           <Loader />
-        ) : error? (
+        ) : error ? (
           <Message variant='danger'>
             {error?.data?.message || error.error}
           </Message>
@@ -111,7 +148,7 @@ const HomeScreen = ({ isOnline }) => {
       </div>
 
       {/* 4. Why Choose Us - Only on homepage */}
-      {!keyword &&!brand && ( // Fix 8: Hide when filtering by brand too
+      {!keyword && !brand && ( // Fix 8: Hide when filtering by brand too
         <section className='py-16 bg-gray-50'>
           <div className='container mx-auto px-4'>
             <h2 className='text-3xl font-bold text-center mb-12'>Why Choose PhoneStore</h2>

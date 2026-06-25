@@ -17,7 +17,7 @@ const Product = ({ product, userInfo }) => {
         </Link>
       )}
 
-      <Link to={`/product/${product._id}`} className='block'>
+      <Link to={`/product/${product.slug}`} className='block'>
         <div className='h-48 sm:h-56 md:h-64 lg:h-72 overflow-hidden bg-gray-50 rounded'>
           <img
             src={mainImage}
@@ -29,7 +29,7 @@ const Product = ({ product, userInfo }) => {
       </Link>
 
       <div className='p-3'>
-        <Link to={`/product/${product._id}`}>
+        <Link to={`/product/${product.slug}`}>
           <h3 className='font-semibold text-sm md:text-base truncate'>
             {product.name}
           </h3>

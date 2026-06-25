@@ -184,7 +184,7 @@ const OrderScreen = () => {
                       />
                     </div>
                     <div className="flex-1 ml-4">
-                      <Link to={`/product/${item.product}`} className="text-blue-600 hover:underline font-medium">
+                      <Link to={`/product/${item.slug}`} className="text-blue-600 hover:underline font-medium">
                         {item.name}
                       </Link>
                     </div>

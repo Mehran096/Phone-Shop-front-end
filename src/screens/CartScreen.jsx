@@ -81,7 +81,7 @@ return (
               <div className="flex-1 flex flex-col sm:flex-row sm:justify-between">
                 <div className="flex-1 min-w-0">
                   <Link 
-                    to={`/product/${item.product}`} 
+                     to={`/product/${item.slug}`}
                     className="font-semibold text-base sm:text-lg hover:text-blue-600 line-clamp-2"
                   >
                     {item.name}

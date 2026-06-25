@@ -130,7 +130,7 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
                       </div>
                       <div className='flex-1'>
                         <Link
-                          to={`/product/${item.product}`}
+                          to={`/product/${item.slug}`}
                           className='text-blue-600 hover:text-blue-800 font-medium'
                         >
                           {item.name}

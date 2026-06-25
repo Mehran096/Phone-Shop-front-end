@@ -69,6 +69,7 @@ const cartSlice = createSlice({
           {
             product: item.product,
             name: item.name,
+            slug: item.slug,
             image: item.image,
             price: item.price,
             color: item.color || '',

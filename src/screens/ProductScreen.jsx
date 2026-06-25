@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import RatingStars from '../components/RatingStars';
 import ReviewsModal from '../components/ReviewsModal';
@@ -8,6 +9,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { FaThumbsUp } from 'react-icons/fa';
 import {
   useGetProductDetailsQuery,
+  useGetProductBySlugQuery,
   useCreateProductReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
@@ -27,13 +29,15 @@ import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
 
 
+
 const ProductScreen = ({ isOnline }) => {
-  const { id: productId } = useParams()
+  const { slug } = useParams()
+  const productId = slug
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
   const { userInfo } = useSelector((state) => state.auth)
-  const { data: product, isLoading, error, refetch } = useGetProductDetailsQuery(productId)
+  const { data: product, isLoading, error, refetch } = useGetProductBySlugQuery(slug)
   const [createProductReview, { isLoading: loadingProductReview }] = useCreateProductReviewMutation()
   const [deleteProductReview, { isLoading: loadingDeleteReview }] = useDeleteReviewMutation();
   const [addAdminReply, { isLoading: loadingAdminReply }] = useAddAdminReplyMutation();
@@ -153,6 +157,7 @@ const [showReviewForm, setShowReviewForm] = useState(false)
     dispatch(addToCart({
       product: product._id,
       name: product.name,
+      slug: product.slug,
       image: mainImage,
       price: selectedColor?.price,
       color: selectedColor?.name || '',
@@ -420,6 +425,53 @@ const [showReviewForm, setShowReviewForm] = useState(false)
 
 
   return (
+    <>
+    <Helmet>
+      <title>{product?.name} - Phone-Store</title>
+      <meta
+        name="description"
+        content={`${product?.name} - ${product?.description?.substring(0, 130)}... Buy now at Phone-Store Pakistan with warranty.`}
+      />
+      <link rel="canonical" href={`https://phone-store.asia/product/${product?.slug}`} />
+
+      <meta property="og:title" content={`${product?.name} | Phone-Store`} />
+      <meta property="og:description" content={product?.description?.substring(0, 155)} />
+      <meta property="og:image" content={selectedColor?.images?.[0] || product?.image} />
+      <meta property="og:url" content={`https://phone-store.asia/product/${product?.slug}`} />
+      <meta property="og:type" content="product" />
+      <meta property="product:price:amount" content={currentPrice || product?.price} />
+      <meta property="product:price:currency" content="PKR" />
+
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": product?.name,
+          "image": selectedColor?.images || [product?.image],
+          "description": product?.description,
+          "sku": product?._id,
+          "brand": { "@type": "Brand", "name": product?.brand },
+          "offers": {
+            "@type": "Offer",
+            "url": `https://phone-store.asia/product/${product?.slug}`,
+            "priceCurrency": "PKR",
+            "price": String(currentPrice || product?.price),
+            "availability": currentStock > 0
+         ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+            "seller": { "@type": "Organization", "name": "Phone-Store" }
+          },
+      ...(product?.numReviews > 0 && {
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": product?.rating?.toFixed(1),
+              "reviewCount": product?.numReviews
+            }
+          })
+        })}
+      </script>
+    </Helmet>
+    
     <div className='max-w-7xl mx-auto px-4 py-8'>
       <Link to='/' className='text-blue-600 hover:text-blue-800 mb-6 inline-block font-medium'>
         ← Go Back
@@ -861,8 +913,7 @@ const [showReviewForm, setShowReviewForm] = useState(false)
 
 
       
-{/* CREATE REVIEW SECTION */}
-{/* CREATE REVIEW SECTION */}
+{/* CREATE REVIEW SECTION */} 
 {/* WRITE REVIEW BUTTON - Shows when form is hidden */}
 {userInfo && !alreadyReviewed && !editingReview && !showReviewForm && (
   <div className='mt-8 pt-8 border-t border-gray-200'>
@@ -1118,6 +1169,7 @@ const [showReviewForm, setShowReviewForm] = useState(false)
         )}
       </div>
     </div>
+</>
   )
 }
 
