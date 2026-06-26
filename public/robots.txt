@@ -1,9 +1,14 @@
 User-agent: *
+Allow: /products/
 Allow: /
-Disallow: /admin
+Disallow: /products?*
 Disallow: /cart
 Disallow: /checkout
-Disallow: /profile
-Disallow: /orders
-Disallow: /search
-Sitemap: https://phone-store.asia/api/sitemap.xml
+Disallow: /account
+Disallow: /admin
+Disallow: /api/
+Disallow: /*?sort=
+Disallow: /*?price=
+
+# Sitemap location
+Sitemap: https://www.phone-store.asia/api/sitemap.xml
