@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'; 
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { login, loginGoogle } from '../slices/authSlice'
@@ -66,6 +67,14 @@ const signInWithGoogleHandler = async () => {
 }
 
   return (
+    <>
+    {/* seo start */}
+       <Helmet>
+            <title>Login | Phone-Store</title>
+            <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+    {/* seo end*/}
+
     <div className="bg-gray-50 px-4 py-8 sm:py-12">
       <div className="mx-auto w-full max-w-md">
         <div className="text-center">
@@ -195,6 +204,7 @@ const signInWithGoogleHandler = async () => {
         </div>
       </div>
     </div>
+  </>
   )
 }
 

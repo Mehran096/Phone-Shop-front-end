@@ -432,12 +432,12 @@ const [showReviewForm, setShowReviewForm] = useState(false)
         name="description"
         content={`${product?.name} - ${product?.description?.substring(0, 130)}... Buy now at Phone-Store Pakistan with warranty.`}
       />
-      <link rel="canonical" href={`https://phone-store.asia/product/${product?.slug}`} />
+      <link rel="canonical" href={`https://www.phone-store.asia/product/${product?.slug}`} />
 
       <meta property="og:title" content={`${product?.name} | Phone-Store`} />
       <meta property="og:description" content={product?.description?.substring(0, 155)} />
       <meta property="og:image" content={selectedColor?.images?.[0] || product?.image} />
-      <meta property="og:url" content={`https://phone-store.asia/product/${product?.slug}`} />
+      <meta property="og:url" content={`https://www.phone-store.asia/product/${product?.slug}`} />
       <meta property="og:type" content="product" />
       <meta property="product:price:amount" content={currentPrice || product?.price} />
       <meta property="product:price:currency" content="PKR" />
@@ -453,7 +453,7 @@ const [showReviewForm, setShowReviewForm] = useState(false)
           "brand": { "@type": "Brand", "name": product?.brand },
           "offers": {
             "@type": "Offer",
-            "url": `https://phone-store.asia/product/${product?.slug}`,
+            "url": `https://www.phone-store.asia/product/${product?.slug}`,
             "priceCurrency": "PKR",
             "price": String(currentPrice || product?.price),
             "availability": currentStock > 0

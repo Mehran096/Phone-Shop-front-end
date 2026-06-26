@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'; 
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { FaTrash, FaHeart, FaShoppingCart } from 'react-icons/fa'
@@ -60,6 +61,14 @@ const WishlistScreen = () => {
   }
 
   return (
+    <>
+     {/* seo start */}
+           <Helmet>
+                <title>Wishlist | Phone-Store</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
+          {/* seo end*/}
+   
     <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
       <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
         <FaHeart className="text-red-500" />
@@ -169,6 +178,8 @@ const WishlistScreen = () => {
         </>
       )}
     </div>
+
+ </>
   )
 }
 

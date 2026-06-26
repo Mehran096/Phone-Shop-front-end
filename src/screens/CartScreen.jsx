@@ -1,4 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux';
+import { Helmet } from 'react-helmet-async'; 
 import { removeFromCart } from '../slices/cartSlice';
 import { updateCartQty } from '../slices/cartSlice';
 import { Link } from 'react-router-dom';
@@ -42,6 +43,14 @@ const { userInfo } = useSelector((state) => state.auth)
   const cartSubtotal = cartItems?.reduce((acc, item) => acc + item.qty * item.price, 0);
   const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
 return (
+  <>
+  {/* seo start */}
+   <Helmet>
+        <title>Cart | Phone-Store</title>
+        <meta name="robots" content="noindex, nofollow" />
+    </Helmet>
+    {/* seo end*/}
+
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 min-h-screen">
     <h1 className="text-2xl sm:text-3xl font-bold mb-6">Shopping Cart</h1>
 
@@ -166,6 +175,7 @@ return (
       </div>
     )}
   </div>
+</>
 )
 }
 

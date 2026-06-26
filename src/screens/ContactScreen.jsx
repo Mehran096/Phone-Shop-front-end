@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import axios from 'axios'
+import { Helmet } from 'react-helmet-async';
+ 
+import api from '../utils/axios'
+
 
 const ContactScreen = () => {
   const [formData, setFormData] = useState({
@@ -20,7 +23,7 @@ const ContactScreen = () => {
   e.preventDefault()
   setLoading(true)
   try {
-    await axios.post('/api/contact', formData)
+    await api.post('/contact', formData)
     toast.success('Message sent! We’ll get back to you within 24 hours.')
     setFormData({ name: '', email: '', subject: '', message: '' })
   } catch (error) {
@@ -30,6 +33,34 @@ const ContactScreen = () => {
 }
 
   return (
+    <>
+    {/* SEO start */}
+      <Helmet>
+        <title>Contact Phone-Store Peshawar | COD & Support</title>
+        <meta 
+          name="description" 
+          content="Contact Phone-Store in Peshawar, Pakistan. Questions about iPhone, Pixel, COD delivery, warranty or returns? Message us, we reply within 24 hours." 
+        />
+        <link rel="canonical" href="https://www.phone-store.asia/contact" />
+        <meta name="robots" content="index, follow" />
+        
+        <meta property="og:title" content="Contact Phone-Store Peshawar | COD & Support" />
+        <meta property="og:description" content="Contact Phone-Store Pakistan for iPhone, Pixel phones, COD, warranty & delivery support." />
+        <meta property="og:url" content="https://www.phone-store.asia/contact" />
+        <meta property="og:type" content="website" />
+
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ContactPage",
+            "url": "https://www.phone-store.asia/contact",
+            "name": "Contact Phone-Store",
+            "about": "Customer support for phone purchases in Pakistan"
+          })}
+        </script>
+      </Helmet>
+      {/* SEO end */}
+      
     <div className='max-w-4xl mx-auto px-4 py-6'>
       <Link to='/' className='text-blue-500 hover:underline mb-4 inline-block'>← Go Back</Link>
       
@@ -120,6 +151,7 @@ const ContactScreen = () => {
         </div>
       </div>
     </div>
+  </>
   )
 }
 

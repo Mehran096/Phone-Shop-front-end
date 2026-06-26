@@ -1,14 +1,41 @@
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async';
 
 const ReturnRefundScreen = () => {
   return (
+    <>
+     {/* SEO start */}
+      <Helmet>
+        <title>Return & Refund Policy | 7-Day Returns | Phone-Store Pakistan</title>
+        <meta 
+          name="description" 
+          content="Phone-Store Pakistan returns policy: 7-day returns, unused sealed phones only. Refunds processed in 5-7 days via Easypaisa, JazzCash or bank transfer." 
+        />
+        <link rel="canonical" href="https://www.phone-store.asia/return-refund" />
+        <meta name="robots" content="index, follow" />
+        
+        <meta property="og:title" content="Return & Refund Policy | Phone-Store Pakistan" />
+        <meta property="og:url" content="https://www.phone-store.asia/return-refund" />
+        <meta property="og:type" content="website" />
+
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Return and Refund Policy",
+            "url": "https://www.phone-store.asia/return-refund",
+            "description": "7-day return policy and refund process for Phone-Store Pakistan"
+          })}
+        </script>
+      </Helmet>
+      {/* SEO end */}
     <div className='max-w-4xl mx-auto px-4 py-6'>
       <Link to='/' className='text-blue-500 hover:underline mb-4 inline-block'>← Go Back</Link>
       
       <h1 className='text-2xl sm:text-3xl font-bold mb-2'>Returns & Refunds Policy</h1>
       <p className='text-gray-400 mb-8'>Last updated: Oct 4, 2026</p>
 
-      <div className='space-y-6 text-gray-300'>
+      <div className='space-y-6 text-gray-600'>
         
         <section>
           <h2 className='text-xl font-semibold text-white mb-2'>1. Return Policy</h2>
@@ -73,6 +100,8 @@ const ReturnRefundScreen = () => {
 
       </div>
     </div>
+
+</>
   )
 }
 

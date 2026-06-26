@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Helmet } from 'react-helmet-async';
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
@@ -90,6 +91,14 @@ const OrderScreen = () => {
   ) : !order || !order._id ? (
     <Loader />
   ) : (
+  <>
+  {/* SEO start */}
+    <Helmet>
+      <title>Order Details | Phone-Store</title>
+      <meta name="robots" content="noindex, nofollow" />
+    </Helmet>
+    {/* SEO end */}
+
     <div className="max-w-7xl mx-auto p-4">
       {/* Go Back Button */}
       <button
@@ -286,6 +295,7 @@ const OrderScreen = () => {
         </div>
       </div>
     </div>
+  </>
   )
 }
 

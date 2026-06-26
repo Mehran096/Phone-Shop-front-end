@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Helmet } from 'react-helmet-async'; 
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { updateUserProfile } from '../slices/authSlice'
@@ -56,6 +57,14 @@ const ProfileScreen = () => {
   }
 
   return (
+    <>
+    {/* seo start */}
+           <Helmet>
+                <title>Profile | Phone-Store</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
+      {/* seo end*/}
+
     <div className='container mx-auto px-4 py-6 md:py-8'>
       <h1 className='text-2xl md:text-3xl font-bold mb-6'>My Account</h1>
 
@@ -281,6 +290,7 @@ const ProfileScreen = () => {
         </div>
       </div>
     </div>
+  </>
   )
 }
 

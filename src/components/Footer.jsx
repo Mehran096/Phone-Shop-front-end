@@ -26,11 +26,12 @@ const Footer = () => {
           </div>
 
           {/* Support */}
+
           <div>
             <h3 className="text-lg font-semibold text-white mb-3">Support</h3>
             <ul className="space-y-2 text-sm">
               <li><Link to="/contact" className="hover:text-white transition">Contact Us</Link></li>
-              <li><Link to="/shipping" className="hover:text-white transition">Shipping Policy</Link></li>
+              <li><Link to="/shipping-policy" className="hover:text-white transition">Shipping Policy</Link></li>
               <li><Link to="/returns" className="hover:text-white transition">Returns & Refunds</Link></li>
               <li><Link to="/faq" className="hover:text-white transition">FAQ</Link></li>
             </ul>

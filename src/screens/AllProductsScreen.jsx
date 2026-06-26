@@ -4,6 +4,7 @@ import Paginate from '../components/Paginate'
 import { useGetProductsQuery } from '../slices/productsApiSlice'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
+import { Helmet } from 'react-helmet-async';
  
 
 const AllProductsScreen = ({ isOnline }) => {
@@ -19,6 +20,34 @@ const AllProductsScreen = ({ isOnline }) => {
 
   return (
     <>
+     {/* SEO start */}
+      <Helmet>
+        <title>
+          {keyword? `Search: ${keyword} | Phone-Store` : 'Buy iPhone & Pixel Phones in Pakistan | Phone-Store'}
+        </title>
+        <meta 
+          name="description" 
+          content={keyword 
+           ? `Search results for ${keyword} at Phone-Store Pakistan. COD, warranty & fast delivery.` 
+            : 'Shop original iPhone, Pixel & flagship phones in Pakistan. COD, warranty & fast delivery in Peshawar.'} 
+        />
+        <link rel="canonical" href={`https://www.phone-store.asia/products${keyword? `?keyword=${keyword}` : ''}`} />
+        <meta name="robots" content={keyword? 'noindex, follow' : 'index, follow'} />
+        
+        <meta property="og:title" content="Buy iPhone & Pixel Phones in Pakistan | Phone-Store" />
+        <meta property="og:url" content="https://www.phone-store.asia/products" />
+        <meta property="og:type" content="website" />
+
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "iPhone & Pixel Phones Pakistan",
+            "url": "https://www.phone-store.asia/products"
+          })}
+        </script>
+      </Helmet>
+      {/* SEO end */}
          
      {/* 3. Products Section */}
 <div className='container mx-auto px-4 py-8'>

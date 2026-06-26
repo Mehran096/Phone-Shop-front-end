@@ -47,12 +47,12 @@ const HomeScreen = ({ isOnline }) => {
             ? `Shop ${keyword || brand} mobiles at Phone-Store. Best prices, 1 year warranty, fast delivery in Pakistan.`
             : 'Phone-Store: Buy latest iPhone, Samsung, Xiaomi, Oppo, Vivo mobiles online in Pakistan. Best prices, 1 year warranty, fast delivery in Peshawar, Karachi, Lahore.'}
         />
-        <link rel="canonical" href={`https://phone-store.asia${keyword ? `/?keyword=${keyword}` : brand ? `/?brand=${brand}` : ''}`} />
+        <link rel="canonical" href={`https://www.phone-store.asia${keyword ? `/?keyword=${keyword}` : brand ? `/?brand=${brand}` : ''}`} />
 
         <meta property="og:title" content={brand ? `${brand} Phones - Phone-Store` : 'Phone-Store - Best Mobile Shop in Pakistan'} />
         <meta property="og:description" content="Shop iPhone, Samsung, Xiaomi & more. Genuine products, best prices, warranty, fast delivery across Pakistan." />
-        <meta property="og:image" content="https://phone-store.asia/og-home.jpg" />
-        <meta property="og:url" content="https://phone-store.asia" />
+        <meta property="og:image" content="https://www.phone-store.asia/og-home.jpg" />
+        <meta property="og:url" content="https://www.phone-store.asia" />
         <meta property="og:type" content="website" />
 
         <script type="application/ld+json">
@@ -60,10 +60,10 @@ const HomeScreen = ({ isOnline }) => {
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "Phone-Store",
-            "url": "https://phone-store.asia",
+            "url": "https://www.phone-store.asia",
             "potentialAction": {
               "@type": "SearchAction",
-              "target": "https://phone-store.asia/?keyword={search_term_string}",
+              "target": "https://www.phone-store.asia/?keyword={search_term_string}",
               "query-input": "required name=search_term_string"
             }
           })}

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'; 
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { listMyOrders } from '../slices/orderSlice'
@@ -20,6 +21,13 @@ const MyOrdersScreen = () => {
   }, [dispatch, navigate, userInfo])
 
   return (
+    <>
+     {/* seo start */}
+       <Helmet>
+            <title>MyOrder | Phone-Store</title>
+            <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+      {/* seo end*/}
     <div className='container mx-auto px-4 py-8'>
       <h1 className='text-3xl font-bold mb-6 text-gray-800'>My Orders</h1>
       
@@ -90,6 +98,7 @@ const MyOrdersScreen = () => {
         </div>
       )}
     </div>
+</>
   )
 }
 

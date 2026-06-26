@@ -30,6 +30,8 @@ import ContactScreen from './screens/ContactScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import WishlistScreen from './screens/WishlistScreen'
+import ShippingPolicyScreen from './screens/ShippingPolicyScreen';
+
 
 import { FaExclamationTriangle } from 'react-icons/fa'
 import { setCartItems } from './slices/cartSlice'
@@ -124,6 +126,7 @@ const dispatch = useDispatch()
             <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
             
             <Route path='/faq' element={<FAQScreen />} />
+            <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
             <Route path='/returns' element={<ReturnRefundScreen />} />
             <Route path='/contact' element={<ContactScreen />} />
             <Route path="/product/:slug" element={<ProductScreen isOnline={isOnline}/>} />

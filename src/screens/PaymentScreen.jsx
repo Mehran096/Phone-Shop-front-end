@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'; 
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { savePaymentMethod } from '../slices/cartSlice'
@@ -32,6 +33,13 @@ function PaymentScreen() {
 
   return (
     <>
+    {/* seo start */}
+       <Helmet>
+            <title>Payment | Phone-Store</title>
+            <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+    {/* seo end*/}
+     
     <div className="max-w-2xl mx-auto p-4">
       <CheckoutSteps step1 step2 step3/>
       

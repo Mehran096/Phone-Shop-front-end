@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async';
 
 const faqs = [
   {
@@ -41,7 +42,40 @@ const FAQScreen = () => {
     faq.a.toLowerCase().includes(search.toLowerCase())
   )
 
+ const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map((faq) => ({
+      "@type": "Question",
+      "name": faq.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.a
+      }
+    }))
+  };
+  
   return (
+    <>
+     {/* SEO start */}
+      <Helmet>
+        <title>FAQ | Phone-Store Pakistan | Shipping, Warranty, COD</title>
+        <meta 
+          name="description" 
+          content="FAQs for Phone-Store Pakistan. Shipping 3-5 days, 1-year warranty, 7-day returns, Cash on Delivery, 100% original phones. Peshawar support." 
+        />
+        <link rel="canonical" href="https://www.phone-store.asia/faq" />
+        <meta name="robots" content="index, follow" />
+        
+        <meta property="og:title" content="FAQ | Phone-Store Pakistan" />
+        <meta property="og:url" content="https://www.phone-store.asia/faq" />
+        <meta property="og:type" content="website" />
+
+        <script type="application/ld+json">
+          {JSON.stringify(faqSchema)}
+        </script>
+      </Helmet>
+      {/* SEO end */}
     <div className='max-w-3xl mx-auto px-4 py-6'>
       <Link to='/' className='text-blue-500 hover:underline mb-4 inline-block'>← Go Back</Link>
       
@@ -97,6 +131,7 @@ const FAQScreen = () => {
         </Link>
       </div>
     </div>
+</>
   )
 }
 

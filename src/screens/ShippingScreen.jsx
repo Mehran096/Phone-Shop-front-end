@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async'; 
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { saveShippingAddress } from '../slices/cartSlice';
@@ -65,6 +66,10 @@ function ShippingScreen() {
 
   return (
     <>
+     <Helmet>
+  <title>Shipping | Phone-Store</title>
+  <meta name="robots" content="noindex, nofollow" />
+</Helmet>
      
      <div className="min-h-screen bg-gray-50 flex items-start justify-center px-4 py-8">
       <div className="w-full max-w-md">

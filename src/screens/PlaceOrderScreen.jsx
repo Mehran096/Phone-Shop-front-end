@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { clearCartItems, resetCart } from '../slices/cartSlice'
@@ -91,6 +92,12 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
 
   return (
     <>
+    {/* seo start */}
+           <Helmet>
+                <title>PlaceOrder | Phone-Store</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
+        {/* seo end*/}
       
       <div className='container mx-auto px-4 py-8'>
         <CheckoutSteps step1 step2 step3 step4 />
