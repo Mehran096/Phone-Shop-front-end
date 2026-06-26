@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/robots.txt",
+      "destination": "https://phone-shop-back-end.onrender.com/robots.txt"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "https://phone-shop-back-end.onrender.com/api/$1"
     },
