@@ -1,92 +1,84 @@
-import { useState, useEffect } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa'
-import { useGetProductsQuery, useDeleteProductMutation, useCreateProductMutation } from '../../slices/productsApiSlice'
-import Paginate from '../../components/Paginate'
-import Loader from '../../components/Loader'
-import Message from '../../components/Message'
-import { toast } from 'react-toastify'
+import { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { FaEdit, FaTrash, FaPlus, FaTimes, FaSearch } from 'react-icons/fa';
+import { useGetProductsQuery, useDeleteProductMutation, useCreateProductMutation } from '../../slices/productsApiSlice';
+import Loader from '../../components/Loader';
+import Message from '../../components/Message';
+import Paginate from '../../components/Paginate';
+import { toast } from 'react-toastify';
 
 const ProductListScreen = () => {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [search, setSearch] = useState(searchParams.get('keyword') || '')
+  const [searchParams, setSearchParams] = useSearchParams();
+  const keyword = searchParams.get('keyword') || '';
+  const pageNumber = searchParams.get('pageNumber') || 1;
 
-  const keyword = searchParams.get('keyword') || ''
-  const pageNumber = Number(searchParams.get('pageNumber')) || 1
+  const { data, isLoading, error } = useGetProductsQuery({ keyword, pageNumber });
 
-  const navigate = useNavigate()
+  const [deleteProduct, { isLoading: loadingDelete }] = useDeleteProductMutation();
+  const [createProduct, { isLoading: loadingCreate }] = useCreateProductMutation();
 
-  const { data, isLoading, error } = useGetProductsQuery({
-    keyword,
-    pageNumber,
-  })
-
-  const [deleteProduct, { isLoading: loadingDelete }] = useDeleteProductMutation()
-  const [createProduct, { isLoading: loadingCreate }] = useCreateProductMutation()
-
-  useEffect(() => {
-    setSearch(keyword)
-  }, [keyword])
+  const navigate = useNavigate();
+  const [searchKeyword, setSearchKeyword] = useState(keyword);
 
   const deleteHandler = async (id) => {
-    if (window.confirm('Delete this product? This will also delete all images from Cloudinary.')) {
+    if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        await deleteProduct(id).unwrap()
-        toast.success('Product deleted')
+        await deleteProduct(id).unwrap();
+        toast.success('Product deleted');
       } catch (err) {
-        toast.error(err?.data?.message || err.error)
+        toast.error(err?.data?.message || err.error);
       }
     }
-  }
+  };
 
-  const createProductHandler = async () => {
-    if (window.confirm('Create a new sample product?')) {
-      try {
-        navigate(`/admin/product/create`)
-      } catch (err) {
-        toast.error(err?.data?.message || err.error)
-      }
-    }
-  }
+  const createProductHandler = () => {
+    navigate('/admin/product/create');
+  };
 
   const submitHandler = (e) => {
-    e.preventDefault()
-    const params = { pageNumber: 1 }
-    if (search.trim()) params.keyword = search
-    setSearchParams(params)
-  }
+    e.preventDefault();
+    if (searchKeyword.trim()) {
+      setSearchParams({ keyword: searchKeyword, pageNumber: 1 });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchKeyword('');
+    setSearchParams({});
+  };
 
   return (
     <div className='container mx-auto px-4 py-6'>
-      <div className='flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4'>
-        <h1 className='text-2xl font-bold text-gray-900'>Products</h1>
-
-        <div className='flex flex-col sm:flex-row gap-3 w-full lg:w-auto'>
-          <form onSubmit={submitHandler} className='flex gap-2 flex-1 lg:flex-initial'>
-            <div className='relative flex-1'>  
-    <input
-      type='text'
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      placeholder='Search products...'
-      className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-    />
-   {search && (
-  <button
-    type='button'
-    onClick={() => {
-      setSearch('')
-      setSearchParams({ pageNumber: 1 })
-    }}
-    className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-3xl font-light leading-none z-10 w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100'
-  >
-    ×
-  </button>
-)}
-  </div>  
+      {/* Header + Search + Create */}
+      <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6'>
+        <h1 className='text-2xl font-bold text-gray-800'>Products</h1>
+        
+        <div className='flex flex-col sm:flex-row gap-3 w-full md:w-auto'>
+          <form onSubmit={submitHandler} className='flex gap-2 flex-1'>
+            <div className='relative flex-1'>
+              <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' />
+              <input
+                type='text'
+                placeholder='Search products...'
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className='w-full pl-10 pr-10 py-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+              />
+              {searchKeyword && (
+                <button
+                  type='button'
+                  onClick={clearSearch}
+                  className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600'
+                >
+                  <FaTimes />
+                </button>
+              )}
+            </div>
             <button
               type='submit'
-              className='px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition whitespace-nowrap'
+              className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition'
             >
               Search
             </button>
@@ -95,16 +87,18 @@ const ProductListScreen = () => {
           <button
             onClick={createProductHandler}
             disabled={loadingCreate}
-            className='px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50'
+            className='flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap'
           >
             <FaPlus /> Create Product
           </button>
         </div>
       </div>
 
+      {/* Loaders */}
       {loadingCreate && <Loader />}
       {loadingDelete && <Loader />}
 
+      {/* Main Content */}
       {isLoading ? (
         <Loader />
       ) : error ? (
@@ -129,7 +123,10 @@ const ProductListScreen = () => {
                   <tr key={product._id} className='hover:bg-gray-50'>
                     <td className='px-4 py-3 text-sm text-gray-600'>{product._id.substring(18, 24)}...</td>
                     <td className='px-4 py-3 text-sm font-medium text-gray-900'>{product.name}</td>
-                    <td className='px-4 py-3 text-sm text-gray-600'>${product.colors[0].price.toLocaleString()}</td>
+                    <td className='px-4 py-3 text-sm text-gray-600'>
+  ${product.variants?.[0]?.price?.toLocaleString() || 'N/A'}
+</td>
+
                     <td className='px-4 py-3 text-sm text-gray-600'>{product.category}</td>
                     <td className='px-4 py-3 text-sm text-gray-600'>{product.brand}</td>
                     <td className='px-4 py-3 flex gap-2'>
@@ -158,8 +155,8 @@ const ProductListScreen = () => {
                 <div className='flex justify-between items-start mb-2 gap-2'>
                   <h3 className='font-semibold text-lg leading-tight'>{product.name}</h3>
                   <span className='text-xl font-bold text-blue-600 shrink-0'>
-                    ${product.colors[0].price.toLocaleString()}
-                  </span>
+  ${product.variants?.[0]?.price?.toLocaleString() || 'N/A'}
+</span>
                 </div>
                 <div className='text-sm text-gray-600 space-y-1 mb-3'>
                   <p><span className='font-medium'>Brand:</span> {product.brand}</p>
@@ -184,19 +181,20 @@ const ProductListScreen = () => {
             ))}
           </div>
 
+          {/* Paginate */}
           <div className='mt-6'>
             <Paginate
               pages={data.pages}
               page={data.page}
               keyword={keyword ? keyword : ''}
               isAdmin={true}
-              pathname="/admin/productlist"
+              pathname='/admin/productlist'
             />
           </div>
         </>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default ProductListScreen
+export default ProductListScreen;

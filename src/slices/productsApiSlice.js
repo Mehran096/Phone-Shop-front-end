@@ -1,98 +1,77 @@
-import { apiSlice } from './apiSlice'
+import { apiSlice } from './apiSlice';
 
 export const productsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query({
-      query: ({ keyword = '', pageNumber = 1, category = '', brand = '' }) => ({
+      query: ({ keyword, pageNumber, category, brand, minPrice, maxPrice, sort }) => ({
         url: '/products',
-        params: { keyword, pageNumber, category, brand },
+        params: { keyword, pageNumber, category, brand, minPrice, maxPrice, sort },
       }),
-      keepUnusedDataFor: 5,
       providesTags: ['Products'],
+      keepUnusedDataFor: 5,
     }),
-
     getProductDetails: builder.query({
-      query: (id) => ({
-        url: `/products/${id}`,
-      }),
+      query: (id) => `/products/${id}`,
       keepUnusedDataFor: 5,
-      providesTags: (result, error, id) => [{ type: 'Product', id }],
     }),
-
-    // NEW: Get product by slug for public SEO pages
     getProductBySlug: builder.query({
-      query: (slug) => ({
-        url: `/products/slug/${slug}`,
-      }),
+      query: (slug) => `/products/slug/${slug}`,
+      providesTags: (result, error, slug) => [{ type: 'Product', id: slug }],
       keepUnusedDataFor: 5,
-      providesTags: (result, error, slug) => [
-        { type: 'Product', id: slug },
-        { type: 'Product', id: result?._id } // cache by both slug + id
-      ],
     }),
-
     createProduct: builder.mutation({
       query: (data) => ({
         url: '/products',
         method: 'POST',
-        body: data, // FormData
+        body: data,
       }),
       invalidatesTags: ['Products'],
     }),
-
-    updateProduct: builder.mutation({
-      query: ({ productId, formData }) => ({
-        url: `/products/${productId}`,
+      updateProduct: builder.mutation({
+    query: (data) => ({
+      url: `/products/${data.id}`, // <-- V9.8 FIX: data.id not data.productId
+      method: 'PUT',
+      body: data, // <-- V9.8: JSON only. Frontend already uploaded to Cloudinary
+    }),
+    invalidatesTags: (result, error, arg) => [
+      'Products',
+      { type: 'Product', id: arg.id }, // <-- V9.8 FIX: arg.id not arg.productId
+      { type: 'Product', id: result?.slug },
+    ],
+  }),
+    updateProductSpecs: builder.mutation({
+      query: ({ productId, specs }) => ({
+        url: `/products/${productId}/specs`,
         method: 'PUT',
-        body: formData,
+        body: specs,
       }),
-      invalidatesTags: (result, error, arg) => [
-        'Products',
-        { type: 'Product', id: arg.productId },
-        { type: 'Product', id: result?.slug }, // Invalidate slug cache too
+      invalidatesTags: (result, error, { productId }) => [
+        { type: 'Product', id: productId },
       ],
     }),
-
-    updateProductSpecs: builder.mutation({
-      query: ({ id, specs }) => ({
-        url: `/products/${id}/specs`,
-        method: 'PUT',
-        body: { specs },
-      }),
-      invalidatesTags: (result, error, arg) => [{ type: 'Product', id: arg.id }],
-    }),
-
     deleteProduct: builder.mutation({
-      query: (id) => ({
-        url: `/products/${id}`,
+      query: (productId) => ({
+        url: `/products/${productId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Products'],
     }),
-
     getProductReviews: builder.query({
-      query: ({ productId, page = 1, limit = 10, color, sort }) => ({
-        url: `/products/${productId}/reviews`,
-        params: { page, limit, color, sort },
-      }),
-      providesTags: (result, error, arg) => [
-        { type: 'Product', id: arg.productId },
-        { type: 'Reviews', id: 'LIST' },
-      ],
+      query: (productId) => `/products/${productId}/reviews`,
+      providesTags: ['Reviews'],
+      keepUnusedDataFor: 5,
     }),
-
     createProductReview: builder.mutation({
-      query: ({ productId, rating, comment, color, images }) => ({
+      query: ({ productId, ...data }) => ({
         url: `/products/${productId}/reviews`,
         method: 'POST',
-        body: { rating, comment, color, images },
+        body: data,
       }),
       invalidatesTags: (result, error, { productId }) => [
         { type: 'Product', id: productId },
         { type: 'Reviews', id: 'LIST' },
       ],
     }),
-
     updateReview: builder.mutation({
       query: (data) => ({
         url: `/products/${data.productId}/reviews/${data.reviewId}`,
@@ -104,7 +83,6 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         { type: 'Reviews', id: 'LIST' },
       ],
     }),
-
     deleteReview: builder.mutation({
       query: ({ productId, reviewId }) => ({
         url: `/products/${productId}/reviews/${reviewId}`,
@@ -115,7 +93,6 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         { type: 'Reviews', id: 'LIST' },
       ],
     }),
-
     markReviewHelpful: builder.mutation({
       query: ({ productId, reviewId }) => ({
         url: `/products/${productId}/reviews/${reviewId}/helpful`,
@@ -125,7 +102,6 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         { type: 'Product', id: productId },
       ],
     }),
-
     addAdminReply: builder.mutation({
       query: ({ productId, reviewId, reply }) => ({
         url: `/products/${productId}/reviews/${reviewId}/reply`,
@@ -138,7 +114,6 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         { type: 'Reviews', id: productId },
       ],
     }),
-
     editAdminReply: builder.mutation({
       query: ({ productId, reviewId, reply }) => ({
         url: `/products/${productId}/reviews/${reviewId}/reply`,
@@ -151,7 +126,6 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         { type: 'Reviews', id: productId },
       ],
     }),
-
     deleteAdminReply: builder.mutation({
       query: ({ productId, reviewId }) => ({
         url: `/products/${productId}/reviews/${reviewId}/reply`,
@@ -163,21 +137,31 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         { type: 'Reviews', id: productId },
       ],
     }),
-
-    uploadProductImage: builder.mutation({
-      query: (data) => ({
-        url: '/upload',
+    uploadProductImage: builder.mutation({ // V8.6 for Products -> Admin only
+      query: (formData) => ({
+        url: '/upload/products', // <-- hits :type = products
         method: 'POST',
-        body: data,
+        body: formData,
+        credentials: 'include', // <-- send cookie
+      }),
+      invalidatesTags: ['Product'], // optional: refetch after upload
+    }),
+
+    uploadReviewImage: builder.mutation({ // V8.6 for Reviews -> Public
+      query: (formData) => ({
+        url: '/upload/reviews', // <-- hits :type = reviews
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
       }),
     }),
   }),
-})
+});
 
 export const {
   useGetProductsQuery,
-  useGetProductDetailsQuery, // Keep for admin panel
-  useGetProductBySlugQuery, // NEW: for public pages
+  useGetProductDetailsQuery,
+  useGetProductBySlugQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
   useUpdateProductSpecsMutation,
@@ -190,5 +174,6 @@ export const {
   useAddAdminReplyMutation,
   useEditAdminReplyMutation,
   useDeleteAdminReplyMutation,
-  useUploadProductImageMutation,
-} = productsApiSlice
+  useUploadProductImageMutation, // <-- V8.6
+  useUploadReviewImageMutation, // <-- V8.6
+} = productsApiSlice;

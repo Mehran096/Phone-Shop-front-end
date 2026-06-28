@@ -1,8 +1,11 @@
-import { Link } from 'react-router-dom'
-import { FaEdit, FaStar } from 'react-icons/fa'
+import { Link } from 'react-router-dom';
+import { FaEdit, FaStar } from 'react-icons/fa';
 
 const Product = ({ product, userInfo }) => {
-  const mainImage = product.colors?.[0]?.images?.[0] || product.image || '/images/placeholder-phone.jpg'
+  const mainImage = product.colors?.[0]?.images?.[0] || product.image || '/images/placeholder-phone.jpg';
+  
+  // Safe price with fallback - this fixes Line 66 crash
+  const mainPrice = product.colors?.[0]?.price?.toLocaleString() || 'N/A';
 
   return (
     <div className='bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border-gray-100 group relative'>
@@ -30,16 +33,14 @@ const Product = ({ product, userInfo }) => {
 
       <div className='p-3'>
         <Link to={`/product/${product.slug}`}>
-          <h3 className='font-semibold text-sm md:text-base truncate'>
-            {product.name}
-          </h3>
+          <h3 className='font-semibold text-sm md:text-base truncate'>{product.name}</h3>
         </Link>
 
         {product.numReviews > 0 && product.rating > 0 && (
           <div className='flex items-center mt-2'>
             <div className='flex items-center'>
               {[...Array(5)].map((_, i) => {
-                const fillPercent = Math.min(Math.max(product.rating - i, 0), 1) * 100
+                const fillPercent = Math.min(Math.max(product.rating - i, 0), 1) * 100;
                 return (
                   <div key={i} className='relative w-4 h-4'>
                     <FaStar className='w-4 h-4 text-gray-300 absolute' />
@@ -50,7 +51,7 @@ const Product = ({ product, userInfo }) => {
                       <FaStar className='w-4 h-4 text-amber-500' />
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
             <span className='text-sm text-blue-600 hover:text-orange-700 hover:underline ml-1 cursor-pointer'>
@@ -61,19 +62,21 @@ const Product = ({ product, userInfo }) => {
 
         <div className='flex items-center justify-between mt-3'>
           <span className='text-xl font-bold text-blue-600'>
-            ${product.colors[0].price}
+            ${mainPrice}
           </span>
+          
+          {/* Color swatches - Added all optional chaining */}
           {product.colors?.length > 1 && (
-            <div className='flex gap-1'>
+            <div className='flex gap-1 items-center'>
               {product.colors.slice(0, 3).map((color, idx) => (
                 <div
                   key={idx}
-                  className='w-4 h-4 rounded-full border border-gray-300'
+                  className='w-4 h-4 rounded-full border-gray-300'
                   style={{ backgroundColor: color.hexCode }}
                   title={color.name}
                 />
               ))}
-              {product.colors.length > 3 && (
+              {product.colors?.length > 3 && (
                 <span className='text-xs text-gray-500'>
                   +{product.colors.length - 3}
                 </span>
@@ -83,7 +86,7 @@ const Product = ({ product, userInfo }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Product
+export default Product;
