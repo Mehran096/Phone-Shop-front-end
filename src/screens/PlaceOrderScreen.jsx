@@ -40,28 +40,20 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
   // REMOVED shippingAddress check - causes redirect loop after order success
 }, [cart.paymentMethod, navigate])
 
-//   useEffect(() => {
-//   if (success && order && orderPlaced) {
-//     if (order.paymentMethod === 'COD') {
-//       navigate(`/order/${order._id}`) // NAVIGATE FIRST
-//       dispatch(clearCartItems())      // CLEAR AFTER
-//       dispatch(resetCart())
-//       dispatch(resetOrder())
-//     }
-//   }
-//   // Stripe: redirect handled in placeOrderHandler
-// }, [success, order, orderPlaced, navigate, dispatch])
+ 
 
  const placeOrderHandler = async () => {
   try {
     const orderData = {
       orderItems: cart.cartItems.map((item) => ({
-        product: item.product,
-        
-        qty: item.qty, 
-         
+        product: item.product, 
+         name: item.name,
+        image: item.image,
+        slug: item.slug,
+        price: Number(item.price), 
+        qty: item.qty,  
         color: item.color,
-        hexCode: item.hexCode,
+        variant: item.variant,
       })),
       shippingAddress: cart.shippingAddress,
       paymentMethod: cart.paymentMethod,

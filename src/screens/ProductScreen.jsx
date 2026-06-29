@@ -47,14 +47,18 @@ const ProductScreen = ({ isOnline }) => {
   const [uploadProductImage, { isLoading: loadingUpload }] = useUploadProductImageMutation();
 
 
+
+
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0); // V9.26 KEY: Default first variant
   const [selectedColorIndex, setSelectedColorIndex] = useState(0); // V9.26 KEY: Default first color
 
-  const selectedVariant = product?.variants?.[selectedVariantIndex] || product;
-  const selectedColor = selectedVariant?.colors?.[selectedColorIndex] || {};
 
-  const [selectedPrice, setSelectedPrice] = useState(0) // ADD THIS
-  const [selectedImage, setSelectedImage] = useState('') // ADD THIS
+  const selectedVariant = product?.variants?.[selectedVariantIndex]; // V10.0 KEY
+  const selectedColor = selectedVariant?.colors?.[selectedColorIndex]; // V10.0 KEY
+  console.log(selectedColor?.images)
+
+  // const [selectedPrice, setSelectedPrice] = useState(0) // ADD THIS
+  // const [selectedImage, setSelectedImage] = useState('') // ADD THIS
   const [mainImage, setMainImage] = useState('/images/placeholder-phone.jpg') // Default to placeholder
   const [qty, setQty] = useState(1)
   const [rating, setRating] = useState(0)
@@ -102,84 +106,46 @@ const ProductScreen = ({ isOnline }) => {
 
   const [updateProductReview, { isLoading: loadingUpdateReview }] = useUpdateReviewMutation();
 
-
-  // Set default on load - use whole object
-  // useEffect(() => {
-  //   if (product?.colors?.length > 0 && !selectedColor) {
-  //     const defaultColor = product.colors[0]
-  //     setSelectedColor(defaultColor) // Object, not string
-  //   }
-  // }, [product])
-
   useEffect(() => {
-    if (product?.variants?.length > 0) {
-      setSelectedColorIndex(0); // V9.27 KEY: Reset color when you change GB
+    if (product?.variants?.length > 0) { // V9.99 KEY:?. added
+      setSelectedColorIndex(0);
     }
   }, [product, selectedVariantIndex]);
 
-  // Update when user clicks color - use whole object
-  // useEffect(() => {
-  //   if (selectedColor) {
-  //     setSelectedPrice(selectedColor.price)
-  //     setSelectedImage(selectedColor.images?.[0] || product.image)
-  //     setMainImage(selectedColor.images?.[0] || product.image)
-  //   }
-  // }, [selectedColor])
-
-  // const selectColorHandler = (color) => {
-  //   setSelectedColor(color) // Object
-  //   setQty(1)
-  // }
+  useEffect(() => {
+    if (selectedColor) { // V10.1 KEY: Add {
+      setMainImage(selectedColor.images?.[0]?.url || '/images/placeholder-phone.jpg');
+    } // V10.1 KEY: Add }
+  }, [selectedColor]);
 
 
-  // When color changes, reset to first image
-  // useEffect(() => {
-  //   setSelectedImageIndex(0)
-  // }, [selectedColor])
-
-
-  //edit review end
-  // useEffect(() => {
-  //   if (product) {
-  //     if (product.colors?.length > 0 && !selectedColor) {
-  //       const firstColor = product.colors[0]
-  //       setSelectedColor(firstColor)
-  //       setMainImage(firstColor.images?.[0] || product.image || '/images/placeholder-phone.jpg')
-  //     } else if (!product.colors?.length) {
-  //       setMainImage(product.image || '/images/placeholder-phone.jpg')
-  //     }
-  //   }
-  // }, [product, selectedColor]) // ← Add selectedColor to deps
-
-  // const selectColorHandler = (color) => {
-  //   setSelectedColor(color)
-  //   setMainImage(color.images?.[0] || product.image || '/images/placeholder-phone.jpg')
-  //   setQty(1)
   // }
 
   const addToCartHandler = () => {
-    // V9.30 KEY: Check using indexes, not old `selectedColor` state
-    if (selectedVariant?.colors?.length > 0 && !selectedColor?.name) {
-      toast.error('Please select a color')
-      return
-    }
-
-    dispatch(addToCart({
-      product: product._id,
-      name: product.name,
-      slug: product.slug,
-      image: selectedColor.images?.[0] || product.image, // V9.30 KEY: Use color first image
-      price: selectedVariant.price, // V9.30 KEY: Use variant price
-      color: selectedColor?.name || '', // V9.30 KEY: Use color name
-      // hexCode: '', // V9.30 KEY: No hex anymore
-      countInStock: selectedVariant.countInStock, // V9.30 KEY: Use variant stock
-      variant: selectedVariant.name, // V9.30 KEY: Add 128GB/256GB
-      qty,
-    }))
-    toast.success('Added to cart')
-    navigate('/cart')
+  if (selectedVariant?.colors?.length > 0 &&!selectedColor?.name) {
+    toast.error('Please select a color')
+    return
   }
 
+  const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0); 
+
+  // V15.3 KEY: Grab.url from object
+  const imageUrl = selectedColor.images?.[0]?.url || product.image || '/placeholder.png';
+
+  dispatch(addToCart({
+    product: product._id,
+    name: product.name,
+    slug: product.slug,
+    image: imageUrl, // V15.3 KEY: Now https://res.cloudinary.com/...
+    price: price, 
+    color: selectedColor?.name || '', 
+    countInStock: selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 
+    variant: selectedVariant.storage || '', 
+    qty,
+  }));
+  toast.success('Added to cart')
+  navigate('/cart')
+}
 
 
   // Filter reviews by selected color, user login to show first his review
@@ -415,8 +381,10 @@ const ProductScreen = ({ isOnline }) => {
     return <OfflineMessage refetch={refetch} isOnline={isOnline} />
   }
 
-  if (isLoading) return <Loader />
-  if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>
+  // V9.92 KEY: GUARD. Stop code before accessing undefined
+  if (isLoading) return <Loader />;
+  if (error || !product || !product.variants?.[0]?.colors?.[0])
+    return <Message variant='danger'>Product not found or invalid V9.47 data</Message>;
 
   const currentStock = selectedColor?.countInStock ?? product.countInStock ?? 0
   const currentPrice = selectedColor?.price ?? product.price ?? 0
@@ -500,7 +468,9 @@ const ProductScreen = ({ isOnline }) => {
 
               <div className='lg:col-span-7 min-w-0'>
                 <Product360
-                  images={selectedColor.images?.length > 0 ? selectedColor.images : [product.image]} // V9.31 KEY: Color pics first
+                  images={selectedColor.images?.length > 0
+                    ? selectedColor.images.map(img => img.url)
+                    : [product.image]} // V11.1 KEY: .map(img => img.url)
                   selectedIndex={selectedImageIndex}
                   setSelectedIndex={setSelectedImageIndex}
                 />
@@ -512,7 +482,9 @@ const ProductScreen = ({ isOnline }) => {
 
               {/* Right: Buy Box - Name, Brand, Price, Stock, Colors, Cart */}
               <div className='lg:col-span-5'>
-                <h1 className='text-2xl md:text-3xl font-bold text-gray-900 mb-2'>{product.name}</h1>
+                <h1 className='text-2xl md:text-3xl font-bold text-gray-900 mb-2'>
+  {product.name}{selectedVariant.storage ? ` - ${selectedVariant.storage}` : ''} {/* V13.6 KEY */}
+</h1>
 
                 {/* <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div> */}
                 {product.numReviews > 0 && (
@@ -529,7 +501,7 @@ const ProductScreen = ({ isOnline }) => {
                       ))}
                     </div>
                     <a className='text-xs text-blue-600 ml-1.5 hover:text-orange-600 hover:underline cursor-pointer'>
-                      {product.rating.toFixed(1)}
+                      {product.rating?.toFixed(1) ?? '0.0'}
                     </a>
                     <a className='text-xs text-blue-600 ml-1 hover:text-orange-600 hover:underline cursor-pointer'>
                       ({product.numReviews})
@@ -537,43 +509,53 @@ const ProductScreen = ({ isOnline }) => {
                   </div>
                 )}
                 <div className='text-5xl font-bold text-blue-600 mb-4'>
-                  ${selectedVariant.price}
+                  ${selectedColor?.price ?? selectedVariant?.price ?? 0}
                 </div>
 
-                {/* Stock Status */}
+
+                {/* Stock Status V12.2 KEY */}
                 <div className='mb-6'>
-                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${selectedVariant.countInStock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                    <span className={`w-2 h-2 rounded-full ${selectedVariant.countInStock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                    {selectedVariant.countInStock > 0 ? `In Stock (${selectedVariant.countInStock})` : 'Out of Stock'}
+                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold 
+                      ${(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-red-50 text-red-700'}`}>
+                    <span className={`w-2 h-2 rounded-full 
+                        ${(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
+                        ? 'bg-green-500'
+                        : 'bg-red-500'}`}></span>
+                    {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
+                      ? `In Stock (${selectedColor?.countInStock ?? selectedVariant?.countInStock})`
+                      : 'Out of Stock'}
                   </span>
                 </div>
 
                 {/* V9.40 KEY: VARIANT SELECTOR = STORAGE 128GB/256GB/512GB */}
-{product.variants?.length > 0 && (
-  <div className='mb-4'>
-    <label className='font-semibold block mb-2 text-gray-900'>
-      Storage: <span className='text-blue-600'>{selectedVariant.name || selectedVariant.storage}</span>
-    </label>
-    <div className='flex flex-wrap gap-2'>
-      {product.variants.map((variant, vIdx) => (
-        <button
-          key={vIdx}
-          type="button"
-          onClick={() => {
-            setSelectedVariantIndex(vIdx);
-            setSelectedColorIndex(0); 
-          }}
-          className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all ${vIdx === selectedVariantIndex? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400 text-gray-700'}`}
-        >
-          {variant.name || variant.storage || `${variant.size}GB`} {/* V9.40 KEY */}
-        </button>
-      ))}
-    </div>
-  </div>
-)}
+                {product.variants?.length > 0 && (
+                  <div className='mb-4'>
+                    <label className='font-semibold block mb-2 text-gray-900'>
+                      Storage: <span className='text-blue-600'>{selectedVariant.name || selectedVariant.storage}</span>
+                    </label>
+                    <div className='flex flex-wrap gap-2'>
+                      {product.variants.map((variant, vIdx) => (
+                        <button
+                          key={vIdx}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVariantIndex(vIdx);
+                            setSelectedColorIndex(0);
+                          }}
+                          className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all ${vIdx === selectedVariantIndex ?
+                            'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400 text-gray-700'}`}
+                        >
+                          {variant.name || variant.storage || `${variant.size}GB`} {/* V9.40 KEY */}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
 
-                {/* Color Selection - INSIDE RIGHT COLUMN */}
+                {/* Color Selection V12.6 */}
                 {selectedVariant.colors?.length > 0 && (
                   <div className='mb-6'>
                     <h3 className='font-semibold mb-3 text-gray-900'>
@@ -584,36 +566,40 @@ const ProductScreen = ({ isOnline }) => {
                         <button
                           key={cIdx}
                           type="button"
-                          onClick={() => setSelectedColorIndex(cIdx)} // V9.32 KEY: This changes everything
-                          className={`p-1 border-2 rounded-md transition-all duration-200 ${cIdx === selectedColorIndex ? 'border-blue-600 ring-4 ring-blue-100 scale-110' : 'border-gray-300 hover:border-gray-400 hover:scale-105'}`}
+                          onClick={() => setSelectedColorIndex(cIdx)}
+                          className={`p-1.5 border-2 rounded-lg transition-all duration-200 ${cIdx === selectedColorIndex
+                            ? 'border-blue-600 ring-2 ring-blue-100 scale-105'
+                            : 'border-gray-200 hover:border-gray-300'}`}
                           title={color.name}
                         >
                           <img
-                            src={color.images?.[0] || product.image} // V9.32 KEY: First image of that color
+                            src={(color.images?.[0]?.url || selectedVariant.images?.[0]?.url || product.image || '/images/placeholder-phone.jpg').replace('/upload/', '/upload/w_400,h_400,c_pad,b_white,q_auto:best/')} // V12.7
                             alt={color.name}
-                            className='w-14 h-14 object-cover rounded'
+                            className='w-20 h-20 object-contain bg-white rounded-md p-1' // V12.7
+                            onError={(e) => e.target.src = '/images/placeholder-phone.jpg'}
                           />
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-                {/* Qty + Add to Cart - LAST ITEM IN RIGHT COLUMN */}
-                {selectedVariant.countInStock > 0 && (
+
+                {/* Qty + Add to Cart - V12.8 KEY */}
+                {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0 && (
                   <div className='flex items-center gap-2 mb-6'>
                     <select
                       value={qty}
                       onChange={(e) => setQty(Number(e.target.value))}
                       className='w-22 flex-shrink-0 px-2 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold text-sm'
                     >
-                      {[...Array(Math.min(selectedVariant.countInStock, 10)).keys()].map((x) => ( // V9.33 KEY
+                      {[...Array(Math.min(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0, 10)).keys()].map((x) => (
                         <option key={x + 1} value={x + 1}>
                           {x + 1}
                         </option>
                       ))}
                     </select>
                     <button
-                      onClick={addToCartHandler} // V9.33 KEY: This is V9.30 version using indexes
+                      onClick={addToCartHandler}
                       className='flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 transition-colors'
                     >
                       <FaShoppingCart /> Add to Cart
@@ -623,9 +609,10 @@ const ProductScreen = ({ isOnline }) => {
               </div>
             </div>
 
-            {/* Specifications Box - Full Width Below Grid */}
+            {/* Specifications Box - Full Width Below Grid V12.9 */}
             {(() => {
-              const specs = selectedVariant.specs || product.specs || {}; // V9.35 KEY: Variant first
+              const specs = { ...product.specs, ...selectedVariant.specs, ...selectedColor.specs }; // V12.9 KEY: Color > Variant > Product
+
               return Object.values(specs).some(v => v) ? (
                 <div className='grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4'>
                   {specs.storage && (
@@ -658,28 +645,20 @@ const ProductScreen = ({ isOnline }) => {
                       <div className='font-semibold text-gray-900 mt-0.5'>{specs.battery}</div>
                     </div>
                   )}
-                  {specs.processor && (
-                    <div>
-                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Processor</div>
-                      <div className='font-semibold text-gray-900 mt-0.5'>{specs.processor}</div>
-                    </div>
-                  )}
                 </div>
-              ) : (
-                <p className='text-gray-500 text-sm'>No specifications added yet.</p>
-              );
+              ) : null;
             })()}
 
 
-            {/* Description - Full Width */}
-            <div className='border-t pt-7'>
-              <h2 className='text-xl font-bold text-gray-900 mb-3'>
-                Description {selectedVariant.name && `- ${selectedVariant.name}`} {/* V9.38 KEY */}
-              </h2>
-              <p className='text-gray-700 leading-relaxed whitespace-pre-line'>
-                {selectedVariant.description || product.description || 'No description available.'} {/* V9.38 KEY */}
-              </p>
-            </div>
+          {/* Description - Full Width V13.4 */}
+<div className='border-t pt-7'>
+  <h2 className='text-xl font-bold text-gray-900 mb-3'>
+    Description {selectedVariant.storage ? `- ${selectedVariant.storage}` : ''} {/* V13.4 KEY */}
+  </h2>
+  <p className='text-gray-700 leading-relaxed whitespace-pre-line'>
+    {selectedVariant.description || selectedColor?.description || product.description || 'No description available.'} {/* V13.4 */}
+  </p>
+</div>
 
           </div>
         </div>
@@ -993,8 +972,8 @@ const ProductScreen = ({ isOnline }) => {
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(0)}
                         className={`w-7 h-7 cursor-pointer transition-colors ${(hoverRating || rating) >= star
-                            ? 'text-amber-500'
-                            : 'text-gray-300'
+                          ? 'text-amber-500'
+                          : 'text-gray-300'
                           }`}
                       />
                     ))}

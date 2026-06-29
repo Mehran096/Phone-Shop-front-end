@@ -35,9 +35,9 @@ const updateCartPrices = (state) => {
   state.shippingPrice = addDecimals(state.itemsPrice > 100 ? 0 : 10)
   //state.taxPrice = addDecimals(Number((0.15 * state.itemsPrice).toFixed(2)))
   //state.taxPrice = addDecimals(0)
-//   state.taxPrice = addDecimals(
-//   state.paymentMethod === 'COD' ? Number((0.15 * state.itemsPrice).toFixed(2)) : 0
-// )
+  //   state.taxPrice = addDecimals(
+  //   state.paymentMethod === 'COD' ? Number((0.15 * state.itemsPrice).toFixed(2)) : 0
+  // )
 
   state.totalPrice = addDecimals(
     Number(state.itemsPrice) +
@@ -56,12 +56,12 @@ const cartSlice = createSlice({
       const item = action.payload
 
       const existItem = state.cartItems.find(
-        (x) => x.product === item.product && x.color === item.color
+        (x) => x.product === item.product && x.color === item.color && x.variant === item.variant
       )
 
       if (existItem) {
         state.cartItems = state.cartItems.map((x) =>
-          x.product === existItem.product && x.color === existItem.color ? item : x
+          x.product === existItem.product && x.color === existItem.color && x.variant === existItem.variant ? item : x
         )
       } else {
         state.cartItems = [
@@ -73,6 +73,7 @@ const cartSlice = createSlice({
             image: item.image,
             price: item.price,
             color: item.color || '',
+            variant: item.variant || '',
             hexCode: item.hexCode || '',
             countInStock: item.countInStock || 0,
             qty: item.qty,
@@ -83,24 +84,24 @@ const cartSlice = createSlice({
       updateCartPrices(state)
     },
 
-    removeFromCart: (state, action) => {
-      const { product, color } = action.payload
-      state.cartItems = state.cartItems.filter(
-        (x) => !(x.product === product && x.color === color)
-      )
-      updateCartPrices(state)
-    },
+   removeFromCart: (state, action) => {
+  const { product, color, variant } = action.payload
+  state.cartItems = state.cartItems.filter(
+    (x) => !(x.product === product && x.color === color && x.variant === variant)
+  )
+  updateCartPrices(state)
+},
 
     updateCartQty: (state, action) => {
-      const { product, color, qty } = action.payload
-      const existItem = state.cartItems.find(
-        (x) => x.product === product && x.color === color
-      )
-      if (existItem) {
-        existItem.qty = qty
-      }
-      updateCartPrices(state)
-    },
+  const { product, color, variant, qty } = action.payload
+  const existItem = state.cartItems.find(
+    (x) => x.product === product && x.color === color && x.variant === variant
+  )
+  if (existItem) {
+    existItem.qty = qty
+  }
+  updateCartPrices(state)
+},
 
     saveShippingAddress: (state, action) => {
       state.shippingAddress = action.payload

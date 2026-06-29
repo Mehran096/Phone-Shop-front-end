@@ -9,11 +9,14 @@ export const createOrder = createAsyncThunk(
   async (orderData, { rejectWithValue }) => {
     try {
       const orderItems = orderData.orderItems.map(item => ({
-        product: item.product,
-        name: item.name, 
+        product: item.product, 
+        name: item.name,
+        image: item.image,
+        slug: item.slug,
+        price: Number(item.price),  
         qty: item.qty,
         color: item.color,
-        hexCode: item.hexCode,
+        variant: item.variant,
       }))
 
       const payload = {
@@ -44,11 +47,14 @@ export const createCheckoutSession = createAsyncThunk(
   async (orderData, { rejectWithValue }) => {
     try {
       const orderItems = orderData.orderItems.map(item => ({
-        product: item.product,
-        name: item.name, 
+        product: item.product, 
+        name: item.name,
+        image: item.image,
+        slug: item.slug,
+        price: Number(item.price),  
         qty: item.qty,
         color: item.color,
-        hexCode: item.hexCode,
+        variant: item.variant,
       }))
 
       const payload = {
