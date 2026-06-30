@@ -124,7 +124,7 @@ const ProductListScreen = () => {
                     <td className='px-4 py-3 text-sm text-gray-600'>{product._id.substring(18, 24)}...</td>
                     <td className='px-4 py-3 text-sm font-medium text-gray-900'>{product.name}</td>
                     <td className='px-4 py-3 text-sm text-gray-600'>
-  ${product.variants?.[0]?.price?.toLocaleString() || 'N/A'}
+   ${product.variants?.[0]?.colors?.[0]?.price?.toLocaleString()?? 'N/A'}
 </td>
 
                     <td className='px-4 py-3 text-sm text-gray-600'>{product.category}</td>
@@ -155,7 +155,7 @@ const ProductListScreen = () => {
                 <div className='flex justify-between items-start mb-2 gap-2'>
                   <h3 className='font-semibold text-lg leading-tight'>{product.name}</h3>
                   <span className='text-xl font-bold text-blue-600 shrink-0'>
-  ${product.variants?.[0]?.price?.toLocaleString() || 'N/A'}
+  ${product.variants?.[0]?.colors?.[0]?.price?.toLocaleString() ?? 'N/A'}  
 </span>
                 </div>
                 <div className='text-sm text-gray-600 space-y-1 mb-3'>

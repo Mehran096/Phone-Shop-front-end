@@ -53,9 +53,16 @@ const ProductScreen = ({ isOnline }) => {
   const [selectedColorIndex, setSelectedColorIndex] = useState(0); // V9.26 KEY: Default first color
 
 
-  const selectedVariant = product?.variants?.[selectedVariantIndex]; // V10.0 KEY
-  const selectedColor = selectedVariant?.colors?.[selectedColorIndex]; // V10.0 KEY
-  console.log(selectedColor?.images)
+ const selectedVariant = useMemo( // V27.1 KEY
+  () => product?.variants?.[selectedVariantIndex],
+  [product, selectedVariantIndex]
+);
+
+const selectedColor = useMemo( // V27.1 KEY
+  () => selectedVariant?.colors?.[selectedColorIndex],
+  [selectedVariant, selectedColorIndex]
+);
+ //console.log(selectedColor?.images)
 
   // const [selectedPrice, setSelectedPrice] = useState(0) // ADD THIS
   // const [selectedImage, setSelectedImage] = useState('') // ADD THIS
@@ -106,11 +113,11 @@ const ProductScreen = ({ isOnline }) => {
 
   const [updateProductReview, { isLoading: loadingUpdateReview }] = useUpdateReviewMutation();
 
-  useEffect(() => {
-    if (product?.variants?.length > 0) { // V9.99 KEY:?. added
-      setSelectedColorIndex(0);
-    }
-  }, [product, selectedVariantIndex]);
+  // useEffect(() => {
+  //   if (product?.variants?.length > 0) { // V9.99 KEY:?. added
+  //     setSelectedColorIndex(0);
+  //   }
+  // }, [product, selectedVariantIndex]);
 
   useEffect(() => {
     if (selectedColor) { // V10.1 KEY: Add {
@@ -140,7 +147,7 @@ const ProductScreen = ({ isOnline }) => {
     price: price, 
     color: selectedColor?.name || '', 
     countInStock: selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 
-    variant: selectedVariant.storage || '', 
+    storage: selectedVariant.storage || '', 
     qty,
   }));
   toast.success('Added to cart')
@@ -586,25 +593,47 @@ const ProductScreen = ({ isOnline }) => {
 
                 {/* Qty + Add to Cart - V12.8 KEY */}
                 {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0 && (
-                  <div className='flex items-center gap-2 mb-6'>
-                    <select
-                      value={qty}
-                      onChange={(e) => setQty(Number(e.target.value))}
-                      className='w-22 flex-shrink-0 px-2 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold text-sm'
-                    >
-                      {[...Array(Math.min(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0, 10)).keys()].map((x) => (
-                        <option key={x + 1} value={x + 1}>
-                          {x + 1}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={addToCartHandler}
-                      className='flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 transition-colors'
-                    >
-                      <FaShoppingCart /> Add to Cart
-                    </button>
-                  </div>
+                  <div className='flex items-center gap-2 mb-6'> {/* V25.4 KEY: flex row */}
+  {/* QTY SELECT */}
+  <select
+    value={qty}
+    onChange={(e) => setQty(Number(e.target.value))}
+    className='w-22 flex-shrink-0 px-2 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold'
+  >
+    {[...Array(Math.min(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 10)).keys()].map(
+      (x) => (
+        <option key={x + 1} value={x + 1}>
+          {x + 1}
+        </option>
+      )
+    )}
+  </select>
+
+  {/* ADD TO CART */}
+  <button
+    onClick={addToCartHandler}
+    className='flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2'
+  >
+    <FaShoppingCart /> Add to Cart
+  </button>
+
+  {/* V25.4 KEY: WISHLIST BUTTON HERE */}
+  <div className='w-14 flex-shrink-0'>
+     
+     {!isLoading && product?.variants?.length > 0 && selectedVariant && selectedColor? ( 
+  <WishlistButton 
+    product={product}
+    selectedColor={selectedColor}
+    selectedStorage={selectedVariant}
+    selectedPrice={selectedVariant.price}
+    selectedImage={selectedColor.images?.[0]?.url}
+    countInStock={selectedVariant.countInStock}
+  />
+) : (  
+  <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" /> 
+)}
+  </div>
+</div>
                 )}
               </div>
             </div>

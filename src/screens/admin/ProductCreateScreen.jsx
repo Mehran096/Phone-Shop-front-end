@@ -6,6 +6,7 @@ import { useCreateProductMutation, useUploadProductImageMutation } from '../../s
 import api from '../../utils/axios';
 
 const ProductCreateScreen = () => {
+ 
   const navigate = useNavigate();
   const [createProduct, { isLoading }] = useCreateProductMutation();
   const [uploadProductImage] = useUploadProductImageMutation();

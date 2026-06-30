@@ -25,7 +25,7 @@ function CartScreen() {
     dispatch(removeFromCart({
       product: item.product, 
       color: item.color,
-      variant: item.variant, 
+      storage: item.storage, 
     }));
   };
 
@@ -33,7 +33,7 @@ function CartScreen() {
     dispatch(updateCartQty({
       product: item.product,
       color: item.color,
-      variant: item.variant, 
+      storage: item.storage, 
       qty: Number(qty),
     }));
   };
@@ -73,7 +73,7 @@ function CartScreen() {
             {/* Left: Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <div key={`${item.product}-${item.color}-${item.variant}`} className="flex flex-col p-3 lg:p-4 border-gray-200 rounded-xl bg-white shadow-sm">
+                <div key={`${item.product}-${item.color}-${item.storage}`} className="flex flex-col p-3 lg:p-4 border-gray-200 rounded-xl bg-white shadow-sm">
                   
                   {/* TOP: Image + Info Row */}
                   <div className="flex gap-4">
@@ -88,11 +88,11 @@ function CartScreen() {
                     <div className="flex-1 flex-col">
                       <Link to={`/product/${item.slug}`} className="hover:underline">
                         <h2 className="font-bold text-gray-900 text-base leading-tight">
-                          {item.name}{item.variant ? ` - ${item.variant}` : ''}
+                          {item.name}{item.storage ? ` - ${item.storage}` : ''}
                         </h2>
                       </Link>
                       <p className="text-xs text-gray-600 mt-1">Color: <span className="font-medium">{item.color || 'Default'}</span></p>
-                      <p className="text-xs text-gray-600">Storage: <span className="font-medium">{item.variant || 'N/A'}</span></p>
+                      <p className="text-xs text-gray-600">Storage: <span className="font-medium">{item.storage || 'N/A'}</span></p>
                       <p className="text-lg font-bold text-gray-900 mt-2">
                         ${Number(item.price || 0).toFixed(2)}
                       </p>

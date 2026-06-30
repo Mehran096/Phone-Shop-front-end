@@ -56,52 +56,53 @@ const cartSlice = createSlice({
       const item = action.payload
 
       const existItem = state.cartItems.find(
-        (x) => x.product === item.product && x.color === item.color && x.variant === item.variant
+        (x) => x.product === item.product && x.color === item.color && x.storage === item.storage
       )
 
       if (existItem) {
         state.cartItems = state.cartItems.map((x) =>
-          x.product === existItem.product && x.color === existItem.color && x.variant === existItem.variant ? item : x
+          x.product === existItem.product && x.color === existItem.color && x.storage === existItem.storage ? item : x
         )
       } else {
         state.cartItems = [
           ...state.cartItems,
-          {
-            product: item.product,
-            name: item.name,
-            slug: item.slug,
-            image: item.image,
-            price: item.price,
-            color: item.color || '',
-            variant: item.variant || '',
-            hexCode: item.hexCode || '',
-            countInStock: item.countInStock || 0,
-            qty: item.qty,
-          },
+          { ...item },
+          // {
+          //   product: item.product,
+          //   name: item.name,
+          //   slug: item.slug,
+          //   image: item.image,
+          //   price: item.price,
+          //   color: item.color || '',
+          //   storage: item.storage || '',
+          //   hexCode: item.hexCode || '',
+          //   countInStock: item.countInStock || 0,
+          //   qty: item.qty,
+          // },
         ]
       }
 
       updateCartPrices(state)
     },
 
-   removeFromCart: (state, action) => {
-  const { product, color, variant } = action.payload
-  state.cartItems = state.cartItems.filter(
-    (x) => !(x.product === product && x.color === color && x.variant === variant)
-  )
-  updateCartPrices(state)
-},
+    removeFromCart: (state, action) => {
+      const { product, color, storage } = action.payload
+      state.cartItems = state.cartItems.filter(
+        (x) => !(x.product === product && x.color === color && x.storage === storage)
+      )
+      updateCartPrices(state)
+    },
 
     updateCartQty: (state, action) => {
-  const { product, color, variant, qty } = action.payload
-  const existItem = state.cartItems.find(
-    (x) => x.product === product && x.color === color && x.variant === variant
-  )
-  if (existItem) {
-    existItem.qty = qty
-  }
-  updateCartPrices(state)
-},
+      const { product, color, storage, qty } = action.payload
+      const existItem = state.cartItems.find(
+        (x) => x.product === product && x.color === color && x.storage === storage
+      )
+      if (existItem) {
+        existItem.qty = qty
+      }
+      updateCartPrices(state)
+    },
 
     saveShippingAddress: (state, action) => {
       state.shippingAddress = action.payload

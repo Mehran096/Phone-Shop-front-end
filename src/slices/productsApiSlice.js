@@ -27,18 +27,18 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Products'],
     }),
-      updateProduct: builder.mutation({
-    query: (data) => ({
-      url: `/products/${data.id}`, // <-- V9.8 FIX: data.id not data.productId
-      method: 'PUT',
-      body: data, // <-- V9.8: JSON only. Frontend already uploaded to Cloudinary
+    updateProduct: builder.mutation({
+      query: (data) => ({
+        url: `/products/${data.id}`, // <-- V9.8 FIX: data.id not data.productId
+        method: 'PUT',
+        body: data, // <-- V9.8: JSON only. Frontend already uploaded to Cloudinary
+      }),
+      invalidatesTags: (result, error, arg) => [
+        'Products',
+        { type: 'Product', id: arg.id }, // <-- V9.8 FIX: arg.id not arg.productId
+        { type: 'Product', id: result?.slug },
+      ],
     }),
-    invalidatesTags: (result, error, arg) => [
-      'Products',
-      { type: 'Product', id: arg.id }, // <-- V9.8 FIX: arg.id not arg.productId
-      { type: 'Product', id: result?.slug },
-    ],
-  }),
     updateProductSpecs: builder.mutation({
       query: ({ productId, specs }) => ({
         url: `/products/${productId}/specs`,
@@ -155,6 +155,15 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         credentials: 'include',
       }),
     }),
+
+    removeProductImageMutation: builder.mutation({
+      query: ({ public_id }) => ({
+        url: `/upload/public_id/${encodeURIComponent(public_id)}`,
+        method: 'DELETE',
+      }),
+    }),
+
+
   }),
 });
 
@@ -174,6 +183,7 @@ export const {
   useAddAdminReplyMutation,
   useEditAdminReplyMutation,
   useDeleteAdminReplyMutation,
-  useUploadProductImageMutation, // <-- V8.6
-  useUploadReviewImageMutation, // <-- V8.6
+  useUploadProductImageMutation,
+  useUploadReviewImageMutation,
+  useRemoveProductImageMutation
 } = productsApiSlice;

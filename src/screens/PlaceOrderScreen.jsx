@@ -114,37 +114,39 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
             {/* Order Items */}
             <div className='bg-white rounded-lg shadow-md p-6'>
               <h2 className='text-2xl font-bold mb-4'>Order Items</h2>
-              {cart.cartItems.length === 0 ? (
-                <Message>Your cart is empty</Message>
-              ) : (
-                <div className='space-y-4'>
-                  {cart.cartItems.map((item) => (
-                    <div key={`${item.product}-${item.color}`} className='flex items-center gap-4 pb-4 border-b border-gray-200 last:border-0'>
-                      <div className='w-16 h-16 flex-shrink-0'>
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className='w-full h-full object-cover rounded'
-                        />
-                      </div>
-                      <div className='flex-1'>
-                        <Link
-                          to={`/product/${item.slug}`}
-                          className='text-blue-600 hover:text-blue-800 font-medium'
-                        >
-                          {item.name}
-                        </Link>
-                        {item.color && (
-                          <p className='text-sm text-gray-500'>Color: {item.color}</p>
-                        )}
-                      </div>
-                      <div className='text-gray-700'>
-                        {item.qty} x ${item.price} = ${addDecimals(item.qty * item.price)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {cart.cartItems.map((item) => (
+  <div 
+    key={`${item.product}-${item.color}-${item.storage}`} 
+    className='flex gap-4 pb-4 border-b border-gray-200 last:border-0'  
+  >
+    
+    <div className='w-28 h-28 flex-shrink-0 bg-gray-50 rounded-xl p-2'>  
+  <img
+    src={item.image}
+    alt={item.name}
+    className='w-full h-full object-contain' 
+  />
+</div>
+
+    <div className='flex-1 min-w-0 flex-col justify-between'>  
+      <Link
+        to={`/product/${item.slug}`}
+        className='text-blue-600 hover:text-blue-800 font-medium text-base line-clamp-2'
+      >
+        {item.name}
+      </Link>
+      
+      <div className='text-sm text-gray-500 space-y-1'> 
+        {item.color && <p>Color: {item.color}</p>} 
+        {item.storage && <p>Storage: {item.storage}</p>}  
+      </div>
+
+      <div className='text-gray-900 font-semibold text-sm mt-2'>  
+        {item.qty} x ${item.price} = ${addDecimals(item.qty * item.price)}
+      </div>
+    </div>
+  </div>
+))}
             </div>
           </div>
 

@@ -5,7 +5,15 @@ import { FaHeart, FaRegHeart } from 'react-icons/fa'
 import { addToWishlist, removeFromWishlist, getWishlist } from '../slices/wishlistSlice'
 import { toast } from 'react-toastify'
 
-const WishlistButton = ({ product, selectedColor, selectedPrice, selectedImage, countInStock }) => {
+// V25.3 KEY: selectedStorage MUST come from ProductScreen
+const WishlistButton = ({ 
+  product, 
+  selectedColor, // {name: "Black", images: []}
+  selectedStorage, // {name: "256GB", price: 999, countInStock: 4} V25.3 KEY
+  selectedPrice, 
+  selectedImage, 
+  countInStock 
+}) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
@@ -18,55 +26,63 @@ const WishlistButton = ({ product, selectedColor, selectedPrice, selectedImage, 
     }
   }, [dispatch, userInfo])
 
-  // FIX: Convert color object to string for DB comparison
+  // V25.3 KEY: Normalize to strings for DB comparison
   const colorName = selectedColor?.name || selectedColor
+ const storageName = selectedStorage?.storage || selectedStorage?.name || selectedStorage; // V27.6 KEY
 
-  // Check product + color combo only
+  // V25.3 KEY: Check product + storage + color combo for toggle
   const isWishlisted = wishlistItems.some(
-    (item) => item.product === product._id && item.color === colorName
+    (item) => 
+      item.product === product._id && 
+      item.storage === storageName && 
+      item.color === colorName
   )
 
-  // Get wishlist item _id for removal
+  // V25.3 KEY: Get exact item for removal
   const wishlistItem = wishlistItems.find(
-    (item) => item.product === product._id && item.color === colorName
+    (item) => 
+      item.product === product._id && 
+      item.storage === storageName && 
+      item.color === colorName
   )
+
+  // V25.3 KEY: Read from nested variants[storage].colors[] not flat colors[]
+  const variantToSend = product?.variants?.find(
+    v => v.storage === storageName
+  )
+
+  const colorToSend = colorName
+  const storageToSend = variantToSend?.storage || storageName // "256GB"
+  const priceToSend = selectedPrice || variantToSend?.colors?.find(c => c.name === colorToSend)?.price
+  const imageToSend = selectedImage || variantToSend?.colors?.find(c => c.name === colorToSend)?.images?.[0]?.url
+  const stockToSend = countInStock || variantToSend?.colors?.find(c => c.name === colorToSend)?.countInStock || 0
 
   const wishlistHandler = () => {
-    // FIX: Check if NOT logged in
     if (!userInfo) {
       navigate('/login')
       return
     }
 
-    const selectedColorObj = product?.colors?.find(c => c.name === (colorName || selectedColor))
-    //const selectedColorObj = product?.colors?.find(c => c.name === selectedColor)
-    // DEFINE THESE FIRST - before any if statements that use them
-    const colorToSend = colorName || selectedColor || product?.colors?.[0]?.name
-    const hexCodeToSend = selectedColorObj?.hexCode || product?.colors?.[0]?.hexCode || '#000000'
-    const priceToSend = selectedPrice
-    const imageToSend = selectedImage || product?.image
-    const stockToSend = countInStock || 0 // <-- Added for qty fix
-
-    // NOW check if color exists
-   if (!colorToSend ||!priceToSend) {
-  toast.error('Please select a color first')
-  return
-}
+    // V25.3 KEY: Guard all 3 required fields
+    if (!colorToSend ||!storageToSend ||!priceToSend) {
+      toast.error('Please select color + storage first')
+      return
+    }
 
     if (isWishlisted) {
-      dispatch(removeFromWishlist(wishlistItem._id))
-      toast.success('Removed from wishlist')
+      // V25.3 KEY: Send storage too so backend deletes exact variant
+      dispatch(removeFromWishlist({ id: wishlistItem._id, storage: storageToSend }))
+      toast.info('Removed from wishlist')
     } else {
-      //console.log('Sending to Redux:', { hexCode: hexCodeToSend })
       dispatch(addToWishlist({
         product: product._id,
         name: product.name,
-        color: colorToSend,
-        hexCode: hexCodeToSend,
         image: imageToSend,
         price: priceToSend,
-        countInStock: stockToSend, // <-- Added for qty fix
-        qty: 1
+        storage: storageToSend, // "256GB"
+        color: colorToSend, // "Black"
+        countInStock: stockToSend,
+        qty: 1,
       }))
       toast.success('Added to wishlist')
     }
@@ -74,11 +90,12 @@ const WishlistButton = ({ product, selectedColor, selectedPrice, selectedImage, 
 
   return (
     <button
+      type='button'
       onClick={wishlistHandler}
       className={`px-4 py-3 w-full h-full border-2 rounded-xl hover:bg-gray-50 flex items-center justify-center transition ${
         isWishlisted
-         ? 'bg-red-50 border-red-500 text-red-500'
-          : 'bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-500'
+         ? 'bg-red-50 border-red-500 text-red-500' // V25.3: Red when saved
+          : 'bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-500' // V25.3: Gray when not
       }`}
       title={isWishlisted? 'Remove from Wishlist' : 'Add to Wishlist'}
     >

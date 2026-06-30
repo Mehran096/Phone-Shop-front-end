@@ -36,7 +36,7 @@ const WishlistScreen = () => {
       image: item.image,
       price: item.price,
       color: item.color,
-      hexCode: item.hexCode,
+      storage: item.storage,
       countInStock: item.countInStock,
       qty: item.qty,
     }))
@@ -52,7 +52,7 @@ const WishlistScreen = () => {
         image: item.image,
         price: item.price,
         color: item.color,
-        hexCode: item.hexCode,
+        storage: item.storage,
         countInStock: item.countInStock,
       qty: item.qty,
       }))
@@ -129,6 +129,9 @@ const WishlistScreen = () => {
                 <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-4">
                   <span className="font-medium">Color:</span> {item.color}
                 </p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-4">  
+  <span className="font-medium">Storage:</span> {item.storage}
+</p>
                 
                 <p className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4">
                   ${item.price}
