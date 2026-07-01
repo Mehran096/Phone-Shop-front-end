@@ -90,20 +90,52 @@ const ProductEditScreen = () => {
     e.target.value = '';
   };
 
-  const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
-    const public_id = variants[vIndex].colors[cIndex].imagePublicIds[imgIndex];
-    if(!public_id) {
-      setVariants(prev => prev.map((v, i) => i === vIndex? {...v, colors: v.colors.map((c, j) => j === cIndex? {...c, images: c.images.filter((_, k) => k!== imgIndex), imagePublicIds: c.imagePublicIds.filter((_, k) => k!== imgIndex)} : c)} : v));
-      return;
-    }
-    try {
-      await api.delete(`/upload/public_id/${encodeURIComponent(public_id)}`);
-      setVariants(prev => prev.map((v, i) => i === vIndex? {...v, colors: v.colors.map((c, j) => j === cIndex? {...c, images: c.images.filter((_, k) => k!== imgIndex), imagePublicIds: c.imagePublicIds.filter((_, k) => k!== imgIndex)} : c)} : v));
-      toast.success('Image removed');
-    } catch(err) { toast.error(err?.data?.message || 'Delete failed'); }
-  };
+const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
+  const color = variants[vIndex]?.colors[cIndex]; // V31.93? = No crash
+  const raw_public_id = color?.imagePublicIds?.[imgIndex]; // V31.93? = No crash
 
-  const submitHandler = async (e) => {
+  if(!raw_public_id) {
+    toast.error('Old image: Cannot delete from Cloudinary. Use Update Product to save.');
+    return;
+  }
+
+  // V31.86 KEY: Extract clean publicId
+  let publicId = raw_public_id;
+  if (publicId.includes('cloudinary.com')) {
+    publicId = publicId.split('/upload/')[1] || publicId;
+  }
+  publicId = publicId.replace(/^\d+\//, '');
+  publicId = publicId.replace(/\.[^.]+$/, "");
+  console.log('V31.99 SENDING:', publicId);
+
+  try {
+    // V31.81 KEY: Backend first - Cloudinary only now
+    await api.delete('/upload', { data: { publicId, productId: product._id, vIndex } });
+
+    // V31.99 KEY: BULLETPROOF UI UPDATE - Delete from BOTH arrays
+    setVariants(prev => { // V31.93 Use functional update = no stale state
+      const newVariants = structuredClone(prev); // V31.93 Deep clone = no mutation bug
+
+      const targetColor = newVariants[vIndex]?.colors[cIndex];
+      if (!targetColor?.imagePublicIds ||!targetColor?.images) {
+        console.log('V31.99 SKIP UI: arrays missing');
+        return prev; // V31.93 Don't crash
+      }
+
+      targetColor.imagePublicIds.splice(imgIndex, 1); // V31.98 Delete publicId
+      targetColor.images.splice(imgIndex, 1); // V31.98 KEY: Delete URL too
+      return newVariants;
+    });
+
+    toast.success('Image removed'); // V31.93 This will show now
+
+  } catch(err) {
+    console.log('V31.99 CATCH:', err);
+    toast.error(err?.data?.message || err.message || 'Delete failed');
+  }
+}
+
+ const submitHandler = async (e) => {
     e.preventDefault();
     const payload = {
       id: productId,
@@ -135,6 +167,7 @@ const ProductEditScreen = () => {
       navigate('/admin/productlist'); 
     } catch (err) { toast.error(err?.data?.message || err.error); }
   };
+
 
   const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
   const inputClass = 'w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none';
