@@ -21,77 +21,77 @@ const PlaceOrderScreen = () => {
   }
 
   // Calculate prices
-const itemsPrice = addDecimals(
-  cart.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
-)
-const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
+  const itemsPrice = addDecimals(
+    cart.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+  )
+  const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
 
-// FIX: Tax only for COD
-const taxPrice = addDecimals(
-  cart.paymentMethod === 'COD' ? Number((0.15 * itemsPrice).toFixed(2)) : 0
-)
+  // FIX: Tax only for COD
+  const taxPrice = addDecimals(
+    cart.paymentMethod === 'COD' ? Number((0.15 * itemsPrice).toFixed(2)) : 0
+  )
 
-const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Number(taxPrice))
+  const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Number(taxPrice))
 
- useEffect(() => {
-  if (!cart.paymentMethod) {
-    navigate('/payment')
-  }
-  // REMOVED shippingAddress check - causes redirect loop after order success
-}, [cart.paymentMethod, navigate])
-
- 
-
- const placeOrderHandler = async () => {
-  try {
-    const orderData = {
-      orderItems: cart.cartItems.map((item) => ({
-        product: item.product, 
-         name: item.name,
-        image: item.image,
-        slug: item.slug,
-        price: Number(item.price), 
-        qty: item.qty,  
-        color: item.color,
-        storage: item.storage,
-        variant: item.variant,
-      })),
-      shippingAddress: cart.shippingAddress,
-      paymentMethod: cart.paymentMethod,
-      itemsPrice,
-      taxPrice,
-      shippingPrice,
-      totalPrice,
+  useEffect(() => {
+    if (!cart.paymentMethod) {
+      navigate('/payment')
     }
+    // REMOVED shippingAddress check - causes redirect loop after order success
+  }, [cart.paymentMethod, navigate])
 
-    if (cart.paymentMethod === 'COD') {
-      //console.log('Sending to backend:', orderData.orderItems)
-      const newOrder = await dispatch(createOrder(orderData)).unwrap() // CAPTURE THE RESPONSE
-      //console.log('Order created:', newOrder) // This will show the _id
-      
-      navigate(`/order/${newOrder._id}`) // NAVIGATE USING THE RESPONSE
-      dispatch(clearCartItems())         // CLEAR AFTER NAVIGATE
-      dispatch(resetOrder())             // RESET ORDER STATE
-    } else if (cart.paymentMethod === 'Stripe') {
-      const session = await dispatch(createCheckoutSession(orderData)).unwrap()
-      window.location.href = session.url // Redirect to Stripe
-    } else {
-      toast.error('Please select a payment method')
+
+
+  const placeOrderHandler = async () => {
+    try {
+      const orderData = {
+        orderItems: cart.cartItems.map((item) => ({
+          product: item.product,
+          name: item.name,
+          image: item.image,
+          slug: item.slug,
+          price: Number(item.price),
+          qty: item.qty,
+          color: item.color,
+          storage: item.storage,
+          variant: item.variant,
+        })),
+        shippingAddress: cart.shippingAddress,
+        paymentMethod: cart.paymentMethod,
+        itemsPrice,
+        taxPrice,
+        shippingPrice,
+        totalPrice,
+      }
+
+      if (cart.paymentMethod === 'COD') {
+        //console.log('Sending to backend:', orderData.orderItems)
+        const newOrder = await dispatch(createOrder(orderData)).unwrap() // CAPTURE THE RESPONSE
+        //console.log('Order created:', newOrder) // This will show the _id
+
+        navigate(`/order/${newOrder._id}`) // NAVIGATE USING THE RESPONSE
+        dispatch(clearCartItems())         // CLEAR AFTER NAVIGATE
+        dispatch(resetOrder())             // RESET ORDER STATE
+      } else if (cart.paymentMethod === 'Stripe') {
+        const session = await dispatch(createCheckoutSession(orderData)).unwrap()
+        window.location.href = session.url // Redirect to Stripe
+      } else {
+        toast.error('Please select a payment method')
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || err.error || 'Failed to place order')
     }
-  } catch (err) {
-    toast.error(err?.data?.message || err.error || 'Failed to place order')
   }
-}
 
   return (
     <>
-    {/* seo start */}
-           <Helmet>
-                <title>PlaceOrder | Phone-Store</title>
-                <meta name="robots" content="noindex, nofollow" />
-            </Helmet>
-        {/* seo end*/}
-      
+      {/* seo start */}
+      <Helmet>
+        <title>PlaceOrder | Phone-Store</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      {/* seo end*/}
+
       <div className='container mx-auto px-4 py-8'>
         <CheckoutSteps step1 step2 step3 step4 />
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8'>
@@ -115,39 +115,39 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
             {/* Order Items */}
             <div className='bg-white rounded-lg shadow-md p-6'>
               <h2 className='text-2xl font-bold mb-4'>Order Items</h2>
-            {cart.cartItems.map((item) => (
-  <div 
-    key={`${item.product}-${item.color}-${item.storage}`} 
-    className='flex gap-4 pb-4 border-b border-gray-200 last:border-0'  
-  >
-    
-    <div className='w-28 h-28 flex-shrink-0 bg-gray-50 rounded-xl p-2'>  
-  <img
-    src={item.image}
-    alt={item.name}
-    className='w-full h-full object-contain' 
-  />
-</div>
+              {cart.cartItems.map((item) => (
+                <div
+                  key={`${item.product}-${item.color}-${item.storage}`}
+                  className='flex gap-4 pb-4 border-b border-gray-200 last:border-0'
+                >
 
-    <div className='flex-1 min-w-0 flex-col justify-between'>  
-      <Link
-        to={`/product/${item.slug}`}
-        className='text-blue-600 hover:text-blue-800 font-medium text-base line-clamp-2'
-      >
-        {item.name}
-      </Link>
-      
-      <div className='text-sm text-gray-500 space-y-1'> 
-        {item.color && <p>Color: {item.color}</p>} 
-        {item.storage && <p>Storage: {item.storage}</p>}  
-      </div>
+                  <div className='w-28 h-28 flex-shrink-0 bg-gray-50 rounded-xl p-2'>
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className='w-full h-full object-contain'
+                    />
+                  </div>
 
-      <div className='text-gray-900 font-semibold text-sm mt-2'>  
-        {item.qty} x ${item.price} = ${addDecimals(item.qty * item.price)}
-      </div>
-    </div>
-  </div>
-))}
+                  <div className='flex-1 min-w-0 flex-col justify-between'>
+                    <Link
+                      to={`/product/${item.slug}`}
+                      className='text-blue-600 hover:text-blue-800 font-medium text-base line-clamp-2'
+                    >
+                      {item.name}
+                    </Link>
+
+                    <div className='text-sm text-gray-500 space-y-1'>
+                      {item.color && <p>Color: {item.color}</p>}
+                      {item.storage && <p>Storage: {item.storage}</p>}
+                    </div>
+
+                    <div className='text-gray-900 font-semibold text-sm mt-2'>
+                      {item.qty} x ${item.price} = ${addDecimals(item.qty * item.price)}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -155,7 +155,7 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
           <div className='lg:col-span-1'>
             <div className='bg-white rounded-lg shadow-md p-6 sticky top-4'>
               <h2 className='text-2xl font-bold mb-6'>Order Summary</h2>
-              
+
               <div className='space-y-3 mb-6'>
                 <div className='flex justify-between pb-3 border-b border-gray-200'>
                   <span className='text-gray-600'>Items</span>
@@ -177,20 +177,20 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
 
               {error && <Message variant='danger'>{error}</Message>}
 
-               {cart.paymentMethod === 'Stripe' && (
-          <p className="text-xs text-gray-500 mb-3 text-center">
-            You'll be redirected to Stripe to complete payment
-          </p>
-        )}
+              {cart.paymentMethod === 'Stripe' && (
+                <p className="text-xs text-gray-500 mb-3 text-center">
+                  You'll be redirected to Stripe to complete payment
+                </p>
+              )}
 
-        <button
-          type='button'
-          disabled={cart.cartItems.length === 0 || loading}
-          onClick={placeOrderHandler}
-          className='w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition'
-        >
-          {loading ? 'Processing...' : cart.paymentMethod === 'COD' ? 'Place Order' : 'Proceed to Payment'}
-        </button>
+              <button
+                type='button'
+                disabled={cart.cartItems.length === 0 || loading}
+                onClick={placeOrderHandler}
+                className='w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition'
+              >
+                {loading ? 'Processing...' : cart.paymentMethod === 'COD' ? 'Place Order' : 'Proceed to Payment'}
+              </button>
             </div>
           </div>
         </div>

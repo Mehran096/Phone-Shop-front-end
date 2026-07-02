@@ -12,7 +12,8 @@ const WishlistButton = ({
   selectedStorage, // {name: "256GB", price: 999, countInStock: 4} V25.3 KEY
   selectedPrice, 
   selectedImage, 
-  countInStock 
+  countInStock,
+  className
 }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -29,11 +30,12 @@ const WishlistButton = ({
   // V25.3 KEY: Normalize to strings for DB comparison
   const colorName = selectedColor?.name || selectedColor
  const storageName = selectedStorage?.storage || selectedStorage?.name || selectedStorage; // V27.6 KEY
+ const productIdStr = product._id?.toString()
 
   // V25.3 KEY: Check product + storage + color combo for toggle
   const isWishlisted = wishlistItems.some(
     (item) => 
-      item.product === product._id && 
+      item.product?.toString() === productIdStr && 
       item.storage === storageName && 
       item.color === colorName
   )
@@ -41,7 +43,7 @@ const WishlistButton = ({
   // V25.3 KEY: Get exact item for removal
   const wishlistItem = wishlistItems.find(
     (item) => 
-      item.product === product._id && 
+      item.product?.toString() === productIdStr && 
       item.storage === storageName && 
       item.color === colorName
   )
@@ -78,8 +80,12 @@ const stockToSend = countInStock?? variantToSend?.colors?.find(c => c.name === c
 
     if (isWishlisted) {
       // V25.3 KEY: Send storage too so backend deletes exact variant
-      dispatch(removeFromWishlist({ id: wishlistItem._id, storage: storageToSend }))
-      toast.info('Removed from wishlist')
+       if (wishlistItem?._id) {
+    dispatch(removeFromWishlist(wishlistItem._id))
+    toast.success('removed from Wishlist') 
+  } else {
+    toast.error('Wishlist item not found. Refresh page.')
+  }
     } else {
       dispatch(addToWishlist({
         product: product._id,
@@ -100,17 +106,13 @@ const stockToSend = countInStock?? variantToSend?.colors?.find(c => c.name === c
     <button
       type='button'
       onClick={wishlistHandler}
-      className={`px-4 py-3 w-full h-full border-2 rounded-xl hover:bg-gray-50 flex items-center justify-center transition ${
-        isWishlisted
-         ? 'bg-red-50 border-red-500 text-red-500' // V25.3: Red when saved
-          : 'bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-500' // V25.3: Gray when not
-      }`}
+      className={`flex items-center justify-center ${className}`} /* V32.77 KEY: Use parent className */
       title={isWishlisted? 'Remove from Wishlist' : 'Add to Wishlist'}
     >
       {isWishlisted? (
-        <FaHeart className="text-red-500" size={22} />
+        <FaHeart className="text-red-500 text-lg" />
       ) : (
-        <FaRegHeart className="text-gray-600" size={22} />
+        <FaRegHeart className="text-gray-600 text-lg" />
       )}
     </button>
   )

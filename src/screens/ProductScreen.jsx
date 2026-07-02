@@ -53,16 +53,16 @@ const ProductScreen = ({ isOnline }) => {
   const [selectedColorIndex, setSelectedColorIndex] = useState(0); // V9.26 KEY: Default first color
 
 
- const selectedVariant = useMemo( // V27.1 KEY
-  () => product?.variants?.[selectedVariantIndex],
-  [product, selectedVariantIndex]
-);
+  const selectedVariant = useMemo( // V27.1 KEY
+    () => product?.variants?.[selectedVariantIndex],
+    [product, selectedVariantIndex]
+  );
 
-const selectedColor = useMemo( // V27.1 KEY
-  () => selectedVariant?.colors?.[selectedColorIndex],
-  [selectedVariant, selectedColorIndex]
-);
- //console.log(selectedColor?.images)
+  const selectedColor = useMemo( // V27.1 KEY
+    () => selectedVariant?.colors?.[selectedColorIndex],
+    [selectedVariant, selectedColorIndex]
+  );
+  //console.log(selectedColor?.images)
 
   // const [selectedPrice, setSelectedPrice] = useState(0) // ADD THIS
   // const [selectedImage, setSelectedImage] = useState('') // ADD THIS
@@ -129,30 +129,30 @@ const selectedColor = useMemo( // V27.1 KEY
   // }
 
   const addToCartHandler = () => {
-  if (selectedVariant?.colors?.length > 0 &&!selectedColor?.name) {
-    toast.error('Please select a color')
-    return
+    if (selectedVariant?.colors?.length > 0 && !selectedColor?.name) {
+      toast.error('Please select a color')
+      return
+    }
+
+    const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
+
+    // V15.3 KEY: Grab.url from object
+    const imageUrl = selectedColor.images?.[0]?.url || product.image || '/placeholder.png';
+
+    dispatch(addToCart({
+      product: product._id,
+      name: product.name,
+      slug: product.slug,
+      image: imageUrl, // V15.3 KEY: Now https://res.cloudinary.com/...
+      price: price,
+      color: selectedColor?.name || '',
+      countInStock: selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0,
+      storage: selectedVariant.storage || '',
+      qty,
+    }));
+    toast.success('Added to cart')
+    navigate('/cart')
   }
-
-  const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0); 
-
-  // V15.3 KEY: Grab.url from object
-  const imageUrl = selectedColor.images?.[0]?.url || product.image || '/placeholder.png';
-
-  dispatch(addToCart({
-    product: product._id,
-    name: product.name,
-    slug: product.slug,
-    image: imageUrl, // V15.3 KEY: Now https://res.cloudinary.com/...
-    price: price, 
-    color: selectedColor?.name || '', 
-    countInStock: selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 
-    storage: selectedVariant.storage || '', 
-    qty,
-  }));
-  toast.success('Added to cart')
-  navigate('/cart')
-}
 
 
   // Filter reviews by selected color, user login to show first his review
@@ -490,8 +490,8 @@ const selectedColor = useMemo( // V27.1 KEY
               {/* Right: Buy Box - Name, Brand, Price, Stock, Colors, Cart */}
               <div className='lg:col-span-5'>
                 <h1 className='text-2xl md:text-3xl font-bold text-gray-900 mb-2'>
-  {product.name}{selectedVariant.storage ? ` - ${selectedVariant.storage}` : ''} {/* V13.6 KEY */}
-</h1>
+                  {product.name}{selectedVariant.storage ? ` - ${selectedVariant.storage}` : ''} {/* V13.6 KEY */}
+                </h1>
 
                 {/* <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div> */}
                 {product.numReviews > 0 && (
@@ -593,47 +593,51 @@ const selectedColor = useMemo( // V27.1 KEY
 
                 {/* Qty + Add to Cart - V12.8 KEY */}
                 {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0 && (
-                  <div className='flex items-center gap-2 mb-6'> {/* V25.4 KEY: flex row */}
-  {/* QTY SELECT */}
-  <select
-    value={qty}
-    onChange={(e) => setQty(Number(e.target.value))}
-    className='w-22 flex-shrink-0 px-2 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold'
-  >
-    {[...Array(Math.min(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 10)).keys()].map(
-      (x) => (
-        <option key={x + 1} value={x + 1}>
-          {x + 1}
-        </option>
-      )
-    )}
-  </select>
+                   <div className='flex items-end gap-2 mb-6'> {/* V25.4 KEY: flex row */}
+                    {/* QTY SELECT */}
+                   <div className='flex flex-col'>
+      <label className='text-xs font-medium text-gray-600 mb-1'>Qty</label> {/* V32.73 KEY */}
+      <select
+        value={qty}
+        onChange={(e) => setQty(Number(e.target.value))}
+        className='w-11 sm:w-18 px-1 py-2.5 border-2 border-gray-300 rounded-lg bg-white font-semibold text-sm text-center h-11'  
+      >
+        {[...Array(Math.min(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 10)).keys()].map(
+          (x) => (
+            <option key={x + 1} value={x + 1}>
+              {x + 1}
+            </option>
+          )
+        )}
+      </select>
+    </div>
 
-  {/* ADD TO CART */}
-  <button
-    onClick={addToCartHandler}
-    className='flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2'
-  >
-    <FaShoppingCart /> Add to Cart
-  </button>
+                    {/* ADD TO CART */}
+                    <button
+                      onClick={addToCartHandler}
+                      className='flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 h-11 text-sm sm:text-base'
+                    >
+                      <FaShoppingCart /> Add to Cart
+                    </button>
 
-  {/* V25.4 KEY: WISHLIST BUTTON HERE */}
-  <div className='w-14 flex-shrink-0'>
-     
-     {!isLoading && product?.variants?.length > 0 && selectedVariant && selectedColor? ( 
-  <WishlistButton 
-    product={product}
-    selectedColor={selectedColor}
-    selectedStorage={selectedVariant}
-    selectedPrice={selectedVariant.price}
-    selectedImage={selectedColor.images?.[0]?.url}
-    countInStock={selectedVariant.countInStock}
-  />
-) : (  
-  <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" /> 
-)}
-  </div>
-</div>
+                    {/* V25.4 KEY: WISHLIST BUTTON HERE */}
+                    <div className='w-14 flex-shrink-0'>
+
+                      {!isLoading && product?.variants?.length > 0 && selectedVariant && selectedColor ? (
+                        <WishlistButton
+                          product={product}
+                          selectedColor={selectedColor}
+                          selectedStorage={selectedVariant}
+                          selectedPrice={selectedVariant.price}
+                          selectedImage={selectedColor.images?.[0]?.url}
+                          countInStock={selectedVariant.countInStock}
+                           className='w-11 h-11 border-2 border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-50'
+                        />
+                      ) : (
+                        <div className='w-11 h-11 rounded-xl bg-gray-200 animate-pulse' />
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -679,15 +683,15 @@ const selectedColor = useMemo( // V27.1 KEY
             })()}
 
 
-          {/* Description - Full Width V13.4 */}
-<div className='border-t pt-7'>
-  <h2 className='text-xl font-bold text-gray-900 mb-3'>
-    Description {selectedVariant.storage ? `- ${selectedVariant.storage}` : ''} {/* V13.4 KEY */}
-  </h2>
-  <p className='text-gray-700 leading-relaxed whitespace-pre-line'>
-    {selectedVariant.description || selectedColor?.description || product.description || 'No description available.'} {/* V13.4 */}
-  </p>
-</div>
+            {/* Description - Full Width V13.4 */}
+            <div className='border-t pt-7'>
+              <h2 className='text-xl font-bold text-gray-900 mb-3'>
+                Description {selectedVariant.storage ? `- ${selectedVariant.storage}` : ''} {/* V13.4 KEY */}
+              </h2>
+              <p className='text-gray-700 leading-relaxed whitespace-pre-line'>
+                {selectedVariant.description || selectedColor?.description || product.description || 'No description available.'} {/* V13.4 */}
+              </p>
+            </div>
 
           </div>
         </div>
