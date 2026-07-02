@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { toast } from 'react-toastify'
 import api from '../utils/axios'
 
-// 1. CREATE ORDER - COD ONLY 
+ 
 // 1. CREATE ORDER - COD ONLY
 export const createOrder = createAsyncThunk(
   'order/createOrder',
@@ -16,7 +16,7 @@ export const createOrder = createAsyncThunk(
         price: Number(item.price),  
         qty: item.qty,
         color: item.color,
-        variant: item.variant,
+        storage: item.storage,
       }))
 
       const payload = {
@@ -54,7 +54,7 @@ export const createCheckoutSession = createAsyncThunk(
         price: Number(item.price),  
         qty: item.qty,
         color: item.color,
-        variant: item.variant,
+        storage: item.storage,
       }))
 
       const payload = {

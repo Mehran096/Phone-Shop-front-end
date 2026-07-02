@@ -51,13 +51,20 @@ const WishlistButton = ({
     v => v.storage === storageName
   )
 
-  const colorToSend = colorName
-  const storageToSend = variantToSend?.storage || storageName // "256GB"
-  const priceToSend = selectedPrice || variantToSend?.colors?.find(c => c.name === colorToSend)?.price
-  const imageToSend = selectedImage || variantToSend?.colors?.find(c => c.name === colorToSend)?.images?.[0]?.url
-  const stockToSend = countInStock || variantToSend?.colors?.find(c => c.name === colorToSend)?.countInStock || 0
+  // const colorToSend = colorName
+  // const storageToSend = variantToSend?.storage || storageName // "256GB"
+  // const priceToSend = selectedPrice || variantToSend?.colors?.find(c => c.name === colorToSend)?.price
+  // const imageToSend = selectedImage || variantToSend?.colors?.find(c => c.name === colorToSend)?.images?.[0]?.url
+  // const stockToSend = countInStock || variantToSend?.colors?.find(c => c.name === colorToSend)?.countInStock || 0
+  const colorToSend = colorName || product?.variants?.[0]?.colors?.[0]?.name || ''
+const storageToSend = variantToSend?.storage || storageName || product?.variants?.[0]?.storage || ''
+const priceToSend = selectedPrice?? variantToSend?.colors?.find(c => c.name === colorToSend)?.price?? product?.variants?.[0]?.colors?.[0]?.price?? 0
+const imageToSend = selectedImage || variantToSend?.colors?.find(c => c.name === colorToSend)?.images?.[0]?.url || product?.images?.[0]?.url || ''
+const stockToSend = countInStock?? variantToSend?.colors?.find(c => c.name === colorToSend)?.countInStock?? 0
+
 
   const wishlistHandler = () => {
+  //  console.log('V32.32 DEBUG:', {colorToSend, storageToSend, priceToSend})
     if (!userInfo) {
       navigate('/login')
       return
@@ -76,6 +83,7 @@ const WishlistButton = ({
     } else {
       dispatch(addToWishlist({
         product: product._id,
+        slug: product.slug,
         name: product.name,
         image: imageToSend,
         price: priceToSend,

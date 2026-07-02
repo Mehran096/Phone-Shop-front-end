@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaPlus } from 'react-icons/fa';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { HiOutlineArrowsUpDown } from 'react-icons/hi2';
 import { useUpdateProductMutation, useGetProductDetailsQuery, useUploadProductImageMutation } from '../../slices/productsApiSlice';
 import api from '../../utils/axios';
 
 const ProductEditScreen = () => {
   //const { productId } = useParams();
   const { id } = useParams(); // <-- V9.8 FIX: Changed from `id: productId` to just `id`
-    const productId = id; // <-- ADD THIS LINE
+  const productId = id; // <-- ADD THIS LINE
   const navigate = useNavigate();
 
   const { data: product, isLoading, error, refetch } = useGetProductDetailsQuery(productId);
@@ -21,11 +23,11 @@ const ProductEditScreen = () => {
   const [description, setDescription] = useState('');
   const [keywords, setKeywords] = useState('');
   const [accessories, setAccessories] = useState('');
-  const [variants, setVariants] = useState([{ 
-    storage: '', 
+  const [variants, setVariants] = useState([{
+    storage: '',
     description: '',
     specs: { ram: '', display: '', battery: '', camera: '' },
-    colors: [{ name: '', images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] 
+    colors: [{ name: '', images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }]
   }]);
   const [uploadingMap, setUploadingMap] = useState({});
 
@@ -60,82 +62,100 @@ const ProductEditScreen = () => {
   }, [product]);
 
   const addVariantHandler = () => setVariants([...variants, { storage: '', description: '', specs: { ram: '', display: '', battery: '', camera: '' }, colors: [{ name: '', images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] }]);
-  const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i!== vIndex));
-  const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, [field]: value} : item));
-  const updateVariantSpec = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, specs: {...item.specs, [field]: value}} : item));
-  const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: [...item.colors, { name: '', images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }]} : item));
-  const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: item.colors.filter((_, ci) => ci!== cIndex)} : item));
-  const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: item.colors.map((c, ci) => ci === cIndex? {...c, [field]: value} : c)} : item));
+  const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i !== vIndex));
+  const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ? { ...item, [field]: value } : item));
+  const updateVariantSpec = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ? { ...item, specs: { ...item.specs, [field]: value } } : item));
+  const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex ? { ...item, colors: [...item.colors, { name: '', images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] } : item));
+  const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex ? { ...item, colors: item.colors.filter((_, ci) => ci !== cIndex) } : item));
+  const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ? { ...item, colors: item.colors.map((c, ci) => ci === cIndex ? { ...c, [field]: value } : c) } : item));
 
+  //upoad image handler
   const uploadFileHandler = async (vIndex, cIndex, e) => {
     const key = `v${vIndex}-c${cIndex}`;
-    setUploadingMap(prev => ({...prev, [key]: true}));
+    setUploadingMap(prev => ({ ...prev, [key]: true }));
     const files = Array.from(e.target.files);
-    if (!files.length) { setUploadingMap(prev => ({...prev, [key]: false})); return; }
+    if (!files.length) { setUploadingMap(prev => ({ ...prev, [key]: false })); return; }
     const uploaded = [];
     for (const file of files) {
       const formData = new FormData();
       formData.append('image', file);
-      try { 
-        const { url, public_id } = await uploadProductImage(formData).unwrap(); 
+      try {
+        const { url, public_id } = await uploadProductImage(formData).unwrap();
         uploaded.push({ url, imagePublicId: public_id });
-      } 
+      }
       catch (err) { toast.error(err?.data?.message || err.error); }
     }
-    if(uploaded.length){
-      setVariants(prev => prev.map((v, i) => i === vIndex? {...v, colors: v.colors.map((c, j) => j === cIndex? {...c, images: [...c.images,...uploaded], imagePublicIds: [...c.imagePublicIds,...uploaded.map(u => u.imagePublicId)]} : c)} : v));
+    if (uploaded.length) {
+      setVariants(prev => prev.map((v, i) => i === vIndex ? { ...v, colors: v.colors.map((c, j) => j === cIndex ? { ...c, images: [...c.images, ...uploaded], imagePublicIds: [...c.imagePublicIds, ...uploaded.map(u => u.imagePublicId)] } : c) } : v));
       toast.success(`${uploaded.length} Image(s) added`);
     }
-    setUploadingMap(prev => ({...prev, [key]: false}));
+    setUploadingMap(prev => ({ ...prev, [key]: false }));
     e.target.value = '';
   };
 
-const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
-  const color = variants[vIndex]?.colors[cIndex]; // V31.93? = No crash
-  const raw_public_id = color?.imagePublicIds?.[imgIndex]; // V31.93? = No crash
+  //remove image handler
+  const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
+    const color = variants[vIndex]?.colors[cIndex]; // V31.93? = No crash
+    const raw_public_id = color?.imagePublicIds?.[imgIndex]; // V31.93? = No crash
 
-  if(!raw_public_id) {
-    toast.error('Old image: Cannot delete from Cloudinary. Use Update Product to save.');
-    return;
+    if (!raw_public_id) {
+      toast.error('Old image: Cannot delete from Cloudinary. Use Update Product to save.');
+      return;
+    }
+
+    // V31.86 KEY: Extract clean publicId
+    let publicId = raw_public_id;
+    if (publicId.includes('cloudinary.com')) {
+      publicId = publicId.split('/upload/')[1] || publicId;
+    }
+    publicId = publicId.replace(/^\d+\//, '');
+    publicId = publicId.replace(/\.[^.]+$/, "");
+    console.log('V31.99 SENDING:', publicId);
+
+    try {
+      // V31.81 KEY: Backend first - Cloudinary only now
+      await api.delete('/upload', { data: { publicId, productId: product._id, vIndex } });
+
+      // V31.99 KEY: BULLETPROOF UI UPDATE - Delete from BOTH arrays
+      setVariants(prev => { // V31.93 Use functional update = no stale state
+        const newVariants = structuredClone(prev); // V31.93 Deep clone = no mutation bug
+
+        const targetColor = newVariants[vIndex]?.colors[cIndex];
+        if (!targetColor?.imagePublicIds || !targetColor?.images) {
+          console.log('V31.99 SKIP UI: arrays missing');
+          return prev; // V31.93 Don't crash
+        }
+
+        targetColor.imagePublicIds.splice(imgIndex, 1); // V31.98 Delete publicId
+        targetColor.images.splice(imgIndex, 1); // V31.98 KEY: Delete URL too
+        return newVariants;
+      });
+
+      toast.success('Image removed'); // V31.93 This will show now
+
+    } catch (err) {
+      console.log('V31.99 CATCH:', err);
+      toast.error(err?.data?.message || err.message || 'Delete failed');
+    }
   }
 
-  // V31.86 KEY: Extract clean publicId
-  let publicId = raw_public_id;
-  if (publicId.includes('cloudinary.com')) {
-    publicId = publicId.split('/upload/')[1] || publicId;
-  }
-  publicId = publicId.replace(/^\d+\//, '');
-  publicId = publicId.replace(/\.[^.]+$/, "");
-  console.log('V31.99 SENDING:', publicId);
-
-  try {
-    // V31.81 KEY: Backend first - Cloudinary only now
-    await api.delete('/upload', { data: { publicId, productId: product._id, vIndex } });
-
-    // V31.99 KEY: BULLETPROOF UI UPDATE - Delete from BOTH arrays
-    setVariants(prev => { // V31.93 Use functional update = no stale state
-      const newVariants = structuredClone(prev); // V31.93 Deep clone = no mutation bug
-
-      const targetColor = newVariants[vIndex]?.colors[cIndex];
-      if (!targetColor?.imagePublicIds ||!targetColor?.images) {
-        console.log('V31.99 SKIP UI: arrays missing');
-        return prev; // V31.93 Don't crash
-      }
-
-      targetColor.imagePublicIds.splice(imgIndex, 1); // V31.98 Delete publicId
-      targetColor.images.splice(imgIndex, 1); // V31.98 KEY: Delete URL too
+  //Drag and drop image handler
+  const onDragEnd = (result, vIndex, cIndex) => {
+    if (!result.destination) return;
+    setVariants(prev => {
+      const newVariants = structuredClone(prev); // V31.93
+      const imgs = newVariants[vIndex].colors[cIndex].images;
+      const ids = newVariants[vIndex].colors[cIndex].imagePublicIds;
+      const [reorderedImg] = imgs.splice(result.source.index, 1);
+      imgs.splice(result.destination.index, 0, reorderedImg);
+      const [reorderedId] = ids.splice(result.source.index, 1);
+      ids.splice(result.destination.index, 0, reorderedId);
       return newVariants;
     });
+  };
 
-    toast.success('Image removed'); // V31.93 This will show now
-
-  } catch(err) {
-    console.log('V31.99 CATCH:', err);
-    toast.error(err?.data?.message || err.message || 'Delete failed');
-  }
-}
-
- const submitHandler = async (e) => {
+  //submit image handler
+  const submitHandler = async (e) => {
     e.preventDefault();
     const payload = {
       id: productId,
@@ -143,28 +163,28 @@ const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
       keywords: keywords.split(',').map(k => k.trim()).filter(Boolean),
       // accessories: accessories.split(',').map(a => a.trim()).filter(Boolean),
       variants: variants
-    .filter(v => v.storage && v.colors.some(c => c.name && c.price!== ''))
-    .map(v => ({ 
-          storage: v.storage, 
+        .filter(v => v.storage && v.colors.some(c => c.name && c.price !== ''))
+        .map(v => ({
+          storage: v.storage,
           description: v.description,
           specs: v.specs,
           colors: v.colors
-        .filter(c => c.name && c.price!== '' && c.images.length > 0)
-        .map(c => ({ 
-              name: c.name, 
+            .filter(c => c.name && c.price !== '' && c.images.length > 0)
+            .map(c => ({
+              name: c.name,
               images: c.images,
               imagePublicIds: c.imagePublicIds,
               price: Number(c.price),
               countInStock: Number(c.countInStock),
-              sku: c.sku 
-            })) 
+              sku: c.sku
+            }))
         })),
     };
-    try { 
-      await updateProduct(payload).unwrap(); 
-      toast.success('Product Updated'); 
+    try {
+      await updateProduct(payload).unwrap();
+      toast.success('Product Updated');
       refetch();
-      navigate('/admin/productlist'); 
+      navigate('/admin/productlist');
     } catch (err) { toast.error(err?.data?.message || err.error); }
   };
 
@@ -187,9 +207,9 @@ const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
         <div className={cardClass}>
           <h2 className='text-lg font-semibold mb-4 border-b pb-2 text-gray-800'>Basic Info</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className={labelClass}>Name *</label><input type='text' value={name} onChange={e => setName(e.target.value)} className={inputClass} required/></div>
-            <div><label className={labelClass}>Brand *</label><input type='text' value={brand} onChange={e => setBrand(e.target.value)} className={inputClass} required/></div>
-            <div><label className={labelClass}>Category *</label><input type='text' value={category} onChange={e => setCategory(e.target.value)} className={inputClass} required/></div>
+            <div><label className={labelClass}>Name *</label><input type='text' value={name} onChange={e => setName(e.target.value)} className={inputClass} required /></div>
+            <div><label className={labelClass}>Brand *</label><input type='text' value={brand} onChange={e => setBrand(e.target.value)} className={inputClass} required /></div>
+            <div><label className={labelClass}>Category *</label><input type='text' value={category} onChange={e => setCategory(e.target.value)} className={inputClass} required /></div>
             <div><label className={labelClass}>Keywords</label><input type='text' placeholder='comma, separated' value={keywords} onChange={e => setKeywords(e.target.value)} className={inputClass} /></div>
             {/* <div className='md:col-span-2'><label className={labelClass}>Description</label><textarea value={description} onChange={e => setDescription(e.target.value)} className={inputClass} rows={3}/></div>
             <div className='md:col-span-2'><label className={labelClass}>Accessories</label><input type='text' placeholder='Box, Charger' value={accessories} onChange={e => setAccessories(e.target.value)} className={inputClass} /></div> */}
@@ -201,7 +221,7 @@ const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
           {variants.map((variant, vIndex) => (
             <div key={vIndex} className='border border-gray-200 p-5 mb-4 rounded-lg bg-gray-50'>
               <div className='flex justify-between items-center mb-3'>
-                <h3 className='font-semibold text-gray-800'>Variant {vIndex+1}</h3>
+                <h3 className='font-semibold text-gray-800'>Variant {vIndex + 1}</h3>
                 {variants.length > 1 && <button type='button' onClick={() => removeVariantHandler(vIndex)} className='text-red-500 text-sm hover:underline'>Remove</button>}
               </div>
               <div className='grid grid-cols-2 md:grid-cols-3 gap-4 mb-4'>
@@ -220,7 +240,7 @@ const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
               {variant.colors.map((color, cIndex) => (
                 <div key={cIndex} className="border-l-4 border-blue-500 pl-4 mb-4 bg-white p-4 rounded-r-lg shadow-sm">
                   <div className='flex justify-between items-center mb-2'>
-                    <label className={labelClass}>Color {cIndex+1}</label>
+                    <label className={labelClass}>Color {cIndex + 1}</label>
                     {variant.colors.length > 1 && <button type='button' onClick={() => removeColorHandler(vIndex, cIndex)} className='text-red-500 text-sm hover:underline'>Remove Color</button>}
                   </div>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2'>
@@ -231,27 +251,59 @@ const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
                     <div><label className={labelClass}>Price *</label><input type='number' value={color.price} onChange={e => updateColor(vIndex, cIndex, 'price', e.target.value)} className={inputClass} /></div>
                     <div><label className={labelClass}>Stock *</label><input type='number' value={color.countInStock} onChange={e => updateColor(vIndex, cIndex, 'countInStock', e.target.value)} className={inputClass} /></div>
                   </div>
-                  
+
                   <label className={labelClass}>Images *</label>
                   <div className='mb-3'>
                     <label className='inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md border-dashed border-blue-300 cursor-pointer hover:bg-blue-100 transition-colors text-sm font-medium'>
-                        <FaPlus />
-                        <span>
-                          {uploadingMap[`v${vIndex}-c${cIndex}`]? 'Uploading...' : 'Select Images'}
-                        </span>
-                        <input type='file' multiple accept="image/*" onChange={(e) => uploadFileHandler(vIndex, cIndex, e)} className='hidden' disabled={uploadingMap[`v${vIndex}-c${cIndex}`]}/>
+                      <FaPlus />
+                      <span>
+                        {uploadingMap[`v${vIndex}-c${cIndex}`] ? 'Uploading...' : 'Select Images'}
+                      </span>
+                      <input type='file' multiple accept="image/*" onChange={(e) => uploadFileHandler(vIndex, cIndex, e)} className='hidden' disabled={uploadingMap[`v${vIndex}-c${cIndex}`]} />
                     </label>
                   </div>
                   {uploadingMap[`v${vIndex}-c${cIndex}`] && <div className='text-blue-600 text-sm mb-2 animate-pulse'>Uploading to Cloudinary...</div>}
 
                   <div className='flex flex-wrap gap-3 p-3 bg-gray-100 rounded-lg min-h-24'>
-                    {color.images.map((img, imgIndex) => (
-                      <div key={imgIndex} className='relative w-20 h-20 group'>
-                        <img src={img.url} alt={`img-${imgIndex}`} className='w-full h-full rounded-md border object-cover' />
-                        <button type="button" onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)} className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-md opacity-0 group-hover:opacity-100 transition-opacity'>X</button>
-                      </div>
-                    ))}
+                    <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex)}>
+                      <Droppable droppableId={`dnd-edit-${vIndex}-${cIndex}`} direction="horizontal">
+                        {(provided) => (
+                          <div className="flex gap-3 flex-wrap w-full" {...provided.droppableProps} ref={provided.innerRef}>
+                            {color.images.map((img, imgIndex) => (
+                              <Draggable key={`${vIndex}-${cIndex}-${imgIndex}-${img.url || img}`} draggableId={`${vIndex}-${cIndex}-${imgIndex}`} index={imgIndex}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`relative w-20 h-20 lg:w-24 lg:h-24 group ${snapshot.isDragging ? 'ring-2 ring-blue-500' : ''}`}
+                                  >
+                                    {/* V32.13 DRAG HANDLE ONLY */}
+                                    <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
+                                      <HiOutlineArrowsUpDown className="text-white text-xs" />
+                                    </div>
+
+                                    <img
+                                      src={img.url || img} // V32.13 KEY: Edit has string OR object
+                                      alt={`img-${imgIndex}`}
+                                      className="w-full h-full object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0"
+                                    />
+
+                                    {/* V31.99 DELETE BUTTON STILL WORKS */}
+                                    <button type="button" onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)}
+                                      className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10'>
+                                      X
+                                    </button>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
                   </div>
+
                   <button type='button' onClick={() => addColorHandler(vIndex)} className={btnSecondary + ' mt-3'}><FaPlus size={12} /> Add Color</button>
                 </div>
               ))}

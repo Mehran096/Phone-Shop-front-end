@@ -20,7 +20,7 @@ export const getWishlist = createAsyncThunk(
 // Add to wishlist - UPDATED: added countInStock
 export const addToWishlist = createAsyncThunk(
   'wishlist/add',
-  async ({ product, color, storage, image, price, name, countInStock }, { rejectWithValue }) => {
+  async ({ product, color, storage, image, price, name, countInStock, slug, qty }, { rejectWithValue }) => {
     try {
       const config = {
         headers: {
@@ -30,12 +30,14 @@ export const addToWishlist = createAsyncThunk(
       }
       const { data } = await api.post('/users/wishlist', {
         product,
+        slug,
         color,
         storage,
         image,
         price,
         name,
         countInStock, // <-- Added this
+        qty: qty || 1,
       }, config)
       return data // returns updated wishlist array
     } catch (error) {

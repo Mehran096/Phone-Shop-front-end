@@ -86,7 +86,7 @@ function CartScreen() {
 
                     {/* Info */}
                     <div className="flex-1 flex-col">
-                      <Link to={`/product/${item.slug}`} className="hover:underline">
+                      <Link to={`/product/${item.slug || item.product}`} className="hover:underline">
                         <h2 className="font-bold text-gray-900 text-base leading-tight">
                           {item.name}{item.storage ? ` - ${item.storage}` : ''}
                         </h2>

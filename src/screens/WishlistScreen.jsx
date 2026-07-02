@@ -32,6 +32,7 @@ const WishlistScreen = () => {
   const addToCartHandler = (item) => {
     dispatch(addToCart({
       product: item.product,
+      slug: item.slug,
       name: item.name,
       image: item.image,
       price: item.price,
@@ -48,6 +49,7 @@ const WishlistScreen = () => {
     wishlistItems.forEach((item) => {
       dispatch(addToCart({
         product: item.product,
+        slug: item.slug,
         name: item.name,
         image: item.image,
         price: item.price,
@@ -110,7 +112,7 @@ const WishlistScreen = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {wishlistItems.map((item) => (
               <div key={item._id} className="border border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-4 hover:shadow-lg transition">
-                <Link to={`/product/${item.product}`}>
+                <Link to={`/product/${item.slug}`}>
                   <div className="w-full aspect-square bg-gray-50 rounded-md sm:rounded-lg mb-2 sm:mb-4 flex items-center justify-center overflow-hidden">
                     <img
                       src={item.image}
@@ -120,7 +122,7 @@ const WishlistScreen = () => {
                   </div>
                 </Link>
                 
-                <Link to={`/product/${item.product}`}>
+                <Link to={`/product/${item.slug}`}>
                   <h3 className="font-semibold text-xs sm:text-base mb-1 sm:mb-2 hover:text-blue-600 line-clamp-2">
                     {item.name}
                   </h3>

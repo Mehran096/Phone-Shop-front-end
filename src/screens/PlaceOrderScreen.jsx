@@ -53,6 +53,7 @@ const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Numb
         price: Number(item.price), 
         qty: item.qty,  
         color: item.color,
+        storage: item.storage,
         variant: item.variant,
       })),
       shippingAddress: cart.shippingAddress,

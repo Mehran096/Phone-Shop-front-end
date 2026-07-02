@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaPlus } from 'react-icons/fa';
 import { useCreateProductMutation, useUploadProductImageMutation } from '../../slices/productsApiSlice';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { HiOutlineArrowsUpDown } from 'react-icons/hi2'; // V32.10 Drag handle icon
 import api from '../../utils/axios';
 
 const ProductCreateScreen = () => {
@@ -57,17 +59,64 @@ const ProductCreateScreen = () => {
   };
 
   const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
-    const public_id = variants[vIndex].colors[cIndex].imagePublicIds[imgIndex];
-    if(!public_id) {
-      setVariants(prev => prev.map((v, i) => i === vIndex? {...v, colors: v.colors.map((c, j) => j === cIndex? {...c, images: c.images.filter((_, k) => k!== imgIndex), imagePublicIds: c.imagePublicIds.filter((_, k) => k!== imgIndex)} : c)} : v));
-      return;
-    }
-    try {
-      await api.delete(`/upload/public_id/${encodeURIComponent(public_id)}`);
-      setVariants(prev => prev.map((v, i) => i === vIndex? {...v, colors: v.colors.map((c, j) => j === cIndex? {...c, images: c.images.filter((_, k) => k!== imgIndex), imagePublicIds: c.imagePublicIds.filter((_, k) => k!== imgIndex)} : c)} : v));
-      toast.success('Image removed');
-    } catch(err) { toast.error(err?.data?.message || 'Delete failed'); }
-  };
+  const color = variants[vIndex]?.colors[cIndex]; // V31.93 No crash
+  const raw_public_id = color?.imagePublicIds?.[imgIndex]; // V31.93
+
+  if(!raw_public_id) {
+    toast.error('Old image: Cannot delete from Cloudinary. Use Update Product to save.');
+    return;
+  }
+
+  let publicId = raw_public_id;
+  if (publicId.includes('cloudinary.com')) {
+    publicId = publicId.split('/upload/')[1] || publicId;
+  }
+  publicId = publicId.replace(/^\d+\//, ''); // V31.86 kill timestamp
+  publicId = publicId.replace(/\.[^.]+$/, ""); // V32.04 kill.jpg
+  console.log('V31.99 SENDING:', publicId);
+
+  try {
+    await api.delete('/upload', { data: { publicId } }); // V32.09 FIXED LINE
+
+    setVariants(prev => { // V31.93 Functional update
+      const newVariants = structuredClone(prev); // V31.93
+      const targetColor = newVariants[vIndex]?.colors[cIndex];
+      if (!targetColor?.imagePublicIds ||!targetColor?.images) {
+        console.log('V31.99 SKIP UI: arrays missing');
+        return prev;
+      }
+      targetColor.imagePublicIds.splice(imgIndex, 1); // V31.98
+      targetColor.images.splice(imgIndex, 1); // V31.98 KEY
+      return newVariants;
+    });
+
+    toast.success('Image removed'); // V31.93
+
+  } catch(err) {
+    console.log('V31.99 CATCH:', err);
+    toast.error(err?.data?.message || err.message || 'Delete failed');
+  }
+};
+
+//drag n drop
+const onDragEnd = (result, vIndex, cIndex) => {
+  if (!result.destination) return; // Dropped outside
+
+  setVariants(prev => {
+    const newVariants = structuredClone(prev);
+    const imgs = newVariants[vIndex].colors[cIndex].images;
+    const ids = newVariants[vIndex].colors[cIndex].imagePublicIds;
+
+    // Reorder both arrays together = V31.98 sync
+    const [reorderedImg] = imgs.splice(result.source.index, 1);
+    imgs.splice(result.destination.index, 0, reorderedImg);
+
+    const [reorderedId] = ids.splice(result.source.index, 1);
+    ids.splice(result.destination.index, 0, reorderedId);
+
+    return newVariants;
+  });
+};
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -149,15 +198,24 @@ const ProductCreateScreen = () => {
                 <div key={cIndex} className="border-l-4 border-blue-500 pl-4 mb-4 bg-white p-4 rounded-r-lg shadow-sm">
                   <div className='flex justify-between items-center mb-2'>
                     <label className={labelClass}>Color {cIndex+1}</label>
-                    {variant.colors.length > 1 && <button type='button' onClick={() => removeColorHandler(vIndex, cIndex)} className='text-red-500 text-sm hover:underline'>Remove Color</button>}
+                    {variant.colors.length > 1 && <button type='button' onClick={() => removeColorHandler(vIndex, cIndex)} 
+                    className='text-red-500 text-sm hover:underline'>Remove Color</button>}
                   </div>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2'>
-                    <div><label className={labelClass}>Color Name *</label><input type='text' placeholder='Black Titanium' value={color.name} onChange={e => updateColor(vIndex, cIndex, 'name', e.target.value)} className={inputClass} /></div>
-                    <div><label className={labelClass}>SKU</label><input type='text' placeholder='A17-256-BLK' value={color.sku} onChange={e => updateColor(vIndex, cIndex, 'sku', e.target.value)} className={inputClass} /></div>
+                    <div><label className={labelClass}>Color Name *</label><input type='text' placeholder='Black Titanium' 
+                    value={color.name} onChange={e => updateColor(vIndex, cIndex, 'name', e.target.value)} 
+                    className={inputClass} /></div>
+                    <div><label className={labelClass}>SKU</label><input type='text' placeholder='A17-256-BLK' 
+                    value={color.sku} onChange={e => updateColor(vIndex, cIndex, 'sku', e.target.value)} 
+                    className={inputClass} /></div>
                   </div>
                   <div className='grid grid-cols-2 gap-4 mb-3'>
-                    <div><label className={labelClass}>Price *</label><input type='number' value={color.price} onChange={e => updateColor(vIndex, cIndex, 'price', e.target.value)} className={inputClass} /></div>
-                    <div><label className={labelClass}>Stock *</label><input type='number' value={color.countInStock} onChange={e => updateColor(vIndex, cIndex, 'countInStock', e.target.value)} className={inputClass} /></div>
+                    <div><label className={labelClass}>Price *</label><input type='number' 
+                    value={color.price} onChange={e => updateColor(vIndex, cIndex, 'price', e.target.value)} 
+                    className={inputClass} /></div>
+                    <div><label className={labelClass}>Stock *</label><input type='number' 
+                    value={color.countInStock} onChange={e => updateColor(vIndex, cIndex, 'countInStock', e.target.value)} 
+                    className={inputClass} /></div>
                   </div>
                   
                   {/* V9.63 KEY: Compact Clean Upload UI */}
@@ -174,13 +232,42 @@ const ProductCreateScreen = () => {
                   {uploadingMap[`v${vIndex}-c${cIndex}`] && <div className='text-blue-600 text-sm mb-2 animate-pulse'>Uploading to Cloudinary...</div>}
 
                   <div className='flex flex-wrap gap-3 p-3 bg-gray-100 rounded-lg min-h-24'>
-                    {color.images.map((img, imgIndex) => (
-                      <div key={imgIndex} className='relative w-20 h-20 group'>
-                        <img src={img.url} alt={`img-${imgIndex}`} className='w-full h-full rounded-md border object-cover' />
-                        <button type="button" onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)} className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-md opacity-0 group-hover:opacity-100 transition-opacity'>X</button>
-                      </div>
-                    ))}
+  <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex)}>
+    <Droppable droppableId={`dnd-${vIndex}-${cIndex}`} direction="horizontal">
+      {(provided) => (
+        <div className="flex gap-3 flex-wrap w-full" {...provided.droppableProps} ref={provided.innerRef}>
+          {color.images.map((img, imgIndex) => (
+            <Draggable key={`${vIndex}-${cIndex}-${imgIndex}-${img}`} draggableId={`${vIndex}-${cIndex}-${imgIndex}`} index={imgIndex}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  className={`relative w-20 h-20 group ${snapshot.isDragging? 'ring-2 ring-blue-500' : ''}`}
+                >
+                  {/* V32.11 DRAG HANDLE ONLY */}
+                  <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
+                    <HiOutlineArrowsUpDown className="text-white text-xs" />
                   </div>
+
+                  <img src={img.url} alt={`img-${imgIndex}`} 
+                  className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0" 
+                  />
+
+                  {/* V31.99 DELETE BUTTON STILL WORKS */}
+                  <button type="button" onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)}
+                    className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10'>
+                    X
+                  </button>
+                </div>
+              )}
+            </Draggable>
+          ))}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
+  </DragDropContext>
+</div>
                   <button type='button' onClick={() => addColorHandler(vIndex)} className={btnSecondary + ' mt-3'}><FaPlus size={12} /> Add Color</button>
                 </div>
               ))}
