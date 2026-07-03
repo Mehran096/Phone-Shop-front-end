@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import {
   useGetProductReviewsQuery,
@@ -12,6 +12,7 @@ import { toast } from 'react-toastify';
 import Loader from './Loader';
 import Message from './Message';
 import Rating from './Rating';
+import { ChevronDown } from 'lucide-react';
 
 const ReviewsModal = ({ productId, productColor, onClose, product }) => {
   const [page, setPage] = useState(1);
@@ -30,6 +31,8 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
     // color: colorFilter === 'All'? '' : colorFilter,
     // sort,
   });
+
+  
 
   const [markHelpful, { isLoading: loadingHelpful }] = useMarkReviewHelpfulMutation();
   const [addAdminReply, { isLoading: loadingReply }] = useAddAdminReplyMutation();
@@ -115,7 +118,45 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
     }
   };
 
-  const arrowSvg = `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`;
+  
+   const CustomDropdown = ({ value, onChange, options, label }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => ref.current &&!ref.current.contains(e.target) && setOpen(false);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full md:w-auto md:min-w-[160px]">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white hover:border-gray-400 transition"
+      >
+        <span className="text-gray-900">{value === 'All'? label : value}</span>
+        <ChevronDown size={18} className={`text-gray-500 transition-transform ${open? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] max-h-60 overflow-y-auto">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { onChange(opt); setOpen(false); }}
+              className={`w-full text-left px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-100 ${value === opt? 'bg-gray-100 font-medium' : ''}`}
+            >
+              {opt === 'All'? label : opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
   if (!productId) return null;
 
@@ -138,37 +179,20 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
             {data?.totalReviews || 0} reviews
           </span>
 
-          <div className="flex gap-2 sm:gap-3 w-full md:w-auto">
-            <select
-              value={colorFilter}
-              onChange={(e) => {
-                setColorFilter(e.target.value);
-                setPage(1);
-              }}
-               style={{ backgroundImage: arrowSvg }}
-              className="border rounded-lg px-4 py-3 pr-10 text-base min-h-[48px] w-full md:w-auto md:min-w-[160px] appearance-none bg-white bg-no-repeat bg-[center_right_1rem]"
-            >
-              <option value="All">All Colors</option>
-              {colors.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-
-            <select
-              value={sort}
-              onChange={(e) => {
-                setSort(e.target.value);
-                setPage(1);
-              }}
-              style={{ backgroundImage: arrowSvg }}
-              className="border rounded-lg px-4 py-3 pr-10 text-base min-h-[48px] w-full md:w-auto md:min-w-[160px] appearance-none bg-white bg-no-repeat bg-[center_right_1rem]"
-            >
-              <option value="newest">Newest First</option>
-              <option value="helpful">Most Helpful</option>
-              <option value="highest">Highest Rating</option>
-              <option value="lowest">Lowest Rating</option>
-            </select>
-          </div>
+          <div className="flex flex-col md:flex-row gap-2 sm:gap-3 w-full md:w-auto">
+  <CustomDropdown
+    value={colorFilter}
+    onChange={(val) => { setColorFilter(val); setPage(1); }}
+    options={['All',...colors]} // V34.23 KEY: colors comes from props/data
+    label="All Colors"
+  />
+  <CustomDropdown
+    value={sort}
+    onChange={(val) => { setSort(val); setPage(1); }}
+    options={['helpful', 'newest', 'highest', 'lowest']}
+    label="Most Helpful"
+  />
+</div>
         </div>
 
         {/* Reviews list */}
