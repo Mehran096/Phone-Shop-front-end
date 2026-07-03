@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import RatingStars from '../components/RatingStars';
@@ -28,6 +28,7 @@ import { FaEdit, FaCheck, FaTrash, FaShoppingCart, FaStar } from 'react-icons/fa
 import { toast } from 'react-toastify'
 import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
+import { ChevronDown } from 'lucide-react';
 
 
 
@@ -467,6 +468,51 @@ const ProductScreen = ({ isOnline }) => {
     return `${days}d ago`;
   }
 
+//drop down for qty / mobile screen
+ const CustomDropdown = ({ value, onChange, options, label, size = 'md' }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => ref.current &&!ref.current.contains(e.target) && setOpen(false);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const sizeClasses = size === 'sm' 
+ ? 'px-3.5 h- min-w- border border-gray-300 rounded-lg bg-white shadow-sm hover:border-gray-400'
+    : 'px-4 py-3 text-base md:min-w-[160px] border border-gray-300 rounded-lg bg-white';
+
+  return (
+    <div ref={ref} className="relative w-auto">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`flex items-center justify-between gap-2 font-semibold text-gray-900 transition ${sizeClasses}`}
+      >
+        <span>{value}</span>
+        <ChevronDown size={size === 'sm'? 16 : 18} className={`text-gray-500 transition-transform ${open? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-1.5 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto 
+          [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { onChange(opt); setOpen(false); }}
+              className={`w-full text-left px-3.5 py-2 text-sm font-medium text-gray-900 hover:bg-blue-50 ${Number(value) === Number(opt)? 'bg-blue-50 text-blue-600' : ''}`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 
 
@@ -652,53 +698,51 @@ const ProductScreen = ({ isOnline }) => {
                 )}
 
                 {/* Qty + Add to Cart - V12.8 KEY */}
-                {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0 && (
-                  <div className='flex items-end gap-2 mb-6'> {/* V25.4 KEY: flex row */}
-                    {/* QTY SELECT */}
-                    <div className='flex flex-col'>
-                      <label className='text-xs font-medium text-gray-600 mb-1'>Qty</label> {/* V32.73 KEY */}
-                      <select
-                        value={qty}
-                        onChange={(e) => setQty(Number(e.target.value))}
-                        className='w-11 sm:w-18 px-1 py-2.5 border-2 border-gray-300 rounded-lg bg-white font-semibold text-sm text-center h-11'
-                      >
-                        {[...Array(Math.min(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0, 10)).keys()].map(
-                          (x) => (
-                            <option key={x + 1} value={x + 1}>
-                              {x + 1}
-                            </option>
-                          )
-                        )}
-                      </select>
-                    </div>
+            
+{(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0) > 0 && (
+  <div className='flex items-end gap-3 mb-6'> 
+    
+    {/* QTY SELECT - V34.30 KEY: CustomDropdown */}
+    <div className='flex flex-col'>
+      <label className='text-sm font-semibold text-gray-700 mb-1.5'>Qty</label>
+      <CustomDropdown
+        size="sm"
+        value={qty}
+        onChange={(val) => setQty(Number(val))}
+        options={Array.from(
+          { length: Math.min(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 10) }, 
+          (_, i) => i + 1
+        )}
+        label="1"
+      />
+    </div>
 
-                    {/* ADD TO CART */}
-                    <button
-                      onClick={addToCartHandler}
-                      className='flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 h-11 text-sm sm:text-base'
-                    >
-                      <FaShoppingCart /> Add to Cart
-                    </button>
+    {/* ADD TO CART */}
+    <button
+      onClick={addToCartHandler}
+      className='flex-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 h-'
+    >
+      <FaShoppingCart size={18} /> Add to Cart
+    </button>
 
-                    {/* V25.4 KEY: WISHLIST BUTTON HERE */}
-                    <div className='w-14 flex-shrink-0'>
-
-                      {!isLoading && product?.variants?.length > 0 && selectedVariant && selectedColor ? (
-                        <WishlistButton
-                          product={product}
-                          selectedColor={selectedColor}
-                          selectedStorage={selectedVariant}
-                          selectedPrice={selectedVariant.price}
-                          selectedImage={selectedColor.images?.[0]?.url}
-                          countInStock={selectedVariant.countInStock}
-                          className='w-11 h-11 border-2 border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-50'
-                        />
-                      ) : (
-                        <div className='w-11 h-11 rounded-xl bg-gray-200 animate-pulse' />
-                      )}
-                    </div>
-                  </div>
-                )}
+    {/* WISHLIST BUTTON */}
+    <div className='flex-shrink-0'>
+      {!isLoading && product?.variants?.length > 0 && selectedVariant && selectedColor? (
+        <WishlistButton
+          product={product}
+          selectedColor={selectedColor}
+          selectedStorage={selectedVariant}
+          selectedPrice={selectedVariant.price}
+          selectedImage={selectedColor.images?.[0]?.url}
+          countInStock={selectedVariant.countInStock}
+          className='w- h- border-2 border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-50'  
+        />
+      ) : (
+        <div className='w- h- rounded-xl bg-gray-200 animate-pulse' />
+      )}
+    </div>
+  </div>
+)}
               </div>
             </div>
 
