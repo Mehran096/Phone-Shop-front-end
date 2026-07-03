@@ -70,28 +70,35 @@ const ProductEditScreen = () => {
   const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ? { ...item, colors: item.colors.map((c, ci) => ci === cIndex ? { ...c, [field]: value } : c) } : item));
 
   //upoad image handler
-  const uploadFileHandler = async (vIndex, cIndex, e) => {
-    const key = `v${vIndex}-c${cIndex}`;
-    setUploadingMap(prev => ({ ...prev, [key]: true }));
-    const files = Array.from(e.target.files);
-    if (!files.length) { setUploadingMap(prev => ({ ...prev, [key]: false })); return; }
-    const uploaded = [];
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append('image', file);
-      try {
-        const { url, public_id } = await uploadProductImage(formData).unwrap();
-        uploaded.push({ url, imagePublicId: public_id });
-      }
-      catch (err) { toast.error(err?.data?.message || err.error); }
-    }
-    if (uploaded.length) {
-      setVariants(prev => prev.map((v, i) => i === vIndex ? { ...v, colors: v.colors.map((c, j) => j === cIndex ? { ...c, images: [...c.images, ...uploaded], imagePublicIds: [...c.imagePublicIds, ...uploaded.map(u => u.imagePublicId)] } : c) } : v));
-      toast.success(`${uploaded.length} Image(s) added`);
-    }
-    setUploadingMap(prev => ({ ...prev, [key]: false }));
-    e.target.value = '';
-  };
+ //upload image handler V33.10
+const uploadFileHandler = async (vIndex, cIndex, e) => {
+  const key = `v${vIndex}-c${cIndex}`;
+  setUploadingMap(prev => ({...prev, [key]: true }));
+  const files = Array.from(e.target.files);
+  if (!files.length) { setUploadingMap(prev => ({...prev, [key]: false })); return; }
+  
+  // V33.10 KEY: 1 API call for all files
+  const formData = new FormData();
+  files.forEach(file => formData.append('images', file)); // V33.10 KEY: 'images' plural
+
+  try {
+    const data = await uploadProductImage(formData).unwrap(); // V33.10 Returns []
+    const uploaded = data.map(u => ({ url: u.url, imagePublicId: u.public_id })); // V33.10
+
+    setVariants(prev => prev.map((v, i) => i === vIndex? { 
+     ...v, colors: v.colors.map((c, j) => j === cIndex? {
+       ...c, 
+        images: [...c.images,...uploaded], // V33.10
+        imagePublicIds: [...c.imagePublicIds,...uploaded.map(u => u.imagePublicId)] // V33.10
+      } : c) 
+    } : v));
+    toast.success(`${uploaded.length} Image(s) added`);
+  } catch (err) { 
+    toast.error(err?.data?.message || err.error); 
+  }
+  setUploadingMap(prev => ({...prev, [key]: false }));
+  e.target.value = '';
+};
 
   //remove image handler
   const removeImageHandler = async (vIndex, cIndex, imgIndex) => {

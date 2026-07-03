@@ -156,12 +156,14 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    removeProductImageMutation: builder.mutation({
-      query: ({ public_id }) => ({
-        url: `/upload/public_id/${encodeURIComponent(public_id)}`,
-        method: 'DELETE',
-      }),
-    }),
+    deleteCloudinaryImage: builder.mutation({ // V33.34A: V31.84 format
+  query: (publicId) => ({
+    url: '/upload', // V33.34 KEY: No param in URL
+    method: 'DELETE',
+    body: { publicId }, // V33.34 KEY: Send in body
+    credentials: 'include',
+  }),
+}),
 
 
   }),
@@ -185,5 +187,5 @@ export const {
   useDeleteAdminReplyMutation,
   useUploadProductImageMutation,
   useUploadReviewImageMutation,
-  useRemoveProductImageMutation
+  useDeleteCloudinaryImageMutation
 } = productsApiSlice;

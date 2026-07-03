@@ -17,7 +17,8 @@ import {
   useAddAdminReplyMutation,
   useEditAdminReplyMutation,
   useDeleteAdminReplyMutation,
-  useUploadProductImageMutation
+  useUploadReviewImageMutation,
+  useDeleteCloudinaryImageMutation
 } from '../slices/productsApiSlice'
 import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
@@ -44,7 +45,8 @@ const ProductScreen = ({ isOnline }) => {
   const [editAdminReply, { isLoading: loadingUpdateReply }] = useEditAdminReplyMutation();
   const [deleteAdminReply, { isLoading: loadingDeleteReply }] = useDeleteAdminReplyMutation();
   const [markHelpful, { isLoading: loadingHelpfulReview }] = useMarkReviewHelpfulMutation();
-  const [uploadProductImage, { isLoading: loadingUpload }] = useUploadProductImageMutation();
+  const [uploadReviewImage, { isLoading: loadingUpload }] = useUploadReviewImageMutation();
+  const [deleteCloudinaryImage] = useDeleteCloudinaryImageMutation();
 
 
 
@@ -78,7 +80,10 @@ const ProductScreen = ({ isOnline }) => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [isEditingReply, setIsEditingReply] = useState(null);
   const [editReplyText, setEditReplyText] = useState('');
-  const [reviewImages, setReviewImages] = useState([]);
+  //const [reviewImages, setReviewImages] = useState([]);
+  // V33.58 KEY: V31 Object[] -> V33.57 File[] + Preview[]
+  const [reviewImageFiles, setReviewImageFiles] = useState([]); // V33.58 KEY: For upload on Submit
+  const [reviewImagePreviews, setReviewImagePreviews] = useState([]); // V33.58 KEY: For UI only
   //const [reviewImageFiles, setReviewImageFiles] = useState([]);
   const [ratingFilter, setRatingFilter] = useState(0);
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -87,27 +92,45 @@ const ProductScreen = ({ isOnline }) => {
 
 
   // Edit states
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
   const [editComment, setEditComment] = useState('');
   const [editRating, setEditRating] = useState(0);
   const [editImages, setEditImages] = useState([]);
+  //const [removedImageIds, setRemovedImageIds] = useState([]);
 
   const [editColor, setEditColor] = useState(null);
 
-  const startEdit = (review) => {
+  // const startEdit = (review) => {
+  //   setEditingReview(review);
+  //   setEditComment(review.comment);
+  //   setEditRating(review.rating);
+  //   setEditImages(review.images || []);
+  //   setEditColor(review.color || null);
+
+  // };
+
+  //review edit modal
+  const handleEditClick = (review) => {
     setEditingReview(review);
-    setEditComment(review.comment);
     setEditRating(review.rating);
-    setEditImages(review.images || []);
+    setEditComment(review.comment);
+    setEditImages(review.images || []); // V33.35B KEY
     setEditColor(review.color || null);
+    setIsEditModalOpen(true); // V33.93 KEY
 
   };
+
 
   const cancelEdit = () => {
     setEditingReview(null);
     setEditComment('');
     setEditRating(0);
     setEditImages([]);
+    setIsEditModalOpen(false);
+    //setEditImageFiles([]);
+    //setRemovedImageIds([]);
 
   };
 
@@ -200,78 +223,143 @@ const ProductScreen = ({ isOnline }) => {
       toast.error('Please select a color');
       return;
     }
-
+    // V33.66 REPLACE L211-L218 WHOLE BLOCK
     try {
+      // V33.66 KEY: 1 FormData with 'images' field for multer.array
+      const formData = new FormData();
+      reviewImageFiles.forEach((file) => {
+        formData.append('images', file); // V33.66 KEY: Must match backend
+      });
+
+      const uploadedImages = await uploadReviewImage(formData).unwrap(); // [{url, imagePublicId}]
+
       await createProductReview({
         productId,
         rating,
         comment,
         color: selectedColor?.name || '',
-        images: reviewImages, // <-- Just send the URLs you already have
+        images: uploadedImages, // V33.66 KEY: [{url, imagePublicId}]
       }).unwrap();
 
       refetch();
       toast.success('Review submitted successfully');
       setRating(0);
       setComment('');
-      setReviewImages([]);
+      setReviewImageFiles([]);
+      setReviewImagePreviews([]);
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
   };
 
-  // 2. Upload immediately when file selected
-  const uploadEditImageHandler = async (e) => {
-    const files = Array.from(e.target.files);
-    if (editImages.length + files.length > 3) {
-      toast.error('Max 3 images');
-      return;
-    }
 
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append('image', file);
-      try {
-        const res = await uploadProductImage(formData).unwrap();
-        setEditImages((prev) => [...prev, res.image]); // Store URL only
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
-      }
-    }
-    e.target.value = null;
-  };
 
   // 3. Submit: just send URLs, no upload loop
+  // V33.89: Submit Edit - No upload, just send current images
   const submitEditHandler = async (e) => {
     e.preventDefault();
-
     if (!editRating) {
       toast.error('Please select a rating');
       return;
     }
 
     try {
+      // V33.89 KEY: Send editImages as-is. No upload, no merge
       await updateProductReview({
         productId,
         reviewId: editingReview._id,
         rating: editRating,
         comment: editComment,
-        color: editColor,
-        images: editImages, // Already URLs, ready to send
+        images: editImages, // V33.89 KEY: [{url, imagePublicId}] only
       }).unwrap();
+
       toast.success('Review updated successfully');
-      cancelEdit();
+      cancelEdit(); // V33.89 KEY: Reset editImages
       refetch();
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
   };
 
-  // 4. Remove handler
-  const removeEditImage = (index) => {
-    setEditImages((prev) => prev.filter((_, i) => i !== index));
+
+
+
+  //create review /upload images
+  // V33.62 KEY: No upload here. Only store File + Preview
+  const uploadFileHandler = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    // V33.62 KEY: Check against new state
+    if (reviewImageFiles.length + files.length > 3) { // V33.62 KEY: Max 3
+      toast.error('Max 3 images per review');
+      return;
+    }
+
+    // V33.62 KEY: Store File objects only
+    setReviewImageFiles((prev) => [...prev, ...files]);
+
+    // V33.62 KEY: Create local previews, no Cloudinary call
+    const previews = files.map(file => URL.createObjectURL(file));
+    setReviewImagePreviews((prev) => [...prev, ...previews]);
+
+    toast.success(`${files.length} Image(s) added`); // V33.62 KEY: 'added' not 'uploaded'
+    e.target.value = null;
   };
 
+  // For CREATE form - remove image
+  // V33.63 KEY: For CREATE form - UI only, no Cloudinary call
+  const removeImage = (index) => { // V33.63 KEY: index not imgObj
+    // V33.63 KEY: Remove File
+    setReviewImageFiles((prev) => prev.filter((_, i) => i !== index));
+
+    // V33.63 KEY: Remove Preview + Free memory
+    setReviewImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index]); // V33.63 KEY: Prevent memory leak
+      return prev.filter((_, i) => i !== index);
+    });
+
+    toast.success('Image removed'); // V33.63 KEY: 'removed' not 'deleted'
+  };
+
+  // 2.edit review / upload images
+  // V33.41 EDIT form upload - 1 API call
+  const uploadEditImageHandler = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    if (editImages.length + files.length > 3) { // V33.41: Max 3 total
+      toast.error('Max 3 images');
+      return;
+    }
+
+    // V33.41 KEY: 1 API call for all files
+    const formData = new FormData();
+    files.forEach((file) => formData.append('images', file)); // V33.41: must be 'images'
+
+    try {
+      const data = await uploadReviewImage(formData).unwrap(); // V33.41: Expect [{url, imagePublicId}]
+      const uploaded = data.map((u) => ({
+        url: u.url,
+        imagePublicId: u.imagePublicId || u.public_id // V33.41: backend compat
+      }));
+      setEditImages((prev) => [...prev, ...uploaded]); // V33.41: Object[]
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
+    e.target.value = null;
+  };
+
+  // V33.84: Remove handler - UI only, no Cloudinary delete/ for edit review
+  const removeEditImage = (index) => {
+    // V33.84 KEY 1: Just remove from UI array
+    setEditImages((prev) => prev.filter((_, i) => i !== index));
+
+    // V33.84 KEY 2: Also remove from file array if it's a new file
+    //setEditImageFiles((prev) => prev.filter((_, i) => i !== index)); 
+  };
+
+  //delete review hnadler
   const deleteHandler = async (reviewId) => {
     if (window.confirm('Are you sure you want to delete this review?')) {
       try {
@@ -345,35 +433,7 @@ const ProductScreen = ({ isOnline }) => {
     }
   };
 
-  const uploadFileHandler = async (e) => {
-    const files = Array.from(e.target.files);
 
-    if (reviewImages.length + files.length > 3) {
-      toast.error('Max 3 images per review');
-      return;
-    }
-
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      try {
-        const res = await uploadProductImage(formData).unwrap();
-        setReviewImages((prev) => [...prev, res.image]);
-        toast.success('Image uploaded');
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
-      }
-    }
-    e.target.value = null; // reset input so same file can be uploaded again
-  };
-
-  // For CREATE form - just remove from state, no backend call
-  const removeImage = (imgUrl) => {
-    setReviewImages(reviewImages.filter((x) => x !== imgUrl));
-    // Don't call deleteReviewImage here. Image will be orphaned on Cloudinary.
-    // If you want to delete orphans, run a cleanup cron job on backend
-  };
 
 
   const alreadyReviewed = product?.reviews?.find(
@@ -593,24 +653,24 @@ const ProductScreen = ({ isOnline }) => {
 
                 {/* Qty + Add to Cart - V12.8 KEY */}
                 {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0 && (
-                   <div className='flex items-end gap-2 mb-6'> {/* V25.4 KEY: flex row */}
+                  <div className='flex items-end gap-2 mb-6'> {/* V25.4 KEY: flex row */}
                     {/* QTY SELECT */}
-                   <div className='flex flex-col'>
-      <label className='text-xs font-medium text-gray-600 mb-1'>Qty</label> {/* V32.73 KEY */}
-      <select
-        value={qty}
-        onChange={(e) => setQty(Number(e.target.value))}
-        className='w-11 sm:w-18 px-1 py-2.5 border-2 border-gray-300 rounded-lg bg-white font-semibold text-sm text-center h-11'  
-      >
-        {[...Array(Math.min(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 10)).keys()].map(
-          (x) => (
-            <option key={x + 1} value={x + 1}>
-              {x + 1}
-            </option>
-          )
-        )}
-      </select>
-    </div>
+                    <div className='flex flex-col'>
+                      <label className='text-xs font-medium text-gray-600 mb-1'>Qty</label> {/* V32.73 KEY */}
+                      <select
+                        value={qty}
+                        onChange={(e) => setQty(Number(e.target.value))}
+                        className='w-11 sm:w-18 px-1 py-2.5 border-2 border-gray-300 rounded-lg bg-white font-semibold text-sm text-center h-11'
+                      >
+                        {[...Array(Math.min(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0, 10)).keys()].map(
+                          (x) => (
+                            <option key={x + 1} value={x + 1}>
+                              {x + 1}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </div>
 
                     {/* ADD TO CART */}
                     <button
@@ -631,7 +691,7 @@ const ProductScreen = ({ isOnline }) => {
                           selectedPrice={selectedVariant.price}
                           selectedImage={selectedColor.images?.[0]?.url}
                           countInStock={selectedVariant.countInStock}
-                           className='w-11 h-11 border-2 border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-50'
+                          className='w-11 h-11 border-2 border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-50'
                         />
                       ) : (
                         <div className='w-11 h-11 rounded-xl bg-gray-200 animate-pulse' />
@@ -746,7 +806,7 @@ const ProductScreen = ({ isOnline }) => {
                     {userInfo?._id === review.user && (
                       <div className='flex gap-3'>
                         <button
-                          onClick={() => startEdit(review)}
+                          onClick={() => handleEditClick(review)}
                           className='text-blue-600 text-sm hover:underline font-medium'
                         >
                           Edit
@@ -770,10 +830,10 @@ const ProductScreen = ({ isOnline }) => {
                       {review.images.map((img, idx) => (
                         <img
                           key={idx}
-                          src={img}
-                          alt='review'
-                          className='w-24 h-24 object-cover rounded border cursor-pointer hover:opacity-80'
-                          onClick={() => window.open(img, '_blank')}
+                          src={img.url} // V33.21 KEY: .url not the whole object
+                          alt={`Review ${idx + 1}`}
+                          className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 cursor-pointer hover:opacity-80 p-1 flex-shrink-0"
+                          onClick={() => window.open(img.url, '_blank')} // V33.21 KEY: .url
                         />
                       ))}
                     </div>
@@ -1041,40 +1101,40 @@ const ProductScreen = ({ isOnline }) => {
                   </p>
 
                   <label className={`
-          inline-block px-4 py-2 rounded-lg border border-gray-400 bg-white text-sm font-medium text-gray-900
-          hover:bg-gray-50 cursor-pointer shadow-sm
-          ${loadingUpload || reviewImages.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''}
-        `}>
+  inline-block px-4 py-2 rounded-lg border border-gray-400 bg-white text-sm font-medium text-gray-900
+  hover:bg-gray-50 cursor-pointer shadow-sm
+  ${reviewImageFiles.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''} // V33.64 KEY: Files not Upload
+`}>
                     <input
                       type='file'
                       accept='image/*'
                       multiple
                       onChange={uploadFileHandler}
-                      disabled={loadingUpload || reviewImages.length >= 3}
+                      disabled={reviewImageFiles.length >= 3}
                       className='hidden'
                     />
-                    {loadingUpload ? 'Uploading...' : 'Choose files'}
+                    {'Choose files'}
                   </label>
                   <span className='text-xs text-gray-500 ml-3'>
-                    {reviewImages.length}/3 photos / (Optional)
+                    {reviewImageFiles.length}/3 photos / (Optional)
                   </span>
 
                   {/* Image Preview Thumbnails */}
-                  {reviewImages.length > 0 && (
+                  {reviewImagePreviews.length > 0 && (
                     <div className='flex gap-3 mt-4 flex-wrap'>
-                      {reviewImages.map((img, idx) => (
+                      {reviewImagePreviews.map((url, idx) => (
                         <div key={idx} className='relative group'>
                           <img
-                            src={img}
+                            src={url}
                             alt={`Review ${idx + 1}`}
-                            className='w-16 h-16 object-cover rounded border border-gray-300'
+                            className='w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border border-gray-200'
                           />
                           <button
                             type='button'
-                            onClick={() => removeImage(img)}
-                            className='absolute -top-2 -right-2 bg-gray-700 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity'
+                            onClick={() => removeImage(idx)}
+                            className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100'
                           >
-                            ×
+                            ❌
                           </button>
                         </div>
                       ))}
@@ -1106,71 +1166,116 @@ const ProductScreen = ({ isOnline }) => {
 
 
           {/* EDIT REVIEW FORM */}
-          {editingReview && (
-            <div className='bg-white p-6 rounded-lg shadow border-2 border-blue-500'>
-              <h3 className='text-xl font-semibold mb-4'>Edit Your Review</h3>
+          {/* V33.99: EDIT REVIEW MODAL */}
+          {isEditModalOpen && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 backdrop-blur-sm" // V33.99 KEY: darker + blur
+              onClick={cancelEdit}
+            >
+              <div
+                className="bg-white w-full max-w-md rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto relative" // V33.99 KEY: max-w-md + relative
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* V33.99 KEY: Top Close Button */}
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
 
-              <form onSubmit={submitEditHandler}>
-                <div className='mb-4'>
-                  <label className='block mb-2 font-medium'>Rating</label>
-                  <RatingStars rating={editRating} setRating={setEditRating} />
-                  {editRating === 0 && <p className='text-red-500 text-sm mt-1'>Please select a rating</p>}
-                </div>
+                <div className="p-6 pt-10"> {/* V33.99 KEY: pt-10 for X button space */}
+                  <h3 className='text-2xl font-bold mb-5'>Edit Your Review</h3>
 
-                <div className='mb-4'>
-                  <label className='block mb-2 font-medium'>Comment</label>
-                  <textarea
-                    className='w-full p-2 border rounded'
-                    rows='4'
-                    value={editComment} // FIX: use editComment
-                    onChange={(e) => setEditComment(e.target.value)} // FIX: use setEditComment
-                    required
-                  />
-                </div>
-
-                <div className='mb-4'>
-                  <label className='block mb-2 font-medium'>Upload Images (Optional, max 3)</label>
-                  <input
-                    type='file'
-                    multiple
-                    accept='image/*'
-                    onChange={uploadEditImageHandler} // FIX: use uploadEditImageHandler
-                    disabled={loadingUpload}
-                    className='text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700'
-                  />
-                  {loadingUpload && <p className='text-sm text-gray-500 mt-1'>Uploading...</p>}
-
-                  <div className='flex gap-2 mt-3 flex-wrap'>
-                    {editImages.map((img, idx) => ( // FIX: use editImages
-                      <div key={idx} className='relative'>
-                        <img src={img} alt='review' className='w-20 h-20 object-cover rounded border' />
-                        <button
-                          type='button'
-                          onClick={() => removeEditImage(idx)} // FIX: use removeEditImage
-                          className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center'
-                        >
-                          ×
-                        </button>
+                  <form onSubmit={submitEditHandler} className='space-y-5'>
+                    {/* Rating */}
+                    <div>
+                      <label className='block mb-2 font-semibold text-gray-700'>Rating</label>
+                      <div className="flex gap-1.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button type="button" key={star} onClick={() => setEditRating(star)} className="cursor-pointer transition-transform hover:scale-110">
+                            <FaStar
+                              className={`w-8 h-8 ${star <= editRating ? 'text-yellow-400' : 'text-gray-300'}`} // V33.99 KEY: w-8 bigger
+                            />
+                          </button>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      {editRating === 0 && <p className='text-red-500 text-sm mt-1'>Please select a rating</p>}
+                    </div>
 
-                <button
-                  type='submit'
-                  disabled={loadingUpdateReview}
-                  className='bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50'
-                >
-                  {loadingUpdateReview ? 'Updating...' : 'Update Review'}
-                </button>
-                <button
-                  type='button'
-                  onClick={cancelEdit} // FIX: use cancelEdit
-                  className='bg-gray-300 text-gray-800 px-6 py-2 rounded hover:bg-gray-400 ml-2'
-                >
-                  Cancel
-                </button>
-              </form>
+                    {/* Comment */}
+                    <div>
+                      <label className='block mb-2 font-semibold text-gray-700'>Comment</label>
+                      <textarea
+                        className='w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none'
+                        rows='4'
+                        value={editComment}
+                        onChange={(e) => setEditComment(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    {/* Images - Clear + Big */}
+                    <div>
+                      <label className='block mb-2 font-semibold text-gray-700'>Images (max 3)</label>
+                      <div className='flex gap-3 mt-3 flex-wrap'>
+                        {editImages.map((img, idx) => (
+                          <div key={idx} className='relative'>
+                            <img
+                              src={img.url}
+                              alt='review'
+                              //className="w-24 h-24 object-cover rounded-xl border-2 border-gray-200 shadow-sm bg-white"
+                              className='w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border border-gray-200' // V33.99 KEY: w-24 + border-2 + shadow
+                            />
+                            <button
+                              type='button'
+                              onClick={() => removeEditImage(idx)}
+                              className='absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm shadow-md transition' // V33.99 KEY: bigger X
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {editImages.length < 3 && (
+                        <div className='mt-3'>
+                          <input
+                            type='file'
+                            accept='image/*'
+                            multiple
+                            onChange={uploadEditImageHandler}
+                            className='block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer'
+                          />
+                          {loadingUpload && <p className='text-sm text-gray-500 mt-1'>Uploading...</p>}
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">To add images, delete current and add new one</p>
+                    </div>
+
+                    {/* Buttons */}
+                    <div className='flex gap-3 pt-3'>
+                      <button
+                        type='submit'
+                        disabled={loadingUpdateReview}
+                        className='flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 transition'
+                      >
+                        {loadingUpdateReview ? 'Updating...' : 'Update Review'}
+                      </button>
+                      <button
+                        type='button'
+                        onClick={cancelEdit}
+                        className='px-6 bg-gray-100 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-200 transition'
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
             </div>
           )}
 

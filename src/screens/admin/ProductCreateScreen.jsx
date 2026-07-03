@@ -36,27 +36,33 @@ const ProductCreateScreen = () => {
   const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: item.colors.map((c, ci) => ci === cIndex? {...c, [field]: value} : c)} : item));
 
   const uploadFileHandler = async (vIndex, cIndex, e) => {
-    const key = `v${vIndex}-c${cIndex}`;
-    setUploadingMap(prev => ({...prev, [key]: true}));
-    const files = Array.from(e.target.files);
-    if (!files.length) { setUploadingMap(prev => ({...prev, [key]: false})); return; }
-    const uploaded = [];
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append('image', file);
-      try { 
-        const { url, public_id } = await uploadProductImage(formData).unwrap(); 
-        uploaded.push({ url, imagePublicId: public_id });
-      } 
-      catch (err) { toast.error(err?.data?.message || err.error); }
-    }
-    if(uploaded.length){
-      setVariants(prev => prev.map((v, i) => i === vIndex? {...v, colors: v.colors.map((c, j) => j === cIndex? {...c, images: [...c.images,...uploaded], imagePublicIds: [...c.imagePublicIds,...uploaded.map(u => u.imagePublicId)]} : c)} : v));
-      toast.success(`${uploaded.length} Image(s) added`);
-    }
-    setUploadingMap(prev => ({...prev, [key]: false}));
-    e.target.value = '';
-  };
+  const key = `v${vIndex}-c${cIndex}`;
+  setUploadingMap(prev => ({...prev, [key]: true}));
+  const files = Array.from(e.target.files);
+  if (!files.length) { setUploadingMap(prev => ({...prev, [key]: false})); return; }
+  
+  // V33.04 KEY: 1 API call for all files
+  const formData = new FormData();
+  files.forEach(file => formData.append('images', file)); // V33.04 KEY: 'images' plural
+
+  try {
+    const data = await uploadProductImage(formData).unwrap(); // V33.04 Returns []
+    const uploaded = Array.isArray(data)? data : [data]; // V33.04 Safety
+
+    setVariants(prev => prev.map((v, i) => i === vIndex? {
+     ...v, colors: v.colors.map((c, j) => j === cIndex? {
+       ...c, 
+        images: [...c.images,...uploaded.map(u => ({url: u.url, imagePublicId: u.public_id}))], // V33.04 KEY
+        imagePublicIds: [...c.imagePublicIds,...uploaded.map(u => u.public_id)] // V33.04 KEY
+      } : c)
+    } : v));
+    toast.success(`${uploaded.length} Image(s) added`);
+  } catch (err) { 
+    toast.error(err?.data?.message || err.error); 
+  }
+  setUploadingMap(prev => ({...prev, [key]: false}));
+  e.target.value = '';
+};
 
   const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
   const color = variants[vIndex]?.colors[cIndex]; // V31.93 No crash
@@ -226,7 +232,8 @@ const onDragEnd = (result, vIndex, cIndex) => {
                         <span>
                           {uploadingMap[`v${vIndex}-c${cIndex}`]? 'Uploading...' : 'Select Images'}
                         </span>
-                        <input type='file' multiple accept="image/*" onChange={(e) => uploadFileHandler(vIndex, cIndex, e)} className='hidden' disabled={uploadingMap[`v${vIndex}-c${cIndex}`]}/>
+                        <input type='file' multiple accept="image/*" onChange={(e) => uploadFileHandler(vIndex, cIndex, e)} 
+                        className='hidden' disabled={uploadingMap[`v${vIndex}-c${cIndex}`]}/>
                     </label>
                   </div>
                   {uploadingMap[`v${vIndex}-c${cIndex}`] && <div className='text-blue-600 text-sm mb-2 animate-pulse'>Uploading to Cloudinary...</div>}
