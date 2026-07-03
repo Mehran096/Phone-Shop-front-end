@@ -23,8 +23,8 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
 
   const { userInfo } = useSelector((state) => state.auth);
 
-  const { data, isLoading, error, refetch } = useGetProductReviewsQuery({
-    productId,
+  const { data, isLoading, error, refetch } = useGetProductReviewsQuery(productId, {
+    skip: !productId,
     //page,
     limit: 500,
     // color: colorFilter === 'All'? '' : colorFilter,
@@ -115,6 +115,8 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
     }
   };
 
+  const arrowSvg = `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`;
+
   if (!productId) return null;
 
   return (
@@ -143,7 +145,8 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                 setColorFilter(e.target.value);
                 setPage(1);
               }}
-              className="border rounded px-2 sm:px-3 py-1.5 text-sm flex-1 md:flex-none"
+               style={{ backgroundImage: arrowSvg }}
+              className="border rounded-lg px-4 py-3 pr-10 text-base min-h-[48px] w-full md:w-auto md:min-w-[160px] appearance-none bg-white bg-no-repeat bg-[center_right_1rem]"
             >
               <option value="All">All Colors</option>
               {colors.map((c) => (
@@ -157,7 +160,8 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                 setSort(e.target.value);
                 setPage(1);
               }}
-              className="border rounded px-2 sm:px-3 py-1.5 text-sm flex-1 md:flex-none"
+              style={{ backgroundImage: arrowSvg }}
+              className="border rounded-lg px-4 py-3 pr-10 text-base min-h-[48px] w-full md:w-auto md:min-w-[160px] appearance-none bg-white bg-no-repeat bg-[center_right_1rem]"
             >
               <option value="newest">Newest First</option>
               <option value="helpful">Most Helpful</option>
@@ -199,9 +203,9 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                           {review.images.map((img, idx) => (
                             <img
                               key={idx}
-                              src={img}
+                              src={img.url}
                               alt={`review-${idx}`}
-                              className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded"
+                              className='w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border border-gray-200'
                             />
                           ))}
                         </div>

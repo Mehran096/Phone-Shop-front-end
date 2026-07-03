@@ -984,9 +984,9 @@ const ProductScreen = ({ isOnline }) => {
               </button>
             )}
 
-            {showAllReviews && (
+            {showAllReviews && product && (
               <ReviewsModal
-                productId={product._id}  // <-- Change this line
+                productId={product?._id}  // <-- Change this line
                 product={product}
                 onClose={() => setShowAllReviews(false)}
               />
