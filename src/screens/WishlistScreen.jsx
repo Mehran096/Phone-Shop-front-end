@@ -75,12 +75,12 @@ const CustomDropdown = ({ value, onChange, options }) => {
   }, []);
 
   return (
-    <div ref={ref} className="relative w-16 border">
+    <div ref={ref} className="relative w-16">
       <button
         type="button"
         disabled={options.length === 0}
         onClick={() => setOpen(!open)}
-        className='flex items-center justify-between gap-1 px-2 h-8 w-full border-gray-300 rounded-md bg-white shadow-sm font-medium text-xs text-gray-900'
+        className='flex items-center justify-between border rounded-lg gap-1 px-2 h-8 w-full border-gray-300 rounded-md bg-white shadow-sm font-medium text-xs text-gray-900'
       >
         <span>{value}</span>
         <FaChevronDown className={`text-gray-500 transition-transform text-[10px] ${open? 'rotate-180' : ''}`} />

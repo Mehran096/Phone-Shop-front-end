@@ -102,20 +102,26 @@ const stockToSend = countInStock?? variantToSend?.colors?.find(c => c.name === c
     }
   }
 
-  return (
-    <button
-      type='button'
-      onClick={wishlistHandler}
-      className={`flex items-center justify-center ${className}`} /* V32.77 KEY: Use parent className */
-      title={isWishlisted? 'Remove from Wishlist' : 'Add to Wishlist'}
-    >
-      {isWishlisted? (
-        <FaHeart className="text-red-500 text-lg" />
-      ) : (
-        <FaRegHeart className="text-gray-600 text-lg" />
-      )}
-    </button>
-  )
+ return (
+  <button
+    type='button'
+    onClick={wishlistHandler}
+    className='w-full h-12 flex items-center border justify-center gap-2 border-gray-300 rounded-lg bg-white hover:bg-gray-50 hover:border-gray-400 transition'
+    title={isWishlisted? 'Remove from Wishlist' : 'Add to Wishlist'}
+  >
+    {isWishlisted? (
+      <>
+        <FaHeart className="text-red-500 text-xl" />
+        <span className="lg:hidden font-semibold text-gray-900 text-base">Remove from Wishlist</span>
+      </>
+    ) : (
+      <>
+        <FaRegHeart className="text-gray-700 text-xl" />
+        <span className="lg:hidden font-semibold text-gray-900 text-base">Add to Wishlist</span>
+      </>
+    )}
+  </button>
+)
 }
 
 export default WishlistButton

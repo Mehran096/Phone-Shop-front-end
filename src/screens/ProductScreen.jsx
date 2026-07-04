@@ -6,7 +6,7 @@ import ReviewsModal from '../components/ReviewsModal';
 import OfflineMessage from '../components/OfflineMessage'
 
 import { useSelector, useDispatch } from 'react-redux'
-import { FaThumbsUp } from 'react-icons/fa';
+ 
 import {
   useGetProductDetailsQuery,
   useGetProductBySlugQuery,
@@ -24,7 +24,16 @@ import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
 import Rating from '../components/Rating'
-import { FaEdit, FaCheck, FaTrash, FaShoppingCart, FaStar, FaChevronDown } from 'react-icons/fa'
+import { FaEdit, 
+  FaCheck,
+   FaTrash,
+    FaShoppingCart,
+     FaStar,
+      FaChevronDown,
+       FaThumbsUp,
+        FaHeart,
+        FaMemory, FaHdd, FaMobileAlt, FaCamera, FaBatteryFull, FaMicrochip, 
+      } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
@@ -470,7 +479,7 @@ const ProductScreen = ({ isOnline }) => {
   }
 
 //drop down for qty / mobile screen
- const CustomDropdown = ({ value, onChange, options, label, size = 'md' }) => {
+const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -480,40 +489,43 @@ const ProductScreen = ({ isOnline }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const sizeClasses = size === 'sm' 
- ? 'px-3.5 h- min-w- border border-gray-300 rounded-lg bg-white shadow-sm hover:border-gray-400'
-    : 'px-4 py-3 text-base md:min-w-[160px] border border-gray-300 rounded-lg bg-white';
+  const sizeClasses = size === 'sm'
+   ? 'px-3 py-2 h-11 text-sm min-w-'
+    : 'px-4 py-2.5 h-12 text-base min-w-[100px]';
 
   return (
-    <div ref={ref} className="relative w-auto">
+    <div ref={ref} className="relative w-full">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center justify-between gap-2 font-semibold text-gray-900 transition ${sizeClasses}`}
+        className={`w-full flex items-center justify-between gap-2 border font-semibold text-gray-900 bg-white border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ${sizeClasses}`}
       >
         <span>{value}</span>
-        <FaChevronDown size={size === 'sm'? 16 : 18} className={`text-gray-500 transition-transform ${open? 'rotate-180' : ''}`} />
+        <FaChevronDown size={size === 'sm'? 14 : 16} className={`text-gray-500 transition-transform duration-200 ${open? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute top-full mt-1.5 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto 
-          [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => { onChange(opt); setOpen(false); }}
-              className={`w-full text-left px-3.5 py-2 text-sm font-medium text-gray-900 hover:bg-blue-50 ${Number(value) === Number(opt)? 'bg-blue-50 text-blue-600' : ''}`}
-            >
-              {opt}
-            </button>
-          ))}
+        <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden">
+          <div className="max-h-[240px] overflow-y-auto scrollbar-hide">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 text-sm transition ${Number(value) === Number(opt)? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-900 hover:bg-blue-50 hover:text-blue-600'}`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
 };
-
 
 
 
@@ -700,92 +712,128 @@ const ProductScreen = ({ isOnline }) => {
 
                 {/* Qty + Add to Cart - V12.8 KEY */}
             
-{(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0) > 0 && (
-  <div className='flex items-end gap-3 mb-6'> 
-    
-    {/* QTY SELECT - V34.30 KEY: CustomDropdown */}
-    <div className='flex flex-col'>
-      <label className='text-sm font-semibold text-gray-700 mb-1.5'>Qty</label>
-      <CustomDropdown
-        size="sm"
-        value={qty}
-        onChange={(val) => setQty(Number(val))}
-        options={Array.from(
-          { length: Math.min(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, 10) }, 
-          (_, i) => i + 1
-        )}
-        label="1"
-      />
-    </div>
+{(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0) > 0? (
+        <div className='mt-6 pt-6 border-t border-gray-200'>
+          <div className='flex flex-col lg:flex-row lg:items-end gap-3'>
+            
+            {/* QTY - AMAZON STYLE 1-5 MAX */}
+            <div className='w-full lg:w-24'>
+              <label className='block text-sm font-semibold text-gray-900 mb-1.5'>Qty:</label>
+              <CustomDropdown 
+                size="sm"
+                value={String(qty)}
+                onChange={(val) => setQty(Number(val))}
+                options={Array.from({ length: Math.min(selectedColor?.countInStock?? 5, 5) }, (_, i) => String(i + 1))}
+              />
+            </div>
 
-    {/* ADD TO CART */}
-    <button
-      onClick={addToCartHandler}
-      className='flex-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 h-'
-    >
-      <FaShoppingCart size={18} /> Add to Cart
-    </button>
+            {/* ADD TO CART */}
+            <button 
+              onClick={addToCartHandler}
+              className='w-full lg:flex-1 bg-[#FFD814] hover:bg-[#F7CA00] border-[#FCD200] text-[#111] font-semibold h-12 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all'
+            >
+              <FaShoppingCart size={18} /> Add to Cart
+            </button>
 
-    {/* WISHLIST BUTTON */}
-    <div className='flex-shrink-0'>
-      {!isLoading && product?.variants?.length > 0 && selectedVariant && selectedColor? (
-        <WishlistButton
-          product={product}
-          selectedColor={selectedColor}
-          selectedStorage={selectedVariant}
-          selectedPrice={selectedVariant.price}
-          selectedImage={selectedColor.images?.[0]?.url}
-          countInStock={selectedVariant.countInStock}
-          className='w- h- border-2 border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-50'  
-        />
+            {/* WISHLIST - WRAPPED IN DIV */}
+            <div className='w-full lg:w-12 h-12 flex-shrink-0'>
+              <WishlistButton
+                product={product}
+                selectedColor={selectedColor}
+                selectedStorage={selectedVariant?.storage}
+                selectedPrice={selectedVariant?.price}
+                selectedImage={selectedColor?.images?.[0]?.url}
+                countInStock={selectedVariant?.countInStock}
+              />
+            </div>
+
+          </div>
+        </div>
       ) : (
-        <div className='w- h- rounded-xl bg-gray-200 animate-pulse' />
+        <div className='mt-6 pt-6 border-t border-gray-200'>
+          <button 
+            disabled
+            className='w-full bg-gray-200 text-gray-500 font-semibold h-12 px-6 rounded-lg cursor-not-allowed'
+          >
+            Currently Unavailable
+          </button>
+        </div>
       )}
-    </div>
-  </div>
-)}
               </div>
             </div>
 
             {/* Specifications Box - Full Width Below Grid V12.9 */}
-            {(() => {
-              const specs = { ...product.specs, ...selectedVariant.specs, ...selectedColor.specs }; // V12.9 KEY: Color > Variant > Product
+{(() => {
+  const specs = { ...product.specs, ...selectedVariant.specs, ...selectedColor.specs }; // V12.9 KEY: Color > Variant > Product
 
-              return Object.values(specs).some(v => v) ? (
-                <div className='grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4'>
-                  {specs.storage && (
-                    <div>
-                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Storage</div>
-                      <div className='font-semibold text-gray-900 mt-0.5'>{specs.storage}</div>
-                    </div>
-                  )}
-                  {specs.ram && (
-                    <div>
-                      <div className='text-xs text-gray-500 uppercase tracking-wide'>RAM</div>
-                      <div className='font-semibold text-gray-900 mt-0.5'>{specs.ram}</div>
-                    </div>
-                  )}
-                  {specs.display && (
-                    <div>
-                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Display</div>
-                      <div className='font-semibold text-gray-900 mt-0.5'>{specs.display}</div>
-                    </div>
-                  )}
-                  {specs.camera && (
-                    <div>
-                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Camera</div>
-                      <div className='font-semibold text-gray-900 mt-0.5'>{specs.camera}</div>
-                    </div>
-                  )}
-                  {specs.battery && (
-                    <div>
-                      <div className='text-xs text-gray-500 uppercase tracking-wide'>Battery</div>
-                      <div className='font-semibold text-gray-900 mt-0.5'>{specs.battery}</div>
-                    </div>
-                  )}
-                </div>
-              ) : null;
-            })()}
+  return Object.values(specs).some(v => v) ? (
+    <div className='mt-6 pt-6 border-t border-gray-200'>
+      <div className='grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-6'>
+        
+        {/* {specs.storage && (
+          <div className='flex flex-col items-start gap-2'>
+            <FaHdd className='text-gray-500 text-xl' />
+            <div>
+              <div className='text-xs text-gray-500 uppercase tracking-wide'>Storage</div>
+              <div className='font-semibold text-gray-900 mt-0.5'>{specs.storage}</div>
+            </div>
+          </div>
+        )} */}
+        
+        {specs.ram && (
+          <div className='flex flex-col items-start gap-2'>
+            <FaMemory className='text-gray-500 text-xl' />
+            <div>
+              <div className='text-xs text-gray-500 uppercase tracking-wide'>RAM</div>
+              <div className='font-semibold text-gray-900 mt-0.5'>{specs.ram}</div>
+            </div>
+          </div>
+        )}
+        
+        {specs.display && (
+          <div className='flex flex-col items-start gap-2'>
+            <FaMobileAlt className='text-gray-500 text-xl' />
+            <div>
+              <div className='text-xs text-gray-500 uppercase tracking-wide'>Display</div>
+              <div className='font-semibold text-gray-900 mt-0.5'>{specs.display}</div>
+            </div>
+          </div>
+        )}
+        
+        {specs.camera && (
+          <div className='flex flex-col items-start gap-2'>
+            <FaCamera className='text-gray-500 text-xl' />
+            <div>
+              <div className='text-xs text-gray-500 uppercase tracking-wide'>Camera</div>
+              <div className='font-semibold text-gray-900 mt-0.5'>{specs.camera}</div>
+            </div>
+          </div>
+        )}
+
+        {specs.battery && (
+          <div className='flex flex-col items-start gap-2'>
+            <FaBatteryFull className='text-gray-500 text-xl' />
+            <div>
+              <div className='text-xs text-gray-500 uppercase tracking-wide'>Battery</div>
+              <div className='font-semibold text-gray-900 mt-0.5'>{specs.battery}</div>
+            </div>
+          </div>
+        )}
+
+        {/* {specs.processor && (
+          <div className='flex flex-col items-start gap-2'>
+            <FaMicrochip className='text-gray-500 text-xl' />
+            <div>
+              <div className='text-xs text-gray-500 uppercase tracking-wide'>Chip</div>
+              <div className='font-semibold text-gray-900 mt-0.5'>{specs.processor}</div>
+            </div>
+          </div>
+        )} */}
+
+      </div>
+    </div>
+  ) : null;
+})()}
 
 
             {/* Description - Full Width V13.4 */}
