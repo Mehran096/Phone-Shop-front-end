@@ -1,16 +1,18 @@
-import React, { useEffect } from 'react'
-import { Helmet } from 'react-helmet-async'; 
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'
+import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { listMyOrders } from '../slices/orderSlice'
-import { FaTimes } from 'react-icons/fa'
+import Loader from '../components/Loader'
+import Message from '../components/Message'
+import { FaBox } from 'react-icons/fa'
 
 const MyOrdersScreen = () => {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
-  const { userInfo } = useSelector((state) => state.auth) // ← Changed from state.userLogin
-  const { myOrders, loading, error } = useSelector((state) => state.order)
+  const { userInfo } = useSelector((state) => state.auth)
+  const { myOrders, loading: loadingOrders, error: errorOrders } = useSelector((state) => state.order)
 
   useEffect(() => {
     if (!userInfo) {
@@ -22,83 +24,79 @@ const MyOrdersScreen = () => {
 
   return (
     <>
-     {/* seo start */}
-       <Helmet>
-            <title>MyOrder | Phone-Store</title>
-            <meta name="robots" content="noindex, nofollow" />
-        </Helmet>
-      {/* seo end*/}
-    <div className='container mx-auto px-4 py-8'>
-      <h1 className='text-3xl font-bold mb-6 text-gray-800'>My Orders</h1>
-      
-      {loading ? (
-        <div className='flex justify-center items-center h-64'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900'></div>
+      <Helmet><title>My Orders | Phone-Store</title></Helmet>
+      <div className='container mx-auto px-4 py-6 md:py-8'>
+        {/* Center everything like Settings */}
+        <div className='flex justify-center'>
+          <div className='w-full max-w-4xl'>
+            <h1 className='text-2xl md:text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2'>
+              <FaBox className='text-blue-600' /> My Orders
+            </h1>
+
+            <div className='bg-white p-4 md:p-6 rounded-lg shadow-md'>
+              {loadingOrders ? (
+                <Loader />
+              ) : errorOrders ? (
+                <Message variant='danger'>{errorOrders}</Message>
+              ) : myOrders?.length === 0 ? (
+                <div className='text-center py-8'>
+                  <p className='text-gray-500 mb-4'>You haven't placed any orders yet</p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className='hidden md:block overflow-x-auto'>
+                    <table className='w-full'>
+                      <thead><tr className='border-b'>
+                        <th className='text-left pb-2'>ORDER ID</th>
+                        <th className='text-left pb-2'>DATE</th>
+                        <th className='text-left pb-2'>TOTAL</th>
+                        <th className='text-left pb-2'>STATUS</th>
+                        <th></th>
+                      </tr></thead>
+                      <tbody>{myOrders.map((order, index) => (
+                        <tr key={order._id} className='border-b'>
+                          <td className='py-3'>#{1001 + index}</td>
+                          <td className='py-3'>{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                          <td className='py-3'>${order.totalPrice.toFixed(2)}</td>
+                          <td className='py-3'>
+                            {order.isDelivered ? <span className='bg-green-100 text-green-800 px-2.5 py-1 rounded-full text-xs font-medium'>Delivered</span> :
+                             order.isPaid ? <span className='bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs font-medium'>Shipped</span> :
+                             <span className='bg-yellow-100 text-yellow-800 px-2.5 py-1 rounded-full text-xs font-medium'>Processing</span>}
+                          </td>
+                          <td className='py-3'><button className='text-blue-600 hover:text-blue-800 text-sm font-medium' onClick={() => navigate(`/order/${order._id}`)}>View Details</button></td>
+                        </tr>
+                      ))}</tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className='md:hidden space-y-3'>
+                    {myOrders.map((order, index) => (
+                      <div key={order._id} className='border border-gray-200 rounded-lg p-4'>
+                        <div className='flex justify-between mb-2'>
+                          <p className='font-semibold text-sm'>#{1001 + index}</p>
+                          <p className='text-xs text-gray-500'>{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                        </div>
+                        <div className='mb-3'>
+                          {order.isDelivered ? <span className='bg-green-100 text-green-800 px-2.5 py-1 rounded-full text-xs font-medium'>Delivered</span> :
+                           order.isPaid ? <span className='bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs font-medium'>Shipped</span> :
+                           <span className='bg-yellow-100 text-yellow-800 px-2.5 py-1 rounded-full text-xs font-medium'>Processing</span>}
+                        </div>
+                        <div className='flex justify-between items-center pt-3 border-t'>
+                          <p className='font-bold text-lg'>${order.totalPrice.toFixed(2)}</p>
+                          <button className='text-blue-600 text-sm font-medium' onClick={() => navigate(`/order/${order._id}`)}>View Details →</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      ) : error ? (
-        <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded'>
-          {error}
-        </div>
-      ) : myOrders.length === 0 ? (
-        <div className='bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded'>
-          You have no orders yet
-        </div>
-      ) : (
-        <div className='overflow-x-auto shadow-md rounded-lg'>
-          <table className='w-full text-sm text-left text-gray-500'>
-            <thead className='text-xs text-gray-700 uppercase bg-gray-50'>
-              <tr>
-                <th scope='col' className='px-6 py-3'>ID</th>
-                <th scope='col' className='px-6 py-3'>DATE</th>
-                <th scope='col' className='px-6 py-3'>TOTAL</th>
-                <th scope='col' className='px-6 py-3'>PAID</th>
-                <th scope='col' className='px-6 py-3'>DELIVERED</th>
-                <th scope='col' className='px-6 py-3'></th>
-              </tr>
-            </thead>
-            <tbody>
-              {myOrders.map((order) => (
-                <tr key={order._id} className='bg-white border-b hover:bg-gray-50'>
-                  <td className='px-6 py-4 font-medium text-gray-900'>
-                    {order._id.substring(0, 8)}...
-                  </td>
-                  <td className='px-6 py-4'>
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className='px-6 py-4'>${order.totalPrice}</td>
-                  <td className='px-6 py-4'>
-                    {order.isPaid ? (
-                      <span className='text-green-600 font-medium'>
-                        {new Date(order.paidAt).toLocaleDateString()}
-                      </span>
-                    ) : (
-                      <FaTimes className='text-red-600' />
-                    )}
-                  </td>
-                  <td className='px-6 py-4'>
-                    {order.isDelivered ? (
-                      <span className='text-green-600 font-medium'>
-                        {new Date(order.deliveredAt).toLocaleDateString()}
-                      </span>
-                    ) : (
-                      <FaTimes className='text-red-600' />
-                    )}
-                  </td>
-                  <td className='px-6 py-4'>
-                    <Link to={`/order/${order._id}`}>
-                      <button className='font-medium text-blue-600 hover:underline'>
-                        Details
-                      </button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-</>
+      </div>
+    </>
   )
 }
 

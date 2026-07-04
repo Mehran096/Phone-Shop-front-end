@@ -12,7 +12,7 @@ import PlaceOrderScreen from './screens/PlaceOrderScreen';
 import OrderScreen from './screens/OrderScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
-import ProfileScreen from './screens/ProfileScreen';
+import MyOrdersScreen from './screens/MyOrdersScreen';
 import AdminDashboard from './screens/admin/AdminDashboard'
 import AdminRoute from './components/AdminRoute'
 import OrderListScreen from './screens/admin/OrderListScreen';
@@ -20,7 +20,7 @@ import ProductListScreen from './screens/admin/ProductListScreen';
 import ProductEditScreen from './screens/admin/ProductEditScreen';
 import UserListScreen from './screens/admin/UserListScreen';
 import UserEditScreen from './screens/admin/UserEditScreen';
-import MyOrdersScreen from './screens/MyOrdersScreen'
+// import MyOrdersScreen from './screens/MyOrdersScree'
 import ProductCreateScreen from './screens/admin/ProductCreateScreen'
 import AllProductsScreen from './screens/AllProductsScreen'
 import FAQScreen from './screens/FAQScreen'
@@ -31,6 +31,7 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import WishlistScreen from './screens/WishlistScreen'
 import ShippingPolicyScreen from './screens/ShippingPolicyScreen';
+import MyAccountScreen from './screens/MyAccountScreen';
 
 
 import { FaExclamationTriangle } from 'react-icons/fa'
@@ -138,8 +139,9 @@ const dispatch = useDispatch()
             <Route path="/order/:id" element={<OrderScreen />} />
             <Route path="/register" element={<RegisterScreen />} />
             <Route path="/login" element={<LoginScreen />} />
-            <Route path="/profile" element={<ProfileScreen />} />
-            <Route path='/myorders' element={<MyOrdersScreen />} />
+            <Route path="/myorders" element={<MyOrdersScreen />} />
+            <Route path="/my-account" element={<MyAccountScreen />} />
+            {/* <Route path='/myorders' element={<MyOrdersScreen />} /> */}
             <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
             <Route path="/reset-password/:token" element={<ResetPasswordScreen />} />
             <Route path="/wishlist" element={<WishlistScreen />} />

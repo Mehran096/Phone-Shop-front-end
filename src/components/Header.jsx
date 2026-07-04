@@ -3,11 +3,12 @@ import { Link, useNavigate, useSearchParams, useLocation, } from 'react-router-d
 import { useDispatch, useSelector } from 'react-redux'
 
 import { logout } from '../slices/authSlice'
-import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaHeart } from 'react-icons/fa'
+import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaHeart, FaBox, FaOutdent, } from 'react-icons/fa'
 import { clearCartItems } from '../slices/cartSlice'
 import { getWishlist, resetWishlist } from '../slices/wishlistSlice'
 import SearchBox from './SearchBox'
 import { FaWifi } from 'react-icons/fa'
+import CollapsibleMenu from './CollapsibleMenu'; 
 import api from '../utils/axios'
  
 
@@ -180,12 +181,21 @@ const Header = ({ isOnline }) => {
 
                 <div className='absolute right-0 mt-0 w-48 bg-white text-gray-900 rounded-sm shadow-lg py-1 z-50 invisible 
                 group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-100'>
+
                   <Link
-                    to='/profile'
+                    to='/my-account'
                     className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600'
                   >
-                    Profile
+                    My Account
                   </Link>
+
+                  <Link
+                    to='/myorders'
+                    className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                  >
+                    My Orders
+                  </Link>
+                  
 
                   <button
                     onClick={logoutHandler}
@@ -323,17 +333,26 @@ const Header = ({ isOnline }) => {
             {userInfo ? (
               <div className='border-t border-gray-700 pt-4 mt-2'>
                 <Link
-                  to='/profile'
+                  to='/my-account'
                   className='flex items-center gap-2 py-2 hover:text-blue-400'
                   onClick={closeMobileMenu}
                 >
                   <FaUser />
-                  Profile
+                  My Account
+                </Link>
+                <Link
+                  to='/myOrders'
+                  className='flex items-center gap-2 py-2 hover:text-blue-400'
+                  onClick={closeMobileMenu}
+                >
+                  <FaBox />
+                  My Orders
                 </Link>
                 <button
                   onClick={() => { logoutHandler(); closeMobileMenu() }}
                   className='flex items-center gap-2 py-2 hover:text-blue-400'
                 >
+                  <FaOutdent />
                   Logout
                 </button>
               </div>
