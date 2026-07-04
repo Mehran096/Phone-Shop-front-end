@@ -108,25 +108,27 @@ const getFlagEmoji = (countryCode) => { // V34.50 KEY
   placeholder="Phone Number"
   className="w-full border-0 outline-none bg-transparent text-gray-900"
   countrySelectComponent={({ value, onChange, options }) => (
-    <div className="relative flex items-center pr-2">
-      <select 
-  value={value}
-  onChange={e => onChange(e.target.value)}
-  className="appearance-none opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
->
-  {options.map((opt, idx) => ( // V34.55 KEY: added idx fallback
-    <option key={opt.value || `country-${idx}`} value={opt.value}>
-      {opt.label}
-    </option>
-  ))}
-</select>
-      
-      <div className="flex items-center gap-1">
-        <span className="text-xl">{getFlagEmoji(value)}</span>
-        <span className="text-gray-500 text-xs">▼</span>
-      </div>
+  <div className="relative flex items-center pr-2">
+    {/* V34.58 KEY: Tiny 1px select that IS clickable but invisible */}
+    <select 
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="appearance-none opacity-0 absolute left-0 top-0 w-1 h-full cursor-pointer z-20"
+    >
+      {options.map((opt, idx) => (
+        <option key={opt.value || `country-${idx}`} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+    
+    {/* V34.58 KEY: This is what user sees and clicks */}
+    <div className="flex items-center gap-1 cursor-pointer">
+      <span className="text-xl">{getFlagEmoji(value)}</span>
+      <span className="text-gray-500 text-xs">▼</span>
     </div>
-  )}
+  </div>
+)}
 />
   </div>
   
