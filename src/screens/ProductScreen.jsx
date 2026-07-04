@@ -24,11 +24,11 @@ import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
 import Rating from '../components/Rating'
-import { FaEdit, FaCheck, FaTrash, FaShoppingCart, FaStar } from 'react-icons/fa'
+import { FaEdit, FaCheck, FaTrash, FaShoppingCart, FaStar, FaChevronDown } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
-import { ChevronDown } from 'lucide-react';
+ 
 
 
 
@@ -491,7 +491,7 @@ const ProductScreen = ({ isOnline }) => {
         className={`flex items-center justify-between gap-2 font-semibold text-gray-900 transition ${sizeClasses}`}
       >
         <span>{value}</span>
-        <ChevronDown size={size === 'sm'? 16 : 18} className={`text-gray-500 transition-transform ${open? 'rotate-180' : ''}`} />
+        <FaChevronDown size={size === 'sm'? 16 : 18} className={`text-gray-500 transition-transform ${open? 'rotate-180' : ''}`} />
       </button>
 
       {open && (

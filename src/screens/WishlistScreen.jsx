@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'; 
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { FaTrash, FaHeart, FaShoppingCart } from 'react-icons/fa'
+import { FaTrash, FaHeart, FaShoppingCart, FaChevronDown} from 'react-icons/fa'
 import Message from '../components/Message'
 import Loader from '../components/Loader'
 import { getWishlist, removeFromWishlist, updateWishlistQty } from '../slices/wishlistSlice'
@@ -61,6 +61,49 @@ const WishlistScreen = () => {
     })
     toast.success('All items moved to cart')
   }
+
+  //qty drop down
+  // V34.38 KEY: Reusable Dropdown - Works Mobile + Desktop
+const CustomDropdown = ({ value, onChange, options }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => ref.current &&!ref.current.contains(e.target) && setOpen(false);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-16 border">
+      <button
+        type="button"
+        disabled={options.length === 0}
+        onClick={() => setOpen(!open)}
+        className='flex items-center justify-between gap-1 px-2 h-8 w-full border-gray-300 rounded-md bg-white shadow-sm font-medium text-xs text-gray-900'
+      >
+        <span>{value}</span>
+        <FaChevronDown className={`text-gray-500 transition-transform text-[10px] ${open? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto 
+          [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { onChange(opt); setOpen(false); }}
+              className={`w-full text-left px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-blue-50 ${Number(value) === Number(opt)? 'bg-blue-50 text-blue-600' : ''}`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
   return (
     <>
@@ -140,25 +183,16 @@ const WishlistScreen = () => {
                 </p>
 
                 {/* Add this qty selector */}
-                <div className="mb-2 sm:mb-4">
-                  <label className="text-xs sm:text-sm text-gray-600 mr-2">Qty:</label>
-                  <select
-                    value={item.qty}
-                    onChange={(e) => 
-                      dispatch(updateWishlistQty({ id: item._id, qty: Number(e.target.value) }))
-                    }
-                    className="border border-gray-300 rounded px-2 py-1 text-sm"
-                  >
-                    {[...Array(item.countInStock).keys()].map((x) => (
-                      <option key={x + 1} value={x + 1}>
-                        {x + 1}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-xs text-gray-500 ml-2">
-                    ({item.countInStock} in stock)
-                  </span>
-                </div>
+                {/* QTY ROW - V34.39 KEY */}
+<div className="flex items-center gap-2 mb-2 sm:mb-4">
+  <label className="text-xs sm:text-sm text-gray-600">Qty:</label>
+  <CustomDropdown
+    value={item.qty}
+    onChange={(val) => dispatch(updateWishlistQty({ id: item._id, qty: Number(val) }))}
+    options={Array.from({ length: Math.min(item.countInStock, 10) }, (_, i) => i + 1)}
+  />
+  <span className="text-xs text-gray-500">({item.countInStock} in stock)</span>
+</div>
                 
                 <div className="flex gap-1 sm:gap-2">
                   <button

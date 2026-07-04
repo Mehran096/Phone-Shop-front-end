@@ -1,8 +1,9 @@
+import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Helmet } from 'react-helmet-async';
 import { removeFromCart, updateCartQty } from '../slices/cartSlice';
 import { Link } from 'react-router-dom';
-import { FaShoppingCart } from 'react-icons/fa';
+import { FaShoppingCart, FaChevronDown, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -23,9 +24,9 @@ function CartScreen() {
 
   const removeFromCartHandler = (item) => {
     dispatch(removeFromCart({
-      product: item.product, 
+      product: item.product,
       color: item.color,
-      storage: item.storage, 
+      storage: item.storage,
     }));
   };
 
@@ -33,13 +34,56 @@ function CartScreen() {
     dispatch(updateCartQty({
       product: item.product,
       color: item.color,
-      storage: item.storage, 
+      storage: item.storage,
       qty: Number(qty),
     }));
   };
 
   const cartSubtotal = cartItems?.reduce((acc, item) => acc + item.qty * Number(item.price || 0), 0);
   const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
+
+  //drop down qty 
+  // V34.37 KEY: Reusable Dropdown - Works Mobile + Desktop
+const CustomDropdown = ({ value, onChange, options }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => ref.current &&!ref.current.contains(e.target) && setOpen(false);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-20 border"> 
+      <button
+        type="button"
+        disabled={options.length === 0}
+        onClick={() => setOpen(!open)}
+        className='flex items-center justify-between gap-1 px-3 h-10 w-full border-gray-300 rounded-md bg-white shadow-sm font-medium text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed'
+      >
+        <span>{value}</span>
+        <FaChevronDown className={`text-gray-500 transition-transform text-xs ${open? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto 
+          [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { onChange(opt); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm font-medium text-gray-900 hover:bg-blue-50 ${Number(value) === Number(opt)? 'bg-blue-50 text-blue-600' : ''}`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
   return (
     <>
@@ -49,7 +93,7 @@ function CartScreen() {
       </Helmet>
 
       <div className="max-w-7xl mx-auto px-4 py-6 min-h-screen bg-gray-50">
-       <h1 className="text-xl lg:text-3xl font-bold mb-4 lg:mb-6 text-gray-900">Shopping Cart</h1>
+        <h1 className="text-xl lg:text-3xl font-bold mb-4 lg:mb-6 text-gray-900">Shopping Cart</h1>
 
         {cartItems?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl shadow-sm">
@@ -60,8 +104,8 @@ function CartScreen() {
             <p className="text-gray-500 mb-6 max-w-md px-4">
               Looks like you haven't added anything to your cart yet.
             </p>
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold"
             >
               Continue Shopping
@@ -69,20 +113,20 @@ function CartScreen() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4"> {/* V16.6 KEY: 1 col mobile, 3 col desktop */}
-            
+
             {/* Left: Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
                 <div key={`${item.product}-${item.color}-${item.storage}`} className="flex flex-col p-3 lg:p-4 border-gray-200 rounded-xl bg-white shadow-sm">
-                  
+
                   {/* TOP: Image + Info Row */}
                   <div className="flex gap-4">
                     {/* V16.6 KEY: FIXED SMALL IMAGE ON MOBILE */}
-                    <img 
-  src={item.image || '/placeholder.png'} 
-  alt={item.name} 
-  className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0" 
-/>
+                    <img
+                      src={item.image || '/placeholder.png'}
+                      alt={item.name}
+                      className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0"
+                    />
 
                     {/* Info */}
                     <div className="flex-1 flex-col">
@@ -103,16 +147,11 @@ function CartScreen() {
                   <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100"> {/* V16.6 KEY */}
                     <div className="flex items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">Qty</label>
-                      <select
-                        value={item.qty}
-                        onChange={(e) => updateQtyHandler(item, e.target.value)}
-                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-500"
-                        disabled={item.countInStock === 0}
-                      >
-                        {[...Array(item.countInStock).keys()].map((x) => (
-                          <option key={x + 1} value={x + 1}>{x + 1}</option>
-                        ))}
-                      </select>
+<CustomDropdown
+  value={item.qty}
+  onChange={(val) => updateQtyHandler(item, Number(val))}
+  options={Array.from({ length: Math.min(item.countInStock, 10) }, (_, i) => i + 1)}
+/>
                     </div>
                     <button
                       type="button"

@@ -56,6 +56,15 @@ function ShippingScreen() {
   navigate('/payment'); // Next step
 };
 
+const getFlagEmoji = (countryCode) => { // V34.50 KEY
+  if (!countryCode) return '🏳️';
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt());
+  return String.fromCodePoint(...codePoints);
+};
+
   // if (loading) {
   //   return (
   //     <div className='flex justify-center items-center h-64'>
@@ -81,23 +90,50 @@ function ShippingScreen() {
         <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Shipping</h1>
 
         <form onSubmit={submitHandler} className="space-y-4">
-          {/* Phone Number */}
-          <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-            Phone Number <span className="text-red-500">*</span>
-          </label>
-          <PhoneInput
-            international
-            defaultCountry="PK"
-            value={phone}
-            onChange={setPhone}
-            className={`phone-input ${phoneError ? 'border-red-500' : ''}`}
-            id="phone"
-          />
-          {phoneError && (
-            <p className="text-red-500 text-sm mt-1">{phoneError}</p>
-          )}
-        </div>
+          {/* Phone Number */} 
+{/* PHONE NUMBER - V34.51 KEY: 1:1 MATCH ADDRESS */}
+<div>
+  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+    Phone Number <span className="text-red-500">*</span>
+  </label>
+  
+  {/* V34.51 KEY: Wrapper = Address input style */}
+  <div className={`relative flex items-center w-full px-3 py-2 border rounded-md shadow-sm bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${phoneError ? 'border-red-500' : 'border-gray-300'}`}>
+   <PhoneInput
+  international
+  defaultCountry="PK"
+  value={phone}
+  onChange={setPhone}
+  id="phone"
+  placeholder="Phone Number"
+  className="w-full border-0 outline-none bg-transparent text-gray-900"
+  countrySelectComponent={({ value, onChange, options }) => (
+    <div className="relative flex items-center pr-2">
+      <select 
+  value={value}
+  onChange={e => onChange(e.target.value)}
+  className="appearance-none opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+>
+  {options.map((opt, idx) => ( // V34.55 KEY: added idx fallback
+    <option key={opt.value || `country-${idx}`} value={opt.value}>
+      {opt.label}
+    </option>
+  ))}
+</select>
+      
+      <div className="flex items-center gap-1">
+        <span className="text-xl">{getFlagEmoji(value)}</span>
+        <span className="text-gray-500 text-xs">▼</span>
+      </div>
+    </div>
+  )}
+/>
+  </div>
+  
+  {phoneError && (
+    <p className="text-red-500 text-sm mt-1">{phoneError}</p>
+  )}
+</div>
 
           {/* Address */}
           <div>

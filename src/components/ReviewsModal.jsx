@@ -7,12 +7,12 @@ import {
   useEditAdminReplyMutation,
   useDeleteAdminReplyMutation,
 } from '../slices/productsApiSlice';
-import { FaStar, FaTimes, FaThumbsUp, FaReply, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaStar, FaTimes, FaThumbsUp, FaReply, FaEdit, FaTrash, FaChevronDown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Loader from './Loader';
 import Message from './Message';
 import Rating from './Rating';
-import { ChevronDown } from 'lucide-react';
+ 
 
 const ReviewsModal = ({ productId, productColor, onClose, product }) => {
   const [page, setPage] = useState(1);
@@ -137,7 +137,7 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
         className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white hover:border-gray-400 transition"
       >
         <span className="text-gray-900">{value === 'All'? label : value}</span>
-        <ChevronDown size={18} className={`text-gray-500 transition-transform ${open? 'rotate-180' : ''}`} />
+        <FaChevronDown size={18} className={`text-gray-500 transition-transform ${open? 'rotate-180' : ''}`} />
       </button>
 
       {open && (

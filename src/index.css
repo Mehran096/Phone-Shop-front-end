@@ -9,26 +9,24 @@ html, body, #root {
 @tailwind utilities;
 
 /* react-phone-number-input Tailwind styles */
+/* V34.53 KEY: NUKE LIB DEFAULT STYLES */
 .PhoneInput {
-  @apply flex items-center;
+  gap: 0.5rem !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
-.PhoneInputInput {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+.PhoneInput input { /* V34.53 KEY: Target inner input directly */
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
-.PhoneInputCountry {
-  @apply mr-2 relative;
-}
-
-.PhoneInputCountrySelect {
-  @apply absolute top-0 left-0 h-full w-full opacity-0 cursor-pointer;
-}
-
-.PhoneInputCountryIcon {
-  @apply w-6 h-4 rounded-sm overflow-hidden shadow-sm;
-}
-
-.PhoneInputCountrySelectArrow {
-  @apply text-gray-500 ml-1 text-xs;
+.PhoneInputCountryIcon { 
+  width: 24px !important; 
+  height: 16px !important; 
+  border-radius: 2px !important; 
 }
