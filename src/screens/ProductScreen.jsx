@@ -239,6 +239,7 @@ const ProductScreen = ({ isOnline }) => {
         rating,
         comment,
         color: selectedColor?.name || '',
+        storage: selectedVariant.storage || '',
         images: uploadedImages, // V33.66 KEY: [{url, imagePublicId}]
       }).unwrap();
 
@@ -842,7 +843,12 @@ const ProductScreen = ({ isOnline }) => {
                   <div className='flex justify-between items-start mb-2'>
                     <div>
                       <strong>{review.name}</strong>
-                      {review.color && <span className='text-sm text-gray-500 ml-2'>({review.color})</span>}
+                      {(review.color || review.storage) && (
+  <span className='text-sm text-gray-500 ml-2'>
+    ({review.color}{review.storage ? ` / ${review.storage}` : ''})
+  </span>
+)}
+                       
                       <span className='text-sm text-gray-500 ml-2'>
                         | {new Date(review.createdAt).toLocaleDateString()}
                       </span>
@@ -1085,7 +1091,7 @@ const ProductScreen = ({ isOnline }) => {
                   <div>
                     <p className='text-gray-600'>You are reviewing:</p>
                     <p className='font-medium text-gray-900'>
-                      {product.name} - {selectedColor.name}
+                      {product.name} - {selectedColor.name} - {selectedVariant.storage}
                     </p>
                   </div>
                 </div>

@@ -10,98 +10,67 @@ import api from '../../utils/axios';
 const ProductCreateScreen = () => {
  
   const navigate = useNavigate();
-  const [createProduct, { isLoading }] = useCreateProductMutation();
-  const [uploadProductImage] = useUploadProductImageMutation();
+  const [createProduct, { isLoading: loadingCreate }] = useCreateProductMutation();
+  const [uploadProductImage, { isLoading: loadingUpload  }] = useUploadProductImageMutation();
 
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState(''); 
   const [keywords, setKeywords] = useState('');
   const [accessories, setAccessories] = useState('');
-  const [variants, setVariants] = useState([{ 
-    storage: '', 
-    description: '',
-    specs: { ram: '', display: '', battery: '', camera: '' },
-    colors: [{ name: '', images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] 
-  }]);
-  const [uploadingMap, setUploadingMap] = useState({});
+  const [variants, setVariants] = useState([{
+  storage: '',
+  description: '',
+  specs: { ram: '', display: '', battery: '', camera: '' },
+  colors: [{ name: '', files: [], images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] // V37.03 KEY: add files:[]
+}]);
+  const [uploading, setUploading] = useState(false);
 
-  const addVariantHandler = () => setVariants([...variants, { storage: '', description: '', specs: { ram: '', display: '', battery: '', camera: '' }, colors: [{ name: '', images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] }]);
+  const addVariantHandler = () => setVariants([...variants, { 
+  storage: '', 
+  description: '',
+  specs: { ram: '', display: '', battery: '', camera: '' },
+  colors: [{ name: '', files: [], images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] // V37.03 KEY
+}]);
   const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i!== vIndex));
-  const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, [field]: value} : item));
-  const updateVariantSpec = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, specs: {...item.specs, [field]: value}} : item));
-  const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: [...item.colors, { name: '', images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }]} : item));
-  const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: item.colors.filter((_, ci) => ci!== cIndex)} : item));
-  const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: item.colors.map((c, ci) => ci === cIndex? {...c, [field]: value} : c)} : item));
+  const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? 
+  {...item, [field]: value} : item));
+  const updateVariantSpec = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? 
+  {...item, specs: {...item.specs, [field]: value}} : item));
+  const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex? {...item, 
+  colors: [...item.colors, { name: '', files: [], images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] } : item));
+  const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex? 
+  {...item, colors: item.colors.filter((_, ci) => ci!== cIndex)} : item));
+  const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? 
+  {...item, colors: item.colors.map((c, ci) => ci === cIndex? {...c, [field]: value} : c)} : item));
 
-  const uploadFileHandler = async (vIndex, cIndex, e) => {
-  const key = `v${vIndex}-c${cIndex}`;
-  setUploadingMap(prev => ({...prev, [key]: true}));
+  const uploadFileHandler = (vIndex, cIndex, e) => {
   const files = Array.from(e.target.files);
-  if (!files.length) { setUploadingMap(prev => ({...prev, [key]: false})); return; }
-  
-  // V33.04 KEY: 1 API call for all files
-  const formData = new FormData();
-  files.forEach(file => formData.append('images', file)); // V33.04 KEY: 'images' plural
+  if (!files.length) return;
 
-  try {
-    const data = await uploadProductImage(formData).unwrap(); // V33.04 Returns []
-    const uploaded = Array.isArray(data)? data : [data]; // V33.04 Safety
+  setVariants(prev => prev.map((v, i) => i === vIndex? {
+...v, colors: v.colors.map((c, j) => j === cIndex? {
+  ...c,
+      files: [...c.files,...files], // V37.00 KEY: store File objects
+      images: [...c.images,...files.map(f => URL.createObjectURL(f))] // V37.00 KEY: local preview
+    } : c)
+  } : v));
 
-    setVariants(prev => prev.map((v, i) => i === vIndex? {
-     ...v, colors: v.colors.map((c, j) => j === cIndex? {
-       ...c, 
-        images: [...c.images,...uploaded.map(u => ({url: u.url, imagePublicId: u.public_id}))], // V33.04 KEY
-        imagePublicIds: [...c.imagePublicIds,...uploaded.map(u => u.public_id)] // V33.04 KEY
-      } : c)
-    } : v));
-    toast.success(`${uploaded.length} Image(s) added`);
-  } catch (err) { 
-    toast.error(err?.data?.message || err.error); 
-  }
-  setUploadingMap(prev => ({...prev, [key]: false}));
   e.target.value = '';
 };
 
-  const removeImageHandler = async (vIndex, cIndex, imgIndex) => {
-  const color = variants[vIndex]?.colors[cIndex]; // V31.93 No crash
-  const raw_public_id = color?.imagePublicIds?.[imgIndex]; // V31.93
 
-  if(!raw_public_id) {
-    toast.error('Old image: Cannot delete from Cloudinary. Use Update Product to save.');
-    return;
-  }
-
-  let publicId = raw_public_id;
-  if (publicId.includes('cloudinary.com')) {
-    publicId = publicId.split('/upload/')[1] || publicId;
-  }
-  publicId = publicId.replace(/^\d+\//, ''); // V31.86 kill timestamp
-  publicId = publicId.replace(/\.[^.]+$/, ""); // V32.04 kill.jpg
-  console.log('V31.99 SENDING:', publicId);
-
-  try {
-    await api.delete('/upload', { data: { publicId } }); // V32.09 FIXED LINE
-
-    setVariants(prev => { // V31.93 Functional update
-      const newVariants = structuredClone(prev); // V31.93
-      const targetColor = newVariants[vIndex]?.colors[cIndex];
-      if (!targetColor?.imagePublicIds ||!targetColor?.images) {
-        console.log('V31.99 SKIP UI: arrays missing');
-        return prev;
-      }
-      targetColor.imagePublicIds.splice(imgIndex, 1); // V31.98
-      targetColor.images.splice(imgIndex, 1); // V31.98 KEY
-      return newVariants;
-    });
-
-    toast.success('Image removed'); // V31.93
-
-  } catch(err) {
-    console.log('V31.99 CATCH:', err);
-    toast.error(err?.data?.message || err.message || 'Delete failed');
-  }
+ const removeImageHandler = (vIndex, cIndex, imgIndex) => {  
+  setVariants(prev => prev.map((v, i) => i === vIndex? {
+...v, colors: v.colors.map((c, j) => j === cIndex? {
+  ...c,
+      files: c.files.filter((_, idx) => idx!== imgIndex), 
+      images: c.images.filter((_, idx) => idx!== imgIndex),
+      imagePublicIds: c.imagePublicIds.filter((_, idx) => idx!== imgIndex)
+    } : c)
+  } : v));
+  
+  toast.success('Image removed');
 };
 
 //drag n drop
@@ -124,36 +93,92 @@ const onDragEnd = (result, vIndex, cIndex) => {
   });
 };
 
-  const submitHandler = async (e) => {
-    e.preventDefault();
+const uploadAllImages = async () => { // V37.00 KEY
+  const formData = new FormData();
+  variants.forEach(v => {
+    v.colors.forEach(c => {
+      c.files.forEach(file => formData.append('images', file)); // V37.00 KEY
+    })
+  });
+  
+  if(!formData.has('images')) return []; // no new files
+  
+  setUploading(true);
+  const data = await uploadProductImage(formData).unwrap(); // 1 API call for all
+  setUploading(false);
+  return Array.isArray(data)? data : [data];
+}
+
+ const submitHandler = async (e) => {
+  e.preventDefault();
+  try {
+    setUploading(true);
+
+    // V37.01 KEY 1: UPLOAD ALL NEW FILES FIRST
+    const formData = new FormData();
+    variants.forEach(v => {
+      v.colors.forEach(c => {
+        c.files?.forEach(file => formData.append('images', file));
+      })
+    });
+    
+    let uploaded = [];
+    if(formData.has('images')){
+      const data = await uploadProductImage(formData).unwrap();
+      uploaded = Array.isArray(data)? data : [data];
+    }
+    setUploading(false);
+
+    // V37.01 KEY 2: MAP UPLOADED URLS BACK TO COLORS
+   // V37.05 KEY: MAP UPLOADED URLS BACK TO COLORS
+// V37.06 KEY: MAP TO OBJECTS {url, imagePublicId}
+let uploadIndex = 0;
+const finalVariants = variants
+.filter(v => v.storage && v.colors.some(c => c.name && c.price))
+.map(v => ({
+    storage: v.storage,
+    description: v.description,
+    specs: v.specs,
+    colors: v.colors
+    .filter(c => c.name && c.price)
+    .map(c => {
+        // V37.06 KEY 1: get uploaded objects
+        const newImages = (c.files || []).map(() => {
+          const img = uploaded[uploadIndex];
+          uploadIndex++;
+          return img; // img is already {url, imagePublicId}
+        }) || [];
+
+        // V37.06 KEY 2: keep old objects + filter out blob previews
+        const oldImages = c.images.filter(i => typeof i === 'object' && i.url &&!i.url.startsWith('blob:')); 
+
+        return {
+          name: c.name,
+          images: [...oldImages,...newImages], // V37.06 KEY: send objects
+          price: Number(c.price),
+          countInStock: Number(c.countInStock),
+          sku: c.sku
+        }
+      })
+  }));
+
     const payload = {
-      name, brand, category, description,
+      name, 
+      brand, 
+      category, 
       keywords: keywords.split(',').map(k => k.trim()).filter(Boolean),
-      // accessories: accessories.split(',').map(a => a.trim()).filter(Boolean),
-      variants: variants
-     .filter(v => v.storage && v.colors.some(c => c.name && c.price!== ''))
-     .map(v => ({ 
-          storage: v.storage, 
-          description: v.description,
-          specs: v.specs,
-          colors: v.colors
-         .filter(c => c.name && c.price!== '' && c.images.length > 0)
-         .map(c => ({ 
-              name: c.name, 
-              images: c.images,
-              imagePublicIds: c.imagePublicIds,
-              price: Number(c.price),
-              countInStock: Number(c.countInStock),
-              sku: c.sku 
-            })) 
-        })),
+      // accessories: accessories.split(',').map(a => a.trim()).filter(Boolean),  
+      variants: finalVariants,
     };
-    try { 
-      await createProduct(payload).unwrap(); 
-      toast.success('Product Created'); 
-      navigate('/admin/productlist'); 
-    } catch (err) { toast.error(err?.data?.message || err.error); }
-  };
+
+    await createProduct(payload).unwrap();
+    toast.success('Product Created');
+    navigate('/admin/productlist');
+  } catch (err) { 
+    setUploading(false);
+    toast.error(err?.data?.message || err.error); 
+  }
+};
 
   const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
   const inputClass = 'w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none';
@@ -165,7 +190,7 @@ const onDragEnd = (result, vIndex, cIndex) => {
     <div className='max-w-5xl mx-auto p-5'>
       <Link to='/admin/productlist' className='text-blue-600 hover:underline mb-3 inline-block text-sm'> Go Back</Link>
       <h1 className='text-2xl font-bold mb-5 text-gray-800'>Create Product V9.63</h1>
-      {isLoading && <div className='text-center py-4'>Loading...</div>}
+      {loadingCreate && <div className='text-center py-4'>Loading...</div>}
       <form onSubmit={submitHandler} className='space-y-5'>
         <div className={cardClass}>
           <h2 className='text-lg font-semibold mb-4 border-b pb-2 text-gray-800'>Basic Info</h2>
@@ -230,13 +255,13 @@ const onDragEnd = (result, vIndex, cIndex) => {
                     <label className='inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md border-dashed border-blue-300 cursor-pointer hover:bg-blue-100 transition-colors text-sm font-medium'>
                         <FaPlus />
                         <span>
-                          {uploadingMap[`v${vIndex}-c${cIndex}`]? 'Uploading...' : 'Select Images'}
+                          {uploading[`v${vIndex}-c${cIndex}`]? 'Uploading...' : 'Select Images'}
                         </span>
                         <input type='file' multiple accept="image/*" onChange={(e) => uploadFileHandler(vIndex, cIndex, e)} 
-                        className='hidden' disabled={uploadingMap[`v${vIndex}-c${cIndex}`]}/>
+                        className='hidden' disabled={uploading[`v${vIndex}-c${cIndex}`]}/>
                     </label>
                   </div>
-                  {uploadingMap[`v${vIndex}-c${cIndex}`] && <div className='text-blue-600 text-sm mb-2 animate-pulse'>Uploading to Cloudinary...</div>}
+                  {uploading[`v${vIndex}-c${cIndex}`] && <div className='text-blue-600 text-sm mb-2 animate-pulse'>Uploading to Cloudinary...</div>}
 
                   <div className='flex flex-wrap gap-3 p-3 bg-gray-100 rounded-lg min-h-24'>
   <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex)}>
@@ -256,7 +281,7 @@ const onDragEnd = (result, vIndex, cIndex) => {
                     <HiOutlineArrowsUpDown className="text-white text-xs" />
                   </div>
 
-                  <img src={img.url} alt={`img-${imgIndex}`} 
+                  <img src={img} alt={`img-${imgIndex}`} 
                   className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0" 
                   />
 
@@ -282,9 +307,21 @@ const onDragEnd = (result, vIndex, cIndex) => {
             </div>
           ))}
         </div>
-        <button type='submit' disabled={isLoading} className={btnPrimary}>
-          Create Product
-        </button>
+        <button 
+  type='submit' 
+  disabled={loadingCreate || loadingUpload} // V38.75 KEY
+  className={`${btnPrimary} w-full flex items-center justify-center gap-2 ${loadingCreate || loadingUpload ? 'opacity-60 cursor-not-allowed' : ''}`}
+>
+  {loadingCreate || loadingUpload ? (
+    <>
+      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 0 0 18-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 14 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Creating Product...
+    </>
+  ) : 'Create Product'}
+</button>
       </form>
     </div>
   );

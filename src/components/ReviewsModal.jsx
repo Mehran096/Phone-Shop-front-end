@@ -12,7 +12,7 @@ import { toast } from 'react-toastify';
 import Loader from './Loader';
 import Message from './Message';
 import Rating from './Rating';
- 
+
 
 const ReviewsModal = ({ productId, productColor, onClose, product }) => {
   const [page, setPage] = useState(1);
@@ -32,7 +32,7 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
     // sort,
   });
 
-  
+
 
   const [markHelpful, { isLoading: loadingHelpful }] = useMarkReviewHelpfulMutation();
   const [addAdminReply, { isLoading: loadingReply }] = useAddAdminReplyMutation();
@@ -45,7 +45,7 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
     if (!data?.reviews) return [];
 
     const filtered = colorFilter === 'All'
-    ? data.reviews
+      ? data.reviews
       : data.reviews.filter((r) => r.color === colorFilter);
 
     return [...filtered].sort((a, b) => {
@@ -118,45 +118,45 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
     }
   };
 
-  
-   const CustomDropdown = ({ value, onChange, options, label }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => ref.current &&!ref.current.contains(e.target) && setOpen(false);
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const CustomDropdown = ({ value, onChange, options, label }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
 
-  return (
-    <div ref={ref} className="relative w-full md:w-auto md:min-w-[160px]">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white hover:border-gray-400 transition"
-      >
-        <span className="text-gray-900">{value === 'All'? label : value}</span>
-        <FaChevronDown size={18} className={`text-gray-500 transition-transform ${open? 'rotate-180' : ''}`} />
-      </button>
+    useEffect(() => {
+      const handleClickOutside = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-      {open && (
-        <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] max-h-60 overflow-y-auto">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => { onChange(opt); setOpen(false); }}
-              className={`w-full text-left px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-100 ${value === opt? 'bg-gray-100 font-medium' : ''}`}
-            >
-              {opt === 'All'? label : opt}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+    return (
+      <div ref={ref} className="relative w-full md:w-auto md:min-w-[160px]">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white hover:border-gray-400 transition"
+        >
+          <span className="text-gray-900">{value === 'All' ? label : value}</span>
+          <FaChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+
+        {open && (
+          <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] max-h-60 overflow-y-auto">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { onChange(opt); setOpen(false); }}
+                className={`w-full text-left px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-100 ${value === opt ? 'bg-gray-100 font-medium' : ''}`}
+              >
+                {opt === 'All' ? label : opt}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (!productId) return null;
 
@@ -180,30 +180,30 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
           </span>
 
           <div className="flex flex-col md:flex-row gap-2 sm:gap-3 w-full md:w-auto">
-  <CustomDropdown
-    value={colorFilter}
-    onChange={(val) => { setColorFilter(val); setPage(1); }}
-    options={['All',...colors]} // V34.23 KEY: colors comes from props/data
-    label="All Colors"
-  />
-  <CustomDropdown
-    value={sort}
-    onChange={(val) => { setSort(val); setPage(1); }}
-    options={['helpful', 'newest', 'highest', 'lowest']}
-    label="Most Helpful"
-  />
-</div>
+            <CustomDropdown
+              value={colorFilter}
+              onChange={(val) => { setColorFilter(val); setPage(1); }}
+              options={['All', ...colors]} // V34.23 KEY: colors comes from props/data
+              label="All Colors"
+            />
+            <CustomDropdown
+              value={sort}
+              onChange={(val) => { setSort(val); setPage(1); }}
+              options={['helpful', 'newest', 'highest', 'lowest']}
+              label="Most Helpful"
+            />
+          </div>
         </div>
 
         {/* Reviews list */}
         <div className="overflow-y-auto p-3 sm:p-4 flex-1">
-          {isLoading? (
+          {isLoading ? (
             <Loader />
-          ) : error? (
+          ) : error ? (
             <Message variant="danger">{error?.data?.message || error.error}</Message>
           ) : (
             <>
-              {sortedReviews.length === 0? (
+              {sortedReviews.length === 0 ? (
                 <Message>No reviews yet</Message>
               ) : (
                 sortedReviews.map((review) => {
@@ -214,7 +214,14 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                       <div className="flex flex-wrap items-center gap-2 text-sm">
                         <span className="font-semibold">{review.name}</span>
                         <span className="text-gray-500">
-                          {review.color} | {new Date(review.createdAt).toLocaleDateString()}
+                          {review.color || review.storage ? (
+                            <>
+                              {review.color}
+                              {review.storage && ` / ${review.storage}`}
+                              {' | '}
+                            </>
+                          ) : null}
+                          {new Date(review.createdAt).toLocaleDateString()}
                         </span>
                       </div>
 
@@ -243,7 +250,7 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                               <p className="font-semibold text-blue-800">
                                 {review.adminReply.name || 'Seller'} Response:
                               </p>
-                              {editingReply === review._id? (
+                              {editingReply === review._id ? (
                                 <div className="mt-2">
                                   <textarea
                                     value={replyText}
@@ -257,7 +264,7 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                                       disabled={loadingEdit}
                                       className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
                                     >
-                                      {loadingEdit? 'Saving...' : 'Save'}
+                                      {loadingEdit ? 'Saving...' : 'Save'}
                                     </button>
                                     <button
                                       onClick={() => {
@@ -274,20 +281,20 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                                 <>
                                   <p className="text-gray-700 mt-1 break-words">
                                     {review.adminReply.reply}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {review.adminReply?.createdAt
-                                        ? new Date(review.adminReply.createdAt).toLocaleDateString('en-US', {
-                                          year: 'numeric',
-                                          month: 'short',
-                                          day: 'numeric',
-                                        })
-                                        : 'Just now'}
-                                    </p>
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {review.adminReply?.createdAt
+                                      ? new Date(review.adminReply.createdAt).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                      })
+                                      : 'Just now'}
+                                  </p>
                                 </>
                               )}
                             </div>
-                            {userInfo?.isAdmin && editingReply!== review._id && (
+                            {userInfo?.isAdmin && editingReply !== review._id && (
                               <div className="flex gap-2">
                                 <button
                                   onClick={() => {
@@ -317,27 +324,26 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                         <button
                           onClick={() => handleHelpful(review._id)}
                           disabled={loadingHelpful}
-                          className={`flex items-center gap-1 text-sm ${
-                            hasMarkedHelpful
-                            ? 'text-blue-600 font-semibold'
+                          className={`flex items-center gap-1 text-sm ${hasMarkedHelpful
+                              ? 'text-blue-600 font-semibold'
                               : 'text-gray-600 hover:text-blue-600'
-                          }`}
+                            }`}
                         >
-                          <FaThumbsUp className={hasMarkedHelpful? 'fill-current' : ''} />
+                          <FaThumbsUp className={hasMarkedHelpful ? 'fill-current' : ''} />
                           Helpful ({review.helpful?.length || 0})
                         </button>
 
-                        {userInfo?.isAdmin &&!review.adminReply?.reply && (
+                        {userInfo?.isAdmin && !review.adminReply?.reply && (
                           <button
                             onClick={() => {
-                              setReplyingTo(review._id === replyingTo? null : review._id);
+                              setReplyingTo(review._id === replyingTo ? null : review._id);
                               setEditingReply(null);
                               setReplyText('');
                             }}
                             className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
                           >
                             <FaReply />
-                            {replyingTo === review._id? 'Cancel' : 'Reply as Admin'}
+                            {replyingTo === review._id ? 'Cancel' : 'Reply as Admin'}
                           </button>
                         )}
                       </div>
@@ -357,7 +363,7 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                             disabled={loadingReply || loadingEdit}
                             className="mt-2 bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:bg-gray-400"
                           >
-                            {loadingReply || loadingEdit? 'Posting...' : editingReply? 'Update Reply' : 'Post Reply'}
+                            {loadingReply || loadingEdit ? 'Posting...' : editingReply ? 'Update Reply' : 'Post Reply'}
                           </button>
                         </div>
                       )}

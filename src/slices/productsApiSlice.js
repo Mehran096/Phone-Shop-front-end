@@ -28,17 +28,17 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Products'],
     }),
     updateProduct: builder.mutation({
-      query: (data) => ({
-        url: `/products/${data.id}`, // <-- V9.8 FIX: data.id not data.productId
-        method: 'PUT',
-        body: data, // <-- V9.8: JSON only. Frontend already uploaded to Cloudinary
-      }),
-      invalidatesTags: (result, error, arg) => [
-        'Products',
-        { type: 'Product', id: arg.id }, // <-- V9.8 FIX: arg.id not arg.productId
-        { type: 'Product', id: result?.slug },
-      ],
-    }),
+  query: (data) => ({
+    url: `/products/${data._id}`, // V38.66 KEY: use _id not id
+    method: 'PUT',
+    body: data, // <-- V9.8: JSON only. Frontend already uploaded to Cloudinary
+  }),
+  invalidatesTags: (result, error, arg) => [
+    'Products',
+    { type: 'Product', id: arg._id }, // V38.66 KEY: use _id not id
+    { type: 'Product', id: result?.slug },
+  ],
+}),
     updateProductSpecs: builder.mutation({
       query: ({ productId, specs }) => ({
         url: `/products/${productId}/specs`,
@@ -165,6 +165,15 @@ export const productsApiSlice = apiSlice.injectEndpoints({
   }),
 }),
 
+deleteCloudinaryImagesBatch: builder.mutation({ // V38.48 KEY: BATCH DELETE
+  query: (data) => ({
+    url: '/upload/delete', // V38.48 KEY: Matches new backend POST route
+    method: 'POST',
+    body: data, // { publicIds: ['id1', 'id2'] }
+    credentials: 'include',
+  })
+}),
+
 
   }),
 });
@@ -187,5 +196,6 @@ export const {
   useDeleteAdminReplyMutation,
   useUploadProductImageMutation,
   useUploadReviewImageMutation,
-  useDeleteCloudinaryImageMutation
+  useDeleteCloudinaryImageMutation,
+  useDeleteCloudinaryImagesBatchMutation,
 } = productsApiSlice;
