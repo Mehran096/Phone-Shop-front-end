@@ -764,77 +764,23 @@ const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
 
             {/* Specifications Box - Full Width Below Grid V12.9 */}
 {(() => {
-  const specs = { ...product.specs, ...selectedVariant.specs, ...selectedColor.specs }; // V12.9 KEY: Color > Variant > Product
+  const specs = { ...product.specs, ...selectedVariant?.specs, ...selectedColor?.specs };
 
-  return Object.values(specs).some(v => v) ? (
+  return Object.keys(specs).length > 0 ? (
     <div className='mt-6 pt-6 border-t border-gray-200'>
-      <div className='grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-6'>
-        
-        {/* {specs.storage && (
-          <div className='flex flex-col items-start gap-2'>
-            <FaHdd className='text-gray-500 text-xl' />
-            <div>
-              <div className='text-xs text-gray-500 uppercase tracking-wide'>Storage</div>
-              <div className='font-semibold text-gray-900 mt-0.5'>{specs.storage}</div>
-            </div>
+      <h3 className='text-xl font-bold mb-4'>Specifications - {selectedVariant?.storage || ''}</h3>
+      
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 bg-gray-50 p-4 rounded-lg'>
+        {Object.entries(specs).map(([key, value]) => (
+          <div key={key} className='flex flex-col'>
+            <span className='text-xs text-gray-500 uppercase tracking-wide font-semibold'>{key}</span>
+            <span className='text-gray-900 font-medium mt-0.5'>{value}</span>
           </div>
-        )} */}
-        
-        {specs.ram && (
-          <div className='flex flex-col items-start gap-2'>
-            <FaMemory className='text-gray-500 text-xl' />
-            <div>
-              <div className='text-xs text-gray-500 uppercase tracking-wide'>RAM</div>
-              <div className='font-semibold text-gray-900 mt-0.5'>{specs.ram}</div>
-            </div>
-          </div>
-        )}
-        
-        {specs.display && (
-          <div className='flex flex-col items-start gap-2'>
-            <FaMobileAlt className='text-gray-500 text-xl' />
-            <div>
-              <div className='text-xs text-gray-500 uppercase tracking-wide'>Display</div>
-              <div className='font-semibold text-gray-900 mt-0.5'>{specs.display}</div>
-            </div>
-          </div>
-        )}
-        
-        {specs.camera && (
-          <div className='flex flex-col items-start gap-2'>
-            <FaCamera className='text-gray-500 text-xl' />
-            <div>
-              <div className='text-xs text-gray-500 uppercase tracking-wide'>Camera</div>
-              <div className='font-semibold text-gray-900 mt-0.5'>{specs.camera}</div>
-            </div>
-          </div>
-        )}
-
-        {specs.battery && (
-          <div className='flex flex-col items-start gap-2'>
-            <FaBatteryFull className='text-gray-500 text-xl' />
-            <div>
-              <div className='text-xs text-gray-500 uppercase tracking-wide'>Battery</div>
-              <div className='font-semibold text-gray-900 mt-0.5'>{specs.battery}</div>
-            </div>
-          </div>
-        )}
-
-        {/* {specs.processor && (
-          <div className='flex flex-col items-start gap-2'>
-            <FaMicrochip className='text-gray-500 text-xl' />
-            <div>
-              <div className='text-xs text-gray-500 uppercase tracking-wide'>Chip</div>
-              <div className='font-semibold text-gray-900 mt-0.5'>{specs.processor}</div>
-            </div>
-          </div>
-        )} */}
-
+        ))}
       </div>
     </div>
   ) : null;
 })()}
-
 
             {/* Description - Full Width V13.4 */}
             <div className='border-t pt-7'>

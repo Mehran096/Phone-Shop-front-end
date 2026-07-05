@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaPlus } from 'react-icons/fa';
@@ -21,16 +21,18 @@ const ProductCreateScreen = () => {
   const [variants, setVariants] = useState([{
   storage: '',
   description: '',
-  specs: { ram: '', display: '', battery: '', camera: '' },
-  colors: [{ name: '', files: [], images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] // V37.03 KEY: add files:[]
+  specs: {},
+  specsJson: '',
+  colors: [{ name: '', files: [], images: [], price: '', countInStock: '', sku: '' }] // V37.03 KEY: add files:[]
 }]);
   const [uploading, setUploading] = useState(false);
 
   const addVariantHandler = () => setVariants([...variants, { 
   storage: '', 
   description: '',
-  specs: { ram: '', display: '', battery: '', camera: '' },
-  colors: [{ name: '', files: [], images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] // V37.03 KEY
+  specs: {},
+  specsJson: '',
+  colors: [{ name: '', files: [], images: [], price: '', countInStock: '', sku: '' }] // V37.03 KEY
 }]);
   const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i!== vIndex));
   const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? 
@@ -38,76 +40,76 @@ const ProductCreateScreen = () => {
   const updateVariantSpec = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? 
   {...item, specs: {...item.specs, [field]: value}} : item));
   const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex? {...item, 
-  colors: [...item.colors, { name: '', files: [], images: [], imagePublicIds: [], price: '', countInStock: '', sku: '' }] } : item));
+  colors: [...item.colors, { name: '', files: [], images: [], price: '', countInStock: '', sku: '' }] } : item));
   const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex? 
   {...item, colors: item.colors.filter((_, ci) => ci!== cIndex)} : item));
   const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? 
   {...item, colors: item.colors.map((c, ci) => ci === cIndex? {...c, [field]: value} : c)} : item));
+
+
+ 
+
+ 
 
   const uploadFileHandler = (vIndex, cIndex, e) => {
   const files = Array.from(e.target.files);
   if (!files.length) return;
 
   setVariants(prev => prev.map((v, i) => i === vIndex? {
-...v, colors: v.colors.map((c, j) => j === cIndex? {
+ ...v, colors: v.colors.map((c, j) => j === cIndex? {
   ...c,
-      files: [...c.files,...files], // V37.00 KEY: store File objects
-      images: [...c.images,...files.map(f => URL.createObjectURL(f))] // V37.00 KEY: local preview
-    } : c)
+    files: [...(c.files || []),...files], // only files
+  } : c)
   } : v));
 
   e.target.value = '';
 };
 
 
- const removeImageHandler = (vIndex, cIndex, imgIndex) => {  
+const removeImageHandler = (vIndex, cIndex, fileIndex) => {
+  const fileToRemove = variants[vIndex].colors[cIndex].files[fileIndex];
+  URL.revokeObjectURL(URL.createObjectURL(fileToRemove)); // cleanup
+  
   setVariants(prev => prev.map((v, i) => i === vIndex? {
 ...v, colors: v.colors.map((c, j) => j === cIndex? {
-  ...c,
-      files: c.files.filter((_, idx) => idx!== imgIndex), 
-      images: c.images.filter((_, idx) => idx!== imgIndex),
-      imagePublicIds: c.imagePublicIds.filter((_, idx) => idx!== imgIndex)
-    } : c)
+ ...c,
+    files: (c.files || []).filter((_, idx) => idx!== fileIndex),
+  } : c)
   } : v));
-  
-  toast.success('Image removed');
+  toast.success("Image removed")
 };
-
+//drag n drop
 //drag n drop
 const onDragEnd = (result, vIndex, cIndex) => {
-  if (!result.destination) return; // Dropped outside
+  if (!result.destination) return;
 
   setVariants(prev => {
     const newVariants = structuredClone(prev);
-    const imgs = newVariants[vIndex].colors[cIndex].images;
-    const ids = newVariants[vIndex].colors[cIndex].imagePublicIds;
-
-    // Reorder both arrays together = V31.98 sync
-    const [reorderedImg] = imgs.splice(result.source.index, 1);
-    imgs.splice(result.destination.index, 0, reorderedImg);
-
-    const [reorderedId] = ids.splice(result.source.index, 1);
-    ids.splice(result.destination.index, 0, reorderedId);
-
+    const files = [...(newVariants[vIndex].colors[cIndex].files || [])];
+    
+    const [reordered] = files.splice(result.source.index, 1);
+    files.splice(result.destination.index, 0, reordered);
+    
+    newVariants[vIndex].colors[cIndex].files = files;
     return newVariants;
   });
 };
 
-const uploadAllImages = async () => { // V37.00 KEY
-  const formData = new FormData();
-  variants.forEach(v => {
-    v.colors.forEach(c => {
-      c.files.forEach(file => formData.append('images', file)); // V37.00 KEY
-    })
-  });
+// const uploadAllImages = async () => { // V37.00 KEY
+//   const formData = new FormData();
+//   variants.forEach(v => {
+//     v.colors.forEach(c => {
+//       c.files.forEach(file => formData.append('images', file)); // V37.00 KEY
+//     })
+//   });
   
-  if(!formData.has('images')) return []; // no new files
+//   if(!formData.has('images')) return []; // no new files
   
-  setUploading(true);
-  const data = await uploadProductImage(formData).unwrap(); // 1 API call for all
-  setUploading(false);
-  return Array.isArray(data)? data : [data];
-}
+//   setUploading(true);
+//   const data = await uploadProductImage(formData).unwrap(); // 1 API call for all
+//   setUploading(false);
+//   return Array.isArray(data)? data : [data];
+// }
 
  const submitHandler = async (e) => {
   e.preventDefault();
@@ -217,15 +219,33 @@ const finalVariants = variants
                 <div className='md:col-span-2'><label className={labelClass}>Variant Description</label><input type='text' placeholder='256GB Variant text' value={variant.description} onChange={e => updateVariant(vIndex, 'description', e.target.value)} className={inputClass} /></div>
               </div>
               <h4 className='font-semibold mt-2 mb-3 text-gray-700'>Specs for {variant.storage || 'Variant'}</h4>
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-4'>
-                <div><label className={labelClass}>RAM</label><input type='text' placeholder='8GB' value={variant.specs.ram} onChange={e => updateVariantSpec(vIndex, 'ram', e.target.value)} className={inputClass} /></div>
-                <div><label className={labelClass}>Display</label><input type='text' placeholder='6.7 AMOLED' value={variant.specs.display} onChange={e => updateVariantSpec(vIndex, 'display', e.target.value)} className={inputClass} /></div>
-                <div><label className={labelClass}>Battery</label><input type='text' placeholder='5000mAh' value={variant.specs.battery} onChange={e => updateVariantSpec(vIndex, 'battery', e.target.value)} className={inputClass} /></div>
-                <div><label className={labelClass}>Camera</label><input type='text' placeholder='50MP' value={variant.specs.camera} onChange={e => updateVariantSpec(vIndex, 'camera', e.target.value)} className={inputClass} /></div>
-              </div>
+              <div className='mb-4'>
+  <label className={labelClass}>Specs JSON *</label>
+  <textarea
+    rows={10}
+    placeholder={`{\n  "Display": "6.88 inch HD+ 120Hz",\n  "Processor": "Unisoc T7250",\n  "RAM": "3GB",\n  "Storage": "64GB eMMC 5.1",\n  "Camera": "32MP AI Dual Camera"\n}`}
+    value={variant.specsJson}
+    onChange={(e) => {
+      const specsJson = e.target.value;
+      let specs = {};
+      try { specs = JSON.parse(specsJson) } catch {} // ignore error while typing
+      updateVariant(vIndex, 'specsJson', specsJson);
+      updateVariant(vIndex, 'specs', specs);
+    }}
+    className={inputClass + ' font-mono text-sm'}
+  />
+  <p className='text-xs text-gray-500 mt-1'>Paste JSON here. Add unlimited keys. Comma between each line</p>
+</div>
 
               <h4 className='font-semibold mt-4 mb-3 text-gray-700'>Colors / SKUs</h4>
-              {variant.colors.map((color, cIndex) => (
+              {variant.colors.map((color, cIndex) => {
+                 const allPreviews = (color.files || []).map((f, i) => ({
+    type: 'file',
+    id: `file-${vIndex}-${cIndex}-${i}-${f.name}`,
+    file: f,
+    preview: URL.createObjectURL(f)
+  }));
+        return(
                 <div key={cIndex} className="border-l-4 border-blue-500 pl-4 mb-4 bg-white p-4 rounded-r-lg shadow-sm">
                   <div className='flex justify-between items-center mb-2'>
                     <label className={labelClass}>Color {cIndex+1}</label>
@@ -265,44 +285,50 @@ const finalVariants = variants
 
                   <div className='flex flex-wrap gap-3 p-3 bg-gray-100 rounded-lg min-h-24'>
   <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex)}>
-    <Droppable droppableId={`dnd-${vIndex}-${cIndex}`} direction="horizontal">
-      {(provided) => (
-        <div className="flex gap-3 flex-wrap w-full" {...provided.droppableProps} ref={provided.innerRef}>
-          {color.images.map((img, imgIndex) => (
-            <Draggable key={`${vIndex}-${cIndex}-${imgIndex}-${img}`} draggableId={`${vIndex}-${cIndex}-${imgIndex}`} index={imgIndex}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                  className={`relative w-20 h-20 group ${snapshot.isDragging? 'ring-2 ring-blue-500' : ''}`}
-                >
-                  {/* V32.11 DRAG HANDLE ONLY */}
-                  <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
-                    <HiOutlineArrowsUpDown className="text-white text-xs" />
-                  </div>
+<Droppable droppableId={`dnd-${vIndex}-${cIndex}`} direction="horizontal">
+  {(provided) => (
+    <div className="flex gap-3 flex-wrap w-full" {...provided.droppableProps} ref={provided.innerRef}>
+      
+      {allPreviews.map((item, imgIndex) => ( // ✅ FIX 1
+        <Draggable key={item.id} draggableId={item.id} index={imgIndex}>
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.draggableProps}
+              className={`relative w-20 h-20 group ${snapshot.isDragging ? 'ring-2 ring-blue-500' : ''}`}
+            >
+              {/* DRAG HANDLE ONLY */}
+              <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
+                <HiOutlineArrowsUpDown className="text-white text-xs" />
+              </div>
 
-                  <img src={img} alt={`img-${imgIndex}`} 
-                  className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0" 
-                  />
-
-                  {/* V31.99 DELETE BUTTON STILL WORKS */}
-                  <button type="button" onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)}
-                    className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10'>
-                    X
-                  </button>
-                </div>
-              )}
-            </Draggable>
-          ))}
-          {provided.placeholder}
-        </div>
-      )}
-    </Droppable>
-  </DragDropContext>
+              <img 
+                src={item.preview} // ✅ FIX 2: use item.preview
+                alt={`img-${imgIndex}`}
+                className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0"
+              />
+              
+              {/* DELETE BUTTON */}
+              <button 
+                onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)}
+                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs"
+              >
+                X
+              </button>
+            </div>
+          )}
+        </Draggable>
+      ))}
+      {provided.placeholder}
+    </div>
+  )}
+</Droppable>
+</DragDropContext>
 </div>
                   <button type='button' onClick={() => addColorHandler(vIndex)} className={btnSecondary + ' mt-3'}><FaPlus size={12} /> Add Color</button>
                 </div>
-              ))}
+              )
+              })}
               <button type='button' onClick={addVariantHandler} className={btnSecondary + ' mt-2'}><FaPlus size={12} /> Add Variant</button>
             </div>
           ))}
@@ -315,9 +341,9 @@ const finalVariants = variants
   {loadingCreate || loadingUpload ? (
     <>
       <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 0 0 18-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 14 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
+  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+</svg>
       Creating Product...
     </>
   ) : 'Create Product'}
