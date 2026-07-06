@@ -609,7 +609,7 @@ const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
               {/* Right: Buy Box - Name, Brand, Price, Stock, Colors, Cart */}
               <div className='lg:col-span-5'>
                 <h1 className='text-2xl md:text-3xl font-bold text-gray-900 mb-2'>
-                  {product.name}{selectedVariant.storage ? ` - ${selectedVariant.storage}` : ''} {/* V13.6 KEY */}
+                  {product.name}{selectedVariant.storage ? ` ${selectedVariant.storage}` : ''} {/* V13.6 KEY */}
                 </h1>
 
                 {/* <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div> */}
