@@ -28,17 +28,17 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Products'],
     }),
     updateProduct: builder.mutation({
-  query: (data) => ({
-    url: `/products/${data._id}`, // V38.66 KEY: use _id not id
-    method: 'PUT',
-    body: data, // <-- V9.8: JSON only. Frontend already uploaded to Cloudinary
-  }),
-  invalidatesTags: (result, error, arg) => [
-    'Products',
-    { type: 'Product', id: arg._id }, // V38.66 KEY: use _id not id
-    { type: 'Product', id: result?.slug },
-  ],
-}),
+      query: (data) => ({
+        url: `/products/${data._id}`, // V38.66 KEY: use _id not id
+        method: 'PUT',
+        body: data, // <-- V9.8: JSON only. Frontend already uploaded to Cloudinary
+      }),
+      invalidatesTags: (result, error, arg) => [
+        'Products',
+        { type: 'Product', id: arg._id }, // V38.66 KEY: use _id not id
+        { type: 'Product', id: result?.slug },
+      ],
+    }),
     updateProductSpecs: builder.mutation({
       query: ({ productId, specs }) => ({
         url: `/products/${productId}/specs`,
@@ -57,7 +57,23 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Products'],
     }),
     getProductReviews: builder.query({
-      query: (productId) => `/products/${productId}/reviews`,
+      query: ({
+        productId,
+        page = 1,
+        limit = 10,
+        color = '',
+        storage = '',
+        sort = '',
+      }) => ({
+        url: `/products/${productId}/reviews`,
+        params: {
+          page,
+          limit,
+          ...(color && { color }),
+          ...(storage && { storage }),
+          ...(sort && { sort }),
+        },
+      }),
       providesTags: ['Reviews'],
       keepUnusedDataFor: 5,
     }),
@@ -157,22 +173,22 @@ export const productsApiSlice = apiSlice.injectEndpoints({
     }),
 
     deleteCloudinaryImage: builder.mutation({ // V33.34A: V31.84 format
-  query: (publicId) => ({
-    url: '/upload', // V33.34 KEY: No param in URL
-    method: 'DELETE',
-    body: { publicId }, // V33.34 KEY: Send in body
-    credentials: 'include',
-  }),
-}),
+      query: (publicId) => ({
+        url: '/upload', // V33.34 KEY: No param in URL
+        method: 'DELETE',
+        body: { publicId }, // V33.34 KEY: Send in body
+        credentials: 'include',
+      }),
+    }),
 
-deleteCloudinaryImagesBatch: builder.mutation({ // V38.48 KEY: BATCH DELETE
-  query: (data) => ({
-    url: '/upload/delete', // V38.48 KEY: Matches new backend POST route
-    method: 'POST',
-    body: data, // { publicIds: ['id1', 'id2'] }
-    credentials: 'include',
-  })
-}),
+    deleteCloudinaryImagesBatch: builder.mutation({ // V38.48 KEY: BATCH DELETE
+      query: (data) => ({
+        url: '/upload/delete', // V38.48 KEY: Matches new backend POST route
+        method: 'POST',
+        body: data, // { publicIds: ['id1', 'id2'] }
+        credentials: 'include',
+      })
+    }),
 
 
   }),

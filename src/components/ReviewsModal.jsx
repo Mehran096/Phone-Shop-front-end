@@ -18,19 +18,31 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('helpful');
   const [colorFilter, setColorFilter] = useState('All');
+  const [storageFilter, setStorageFilter] = useState('All');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [editingReply, setEditingReply] = useState(null);
 
   const { userInfo } = useSelector((state) => state.auth);
 
-  const { data, isLoading, error, refetch } = useGetProductReviewsQuery(productId, {
-    skip: !productId,
-    //page,
-    limit: 500,
-    // color: colorFilter === 'All'? '' : colorFilter,
-    // sort,
-  });
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useGetProductReviewsQuery(
+    {
+      productId,
+      page,
+      limit: 10,
+      sort,
+      color: colorFilter === "All" ? "" : colorFilter,
+      storage: storageFilter === 'All' ? '' : storageFilter,
+    },
+    {
+      skip: !productId,
+    }
+  );
 
 
 
@@ -40,28 +52,11 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
   const [deleteAdminReply, { isLoading: loadingDelete }] = useDeleteAdminReplyMutation();
 
   const colors = product?.colors?.map((c) => c.name) || [];
+  //console.log(colors)
+  const storages = [...new Set(product?.variants?.map(v => v.storage) || [])];
+  //console.log(storages)
 
-  const sortedReviews = useMemo(() => {
-    if (!data?.reviews) return [];
-
-    const filtered = colorFilter === 'All'
-      ? data.reviews
-      : data.reviews.filter((r) => r.color === colorFilter);
-
-    return [...filtered].sort((a, b) => {
-      switch (sort) {
-        case 'helpful':
-          return (b.helpful?.length || 0) - (a.helpful?.length || 0);
-        case 'highest':
-          return b.rating - a.rating;
-        case 'lowest':
-          return a.rating - b.rating;
-        case 'newest':
-        default:
-          return new Date(b.createdAt) - new Date(a.createdAt);
-      }
-    });
-  }, [data?.reviews, sort, colorFilter]);
+  const reviews = data?.reviews || [];
 
   const handleHelpful = async (reviewId) => {
     if (!userInfo) {
@@ -97,10 +92,11 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
         }).unwrap();
         toast.success('Reply posted');
       }
+      refetch();
       setReplyText('');
       setReplyingTo(null);
       setEditingReply(null);
-      refetch();
+
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
@@ -119,7 +115,7 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
   };
 
 
-  const CustomDropdown = ({ value, onChange, options, label }) => {
+  const CustomDropdown = ({ value, onChange, options, label, displayMap = {} }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
 
@@ -134,22 +130,31 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white hover:border-gray-400 transition"
+          className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white 
+          hover:border-gray-400 transition"
         >
-          <span className="text-gray-900">{value === 'All' ? label : value}</span>
+          <span className="text-gray-900">
+            {value === 'All'
+              ? label
+              : displayMap[value] || value}
+          </span>
           <FaChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
 
         {open && (
-          <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] max-h-60 overflow-y-auto">
+          <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] 
+          max-h-60 overflow-y-auto">
             {options.map((opt) => (
               <button
                 key={opt}
                 type="button"
                 onClick={() => { onChange(opt); setOpen(false); }}
-                className={`w-full text-left px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-100 ${value === opt ? 'bg-gray-100 font-medium' : ''}`}
+                className={`w-full text-left px-4 py-2.5 text-sm text-gray-900
+                   hover:bg-gray-100 ${value === opt ? 'bg-gray-100 font-medium' : ''}`}
               >
-                {opt === 'All' ? label : opt}
+                {opt === 'All'
+                  ? label
+                  : displayMap[opt] || opt}
               </button>
             ))}
           </div>
@@ -182,15 +187,36 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
           <div className="flex flex-col md:flex-row gap-2 sm:gap-3 w-full md:w-auto">
             <CustomDropdown
               value={colorFilter}
-              onChange={(val) => { setColorFilter(val); setPage(1); }}
-              options={['All', ...colors]} // V34.23 KEY: colors comes from props/data
+              onChange={(val) => {
+                setColorFilter(val);
+                setPage(1);
+              }}
+              options={['All', ...colors]}
               label="All Colors"
             />
             <CustomDropdown
+              value={storageFilter}
+              onChange={(val) => {
+                setStorageFilter(val);
+                setPage(1);
+              }}
+              options={['All', ...storages]}
+              label="All Storage"
+            />
+            <CustomDropdown
               value={sort}
-              onChange={(val) => { setSort(val); setPage(1); }}
+              onChange={(val) => {
+                setSort(val);
+                setPage(1);
+              }}
               options={['helpful', 'newest', 'highest', 'lowest']}
-              label="Most Helpful"
+              label="Sort By"
+              displayMap={{
+                helpful: 'Most Helpful',
+                newest: 'Newest',
+                highest: 'Highest Rating',
+                lowest: 'Lowest Rating',
+              }}
             />
           </div>
         </div>
@@ -203,10 +229,10 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
             <Message variant="danger">{error?.data?.message || error.error}</Message>
           ) : (
             <>
-              {sortedReviews.length === 0 ? (
+              {reviews.length === 0 ? (
                 <Message>No reviews yet</Message>
               ) : (
-                sortedReviews.map((review) => {
+                reviews.map((review) => {
                   const hasMarkedHelpful = review.helpful?.includes(userInfo?._id);
 
                   return (
@@ -325,8 +351,8 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                           onClick={() => handleHelpful(review._id)}
                           disabled={loadingHelpful}
                           className={`flex items-center gap-1 text-sm ${hasMarkedHelpful
-                              ? 'text-blue-600 font-semibold'
-                              : 'text-gray-600 hover:text-blue-600'
+                            ? 'text-blue-600 font-semibold'
+                            : 'text-gray-600 hover:text-blue-600'
                             }`}
                         >
                           <FaThumbsUp className={hasMarkedHelpful ? 'fill-current' : ''} />
@@ -361,7 +387,8 @@ const ReviewsModal = ({ productId, productColor, onClose, product }) => {
                           <button
                             onClick={() => handleReply(review._id)}
                             disabled={loadingReply || loadingEdit}
-                            className="mt-2 bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:bg-gray-400"
+                            className="mt-2 bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 
+                            disabled:bg-gray-400"
                           >
                             {loadingReply || loadingEdit ? 'Posting...' : editingReply ? 'Update Reply' : 'Post Reply'}
                           </button>

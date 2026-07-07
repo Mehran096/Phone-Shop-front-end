@@ -6,7 +6,7 @@ import ReviewsModal from '../components/ReviewsModal';
 import OfflineMessage from '../components/OfflineMessage'
 
 import { useSelector, useDispatch } from 'react-redux'
- 
+
 import {
   useGetProductDetailsQuery,
   useGetProductBySlugQuery,
@@ -24,20 +24,21 @@ import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
 import Rating from '../components/Rating'
-import { FaEdit, 
+import {
+  FaEdit,
   FaCheck,
-   FaTrash,
-    FaShoppingCart,
-     FaStar,
-      FaChevronDown,
-       FaThumbsUp,
-        FaHeart,
-        FaMemory, FaHdd, FaMobileAlt, FaCamera, FaBatteryFull, FaMicrochip, 
-      } from 'react-icons/fa'
+  FaTrash,
+  FaShoppingCart,
+  FaStar,
+  FaChevronDown,
+  FaThumbsUp,
+  FaHeart,
+  FaMemory, FaHdd, FaMobileAlt, FaCamera, FaBatteryFull, FaMicrochip,
+} from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
- 
+
 
 
 
@@ -218,6 +219,22 @@ const ProductScreen = ({ isOnline }) => {
     return reviews;
   }, [product, ratingFilter, sortBy, userInfo]);
 
+  //rating counts
+  const ratingCounts = useMemo(() => {
+    const counts = {
+      5: 0,
+      4: 0,
+      3: 0,
+      2: 0,
+      1: 0,
+    };
+
+    product?.reviews?.forEach((review) => {
+      counts[Math.round(review.rating)]++;
+    });
+
+    return counts;
+  }, [product]);
 
 
   const displayRating = product?.rating || 0;
@@ -478,54 +495,54 @@ const ProductScreen = ({ isOnline }) => {
     return `${days}d ago`;
   }
 
-//drop down for qty / mobile screen
-const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  //drop down for qty / mobile screen
+  const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => ref.current &&!ref.current.contains(e.target) && setOpen(false);
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    useEffect(() => {
+      const handleClickOutside = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-  const sizeClasses = size === 'sm'
-   ? 'px-3 py-2 h-11 text-sm min-w-'
-    : 'px-4 py-2.5 h-12 text-base min-w-[100px]';
+    const sizeClasses = size === 'sm'
+      ? 'px-3 py-2 h-11 text-sm min-w-'
+      : 'px-4 py-2.5 h-12 text-base min-w-[100px]';
 
-  return (
-    <div ref={ref} className="relative w-full">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className={`w-full flex items-center justify-between gap-2 border font-semibold text-gray-900 bg-white border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ${sizeClasses}`}
-      >
-        <span>{value}</span>
-        <FaChevronDown size={size === 'sm'? 14 : 16} className={`text-gray-500 transition-transform duration-200 ${open? 'rotate-180' : ''}`} />
-      </button>
+    return (
+      <div ref={ref} className="relative w-full">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className={`w-full flex items-center justify-between gap-2 border font-semibold text-gray-900 bg-white border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ${sizeClasses}`}
+        >
+          <span>{value}</span>
+          <FaChevronDown size={size === 'sm' ? 14 : 16} className={`text-gray-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        </button>
 
-      {open && (
-        <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden">
-          <div className="max-h-[240px] overflow-y-auto scrollbar-hide">
-            {options.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => {
-                  onChange(opt);
-                  setOpen(false);
-                }}
-                className={`w-full text-left px-3 py-2 text-sm transition ${Number(value) === Number(opt)? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-900 hover:bg-blue-50 hover:text-blue-600'}`}
-              >
-                {opt}
-              </button>
-            ))}
+        {open && (
+          <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden">
+            <div className="max-h-[240px] overflow-y-auto scrollbar-hide">
+              {options.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt);
+                    setOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 text-sm transition ${Number(value) === Number(opt) ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-900 hover:bg-blue-50 hover:text-blue-600'}`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
 
 
@@ -711,76 +728,76 @@ const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
                 )}
 
                 {/* Qty + Add to Cart - V12.8 KEY */}
-            
-{(selectedColor?.countInStock?? selectedVariant?.countInStock?? 0) > 0? (
-        <div className='mt-6 pt-6 border-t border-gray-200'>
-          <div className='flex flex-col lg:flex-row lg:items-end gap-3'>
-            
-            {/* QTY - AMAZON STYLE 1-5 MAX */}
-            <div className='w-full lg:w-24'>
-              <label className='block text-sm font-semibold text-gray-900 mb-1.5'>Qty:</label>
-              <CustomDropdown 
-                size="sm"
-                value={String(qty)}
-                onChange={(val) => setQty(Number(val))}
-                options={Array.from({ length: Math.min(selectedColor?.countInStock?? 5, 5) }, (_, i) => String(i + 1))}
-              />
-            </div>
 
-            {/* ADD TO CART */}
-            <button 
-              onClick={addToCartHandler}
-              className='w-full lg:flex-1 bg-[#FFD814] hover:bg-[#F7CA00] border-[#FCD200] text-[#111] font-semibold h-12 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all'
-            >
-              <FaShoppingCart size={18} /> Add to Cart
-            </button>
+                {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0 ? (
+                  <div className='mt-6 pt-6 border-t border-gray-200'>
+                    <div className='flex flex-col lg:flex-row lg:items-end gap-3'>
 
-            {/* WISHLIST - WRAPPED IN DIV */}
-            <div className='w-full lg:w-12 h-12 flex-shrink-0'>
-              <WishlistButton
-                product={product}
-                selectedColor={selectedColor}
-                selectedStorage={selectedVariant?.storage}
-                selectedPrice={selectedVariant?.price}
-                selectedImage={selectedColor?.images?.[0]?.url}
-                countInStock={selectedVariant?.countInStock}
-              />
-            </div>
+                      {/* QTY - AMAZON STYLE 1-5 MAX */}
+                      <div className='w-full lg:w-24'>
+                        <label className='block text-sm font-semibold text-gray-900 mb-1.5'>Qty:</label>
+                        <CustomDropdown
+                          size="sm"
+                          value={String(qty)}
+                          onChange={(val) => setQty(Number(val))}
+                          options={Array.from({ length: Math.min(selectedColor?.countInStock ?? 5, 5) }, (_, i) => String(i + 1))}
+                        />
+                      </div>
 
-          </div>
-        </div>
-      ) : (
-        <div className='mt-6 pt-6 border-t border-gray-200'>
-          <button 
-            disabled
-            className='w-full bg-gray-200 text-gray-500 font-semibold h-12 px-6 rounded-lg cursor-not-allowed'
-          >
-            Currently Unavailable
-          </button>
-        </div>
-      )}
+                      {/* ADD TO CART */}
+                      <button
+                        onClick={addToCartHandler}
+                        className='w-full lg:flex-1 bg-[#FFD814] hover:bg-[#F7CA00] border-[#FCD200] text-[#111] font-semibold h-12 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all'
+                      >
+                        <FaShoppingCart size={18} /> Add to Cart
+                      </button>
+
+                      {/* WISHLIST - WRAPPED IN DIV */}
+                      <div className='w-full lg:w-12 h-12 flex-shrink-0'>
+                        <WishlistButton
+                          product={product}
+                          selectedColor={selectedColor}
+                          selectedStorage={selectedVariant?.storage}
+                          selectedPrice={selectedVariant?.price}
+                          selectedImage={selectedColor?.images?.[0]?.url}
+                          countInStock={selectedVariant?.countInStock}
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+                ) : (
+                  <div className='mt-6 pt-6 border-t border-gray-200'>
+                    <button
+                      disabled
+                      className='w-full bg-gray-200 text-gray-500 font-semibold h-12 px-6 rounded-lg cursor-not-allowed'
+                    >
+                      Currently Unavailable
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Specifications Box - Full Width Below Grid V12.9 */}
-{(() => {
-  const specs = { ...product.specs, ...selectedVariant?.specs, ...selectedColor?.specs };
+            {(() => {
+              const specs = { ...product.specs, ...selectedVariant?.specs, ...selectedColor?.specs };
 
-  return Object.keys(specs).length > 0 ? (
-    <div className='mt-6 pt-6 border-t border-gray-200'>
-      <h3 className='text-xl font-bold mb-4'>Specifications - {selectedVariant?.storage || ''}</h3>
-      
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 bg-gray-50 p-4 rounded-lg'>
-        {Object.entries(specs).map(([key, value]) => (
-          <div key={key} className='flex flex-col'>
-            <span className='text-xs text-gray-500 uppercase tracking-wide font-semibold'>{key}</span>
-            <span className='text-gray-900 font-medium mt-0.5'>{value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  ) : null;
-})()}
+              return Object.keys(specs).length > 0 ? (
+                <div className='mt-6 pt-6 border-t border-gray-200'>
+                  <h3 className='text-xl font-bold mb-4'>Specifications - {selectedVariant?.storage || ''}</h3>
+
+                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 bg-gray-50 p-4 rounded-lg'>
+                    {Object.entries(specs).map(([key, value]) => (
+                      <div key={key} className='flex flex-col'>
+                        <span className='text-xs text-gray-500 uppercase tracking-wide font-semibold'>{key}</span>
+                        <span className='text-gray-900 font-medium mt-0.5'>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
 
             {/* Description - Full Width V13.4 */}
             <div className='border-t pt-7'>
@@ -799,31 +816,81 @@ const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
         {/* Reviews Section */}
         <div className='mt-10'>
 
-          <div className='mt-3 mb-4 flex items-center gap-2 flex-wrap'>
-            <span className='font-medium text-sm'>Filter:</span>
-            {[0, 5, 4, 3, 2, 1].map((star) => (
-              <button
-                key={star}
-                type='button'
-                onClick={() => setRatingFilter(star)}
-                className={`px-3 py-1 rounded text-sm border ${ratingFilter === star
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-              >
-                {star === 0 ? 'All' : `${star} ★`}
-              </button>
-            ))}
-            {ratingFilter !== 0 && (
-              <button
-                type='button'
-                onClick={() => setRatingFilter(0)}
-                className='text-sm text-blue-600 hover:underline ml-2'
-              >
-                Clear
-              </button>
-            )}
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+            Filter Reviews
+          </h3>
+
+          <div className="flex flex-wrap gap-2 mb-5">
+
+            {[5, 4, 3, 2, 1].map((star) => {
+
+              const active = ratingFilter === star;
+
+              return (
+
+                <button
+                  key={star}
+                  onClick={() => setRatingFilter(star)}
+                  className={`
+            flex items-center gap-2
+            border rounded-md
+            px-3 py-2
+            transition
+            text-sm
+
+            ${active
+                      ? "border-yellow-500 bg-yellow-50"
+                      : "border-gray-300 bg-white hover:border-yellow-400"
+                    }
+          `}
+                >
+
+                  <div className="flex">
+
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <span
+                        key={i}
+                        className={`text-lg ${i <= star
+                            ? "text-yellow-400"
+                            : "text-gray-300"
+                          }`}
+                      >
+                        ★
+                      </span>
+                    ))}
+
+                  </div>
+
+                  <span className="text-gray-600">
+                    ({ratingCounts[star]})
+                  </span>
+
+                </button>
+
+              );
+
+            })}
+
+            <button
+              onClick={() => setRatingFilter(0)}
+              className={`
+        px-4 py-2
+        rounded-md
+        border
+        text-sm
+
+        ${ratingFilter === 0
+                  ? "bg-green-600 text-white border-green-600"
+                  : "bg-white border-gray-300 hover:bg-gray-50"
+                }
+      `}
+            >
+              All ({product?.reviews?.length || 0})
+            </button>
+
           </div>
+
+
 
           {product?.reviews?.length === 0 && (
             <Message>No Reviews Yet</Message>
@@ -837,14 +904,20 @@ const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
                   <div className='flex justify-between items-start mb-2'>
                     <div>
                       <strong>{review.name}</strong>
+                       {review.verifiedPurchase && (
+    <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
+      ✓ Verified Purchase
+    </span>
+  )}
                       {(review.color || review.storage) && (
-  <span className='text-sm text-gray-500 ml-2'>
-    ({review.color}{review.storage ? ` / ${review.storage}` : ''})
-  </span>
-)}
-                       
+                        <span className='text-sm text-gray-500 ml-2'>
+                          ({review.color}{review.storage ? ` / ${review.storage}` : ''})
+                        </span>
+                      )}
+
                       <span className='text-sm text-gray-500 ml-2'>
-                        | {new Date(review.createdAt).toLocaleDateString()}
+                        |  {timeAgo(review.createdAt)}
+
                       </span>
                     </div>
                     {userInfo?._id === review.user && (
@@ -1030,7 +1103,7 @@ const CustomDropdown = ({ value, onChange, options, size = 'md' }) => {
 
             {showAllReviews && product && (
               <ReviewsModal
-                productId={product?._id}  // <-- Change this line
+                productId={product?._id}
                 product={product}
                 onClose={() => setShowAllReviews(false)}
               />
