@@ -64,6 +64,8 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         color = '',
         storage = '',
         sort = '',
+        keyword = '',
+        rating = "",
       }) => ({
         url: `/products/${productId}/reviews`,
         params: {
@@ -72,6 +74,8 @@ export const productsApiSlice = apiSlice.injectEndpoints({
           ...(color && { color }),
           ...(storage && { storage }),
           ...(sort && { sort }),
+          ...(keyword && { keyword }),
+          ...(rating && { rating }),
         },
       }),
       providesTags: ['Reviews'],

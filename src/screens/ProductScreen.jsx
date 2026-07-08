@@ -86,6 +86,7 @@ const ProductScreen = ({ isOnline }) => {
   //const [headline, setHeadline] = useState('')      // ADD THIS
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [comment, setComment] = useState('')
+  const [title, setTitle] = useState('')
   const [sortBy, setSortBy] = useState('helpful');
   const [replyText, setReplyText] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
@@ -107,6 +108,7 @@ const ProductScreen = ({ isOnline }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
   const [editComment, setEditComment] = useState('');
+  const [editTitle, setEditTitle] = useState('');
   const [editRating, setEditRating] = useState(0);
   const [editImages, setEditImages] = useState([]);
   //const [removedImageIds, setRemovedImageIds] = useState([]);
@@ -127,6 +129,7 @@ const ProductScreen = ({ isOnline }) => {
     setEditingReview(review);
     setEditRating(review.rating);
     setEditComment(review.comment);
+    setEditTitle(review.title || "");
     setEditImages(review.images || []); // V33.35B KEY
     setEditColor(review.color || null);
     setIsEditModalOpen(true); // V33.93 KEY
@@ -138,6 +141,7 @@ const ProductScreen = ({ isOnline }) => {
     setEditingReview(null);
     setEditComment('');
     setEditRating(0);
+    setEditTitle('');
     setEditImages([]);
     setIsEditModalOpen(false);
     //setEditImageFiles([]);
@@ -264,6 +268,7 @@ const ProductScreen = ({ isOnline }) => {
         productId,
         rating,
         comment,
+        title,
         color: selectedColor?.name || '',
         storage: selectedVariant.storage || '',
         images: uploadedImages, // V33.66 KEY: [{url, imagePublicId}]
@@ -273,6 +278,7 @@ const ProductScreen = ({ isOnline }) => {
       toast.success('Review submitted successfully');
       setRating(0);
       setComment('');
+      setTitle('');
       setReviewImageFiles([]);
       setReviewImagePreviews([]);
     } catch (err) {
@@ -298,6 +304,7 @@ const ProductScreen = ({ isOnline }) => {
         reviewId: editingReview._id,
         rating: editRating,
         comment: editComment,
+        title: editTitle,
         images: editImages, // V33.89 KEY: [{url, imagePublicId}] only
       }).unwrap();
 
@@ -940,6 +947,11 @@ const ProductScreen = ({ isOnline }) => {
                   </div>
 
                   <Rating value={review.rating} />
+                  {review.title && (
+  <h4 className="mt-2 font-semibold text-gray-900 text-base">
+    {review.title}
+  </h4>
+)}
                   <p className='mt-2 text-gray-700'>{review.comment}</p>
 
                   {review.images?.length > 0 && (
@@ -1194,6 +1206,20 @@ const ProductScreen = ({ isOnline }) => {
                 </div>
 
                 {/* Written Review */}
+                <div className="mb-6">
+  <label className="block text-base font-bold text-gray-900 mb-2">
+    Review title <span className="text-gray-500 font-normal">(optional)</span>
+  </label>
+
+  <input
+    type="text"
+    placeholder="Example: Great battery life"
+    value={title}
+    onChange={(e) => setTitle(e.target.value)}
+    maxLength={120}
+    className="w-full px-3 py-2 border border-gray-400 rounded shadow-sm focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500"
+  />
+</div>
                 <div className='mb-6'>
                   <label className='block text-base font-bold text-gray-900 mb-2'>
                     Add a written review
@@ -1322,6 +1348,23 @@ const ProductScreen = ({ isOnline }) => {
                       </div>
                       {editRating === 0 && <p className='text-red-500 text-sm mt-1'>Please select a rating</p>}
                     </div>
+                    {/* Review Title */}
+                        {editTitle !== "" && (
+  <div className="mb-4">
+    <label className="block mb-2 font-semibold text-gray-700">
+      Review Title <span className="text-gray-500 font-normal">(optional)</span>
+    </label>
+
+    <input
+      type="text"
+      value={editTitle}
+      onChange={(e) => setEditTitle(e.target.value)}
+      placeholder="Example: Great battery life"
+      maxLength={120}
+      className="w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+    />
+  </div>
+)}
 
                     {/* Comment */}
                     <div>

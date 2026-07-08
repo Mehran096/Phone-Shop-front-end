@@ -15,6 +15,8 @@ import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Rating from '../components/Rating';
+import ReviewSkeleton from '../components/ReviewSkeleton';
+
 
 
 const ProductReviewsScreen = () => {
@@ -24,9 +26,12 @@ const ProductReviewsScreen = () => {
     const [sort, setSort] = useState('helpful');
     const [colorFilter, setColorFilter] = useState('All');
     const [storageFilter, setStorageFilter] = useState('All');
+    const [ratingFilter, setRatingFilter] = useState("");
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [editingReply, setEditingReply] = useState(null);
+    const [allReviews, setAllReviews] = useState([]);
+    const [search, setSearch] = useState('');
     //image view
     const [selectedImage, setSelectedImage] = useState(null);
 
@@ -44,6 +49,7 @@ const ProductReviewsScreen = () => {
     const {
         data,
         isLoading,
+        isFetching,
         error,
         refetch,
     } = useGetProductReviewsQuery(
@@ -51,9 +57,11 @@ const ProductReviewsScreen = () => {
             productId,
             page,
             limit: 10,
-            sort,
+            sort, 
             color: colorFilter === "All" ? "" : colorFilter,
             storage: storageFilter === 'All' ? '' : storageFilter,
+            keyword: search,
+            rating: ratingFilter,
         },
         {
             skip: !productId,
@@ -78,7 +86,6 @@ const ProductReviewsScreen = () => {
     const storages = [...new Set(product?.variants?.map(v => v.storage) || [])];
 
 
-
     //filter image start
     const selectedVariant =
         product?.variants?.find(
@@ -97,15 +104,28 @@ const ProductReviewsScreen = () => {
 
     //filters iamge end
 
+useEffect(() => {
+    setPage(1);
+    setAllReviews([]);
+}, [sort, colorFilter, storageFilter]);
 
-    const reviews = data?.reviews || [];
+    //const reviews = data?.reviews || [];
+  useEffect(() => {
+    if (!data) return;
 
-    const customerPhotos = reviews.flatMap((review) =>
-  (review.images || []).map((img) => ({
-    ...img,
-    reviewId: review._id,
-  }))
-);
+    if (data.page === 1) {
+        setAllReviews(data.reviews);
+    } else {
+        setAllReviews(prev => [...prev, ...data.reviews]);
+    }
+}, [data]);
+
+    const customerPhotos = allReviews.flatMap((review) =>
+        (review.images || []).map((img) => ({
+            ...img,
+            reviewId: review._id,
+        }))
+    );
 
     const handleHelpful = async (reviewId) => {
         if (!userInfo) {
@@ -183,10 +203,8 @@ const ProductReviewsScreen = () => {
           hover:border-gray-400 transition"
                 >
                     <span className="text-gray-900">
-                        {value === 'All'
-                            ? label
-                            : displayMap[value] || value}
-                    </span>
+  {options.find((opt) => opt.value === value)?.label || label}
+</span>
                     <FaChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -195,15 +213,13 @@ const ProductReviewsScreen = () => {
           max-h-60 overflow-y-auto">
                         {options.map((opt) => (
                             <button
-                                key={opt}
+                                key={opt.value}
                                 type="button"
-                                onClick={() => { onChange(opt); setOpen(false); }}
+                                onClick={() => { onChange(opt.value); setOpen(false); }}
                                 className={`w-full text-left px-4 py-2.5 text-sm text-gray-900
                    hover:bg-gray-100 ${value === opt ? 'bg-gray-100 font-medium' : ''}`}
                             >
-                                {opt === 'All'
-                                    ? label
-                                    : displayMap[opt] || opt}
+                                {opt.label}
                             </button>
                         ))}
                     </div>
@@ -260,7 +276,7 @@ const ProductReviewsScreen = () => {
                             <div className="mt-2 flex items-center gap-3">
                                 <Rating value={product.rating} />
                                 <span className="text-gray-600">
-                                    ({product.numReviews} Reviews)
+                                    ({product.numReviews} allReviews)
                                 </span>
                             </div>
 
@@ -292,7 +308,7 @@ const ProductReviewsScreen = () => {
                                     <Rating value={product.rating} />
 
                                     <p className="text-gray-500 mt-1">
-                                        Based on {product.numReviews} reviews
+                                        Based on {product.numReviews} allReviews
                                     </p>
 
                                 </div>
@@ -354,42 +370,88 @@ const ProductReviewsScreen = () => {
                 </div>
 
                 {customerPhotos.length > 0 && (
-  <div className="bg-white rounded-lg border p-5 mb-8">
-    <h3 className="text-lg font-semibold mb-4">
-      Customer Photos ({customerPhotos.length})
-    </h3>
+                    <div className="bg-white rounded-lg border p-5 mb-8">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Customer Photos ({customerPhotos.length})
+                        </h3>
 
-    <div className="flex flex-wrap gap-3">
-      {customerPhotos.map((photo, index) => (
-        <img
-          key={index}
-          src={photo.url}
-          alt="Customer Review"
-          onClick={() => setSelectedImage(photo.url)}
-          className="w-20 h-20 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
-        />
-      ))}
-    </div>
-  </div>
-)}
+                        <div className="flex flex-wrap gap-3">
+                            {customerPhotos.map((photo, index) => (
+                                <img
+                                    key={index}
+                                    src={photo.url}
+                                    alt="Customer Review"
+                                    onClick={() => setSelectedImage(photo.url)}
+                                    className="w-20 h-20 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
 
             </div>
+
+            {/* Search Reviews */}
+<div className="mb-6">
+  <div className="relative w-full md:max-w-md lg:max-w-lg">
+    <input
+      type="text"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder="Search reviews..."
+      className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
+  </div>
+</div>
 
 
             {/* Sort + Stats */}
             <div className="p-3 sm:p-4 border-b flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 gap-3">
                 <span className="text-sm text-gray-600">
-                    {data?.totalReviews || 0} reviews
+                    {data?.totalReviews || 0} allReviews
                 </span>
 
                 <div className="flex flex-col md:flex-row gap-2 sm:gap-3 w-full md:w-auto">
+                    <CustomDropdown
+  value={ratingFilter}
+  onChange={(value) => setRatingFilter(value)}
+  options={[
+    { label: "All Stars", value: "" },
+    { label: "5 Stars", value: "5" },
+    { label: "4 Stars", value: "4" },
+    { label: "3 Stars", value: "3" },
+    { label: "2 Stars", value: "2" },
+    { label: "1 Star", value: "1" },
+  ]}
+/>
                     <CustomDropdown
                         value={colorFilter}
                         onChange={(val) => {
                             setColorFilter(val);
                             setPage(1);
                         }}
-                        options={['All', ...colors]}
+                       options={[
+  { label: 'All Colors', value: 'All' },
+  ...colors.map((color) => ({
+    label: color,
+    value: color,
+  })),
+]}
                         label="All Colors"
                     />
                     <CustomDropdown
@@ -398,7 +460,13 @@ const ProductReviewsScreen = () => {
                             setStorageFilter(val);
                             setPage(1);
                         }}
-                        options={['All', ...storages]}
+                        options={[
+  { label: 'All Storage', value: 'All' },
+  ...storages.map((storage) => ({
+    label: storage,
+    value: storage,
+  })),
+]}
                         label="All Storage"
                     />
                     <CustomDropdown
@@ -407,14 +475,19 @@ const ProductReviewsScreen = () => {
                             setSort(val);
                             setPage(1);
                         }}
-                        options={['helpful', 'newest', 'highest', 'lowest']}
+                        options={[
+  { label: 'Most Helpful', value: 'helpful' },
+  { label: 'Newest', value: 'newest' },
+  { label: 'Highest Rating', value: 'highest' },
+  { label: 'Lowest Rating', value: 'lowest' },
+]}
                         label="Sort By"
-                        displayMap={{
-                            helpful: 'Most Helpful',
-                            newest: 'Newest',
-                            highest: 'Highest Rating',
-                            lowest: 'Lowest Rating',
-                        }}
+                        // displayMap={{
+                        //     helpful: 'Most Helpful',
+                        //     newest: 'Newest',
+                        //     highest: 'Highest Rating',
+                        //     lowest: 'Lowest Rating',
+                        // }}
                     />
                 </div>
             </div>
@@ -427,14 +500,14 @@ const ProductReviewsScreen = () => {
                     <Message variant="danger">{error?.data?.message || error.error}</Message>
                 ) : (
                     <>
-                        {reviews.length === 0 ? (
+                        {allReviews.length === 0 ? (
                             <Message>No reviews yet</Message>
                         ) : (
-                            reviews.map((review) => {
+                            allReviews.map((review, index) => {
                                 const hasMarkedHelpful = review.helpful?.includes(userInfo?._id);
 
                                 return (
-                                    <div key={review._id} className="border-b py-4 sm:py-6 last:border-b-0">
+                                    <div key={`${review._id}-${index}`} className="border-b py-4 sm:py-6 last:border-b-0">
                                         <div className="flex flex-wrap items-center gap-2 text-sm">
                                             <span className="font-semibold">{review.name}</span>
                                             {review.verifiedPurchase && (
@@ -455,7 +528,11 @@ const ProductReviewsScreen = () => {
                                         </div>
 
                                         <Rating value={review.rating} />
-
+                                        {review.title && (
+  <h4 className="font-semibold text-gray-900 text-base sm:text-lg mt-2 mb-1">
+    {review.title}
+  </h4>
+)}
                                         <p className="text-gray-800 mb-3 break-words text-sm sm:text-base">{review.comment}</p>
 
                                         {review.images?.length > 0 && (
@@ -476,7 +553,7 @@ const ProductReviewsScreen = () => {
                                             <div
                                                 className="fixed inset-0 bg-black/80 flex justify-center items-center z-50"
                                                 onClick={() => setSelectedImage(null)}
-                                            > 
+                                            >
                                                 <img
                                                     src={selectedImage}
                                                     className="max-w-[90%] max-h-[90%] rounded-lg"
@@ -620,24 +697,27 @@ const ProductReviewsScreen = () => {
             </div>
 
             {/* Pagination */}
-            {data?.totalPages > 1 && (
-                <div className="p-3 sm:p-4 border-t flex justify-between items-center bg-gray-50">
+            {/* Show skeleton while loading more */}
+            {isFetching && (
+                <div className="mt-6">
+                    {[1, 2, 3].map((item) => (
+                        <ReviewSkeleton key={item} />
+                    ))}
+                </div>
+            )}
+
+            {/* Load More Button */}
+            {page < data?.totalPages && (
+                <div className="flex justify-center mt-10">
                     <button
-                        disabled={page === 1}
-                        onClick={() => setPage((p) => p - 1)}
-                        className="px-3 sm:px-4 py-2 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setPage((prev) => prev + 1)}
+                        disabled={isFetching}
+                        className="px-8 py-3 bg-gray-900 text-white rounded-xl
+                 hover:bg-black transition-all duration-300
+                 hover:scale-105 shadow-lg
+                 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Previous
-                    </button>
-                    <span className="text-xs sm:text-sm">
-                        Page {page} of {data.totalPages}
-                    </span>
-                    <button
-                        disabled={page === data.totalPages}
-                        onClick={() => setPage((p) => p + 1)}
-                        className="px-3 sm:px-4 py-2 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Next
+                        {isFetching ? "Loading..." : "Load More Reviews"}
                     </button>
                 </div>
             )}
