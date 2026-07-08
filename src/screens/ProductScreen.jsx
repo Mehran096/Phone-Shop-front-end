@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import RatingStars from '../components/RatingStars';
-import ReviewsModal from '../components/ReviewsModal';
+//import ReviewsModal from '../components/ReviewsModal';
 import OfflineMessage from '../components/OfflineMessage'
 
 import { useSelector, useDispatch } from 'react-redux'
@@ -97,7 +97,7 @@ const ProductScreen = ({ isOnline }) => {
   const [reviewImagePreviews, setReviewImagePreviews] = useState([]); // V33.58 KEY: For UI only
   //const [reviewImageFiles, setReviewImageFiles] = useState([]);
   const [ratingFilter, setRatingFilter] = useState(0);
-  const [showAllReviews, setShowAllReviews] = useState(false);
+  //const [showAllReviews, setShowAllReviews] = useState(false);
   //product360
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
@@ -851,8 +851,8 @@ const ProductScreen = ({ isOnline }) => {
                       <span
                         key={i}
                         className={`text-lg ${i <= star
-                            ? "text-yellow-400"
-                            : "text-gray-300"
+                          ? "text-yellow-400"
+                          : "text-gray-300"
                           }`}
                       >
                         ★
@@ -904,11 +904,11 @@ const ProductScreen = ({ isOnline }) => {
                   <div className='flex justify-between items-start mb-2'>
                     <div>
                       <strong>{review.name}</strong>
-                       {review.verifiedPurchase && (
-    <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-      ✓ Verified Purchase
-    </span>
-  )}
+                      {review.verifiedPurchase && (
+                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
+                          ✓ Verified Purchase
+                        </span>
+                      )}
                       {(review.color || review.storage) && (
                         <span className='text-sm text-gray-500 ml-2'>
                           ({review.color}{review.storage ? ` / ${review.storage}` : ''})
@@ -1093,21 +1093,21 @@ const ProductScreen = ({ isOnline }) => {
 
             {/* Add this right here*/}
             {product?.reviews?.length > 3 && (
-              <button
-                onClick={() => setShowAllReviews(true)}
-                className="mt-6 px-6 py-2 border-2 border-gray-800 rounded-md hover:bg-gray-100 font-semibold transition w-full sm:w-auto"
+              <Link
+                to={`/products/${product.slug}/reviews`}
+                className="inline-block mt-6 px-6 py-2 border-2 border-gray-800 rounded-md hover:bg-gray-100 font-semibold"
               >
                 See All Reviews ({product.reviews.length})
-              </button>
+              </Link>
             )}
 
-            {showAllReviews && product && (
+            {/* {showAllReviews && product && (
               <ReviewsModal
                 productId={product?._id}
                 product={product}
                 onClose={() => setShowAllReviews(false)}
               />
-            )}
+            )} */}
 
           </div>
 

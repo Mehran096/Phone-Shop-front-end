@@ -32,6 +32,7 @@ import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import WishlistScreen from './screens/WishlistScreen'
 import ShippingPolicyScreen from './screens/ShippingPolicyScreen';
 import MyAccountScreen from './screens/MyAccountScreen';
+import ProductReviewsScreen from './screens/ProductReviewsScreen';
 
 
 import { FaExclamationTriangle } from 'react-icons/fa'
@@ -41,6 +42,7 @@ import { useEffect, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
+ 
 
 
  
@@ -131,6 +133,7 @@ const dispatch = useDispatch()
             <Route path='/returns' element={<ReturnRefundScreen />} />
             <Route path='/contact' element={<ContactScreen />} />
             <Route path="/product/:slug" element={<ProductScreen isOnline={isOnline}/>} />
+            <Route path="/products/:slug/reviews" element={<ProductReviewsScreen />}/>
             <Route path="/cart" element={<CartScreen />} />
             <Route path="/shipping" element={<ShippingScreen />} />
             <Route path="/payment" element={<PaymentScreen />} />
