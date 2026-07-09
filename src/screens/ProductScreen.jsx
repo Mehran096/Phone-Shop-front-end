@@ -195,6 +195,36 @@ const ProductScreen = ({ isOnline }) => {
     toast.success('Added to cart')
     navigate('/cart')
   }
+//Buy now handler
+const buyNowHandler = () => {
+     
+  if (selectedVariant?.colors?.length > 0 && !selectedColor?.name) {
+    toast.error("Please select a color");
+    return;
+  }
+const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
+  const imageUrl = selectedColor.images?.[0]?.url || product.image || '/placeholder.png';
+    dispatch(addToCart({
+    product: product._id,
+    name: product.name,
+    slug: product.slug,
+    image: imageUrl,
+   price: price,
+    color: selectedColor?.name || "",
+    countInStock:
+        selectedColor?.countInStock ??
+        selectedVariant?.countInStock ??
+        0,
+    storage: selectedVariant.storage || "",
+    qty,
+}));
+ 
+navigate("/shipping");
+ 
+
+
+  
+};
 
 
   // Filter reviews by selected color, user login to show first his review
@@ -773,7 +803,7 @@ const ProductScreen = ({ isOnline }) => {
                 {/* Qty + Add to Cart - V12.8 KEY */}
 
                 {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0 ? (
-                  <div className='mt-6 pt-6 border-t border-gray-200'>
+                  <div className='hidden md:block mt-6 pt-6 border-t border-gray-200'>
                     <div className='flex flex-col lg:flex-row lg:items-end gap-3'>
 
                       {/* QTY - AMAZON STYLE 1-5 MAX */}
@@ -796,15 +826,17 @@ const ProductScreen = ({ isOnline }) => {
                       </button>
 
                       {/* WISHLIST - WRAPPED IN DIV */}
-                      <div className='w-full lg:w-12 h-12 flex-shrink-0'>
-                        <WishlistButton
-                          product={product}
-                          selectedColor={selectedColor}
-                          selectedStorage={selectedVariant?.storage}
-                          selectedPrice={selectedVariant?.price}
-                          selectedImage={selectedColor?.images?.[0]?.url}
-                          countInStock={selectedVariant?.countInStock}
-                        />
+                      <div className="w-12 h-12 flex-shrink-0">
+                          <WishlistButton
+                            product={product}
+                            selectedColor={selectedColor}
+                            selectedStorage={selectedVariant?.storage}
+                            selectedPrice={selectedVariant?.price}
+                            selectedImage={selectedColor?.images?.[0]?.url}
+                            countInStock={selectedVariant?.countInStock}
+                            className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
+                            showText={false}
+                          />
                       </div>
 
                     </div>
@@ -1399,7 +1431,7 @@ const ProductScreen = ({ isOnline }) => {
                       {editRating === 0 && <p className='text-red-500 text-sm mt-1'>Please select a rating</p>}
                     </div>
                     {/* Review Title */}
-                    {editTitle !== "" && (
+                    
                       <div className="mb-4">
                         <label className="block mb-2 font-semibold text-gray-700">
                           Review Title <span className="text-gray-500 font-normal">(optional)</span>
@@ -1414,7 +1446,7 @@ const ProductScreen = ({ isOnline }) => {
                           className="w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
-                    )}
+                   
 
                     {/* Comment */}
                     <div>
@@ -1508,10 +1540,13 @@ const ProductScreen = ({ isOnline }) => {
       </div>
 
       <StickyPurchaseBar
+  product={product}
+  selectedColor={selectedColor}
+  selectedVariant={selectedVariant}
+  qty={qty}
+  setQty={setQty}
   addToCartHandler={addToCartHandler}
-  //buyNowHandler={buyNowHandler}
-  //wishlistHandler={wishlistHandler}
-  //isInWishlist={isInWishlist}
+  buyNowHandler={buyNowHandler}
 />
     </>
   )

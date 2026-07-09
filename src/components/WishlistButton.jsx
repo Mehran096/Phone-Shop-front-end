@@ -13,7 +13,8 @@ const WishlistButton = ({
   selectedPrice, 
   selectedImage, 
   countInStock,
-  className
+  className,
+  showText = false,
 }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -52,12 +53,7 @@ const WishlistButton = ({
   const variantToSend = product?.variants?.find(
     v => v.storage === storageName
   )
-
-  // const colorToSend = colorName
-  // const storageToSend = variantToSend?.storage || storageName // "256GB"
-  // const priceToSend = selectedPrice || variantToSend?.colors?.find(c => c.name === colorToSend)?.price
-  // const imageToSend = selectedImage || variantToSend?.colors?.find(c => c.name === colorToSend)?.images?.[0]?.url
-  // const stockToSend = countInStock || variantToSend?.colors?.find(c => c.name === colorToSend)?.countInStock || 0
+ 
   const colorToSend = colorName || product?.variants?.[0]?.colors?.[0]?.name || ''
 const storageToSend = variantToSend?.storage || storageName || product?.variants?.[0]?.storage || ''
 const priceToSend = selectedPrice?? variantToSend?.colors?.find(c => c.name === colorToSend)?.price?? product?.variants?.[0]?.colors?.[0]?.price?? 0
@@ -106,20 +102,23 @@ const stockToSend = countInStock?? variantToSend?.colors?.find(c => c.name === c
   <button
     type='button'
     onClick={wishlistHandler}
-    className='w-full h-12 flex items-center border justify-center gap-2 border-gray-300 rounded-lg bg-white hover:bg-gray-50 hover:border-gray-400 transition'
+     className={
+    className ||
+    "w-full h-12 flex items-center justify-center gap-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50"
+  }
     title={isWishlisted? 'Remove from Wishlist' : 'Add to Wishlist'}
   >
-    {isWishlisted? (
-      <>
-        <FaHeart className="text-red-500 text-xl" />
-        <span className="lg:hidden font-semibold text-gray-900 text-base">Remove from Wishlist</span>
-      </>
-    ) : (
-      <>
-        <FaRegHeart className="text-gray-700 text-xl" />
-        <span className="lg:hidden font-semibold text-gray-900 text-base">Add to Wishlist</span>
-      </>
-    )}
+   {isWishlisted ? (
+  <>
+    <FaHeart className="text-red-500 text-xl" />
+    {showText && <span>Remove from Wishlist</span>}
+  </>
+) : (
+  <>
+    <FaRegHeart className="text-gray-700 text-xl" />
+    {showText && <span>Add to Wishlist</span>}
+  </>
+)}
   </button>
 )
 }
