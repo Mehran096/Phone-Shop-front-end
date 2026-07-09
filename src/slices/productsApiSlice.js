@@ -122,6 +122,15 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         { type: 'Product', id: productId },
       ],
     }),
+    markReviewNotHelpful: builder.mutation({
+  query: ({ productId, reviewId }) => ({
+    url: `/products/${productId}/reviews/${reviewId}/not-helpful`,
+    method: 'PUT',
+  }),
+  invalidatesTags: (result, error, { productId }) => [
+    { type: 'Product', id: productId },
+  ],
+}),
     addAdminReply: builder.mutation({
       query: ({ productId, reviewId, reply }) => ({
         url: `/products/${productId}/reviews/${reviewId}/reply`,
@@ -211,6 +220,7 @@ export const {
   useUpdateReviewMutation,
   useDeleteReviewMutation,
   useMarkReviewHelpfulMutation,
+  useMarkReviewNotHelpfulMutation,
   useAddAdminReplyMutation,
   useEditAdminReplyMutation,
   useDeleteAdminReplyMutation,

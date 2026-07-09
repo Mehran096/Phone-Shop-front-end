@@ -6,11 +6,12 @@ import {
     useGetProductBySlugQuery,
     useGetProductReviewsQuery,
     useMarkReviewHelpfulMutation,
+    useMarkReviewNotHelpfulMutation,
     useAddAdminReplyMutation,
     useEditAdminReplyMutation,
     useDeleteAdminReplyMutation,
 } from '../slices/productsApiSlice';
-import { FaStar, FaTimes, FaThumbsUp, FaReply, FaEdit, FaTrash, FaChevronDown } from 'react-icons/fa';
+import { FaStar, FaTimes, FaThumbsUp, FaThumbsDown, FaReply, FaEdit, FaTrash, FaChevronDown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
@@ -57,7 +58,7 @@ const ProductReviewsScreen = () => {
             productId,
             page,
             limit: 10,
-            sort, 
+            sort,
             color: colorFilter === "All" ? "" : colorFilter,
             storage: storageFilter === 'All' ? '' : storageFilter,
             keyword: search,
@@ -71,6 +72,7 @@ const ProductReviewsScreen = () => {
 
 
     const [markHelpful, { isLoading: loadingHelpful }] = useMarkReviewHelpfulMutation();
+    const [markReviewNotHelpful, { isLoading: loadingNotHelpful }] = useMarkReviewNotHelpfulMutation();
     const [addAdminReply, { isLoading: loadingReply }] = useAddAdminReplyMutation();
     const [editAdminReply, { isLoading: loadingEdit }] = useEditAdminReplyMutation();
     const [deleteAdminReply, { isLoading: loadingDelete }] = useDeleteAdminReplyMutation();
@@ -104,21 +106,21 @@ const ProductReviewsScreen = () => {
 
     //filters iamge end
 
-useEffect(() => {
-    setPage(1);
-    setAllReviews([]);
-}, [sort, colorFilter, storageFilter]);
+    useEffect(() => {
+        setPage(1);
+        setAllReviews([]);
+    }, [sort, colorFilter, storageFilter]);
 
     //const reviews = data?.reviews || [];
-  useEffect(() => {
-    if (!data) return;
+    useEffect(() => {
+        if (!data) return;
 
-    if (data.page === 1) {
-        setAllReviews(data.reviews);
-    } else {
-        setAllReviews(prev => [...prev, ...data.reviews]);
-    }
-}, [data]);
+        if (data.page === 1) {
+            setAllReviews(data.reviews);
+        } else {
+            setAllReviews(prev => [...prev, ...data.reviews]);
+        }
+    }, [data]);
 
     const customerPhotos = allReviews.flatMap((review) =>
         (review.images || []).map((img) => ({
@@ -133,8 +135,36 @@ useEffect(() => {
             return;
         }
         try {
-            await markHelpful({ productId, reviewId }).unwrap();
+            const res = await markHelpful({ productId, reviewId }).unwrap();
             refetch();
+            toast.success(
+  res.userVoted
+    ? 'Thanks! You found this review helpful.'
+    : 'Your helpful vote has been removed.'
+);
+        } catch (err) {
+            toast.error(err?.data?.message || err.error);
+        }
+    };
+
+    const handleNotHelpful = async (reviewId) => {
+        if (!userInfo) {
+            toast.error("Please login to mark as not helpful");
+            return;
+        }
+
+        try {
+           const res = await markReviewNotHelpful({
+                productId,
+                reviewId,
+            }).unwrap();
+
+            refetch();
+            toast.success(
+  res.userVoted
+    ? "Thanks! You marked this review as not helpful."
+    : 'Your not helpful vote has been removed.'
+);
         } catch (err) {
             toast.error(err?.data?.message || err.error);
         }
@@ -203,8 +233,8 @@ useEffect(() => {
           hover:border-gray-400 transition"
                 >
                     <span className="text-gray-900">
-  {options.find((opt) => opt.value === value)?.label || label}
-</span>
+                        {options.find((opt) => opt.value === value)?.label || label}
+                    </span>
                     <FaChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -392,32 +422,32 @@ useEffect(() => {
             </div>
 
             {/* Search Reviews */}
-<div className="mb-6">
-  <div className="relative w-full md:max-w-md lg:max-w-lg">
-    <input
-      type="text"
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      placeholder="Search reviews..."
-      className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-    />
+            <div className="mb-6">
+                <div className="relative w-full md:max-w-md lg:max-w-lg">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search reviews..."
+                        className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
 
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
-    </svg>
-  </div>
-</div>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                    </svg>
+                </div>
+            </div>
 
 
             {/* Sort + Stats */}
@@ -428,30 +458,30 @@ useEffect(() => {
 
                 <div className="flex flex-col md:flex-row gap-2 sm:gap-3 w-full md:w-auto">
                     <CustomDropdown
-  value={ratingFilter}
-  onChange={(value) => setRatingFilter(value)}
-  options={[
-    { label: "All Stars", value: "" },
-    { label: "5 Stars", value: "5" },
-    { label: "4 Stars", value: "4" },
-    { label: "3 Stars", value: "3" },
-    { label: "2 Stars", value: "2" },
-    { label: "1 Star", value: "1" },
-  ]}
-/>
+                        value={ratingFilter}
+                        onChange={(value) => setRatingFilter(value)}
+                        options={[
+                            { label: "All Stars", value: "" },
+                            { label: "5 Stars", value: "5" },
+                            { label: "4 Stars", value: "4" },
+                            { label: "3 Stars", value: "3" },
+                            { label: "2 Stars", value: "2" },
+                            { label: "1 Star", value: "1" },
+                        ]}
+                    />
                     <CustomDropdown
                         value={colorFilter}
                         onChange={(val) => {
                             setColorFilter(val);
                             setPage(1);
                         }}
-                       options={[
-  { label: 'All Colors', value: 'All' },
-  ...colors.map((color) => ({
-    label: color,
-    value: color,
-  })),
-]}
+                        options={[
+                            { label: 'All Colors', value: 'All' },
+                            ...colors.map((color) => ({
+                                label: color,
+                                value: color,
+                            })),
+                        ]}
                         label="All Colors"
                     />
                     <CustomDropdown
@@ -461,12 +491,12 @@ useEffect(() => {
                             setPage(1);
                         }}
                         options={[
-  { label: 'All Storage', value: 'All' },
-  ...storages.map((storage) => ({
-    label: storage,
-    value: storage,
-  })),
-]}
+                            { label: 'All Storage', value: 'All' },
+                            ...storages.map((storage) => ({
+                                label: storage,
+                                value: storage,
+                            })),
+                        ]}
                         label="All Storage"
                     />
                     <CustomDropdown
@@ -476,18 +506,14 @@ useEffect(() => {
                             setPage(1);
                         }}
                         options={[
-  { label: 'Most Helpful', value: 'helpful' },
-  { label: 'Newest', value: 'newest' },
-  { label: 'Highest Rating', value: 'highest' },
-  { label: 'Lowest Rating', value: 'lowest' },
-]}
+                            { label: 'Most Helpful', value: 'helpful' },
+                            { label: 'Most Not Helpful', value: 'notHelpful' },
+                            { label: 'Newest', value: 'newest' },
+                            { label: 'Highest Rating', value: 'highest' },
+                            { label: 'Lowest Rating', value: 'lowest' },
+                        ]}
                         label="Sort By"
-                        // displayMap={{
-                        //     helpful: 'Most Helpful',
-                        //     newest: 'Newest',
-                        //     highest: 'Highest Rating',
-                        //     lowest: 'Lowest Rating',
-                        // }}
+
                     />
                 </div>
             </div>
@@ -505,6 +531,7 @@ useEffect(() => {
                         ) : (
                             allReviews.map((review, index) => {
                                 const hasMarkedHelpful = review.helpful?.includes(userInfo?._id);
+                                const hasMarkedNotHelpful = review.notHelpful?.includes(userInfo?._id);
 
                                 return (
                                     <div key={`${review._id}-${index}`} className="border-b py-4 sm:py-6 last:border-b-0">
@@ -529,10 +556,10 @@ useEffect(() => {
 
                                         <Rating value={review.rating} />
                                         {review.title && (
-  <h4 className="font-semibold text-gray-900 text-base sm:text-lg mt-2 mb-1">
-    {review.title}
-  </h4>
-)}
+                                            <h4 className="font-semibold text-gray-900 text-base sm:text-lg mt-2 mb-1">
+                                                {review.title}
+                                            </h4>
+                                        )}
                                         <p className="text-gray-800 mb-3 break-words text-sm sm:text-base">{review.comment}</p>
 
                                         {review.images?.length > 0 && (
@@ -651,6 +678,17 @@ useEffect(() => {
                                             >
                                                 <FaThumbsUp className={hasMarkedHelpful ? 'fill-current' : ''} />
                                                 Helpful ({review.helpful?.length || 0})
+                                            </button>
+                                            <button
+                                                onClick={() => handleNotHelpful(review._id)}
+                                                disabled={loadingNotHelpful}
+                                                className={`flex items-center gap-1 text-sm ${hasMarkedNotHelpful
+                                                        ? "text-red-600 font-semibold"
+                                                        : "text-gray-600 hover:text-red-600"
+                                                    }`}
+                                            >
+                                                <FaThumbsDown className={hasMarkedNotHelpful ? "fill-current" : ""} />
+                                                Not Helpful ({review.notHelpful?.length || 0})
                                             </button>
 
                                             {userInfo?.isAdmin && !review.adminReply?.reply && (

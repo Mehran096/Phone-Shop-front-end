@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import RatingStars from '../components/RatingStars';
 //import ReviewsModal from '../components/ReviewsModal';
 import OfflineMessage from '../components/OfflineMessage'
+import StickyPurchaseBar from "../components/StickyPurchaseBar";
 
 import { useSelector, useDispatch } from 'react-redux'
 
@@ -14,6 +15,7 @@ import {
   useUpdateReviewMutation,
   useDeleteReviewMutation,
   useMarkReviewHelpfulMutation,
+  useMarkReviewNotHelpfulMutation,
   useAddAdminReplyMutation,
   useEditAdminReplyMutation,
   useDeleteAdminReplyMutation,
@@ -32,6 +34,7 @@ import {
   FaStar,
   FaChevronDown,
   FaThumbsUp,
+  FaThumbsDown,
   FaHeart,
   FaMemory, FaHdd, FaMobileAlt, FaCamera, FaBatteryFull, FaMicrochip,
 } from 'react-icons/fa'
@@ -56,6 +59,7 @@ const ProductScreen = ({ isOnline }) => {
   const [editAdminReply, { isLoading: loadingUpdateReply }] = useEditAdminReplyMutation();
   const [deleteAdminReply, { isLoading: loadingDeleteReply }] = useDeleteAdminReplyMutation();
   const [markHelpful, { isLoading: loadingHelpfulReview }] = useMarkReviewHelpfulMutation();
+  const [markReviewNotHelpful, { isLoading: loadingNotHelpfulReview },] = useMarkReviewNotHelpfulMutation();
   const [uploadReviewImage, { isLoading: loadingUpload }] = useUploadReviewImageMutation();
   const [deleteCloudinaryImage] = useDeleteCloudinaryImageMutation();
 
@@ -416,13 +420,45 @@ const ProductScreen = ({ isOnline }) => {
       return;
     }
     try {
-      await markHelpful({ productId: product._id, reviewId }).unwrap();
-      refetch(); // <- ADD THIS LINE to get updated helpfulBy array
-      toast.success('Updated');
+      const res = await markHelpful({
+      productId: product._id,
+      reviewId,
+      }).unwrap();
+
+      refetch();
+
+      toast.success(
+  res.userVoted
+    ? 'Thanks! You found this review helpful.'
+    : 'Your helpful vote has been removed.'
+);
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
   };
+
+  const notHelpfulHandler = async (reviewId) => {
+  if (!userInfo) {
+    toast.error('Please login to mark as not helpful');
+    return;
+  }
+
+  try {
+    const res = await markReviewNotHelpful({
+  productId: product._id,
+  reviewId,
+}).unwrap();
+
+    refetch();
+    toast.success(
+  res.userVoted
+    ? "Thanks! You marked this review as not helpful."
+    : 'Your not helpful vote has been removed.'
+);
+  } catch (err) {
+    toast.error(err?.data?.message || err.error);
+  }
+};
 
   const submitReplyHandler = async (reviewId) => {
     if (!replyText.trim()) {
@@ -823,79 +859,75 @@ const ProductScreen = ({ isOnline }) => {
         {/* Reviews Section */}
         <div className='mt-10'>
 
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">
-            Filter Reviews
-          </h3>
+          
+          {/* Review Summary */}
+{/* Review Summary */}
+<div className="bg-white border rounded-xl p-6 mb-6 shadow-sm">
+  <h3 className="text-lg font-semibold text-gray-800 mb-5">
+      Customer Reviews Summary
+  </h3>
 
-          <div className="flex flex-wrap gap-2 mb-5">
+  <div className="flex flex-col md:flex-row gap-8">
+    {/* Left */}
+    <div className="md:w-56 flex flex-col items-center md:items-start">
+      <div className="text-5xl font-bold text-gray-900">
+        {product.rating.toFixed(1)}
+      </div>
 
-            {[5, 4, 3, 2, 1].map((star) => {
+      <div className="flex text-yellow-400 text-xl mt-2">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <span key={i}>
+            {product.rating >= i
+              ? "★"
+              : product.rating >= i - 0.5
+              ? "☆"
+              : "☆"}
+          </span>
+        ))}
+      </div>
 
-              const active = ratingFilter === star;
+      <p className="text-sm text-gray-500 mt-2">
+         {product.numReviews} customer reviews
+      </p>
+    </div>
 
-              return (
+    {/* Right */}
+    <div className="flex-1">
+      {[5, 4, 3, 2, 1].map((star) => {
+        const count = product.reviews.filter(
+          (review) => review.rating === star
+        ).length;
 
-                <button
-                  key={star}
-                  onClick={() => setRatingFilter(star)}
-                  className={`
-            flex items-center gap-2
-            border rounded-md
-            px-3 py-2
-            transition
-            text-sm
+        const percentage =
+          product.numReviews > 0
+            ? (count / product.numReviews) * 100
+            : 0;
 
-            ${active
-                      ? "border-yellow-500 bg-yellow-50"
-                      : "border-gray-300 bg-white hover:border-yellow-400"
-                    }
-          `}
-                >
+        return (
+          <div
+            key={star}
+            className="flex items-center gap-3 mb-3"
+          >
+            <span className="w-8 text-sm font-medium">
+              {star}★
+            </span>
 
-                  <div className="flex">
+            <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="bg-yellow-400 h-3 rounded-full transition-all duration-300"
+                style={{ width: `${percentage}%` }}
+              ></div>
+            </div>
 
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <span
-                        key={i}
-                        className={`text-lg ${i <= star
-                          ? "text-yellow-400"
-                          : "text-gray-300"
-                          }`}
-                      >
-                        ★
-                      </span>
-                    ))}
-
-                  </div>
-
-                  <span className="text-gray-600">
-                    ({ratingCounts[star]})
-                  </span>
-
-                </button>
-
-              );
-
-            })}
-
-            <button
-              onClick={() => setRatingFilter(0)}
-              className={`
-        px-4 py-2
-        rounded-md
-        border
-        text-sm
-
-        ${ratingFilter === 0
-                  ? "bg-green-600 text-white border-green-600"
-                  : "bg-white border-gray-300 hover:bg-gray-50"
-                }
-      `}
-            >
-              All ({product?.reviews?.length || 0})
-            </button>
-
+            <span className="w-16 text-right text-sm text-gray-600">
+              {count} ({Math.round(percentage)}%)
+            </span>
           </div>
+        );
+      })}
+    </div>
+  </div>
+</div>
 
 
 
@@ -948,10 +980,10 @@ const ProductScreen = ({ isOnline }) => {
 
                   <Rating value={review.rating} />
                   {review.title && (
-  <h4 className="mt-2 font-semibold text-gray-900 text-base">
-    {review.title}
-  </h4>
-)}
+                    <h4 className="mt-2 font-semibold text-gray-900 text-base">
+                      {review.title}
+                    </h4>
+                  )}
                   <p className='mt-2 text-gray-700'>{review.comment}</p>
 
                   {review.images?.length > 0 && (
@@ -968,16 +1000,34 @@ const ProductScreen = ({ isOnline }) => {
                     </div>
                   )}
 
-                  <div className='mt-2 flex items-center gap-2 text-sm text-gray-600'>
+                  <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
+
+                    {/* Helpful */}
                     <button
                       onClick={() => helpfulHandler(review._id)}
                       disabled={loadingHelpfulReview}
-                      className={`flex items-center gap-1 hover:text-blue-600 disabled:opacity-50 ${userInfo && review.helpful?.includes(userInfo._id) ? 'text-blue-600 font-medium' : ''
+                      className={`flex items-center gap-1 hover:text-blue-600 disabled:opacity-50 ${userInfo && review.helpful?.includes(userInfo._id)
+                          ? 'text-blue-600 font-medium'
+                          : ''
                         }`}
                     >
                       <FaThumbsUp size={14} />
                       Helpful ({review.helpful?.length || 0})
                     </button>
+
+                    {/* Not Helpful */}
+                    <button
+                      onClick={() => notHelpfulHandler(review._id)}
+                      disabled={loadingNotHelpfulReview}
+                      className={`flex items-center gap-1 hover:text-red-600 disabled:opacity-50 ${userInfo && review.notHelpful?.includes(userInfo._id)
+                          ? 'text-red-600 font-medium'
+                          : ''
+                        }`}
+                    >
+                      <FaThumbsDown size={14} />
+                      Not Helpful ({review.notHelpful?.length || 0})
+                    </button>
+
                   </div>
 
                   {/* Show existing admin reply */}
@@ -1207,19 +1257,19 @@ const ProductScreen = ({ isOnline }) => {
 
                 {/* Written Review */}
                 <div className="mb-6">
-  <label className="block text-base font-bold text-gray-900 mb-2">
-    Review title <span className="text-gray-500 font-normal">(optional)</span>
-  </label>
+                  <label className="block text-base font-bold text-gray-900 mb-2">
+                    Review title <span className="text-gray-500 font-normal">(optional)</span>
+                  </label>
 
-  <input
-    type="text"
-    placeholder="Example: Great battery life"
-    value={title}
-    onChange={(e) => setTitle(e.target.value)}
-    maxLength={120}
-    className="w-full px-3 py-2 border border-gray-400 rounded shadow-sm focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500"
-  />
-</div>
+                  <input
+                    type="text"
+                    placeholder="Example: Great battery life"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    maxLength={120}
+                    className="w-full px-3 py-2 border border-gray-400 rounded shadow-sm focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500"
+                  />
+                </div>
                 <div className='mb-6'>
                   <label className='block text-base font-bold text-gray-900 mb-2'>
                     Add a written review
@@ -1349,22 +1399,22 @@ const ProductScreen = ({ isOnline }) => {
                       {editRating === 0 && <p className='text-red-500 text-sm mt-1'>Please select a rating</p>}
                     </div>
                     {/* Review Title */}
-                        {editTitle !== "" && (
-  <div className="mb-4">
-    <label className="block mb-2 font-semibold text-gray-700">
-      Review Title <span className="text-gray-500 font-normal">(optional)</span>
-    </label>
+                    {editTitle !== "" && (
+                      <div className="mb-4">
+                        <label className="block mb-2 font-semibold text-gray-700">
+                          Review Title <span className="text-gray-500 font-normal">(optional)</span>
+                        </label>
 
-    <input
-      type="text"
-      value={editTitle}
-      onChange={(e) => setEditTitle(e.target.value)}
-      placeholder="Example: Great battery life"
-      maxLength={120}
-      className="w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-    />
-  </div>
-)}
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          placeholder="Example: Great battery life"
+                          maxLength={120}
+                          className="w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    )}
 
                     {/* Comment */}
                     <div>
@@ -1456,6 +1506,13 @@ const ProductScreen = ({ isOnline }) => {
           )}
         </div>
       </div>
+
+      <StickyPurchaseBar
+  addToCartHandler={addToCartHandler}
+  //buyNowHandler={buyNowHandler}
+  //wishlistHandler={wishlistHandler}
+  //isInWishlist={isInWishlist}
+/>
     </>
   )
 }
