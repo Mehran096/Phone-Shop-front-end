@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { FaChevronLeft, FaChevronRight, FaTimes } from 'react-icons/fa'
 
-const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
+const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen, setIsImageFullscreen,}) => {
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  //const [isFullscreen, setIsFullscreen] = useState(false)
 
   const minSwipeDistance = 50
 
@@ -34,7 +34,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
 
   // Lock body scroll when fullscreen open
   useEffect(() => {
-    if (isFullscreen) {
+    if (isImageFullscreen) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = 'unset'
@@ -42,18 +42,18 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
     return () => {
       document.body.style.overflow = 'unset'
     }
-  }, [isFullscreen])
+  }, [isImageFullscreen])
 
   // Desktop keyboard + ESC for fullscreen
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowLeft') prevImage()
       if (e.key === 'ArrowRight') nextImage()
-      if (e.key === 'Escape') setIsFullscreen(false)
+      if (e.key === 'Escape') setIsImageFullscreen(false)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedIndex, isFullscreen])
+  }, [selectedIndex, isImageFullscreen])
 
   return (
     <>
@@ -89,7 +89,9 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
               src={images[selectedIndex]}
               alt='Product'
               className='h-full w-auto max-h-[85%] max-w-[85%] object-contain cursor-pointer'
-              onClick={() => setIsFullscreen(true)}
+              onClick={() => {
+  setIsImageFullscreen(true);
+}}
             />
 
             {/* Mobile Counter - TOP CENTER */}
@@ -162,14 +164,18 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex }) => {
       </div>
 
       {/* Fullscreen Modal - KEEP AS IS - WORKING FINE */}
-      {isFullscreen && (
+      {isImageFullscreen && (
         <div
           className='fixed inset-0 bg-white z-50 flex flex-col md:flex-row overflow-hidden'
-          onClick={() => setIsFullscreen(false)}
+          onClick={() => {
+  setIsImageFullscreen(false);
+}}
         >
           {/* Close - NO CIRCLE - BLACK ICON */}
           <button
-            onClick={() => setIsFullscreen(false)}
+            onClick={() => {
+  setIsImageFullscreen(false);
+}}
             className='absolute top-4 right-4 z-20 p-3 text-gray-700 hover:text-black transition'
             aria-label='Close fullscreen'
           >

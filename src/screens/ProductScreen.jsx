@@ -106,7 +106,8 @@ const ProductScreen = ({ isOnline }) => {
   //product360
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
-
+//product360 open modal state and used for to hide the stickyPurchase.jsx in mobile screen 
+const [isImageFullscreen, setIsImageFullscreen] = useState(false);
   // Edit states
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -689,6 +690,8 @@ navigate("/shipping");
                     : [product.image]} // V11.1 KEY: .map(img => img.url)
                   selectedIndex={selectedImageIndex}
                   setSelectedIndex={setSelectedImageIndex}
+                  isImageFullscreen={isImageFullscreen}
+                  setIsImageFullscreen={setIsImageFullscreen}
                 />
               </div>
 
@@ -1538,7 +1541,7 @@ navigate("/shipping");
           )}
         </div>
       </div>
-
+{!isImageFullscreen && (
       <StickyPurchaseBar
   product={product}
   selectedColor={selectedColor}
@@ -1548,6 +1551,7 @@ navigate("/shipping");
   addToCartHandler={addToCartHandler}
   buyNowHandler={buyNowHandler}
 />
+)}
     </>
   )
 }
