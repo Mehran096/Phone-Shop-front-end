@@ -178,12 +178,12 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             setIsImageFullscreen(false);
           }}
         >
-          {/* Close - NO CIRCLE - BLACK ICON */}
+          {/* Close - CIRCLE - BLACK ICON */}
           <button
             onClick={() => {
               setIsImageFullscreen(false);
             }}
-            className='absolute top-4 right-4 z-20 w-11 h-11 flex items-center justify-center rounded-full bg-white/75 backdrop-blur-md border border-white/60 shadow-md text-gray-700 hover:bg-white hover:text-black transition-all duration-200'
+            className='absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/65 backdrop-blur-md border border-white/60 shadow-md text-gray-700 hover:bg-white hover:text-black transition-all duration-200'
             aria-label='Close fullscreen'
           >
             <FaTimes size={22} />
