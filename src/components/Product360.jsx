@@ -78,10 +78,11 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
         )}
 
         {/* Main Image - AMAZON MOBILE: FIXED ASPECT RATIO */}
-        <div className='flex-1 relative group bg-white rounded-lg border border-gray-100 overflow-hidden min-w-0 w-full 
-        aspect-[3/4] md:aspect-auto md:h-[28rem]'>
+        <div
+  className="flex-1 relative group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-w-0 w-full aspect-[4/5] md:aspect-auto md:h-[32rem] transition-all duration-300"
+>
           <div
-            className='w-full h-full flex items-center justify-center p-6'
+             className="w-full h-full flex items-center justify-center p-4 md:p-8"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -89,7 +90,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             <img
               src={images[selectedIndex]}
               alt='Product'
-              className='h-full w-auto max-h-[85%] max-w-[85%] object-contain cursor-pointer'
+               className="h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
               onClick={() => {
                 setIsImageFullscreen(true);
               }}
