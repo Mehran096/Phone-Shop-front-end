@@ -66,12 +66,12 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
               <button
                 key={idx}
                 onClick={() => setSelectedIndex(idx)}
-                className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${selectedIndex === idx
-                    ? 'border-blue-600 shadow-md scale-105'
-                    : 'border-gray-200 hover:border-gray-400'
+                className={`w-14 h-14 bg-white rounded-xl border-2 p-1 flex-shrink-0 transition-all duration-200 ${selectedIndex === idx
+                    ? "border-blue-600 shadow-lg scale-105 ring-2 ring-blue-100"
+                    : "border-gray-200 hover:border-gray-400 hover:shadow-md hover:scale-105"
                   }`}
               >
-                <img src={img} alt={`Thumb ${idx + 1}`} className='w-full h-full object-contain' />
+                <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-contain rounded-lg" />
               </button>
             ))}
           </div>
@@ -79,10 +79,10 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
 
         {/* Main Image - AMAZON MOBILE: FIXED ASPECT RATIO */}
         <div
-  className="flex-1 relative group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-w-0 w-full aspect-[4/5] md:aspect-auto md:h-[32rem] transition-all duration-300"
->
+          className="flex-1 relative group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-w-0 w-full aspect-[4/5] md:aspect-auto md:h-[32rem] transition-all duration-300"
+        >
           <div
-             className="w-full h-full flex items-center justify-center p-4 md:p-8"
+            className="w-full h-full flex items-center justify-center pt-12 pb-4 px-4 md:p-8"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -90,7 +90,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             <img
               src={images[selectedIndex]}
               alt='Product'
-               className="h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
+              className="h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
               onClick={() => {
                 setIsImageFullscreen(true);
               }}
@@ -149,16 +149,16 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                     setSelectedIndex(idx)
                   }}
                   aria-label={`View image ${idx + 1}`}
-                  className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-0.5 snap-start transition-all 
+                  className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-1 snap-start transition-all 
                     duration-200 ${selectedIndex === idx
-                      ? 'border-blue-600 scale-105 shadow-md'
-                      : 'border-gray-200'
+                      ? 'border-blue-600 ring-2 ring-blue-100 shadow-md scale-105'
+                      : 'border-gray-200 hover:border-gray-400'
                     }`}
                 >
                   <img
                     src={img}
                     alt={`Thumb ${idx + 1}`}
-                    className='w-full h-full object-contain rounded-md'
+                    className='w-full h-full object-contain rounded-lg'
                     loading='lazy'
                   />
                 </button>
@@ -201,8 +201,8 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                     setSelectedIndex(idx)
                   }}
                   className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${selectedIndex === idx
-                      ? 'border-blue-600 scale-105 shadow-md'
-                      : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-blue-600 scale-105 shadow-md'
+                    : 'border-gray-300 hover:border-gray-400'
                     }`}
                 >
                   <img src={img} alt={`Thumb ${idx + 1}`} className='w-full h-full object-contain' />
@@ -234,11 +234,9 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                     prevImage()
                   }}
                   disabled={selectedIndex === 0}
-                  className='hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 p-4 text-gray-700 hover:text-black 
-                  disabled:opacity-20 disabled:cursor-not-allowed transition'
-                  aria-label='Previous image'
+                  className='hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
                 >
-                  <FaChevronLeft size={36} />
+                  <FaChevronLeft size={24} />
                 </button>
                 <button
                   onClick={(e) => {
@@ -246,11 +244,9 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                     nextImage()
                   }}
                   disabled={selectedIndex === images.length - 1}
-                  className='hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 p-4 text-gray-700 hover:text-black 
-                  disabled:opacity-20 disabled:cursor-not-allowed transition'
-                  aria-label='Next image'
+                  className='hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
                 >
-                  <FaChevronRight size={36} />
+                  <FaChevronRight size={24} />
                 </button>
               </>
             )}
