@@ -1541,7 +1541,7 @@ navigate("/shipping");
           )}
         </div>
       </div>
-{!isImageFullscreen && (
+{!isImageFullscreen && !isEditModalOpen && (
       <StickyPurchaseBar
   product={product}
   selectedColor={selectedColor}

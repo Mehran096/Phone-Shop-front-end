@@ -60,15 +60,15 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
       <div className='w-full flex flex-col md:flex-row min-w-0 gap-4'>
         {/* Desktop Thumbnails - LEFT */}
         {images.length > 1 && (
-          <div className='hidden md:flex flex-col gap-2 w-14 overflow-y-auto overflow-x-hidden h-[28rem] flex-shrink-0 
+          <div className='hidden pt-2 pl-2 md:flex flex-col gap-2 w-20 overflow-y-auto overflow-x-hidden h-[28rem] flex-shrink-0 
           [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
             {images.map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedIndex(idx)}
                 className={`w-14 h-14 bg-white rounded-xl border-2 p-1 flex-shrink-0 transition-all duration-200 ${selectedIndex === idx
-                    ? "border-blue-600 shadow-lg scale-105 ring-2 ring-blue-100"
-                    : "border-gray-200 hover:border-gray-400 hover:shadow-md hover:scale-105"
+                  ? "border-blue-600 shadow-lg scale-105 ring-2 ring-blue-100"
+                  : "border-gray-200 hover:border-gray-400 hover:shadow-md hover:scale-105"
                   }`}
               >
                 <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-contain rounded-lg" />
@@ -191,7 +191,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
 
           {/* Desktop modal thumbs */}
           {images.length > 1 && (
-            <div className='hidden md:flex flex-col gap-2 w-20 p-4 overflow-y-auto overflow-x-hidden bg-gray-50 border-r 
+            <div className='hidden md:flex flex-col gap-2 w-26 p-4 overflow-y-auto overflow-x-hidden bg-gray-50 border-r 
             border-gray-200 flex-shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
               {images.map((img, idx) => (
                 <button
@@ -213,60 +213,72 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
 
           {/* Fullscreen image - HARD HEIGHT CAP */}
           <div
-            className='flex-1 relative flex items-center justify-center p-6 md:p-10 bg-white overflow-hidden'
+            className='flex-1 flex items-center justify-center px-4 md:px-8 bg-white overflow-hidden'
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={images[selectedIndex]}
-              alt='Product'
-              className='max-w-[85%] max-h-[80vh] object-contain transition-transform duration-300'
-            />
+            <div
+              className="
+      w-full
+      max-w-[520px]
+      h-[65vh]
+      md:h-[70vh]
+      flex
+      items-center
+      justify-center
+    "
+            >
+              <img
+                src={images[selectedIndex]}
+                alt='Product'
+                className='max-w-full max-h-full object-contain transition-all duration-300'
+              />
 
-            {/* Desktop modal arrows - BLACK ICONS */}
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    prevImage()
-                  }}
-                  disabled={selectedIndex === 0}
-                  className='hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
-                >
-                  <FaChevronLeft size={24} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    nextImage()
-                  }}
-                  disabled={selectedIndex === images.length - 1}
-                  className='hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
-                >
-                  <FaChevronRight size={24} />
-                </button>
-              </>
-            )}
+              {/* Desktop modal arrows - BLACK ICONS */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      prevImage()
+                    }}
+                    disabled={selectedIndex === 0}
+                    className='hidden md:flex absolute left-32 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
+                  >
+                    <FaChevronLeft size={24} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      nextImage()
+                    }}
+                    disabled={selectedIndex === images.length - 1}
+                    className='hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
+                  >
+                    <FaChevronRight size={24} />
+                  </button>
+                </>
+              )}
 
-            {/* Mobile counter in modal */}
-            {images.length > 1 && (
-              <div className=' absolute
-    top-2
-    left-1/2
-    -translate-x-1/2
-    z-30
-    bg-white/80
-    backdrop-blur-md
-    rounded-full
-    px-3
-    py-1
-    shadow-sm'>
-                {selectedIndex + 1} / {images.length}
-              </div>
-            )}
+              {/* Mobile counter in modal */}
+              {images.length > 1 && (
+                <div className=' absolute
+                    top-2
+                    left-1/2
+                    -translate-x-1/2
+                    z-30
+                    bg-white/80
+                    backdrop-blur-md
+                    rounded-full
+                    px-3
+                    py-1
+                    shadow-sm'>
+                  {selectedIndex + 1} / {images.length}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile thumbs in modal */}
