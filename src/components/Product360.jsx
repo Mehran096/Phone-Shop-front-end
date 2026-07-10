@@ -183,10 +183,10 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             onClick={() => {
               setIsImageFullscreen(false);
             }}
-            className='absolute top-4 right-4 z-20 p-3 text-gray-700 hover:text-black transition'
+            className='absolute top-4 right-4 z-20 w-11 h-11 flex items-center justify-center rounded-full bg-white/75 backdrop-blur-md border border-white/60 shadow-md text-gray-700 hover:bg-white hover:text-black transition-all duration-200'
             aria-label='Close fullscreen'
           >
-            <FaTimes size={28} />
+            <FaTimes size={22} />
           </button>
 
           {/* Desktop modal thumbs */}
@@ -200,9 +200,9 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                     e.stopPropagation()
                     setSelectedIndex(idx)
                   }}
-                  className={`w-14 h-14 bg-white rounded border-2 p-0.5 flex-shrink-0 transition-all ${selectedIndex === idx
-                    ? 'border-blue-600 scale-105 shadow-md'
-                    : 'border-gray-300 hover:border-gray-400'
+                  className={`w-16 h-16 bg-white rounded-lg border-2 p-0.5 flex-shrink-0 transition-all ${selectedIndex === idx
+                    ? 'border-blue-500 ring-2 ring-blue-300 shadow-lg scale-105'
+                    : 'border-gray-500 hover:border-white'
                     }`}
                 >
                   <img src={img} alt={`Thumb ${idx + 1}`} className='w-full h-full object-contain' />
@@ -213,7 +213,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
 
           {/* Fullscreen image - HARD HEIGHT CAP */}
           <div
-            className='flex-1 relative flex items-center justify-center p-4 md:p-8 bg-white overflow-hidden'
+            className='flex-1 relative flex items-center justify-center p-6 md:p-10 bg-white overflow-hidden'
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -222,7 +222,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             <img
               src={images[selectedIndex]}
               alt='Product'
-              className='max-w-full max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-160px)] object-contain'
+              className='max-w-[85%] max-h-[80vh] object-contain transition-transform duration-300'
             />
 
             {/* Desktop modal arrows - BLACK ICONS */}
@@ -253,8 +253,17 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
 
             {/* Mobile counter in modal */}
             {images.length > 1 && (
-              <div className='md:hidden absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-sm px-3 py-1 
-              rounded-full'>
+              <div className=' absolute
+    top-2
+    left-1/2
+    -translate-x-1/2
+    z-30
+    bg-white/80
+    backdrop-blur-md
+    rounded-full
+    px-3
+    py-1
+    shadow-sm'>
                 {selectedIndex + 1} / {images.length}
               </div>
             )}
