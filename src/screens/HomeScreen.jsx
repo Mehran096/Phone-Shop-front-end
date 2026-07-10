@@ -99,7 +99,7 @@ const HomeScreen = ({ isOnline }) => {
       )}
 
       {/* 3. Products Section */}
-      <div className='container mx-auto px-4 py-8'>
+      <div className='container mx-auto px-2 sm:px-4 py-6 sm:py-8'>
         {/* Back button when filtering */}
         {(keyword || brand) && ( // Fix 4: Show for brand too
           <Link
@@ -110,7 +110,7 @@ const HomeScreen = ({ isOnline }) => {
           </Link>
         )}
 
-        <h1 className='text-3xl font-bold text-gray-900 mb-8 text-center'>
+        <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center'>
           {keyword
             ? `Search Results for "${keyword}"`
             : brand
@@ -126,7 +126,7 @@ const HomeScreen = ({ isOnline }) => {
           </Message>
         ) : (
           <>
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8'>
+            <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8'>
               {data.products.map((product) => (
                 <Product key={product._id} product={product} userInfo={userInfo} />
               ))}

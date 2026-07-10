@@ -33,7 +33,7 @@ const ProductEditScreen = () => {
     storage: '',
     specs: {},
     specsJson: '',
-    colors: [{ name: '', images: [], price: '', countInStock: '', sku: '' }]
+    colors: [{ name: '', hexCode: '', images: [], price: '', countInStock: '', sku: '' }]
   }]);
   const [uploadingMap, setUploadingMap] = useState({});
   const [imagesToDelete, setImagesToDelete] = useState([]);
@@ -53,6 +53,7 @@ const ProductEditScreen = () => {
         specsJson: JSON.stringify(v.specs || {}, null, 2),
         colors: v.colors?.map(c => ({
           name: c.name || '',
+          hexCode: c.hexCode || '',
           images: (c.images || []).map(img =>
             typeof img === 'string'
               ? { url: img, imagePublicId: '' }
@@ -62,13 +63,13 @@ const ProductEditScreen = () => {
           price: c.price || '',
           countInStock: c.countInStock || '',
           sku: c.sku || '',
-        })) || [{ name: '', images: [], price: '', countInStock: '', sku: '' }]
+        })) || [{ name: '', hexCode: '', images: [], price: '', countInStock: '', sku: '' }]
       })) || [{
         storage: '',
         description: '',
         specs: {},
         specsJson: '',
-        colors: [{ name: '', images: [], price: '', countInStock: '', sku: '' }]
+        colors: [{ name: '', hexCode: '', images: [], price: '', countInStock: '', sku: '' }]
       }])
     }
   }, [product]);
@@ -78,7 +79,7 @@ const ProductEditScreen = () => {
     description: '',
     specs: {},
     specsJson: '',
-    colors: [{ name: '', images: [], newFiles: [], price: '', countInStock: '', sku: '' }]
+    colors: [{ name: '', hexCode: '', images: [], newFiles: [], price: '', countInStock: '', sku: '' }]
   }]);
   const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i !== vIndex));
   const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
@@ -86,7 +87,7 @@ const ProductEditScreen = () => {
   // const updateVariantSpec = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
   //   { ...item, specs: { ...item.specs, [field]: value } } : item));
   const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex ?
-    { ...item, colors: [...item.colors, { name: '', images: [], newFiles: [], price: '', countInStock: '', sku: '' }] } : item));
+    { ...item, colors: [...item.colors, { name: '', hexCode: '', images: [], newFiles: [], price: '', countInStock: '', sku: '' }] } : item));
   const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex ?
     { ...item, colors: item.colors.filter((_, ci) => ci !== cIndex) } : item));
   const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
@@ -329,7 +330,7 @@ const ProductEditScreen = () => {
                     }
                   </div>
 
-                  {/* COLOR NAME + SKU */}
+                  {/* COLOR NAME + hexCode */}
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2'>
                     <div>
                       <label className={labelClass}>Color Name *</label>
@@ -342,15 +343,20 @@ const ProductEditScreen = () => {
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>SKU</label>
+                      <label className={labelClass}>Hex Code</label>
                       <input
-                        type='text'
-                        placeholder='A17-256-BLK'
-                        value={color.sku}
-                        onChange={e => updateColor(vIndex, cIndex, 'sku', e.target.value)}
+                        type="text"
+                        placeholder="#C8E6C9"
+                        value={color.hexCode}
+                        onChange={(e) =>
+                          updateColor(vIndex, cIndex, 'hexCode', e.target.value)
+                        }
                         className={inputClass}
                       />
                     </div>
+
+                     
+
                   </div>
 
                   {/* PRICE + STOCK */}
@@ -373,6 +379,21 @@ const ProductEditScreen = () => {
                         className={inputClass}
                       />
                     </div>
+                  </div>
+                  {/* sku */}
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2'>
+                    
+                    <div>
+                      <label className={labelClass}>SKU</label>
+                      <input
+                        type='text'
+                        placeholder='A17-256-BLK'
+                        value={color.sku}
+                        onChange={e => updateColor(vIndex, cIndex, 'sku', e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+
                   </div>
 
                   {/* IMAGES SECTION */}

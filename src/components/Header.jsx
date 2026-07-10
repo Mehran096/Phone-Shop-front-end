@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { logout } from '../slices/authSlice'
 import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaHeart, FaBox, FaOutdent, } from 'react-icons/fa'
+import { IoLogOutOutline } from "react-icons/io5";
 import { clearCartItems } from '../slices/cartSlice'
 import { getWishlist, resetWishlist } from '../slices/wishlistSlice'
 import SearchBox from './SearchBox'
@@ -352,7 +353,7 @@ const Header = ({ isOnline }) => {
                   onClick={() => { logoutHandler(); closeMobileMenu() }}
                   className='flex items-center gap-2 py-2 hover:text-blue-400'
                 >
-                  <FaOutdent />
+                  <IoLogOutOutline className="text-xl" />
                   Logout
                 </button>
               </div>
