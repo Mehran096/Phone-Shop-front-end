@@ -677,7 +677,7 @@ const ProductScreen = ({ isOnline }) => {
           <div className='p-6 md:p-8'>
 
             {/* Top Section: Images + Buy Box */}
-            <div className='grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8'>
+            <div className='grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-8 mb-8'>
 
               {/* Left: Thumbnails + Main Image */}
 
@@ -708,13 +708,15 @@ const ProductScreen = ({ isOnline }) => {
                         leading-tight
                         text-gray-900
                         tracking-tight
-                        mb-3'>
+                        mb-3
+                        sm:mb-5'
+                >
                   {product.name}{selectedVariant.storage ? ` ${selectedVariant.storage}` : ''} {/* V13.6 KEY */}
                 </h1>
 
                 {/* <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div> */}
                 {product.numReviews > 0 && (
-                  <div className='flex items-center gap-2 mb-4'>
+                  <div className='flex items-center gap-2 mb-3 sm:mb-5'>
                     <div className='flex text-amber-500 gap-0.5'>
                       {[...Array(5)].map((_, i) => (
                         <FaStar
@@ -734,7 +736,7 @@ const ProductScreen = ({ isOnline }) => {
                     </a>
                   </div>
                 )}
-                <div className="mb-5">
+                <div className="sm:mb-5 mb-3">
                   <span className="text-4xl sm:text-5xl font-extrabold text-blue-600">
                     ${selectedColor?.price ?? selectedVariant?.price ?? 0}
                   </span>
@@ -742,15 +744,21 @@ const ProductScreen = ({ isOnline }) => {
 
 
                 {/* Stock Status V12.2 KEY */}
-                <div className='mb-6'>
-                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold 
-                      ${(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-700'}`}>
-                    <span className={`w-2 h-2 rounded-full 
+                <div className="sm:mb-7 mb-5">
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm border
                         ${(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
-                        ? 'bg-green-500'
-                        : 'bg-red-500'}`}></span>
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : "bg-red-50 border-red-200 text-red-700"
+                      }`}
+                  >
+                    <span
+                      className={`w-3 h-3 rounded-full animate-pulse
+                            ${(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
+                          ? "bg-green-500"
+                          : "bg-red-500"
+                        }`}
+                    />
                     {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
                       ? `In Stock (${selectedColor?.countInStock ?? selectedVariant?.countInStock})`
                       : 'Out of Stock'}
@@ -760,10 +768,10 @@ const ProductScreen = ({ isOnline }) => {
                 {/* V9.40 KEY: VARIANT SELECTOR = STORAGE 128GB/256GB/512GB */}
                 {product.variants?.length > 0 && (
                   <div className='mb-4'>
-                    <label className='font-semibold block mb-2 text-gray-900'>
+                    <label className='font-semibold block mb-3 text-gray-900'>
                       Storage: <span className='text-blue-600'>{selectedVariant.name || selectedVariant.storage}</span>
                     </label>
-                    <div className='flex flex-wrap gap-2'>
+                    <div className="flex flex-wrap gap-3 sm:gap-4">
                       {product.variants.map((variant, vIdx) => (
                         <button
                           key={vIdx}
@@ -772,8 +780,21 @@ const ProductScreen = ({ isOnline }) => {
                             setSelectedVariantIndex(vIdx);
                             setSelectedColorIndex(0);
                           }}
-                          className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all ${vIdx === selectedVariantIndex ?
-                            'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400 text-gray-700'}`}
+                          className={`
+                                min-w-[80px] md:min-w-[96px] lg:min-w-[90px]
+                                h-12 md:h-14
+                                px-4 md:px-5
+                                rounded-xl
+                                border-2
+                                font-semibold
+                                text-sm md:text-base
+                                transition-all
+                                duration-200
+                                ${vIdx === selectedVariantIndex
+                              ? "border-blue-600 bg-blue-50 text-blue-700 shadow-lg scale-[1.03]"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-blue-400 hover:shadow-sm"
+                            }
+                                `}
                         >
                           {variant.name || variant.storage || `${variant.size}GB`} {/* V9.40 KEY */}
                         </button>
@@ -786,24 +807,39 @@ const ProductScreen = ({ isOnline }) => {
                 {/* Color Selection V12.6 */}
                 {selectedVariant.colors?.length > 0 && (
                   <div className='mb-6'>
-                    <h3 className='font-semibold mb-3 text-gray-900'>
-                      Color: <span className='text-blue-600'>{selectedColor.name}</span>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Color:
+                      <span className="ml-2 text-blue-600 font-bold">
+                        {selectedColor.name}
+                      </span>
                     </h3>
-                    <div className='flex flex-wrap gap-3'>
+                    <div className="flex flex-wrap gap-3 sm:gap-4">
                       {selectedVariant.colors.map((color, cIdx) => (
                         <button
                           key={cIdx}
                           type="button"
                           onClick={() => setSelectedColorIndex(cIdx)}
-                          className={`p-1.5 border-2 rounded-lg transition-all duration-200 ${cIdx === selectedColorIndex
-                            ? 'border-blue-600 ring-2 ring-blue-100 scale-105'
-                            : 'border-gray-200 hover:border-gray-300'}`}
+                          className={`
+                                  relative
+                                  w-24 h-24
+                                  sm:w-28 sm:h-28
+                                  rounded-xl
+                                  border-2
+                                  bg-white
+                                  overflow-hidden
+                                  transition-all
+                                  duration-300
+                                  ${cIdx === selectedColorIndex
+                              ? "border-blue-600 ring-2 sm:ring-4 ring-blue-100 shadow-lg scale-105"
+                              : "border-gray-200 hover:border-blue-300 hover:shadow-md"
+                            }
+                                  `}
                           title={color.name}
                         >
                           <img
                             src={(color.images?.[0]?.url || selectedVariant.images?.[0]?.url || product.image || '/images/placeholder-phone.jpg').replace('/upload/', '/upload/w_400,h_400,c_pad,b_white,q_auto:best/')} // V12.7
                             alt={color.name}
-                            className='w-20 h-20 object-contain bg-white rounded-md p-1' // V12.7
+                            className='w-full h-full object-contain p-2 sm:p-3' // V12.7
                             onError={(e) => e.target.src = '/images/placeholder-phone.jpg'}
                           />
                         </button>
@@ -815,8 +851,8 @@ const ProductScreen = ({ isOnline }) => {
                 {/* Qty + Add to Cart - V12.8 KEY */}
 
                 {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0 ? (
-                  <div className='hidden md:block mt-6 pt-6 border-t border-gray-200'>
-                    <div className='flex flex-col lg:flex-row lg:items-end gap-3'>
+                  <div className='hidden md:block mt-8 pt-8 border-t border-gray-200'>
+                    <div className='flex flex-col lg:flex-row lg:items-end gap-4'>
 
                       {/* QTY - AMAZON STYLE 1-5 MAX */}
                       <div className='w-full lg:w-24'>
@@ -832,13 +868,15 @@ const ProductScreen = ({ isOnline }) => {
                       {/* ADD TO CART */}
                       <button
                         onClick={addToCartHandler}
-                        className='w-full lg:flex-1 bg-[#FFD814] hover:bg-[#F7CA00] border-[#FCD200] text-[#111] font-semibold h-12 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all'
+                        className='w-full lg:flex-1 bg-[#FFD814] hover:bg-[#F7CA00] border-[#FCD200] text-[#111] 
+                        font-semibold h-12 lg:h-14 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm hover:shadow-md 
+                        transition-all'
                       >
                         <FaShoppingCart size={18} /> Add to Cart
                       </button>
 
                       {/* WISHLIST - WRAPPED IN DIV */}
-                      <div className="w-12 h-12 flex-shrink-0">
+                      <div className="w-14 h-14 flex-shrink-0">
                         <WishlistButton
                           product={product}
                           selectedColor={selectedColor}
@@ -846,7 +884,8 @@ const ProductScreen = ({ isOnline }) => {
                           selectedPrice={selectedVariant?.price}
                           selectedImage={selectedColor?.images?.[0]?.url}
                           countInStock={selectedVariant?.countInStock}
-                          className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
+                          className="w-14 h-14 flex items-center justify-center border border-gray-300 rounded-lg bg-white 
+                          hover:bg-gray-50 transition"
                           showText={false}
                         />
                       </div>
@@ -872,13 +911,13 @@ const ProductScreen = ({ isOnline }) => {
 
               return Object.keys(specs).length > 0 ? (
                 <div className='mt-6 pt-6 border-t border-gray-200'>
-                  <h3 className='text-xl font-bold mb-4'>Specifications - {selectedVariant?.storage || ''}</h3>
+                  <h3 className='text-xl font-bold mb-5'>Specifications - {selectedVariant?.storage || ''}</h3>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 bg-gray-50 p-4 rounded-lg'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 bg-gray-50 p-5 lg:p-6 rounded-lg'>
                     {Object.entries(specs).map(([key, value]) => (
                       <div key={key} className='flex flex-col'>
                         <span className='text-xs text-gray-500 uppercase tracking-wide font-semibold'>{key}</span>
-                        <span className='text-gray-900 font-medium mt-0.5'>{value}</span>
+                        <span className='text-[15px] leading-6 text-gray-900 font-medium mt-0.5'>{value}</span>
                       </div>
                     ))}
                   </div>
@@ -887,13 +926,16 @@ const ProductScreen = ({ isOnline }) => {
             })()}
 
             {/* Description - Full Width V13.4 */}
-            <div className='border-t pt-7'>
-              <h2 className='text-xl font-bold text-gray-900 mb-3'>
+            <div className='border-t pt-8 mt-2'>
+              <h2 className='text-2xl font-bold text-gray-900 mb-4'>
                 Description {selectedVariant.storage ? `- ${selectedVariant.storage}` : ''} {/* V13.4 KEY */}
               </h2>
-              <p className='text-gray-700 leading-relaxed whitespace-pre-line'>
-                {selectedVariant.description || selectedColor?.description || product.description || 'No description available.'} {/* V13.4 */}
-              </p>
+              <div class='max-w-5xl'>
+                <p className='text-gray-700 leading-8 text-[15px] whitespace-pre-line'>
+                  {selectedVariant.description || selectedColor?.description || product.description || 'No description available.'} {/* V13.4 */}
+                </p>
+
+              </div>
             </div>
 
           </div>
@@ -911,14 +953,14 @@ const ProductScreen = ({ isOnline }) => {
               Customer Reviews Summary
             </h3>
 
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-10">
               {/* Left */}
               <div className="md:w-56 flex flex-col items-center md:items-start">
-                <div className="text-5xl font-bold text-gray-900">
+                <div className="text-5xl sm:text-5xl md:text-6xl font-bold text-gray-900">
                   {product.rating.toFixed(1)}
                 </div>
 
-                <div className="flex text-yellow-400 text-xl mt-2">
+                <div className="flex text-yellow-400 text-4xl sm:text-5xl md:text-5xl mt-2">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <span key={i}>
                       {product.rating >= i
@@ -930,7 +972,7 @@ const ProductScreen = ({ isOnline }) => {
                   ))}
                 </div>
 
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-gray-500 mt-3">
                   {product.numReviews} customer reviews
                 </p>
               </div>
@@ -958,7 +1000,7 @@ const ProductScreen = ({ isOnline }) => {
 
                       <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className="bg-yellow-400 h-3 rounded-full transition-all duration-300"
+                          className="bg-yellow-400 h-3 rounded-full transition-all duration-500"
                           style={{ width: `${percentage}%` }}
                         ></div>
                       </div>
@@ -984,37 +1026,45 @@ const ProductScreen = ({ isOnline }) => {
             {sortedReviews.length > 0 ? (
               sortedReviews.slice(0, 3).map((review) => (
                 <div key={review._id} className='bg-gray-50 p-4 rounded-lg mb-4'>
-                  <div className='flex justify-between items-start mb-2'>
-                    <div>
-                      <strong>{review.name}</strong>
-                      {review.verifiedPurchase && (
-                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-                          ✓ Verified Purchase
-                        </span>
-                      )}
-                      {(review.color || review.storage) && (
-                        <span className='text-sm text-gray-500 ml-2'>
-                          ({review.color}{review.storage ? ` / ${review.storage}` : ''})
-                        </span>
-                      )}
+                  <div className='flex justify-between items-start gap-3 mb-2'>
+                    <div className="flex-1 min-w-0">
+                      <strong className="block text-lg font-semibold">
+                        {review.name}
+                      </strong>
 
-                      <span className='text-sm text-gray-500 ml-2'>
-                        |  {timeAgo(review.createdAt)}
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
 
-                      </span>
+                        {review.verifiedPurchase && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 text-xs px-2 py-1">
+                            ✓ Verified Purchase
+                          </span>
+                        )}
+
+                        {(review.color || review.storage) && (
+                          <span>
+                            {review.color}
+                            {review.storage ? ` / ${review.storage}` : ""}
+                          </span>
+                        )}
+
+                        <span>
+                          | {timeAgo(review.createdAt)}
+                        </span>
+
+                      </div>
                     </div>
                     {userInfo?._id === review.user && (
-                      <div className='flex gap-3'>
+                      <div className='flex gap-2 flex-shrink-0'>
                         <button
                           onClick={() => handleEditClick(review)}
-                          className='text-blue-600 text-sm hover:underline font-medium'
+                          className='text-blue-600 text-xs hover:underline font-medium'
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => deleteHandler(review._id)}
                           disabled={loadingDeleteReview}
-                          className='text-red-600 text-sm hover:underline font-medium disabled:opacity-50'
+                          className='text-red-600 text-xs hover:underline font-medium disabled:opacity-50'
                         >
                           {loadingDeleteReview ? 'Deleting...' : 'Delete'}
                         </button>
@@ -1022,13 +1072,15 @@ const ProductScreen = ({ isOnline }) => {
                     )}
                   </div>
 
-                  <Rating value={review.rating} />
+                  <div className="mt-2">
+                    <Rating value={review.rating} />
+                  </div>
                   {review.title && (
-                    <h4 className="mt-2 font-semibold text-gray-900 text-base">
+                    <h4 className="mt-2 text-lg font-semibold text-gray-900 leading-tight">
                       {review.title}
                     </h4>
                   )}
-                  <p className='mt-2 text-gray-700'>{review.comment}</p>
+                  <p className='mt-2 text-[15px] leading-7 text-gray-700'>{review.comment}</p>
 
                   {review.images?.length > 0 && (
                     <div className='flex gap-2 mt-2 flex-wrap'>
@@ -1037,22 +1089,34 @@ const ProductScreen = ({ isOnline }) => {
                           key={idx}
                           src={img.url} // V33.21 KEY: .url not the whole object
                           alt={`Review ${idx + 1}`}
-                          className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 cursor-pointer hover:opacity-80 p-1 flex-shrink-0"
+                          className="w-16 h-16
+                                sm:w-20 sm:h-20
+                                lg:w-24 lg:h-24
+                                object-contain
+                                rounded-lg
+                                bg-white
+                                border
+                                border-gray-200
+                                p-1
+                                cursor-pointer
+                                hover:opacity-80
+                                flex-shrink-0"
                           onClick={() => window.open(img.url, '_blank')} // V33.21 KEY: .url
                         />
                       ))}
                     </div>
                   )}
 
-                  <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
+                  <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
 
                     {/* Helpful */}
                     <button
                       onClick={() => helpfulHandler(review._id)}
                       disabled={loadingHelpfulReview}
-                      className={`flex items-center gap-1 hover:text-blue-600 disabled:opacity-50 ${userInfo && review.helpful?.includes(userInfo._id)
-                        ? 'text-blue-600 font-medium'
-                        : ''
+                      className={`inline-flex items-center gap-2 rounded-md px-3 py-2 transition-colors
+                            ${userInfo && review.helpful?.includes(userInfo._id)
+                          ? "bg-blue-50 text-blue-600 font-medium"
+                          : "text-gray-600 hover:bg-gray-100"
                         }`}
                     >
                       <FaThumbsUp size={14} />
@@ -1063,9 +1127,10 @@ const ProductScreen = ({ isOnline }) => {
                     <button
                       onClick={() => notHelpfulHandler(review._id)}
                       disabled={loadingNotHelpfulReview}
-                      className={`flex items-center gap-1 hover:text-red-600 disabled:opacity-50 ${userInfo && review.notHelpful?.includes(userInfo._id)
-                        ? 'text-red-600 font-medium'
-                        : ''
+                      className={`inline-flex items-center gap-2 rounded-md px-3 py-2 transition-colors
+                          ${userInfo && review.notHelpful?.includes(userInfo._id)
+                          ? "bg-red-50 text-red-600 font-medium"
+                          : "text-gray-600 hover:bg-gray-100"
                         }`}
                     >
                       <FaThumbsDown size={14} />
@@ -1076,10 +1141,10 @@ const ProductScreen = ({ isOnline }) => {
 
                   {/* Show existing admin reply */}
                   {review.adminReply && (review.adminReply.reply || review.adminReply.text) && (
-                    <div className='mt-3 ml-4 pl-3 border-l-2 border-gray-300 bg-gray-50 p-2 rounded'>
-                      <div className='flex justify-between items-start'>
+                    <div className="mt-4 ml-2 sm:ml-4 border-l-4 border-blue-500 bg-blue-50 rounded-lg p-3">
+                      <div className="flex justify-between items-start">
                         <div className='flex-1'>
-                          <p className='text-sm font-medium text-gray-800'>
+                          <p className="text-sm font-semibold text-blue-700">
                             Store Response - {review.adminReply.name}
                           </p>
                           {isEditingReply === review._id ? (
@@ -1090,7 +1155,7 @@ const ProductScreen = ({ isOnline }) => {
                                 onChange={(e) => setEditReplyText(e.target.value)}
                                 className='w-full border rounded p-1 text-sm'
                               />
-                              <div className='flex gap-2 mt-1'>
+                              <div className="flex gap-3 self-end sm:self-auto">
                                 <button
                                   onClick={() => updateReplyHandler(review._id)}
                                   disabled={loadingUpdateReply}
@@ -1108,10 +1173,11 @@ const ProductScreen = ({ isOnline }) => {
                             </div>
                           ) : (
                             <div className='text-sm text-gray-700 mt-1'>
-                              <p>{review.adminReply.reply || review.adminReply.text}</p>
+                              <p className="mt-2 text-sm leading-7 text-gray-700 break-words">
+                                {review.adminReply.reply || review.adminReply.text}</p>
                               {review.adminReply.createdAt && (
 
-                                <p className='text-xs text-gray-500 mt-1'>{timeAgo(review.adminReply.createdAt)}</p>
+                                <p className='text-xs text-gray-500 mt-3'>{timeAgo(review.adminReply.createdAt)}</p>
 
                               )}
                             </div>
@@ -1155,19 +1221,19 @@ const ProductScreen = ({ isOnline }) => {
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             placeholder='Write admin reply...'
-                            className='w-full border rounded p-2 text-sm'
+                            className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
                           />
-                          <div className='flex gap-2 mt-1'>
+                          <div className="mt-3 flex items-center gap-3">
                             <button
                               onClick={() => submitReplyHandler(review._id)}
                               disabled={loadingAdminReply}
-                              className='bg-blue-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50'
+                              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                             >
                               {loadingAdminReply ? 'Posting...' : 'Post Reply'}
                             </button>
                             <button
                               onClick={() => { setReplyingTo(null); setReplyText(''); }}
-                              className='text-gray-600 text-sm'
+                              className="rounded-md px-2 py-2 text-sm text-gray-600 hover:text-gray-800"
                             >
                               Cancel
                             </button>
@@ -1176,7 +1242,7 @@ const ProductScreen = ({ isOnline }) => {
                       ) : (
                         <button
                           onClick={() => setReplyingTo(review._id)}
-                          className='text-blue-600 text-sm hover:underline mt-1'
+                          className="mt-2 text-sm font-medium text-blue-600 hover:underline"
                         >
                           Reply as Admin
                         </button>
@@ -1199,12 +1265,14 @@ const ProductScreen = ({ isOnline }) => {
 
             {/* Add this right here*/}
             {product?.reviews?.length > 3 && (
-              <Link
-                to={`/products/${product.slug}/reviews`}
-                className="inline-block mt-6 px-6 py-2 border-2 border-gray-800 rounded-md hover:bg-gray-100 font-semibold"
-              >
-                See All Reviews ({product.reviews.length})
-              </Link>
+              <div className="mt-8 flex">
+                <Link
+                  to={`/products/${product.slug}/reviews`}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 hover:shadow-md sm:w-auto"
+                >
+                  View All Reviews ({product.reviews.length})
+                </Link>
+              </div>
             )}
 
             {/* {showAllReviews && product && (

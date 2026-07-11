@@ -412,7 +412,18 @@ const ProductReviewsScreen = () => {
                                     src={photo.url}
                                     alt="Customer Review"
                                     onClick={() => setSelectedImage(photo.url)}
-                                    className="w-20 h-20 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
+                                    className="w-16 h-16
+                                        sm:w-20 sm:h-20
+                                        lg:w-24 lg:h-24
+                                        object-contain
+                                        rounded-lg
+                                        bg-white
+                                        border
+                                        border-gray-200
+                                        p-1
+                                        cursor-pointer
+                                        hover:opacity-80
+                                        flex-shrink-0"
                                 />
                             ))}
                         </div>
@@ -570,7 +581,18 @@ const ProductReviewsScreen = () => {
                                                         src={img.url}
                                                         onClick={() => setSelectedImage(img.url)}
                                                         alt={`review-${idx}`}
-                                                        className='w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border border-gray-200 cursor-pointer'
+                                                        className="w-16 h-16
+                                                                sm:w-20 sm:h-20
+                                                                lg:w-24 lg:h-24
+                                                                object-contain
+                                                                rounded-lg
+                                                                bg-white
+                                                                border
+                                                                border-gray-200
+                                                                p-1
+                                                                cursor-pointer
+                                                                hover:opacity-80
+                                                                flex-shrink-0"
                                                     />
                                                 ))}
                                             </div>
