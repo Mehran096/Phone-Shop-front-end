@@ -106,8 +106,8 @@ const ProductScreen = ({ isOnline }) => {
   //product360
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
-//product360 open modal state and used for to hide the stickyPurchase.jsx in mobile screen 
-const [isImageFullscreen, setIsImageFullscreen] = useState(false);
+  //product360 open modal state and used for to hide the stickyPurchase.jsx in mobile screen 
+  const [isImageFullscreen, setIsImageFullscreen] = useState(false);
   // Edit states
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -196,36 +196,36 @@ const [isImageFullscreen, setIsImageFullscreen] = useState(false);
     toast.success('Added to cart')
     navigate('/cart')
   }
-//Buy now handler
-const buyNowHandler = () => {
-     
-  if (selectedVariant?.colors?.length > 0 && !selectedColor?.name) {
-    toast.error("Please select a color");
-    return;
-  }
-const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
-  const imageUrl = selectedColor.images?.[0]?.url || product.image || '/placeholder.png';
+  //Buy now handler
+  const buyNowHandler = () => {
+
+    if (selectedVariant?.colors?.length > 0 && !selectedColor?.name) {
+      toast.error("Please select a color");
+      return;
+    }
+    const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
+    const imageUrl = selectedColor.images?.[0]?.url || product.image || '/placeholder.png';
     dispatch(addToCart({
-    product: product._id,
-    name: product.name,
-    slug: product.slug,
-    image: imageUrl,
-   price: price,
-    color: selectedColor?.name || "",
-    countInStock:
+      product: product._id,
+      name: product.name,
+      slug: product.slug,
+      image: imageUrl,
+      price: price,
+      color: selectedColor?.name || "",
+      countInStock:
         selectedColor?.countInStock ??
         selectedVariant?.countInStock ??
         0,
-    storage: selectedVariant.storage || "",
-    qty,
-}));
- 
-navigate("/shipping");
- 
+      storage: selectedVariant.storage || "",
+      qty,
+    }));
+
+    navigate("/shipping");
 
 
-  
-};
+
+
+  };
 
 
   // Filter reviews by selected color, user login to show first his review
@@ -452,44 +452,44 @@ navigate("/shipping");
     }
     try {
       const res = await markHelpful({
-      productId: product._id,
-      reviewId,
+        productId: product._id,
+        reviewId,
       }).unwrap();
 
       refetch();
 
       toast.success(
-  res.userVoted
-    ? 'Thanks! You found this review helpful.'
-    : 'Your helpful vote has been removed.'
-);
+        res.userVoted
+          ? 'Thanks! You found this review helpful.'
+          : 'Your helpful vote has been removed.'
+      );
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
   };
 
   const notHelpfulHandler = async (reviewId) => {
-  if (!userInfo) {
-    toast.error('Please login to mark as not helpful');
-    return;
-  }
+    if (!userInfo) {
+      toast.error('Please login to mark as not helpful');
+      return;
+    }
 
-  try {
-    const res = await markReviewNotHelpful({
-  productId: product._id,
-  reviewId,
-}).unwrap();
+    try {
+      const res = await markReviewNotHelpful({
+        productId: product._id,
+        reviewId,
+      }).unwrap();
 
-    refetch();
-    toast.success(
-  res.userVoted
-    ? "Thanks! You marked this review as not helpful."
-    : 'Your not helpful vote has been removed.'
-);
-  } catch (err) {
-    toast.error(err?.data?.message || err.error);
-  }
-};
+      refetch();
+      toast.success(
+        res.userVoted
+          ? "Thanks! You marked this review as not helpful."
+          : 'Your not helpful vote has been removed.'
+      );
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
+  };
 
   const submitReplyHandler = async (reviewId) => {
     if (!replyText.trim()) {
@@ -701,34 +701,43 @@ navigate("/shipping");
 
               {/* Right: Buy Box - Name, Brand, Price, Stock, Colors, Cart */}
               <div className='lg:col-span-5'>
-                <h1 className='text-2xl md:text-3xl font-bold text-gray-900 mb-2'>
+                <h1 className='text-2xl
+                        sm:text-3xl
+                        lg:text-4xl
+                        font-bold
+                        leading-tight
+                        text-gray-900
+                        tracking-tight
+                        mb-3'>
                   {product.name}{selectedVariant.storage ? ` ${selectedVariant.storage}` : ''} {/* V13.6 KEY */}
                 </h1>
 
                 {/* <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div> */}
                 {product.numReviews > 0 && (
-                  <div className='flex items-center mt-3 mb-2'>
+                  <div className='flex items-center gap-2 mb-4'>
                     <div className='flex text-amber-500 gap-0.5'>
                       {[...Array(5)].map((_, i) => (
                         <FaStar
                           key={i}
-                          className={`w-3.5 h-3.5 ${i < Math.floor(product.rating)
+                          className={`w-4 h-4 sm:w-5 sm:h-5 ${i < Math.floor(product.rating)
                             ? 'fill-current'
                             : 'fill-gray-300'
                             }`}
                         />
                       ))}
                     </div>
-                    <a className='text-xs text-blue-600 ml-1.5 hover:text-orange-600 hover:underline cursor-pointer'>
+                    <a className='text-sm font-medium text-gray-600 ml-1.5 hover:text-orange-600 hover:underline cursor-pointer'>
                       {product.rating?.toFixed(1) ?? '0.0'}
                     </a>
-                    <a className='text-xs text-blue-600 ml-1 hover:text-orange-600 hover:underline cursor-pointer'>
+                    <a className='text-sm text-blue-600 ml-1 hover:text-orange-600 hover:underline cursor-pointer'>
                       ({product.numReviews})
                     </a>
                   </div>
                 )}
-                <div className='text-5xl font-bold text-blue-600 mb-4'>
-                  ${selectedColor?.price ?? selectedVariant?.price ?? 0}
+                <div className="mb-5">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-blue-600">
+                    ${selectedColor?.price ?? selectedVariant?.price ?? 0}
+                  </span>
                 </div>
 
 
@@ -830,16 +839,16 @@ navigate("/shipping");
 
                       {/* WISHLIST - WRAPPED IN DIV */}
                       <div className="w-12 h-12 flex-shrink-0">
-                          <WishlistButton
-                            product={product}
-                            selectedColor={selectedColor}
-                            selectedStorage={selectedVariant?.storage}
-                            selectedPrice={selectedVariant?.price}
-                            selectedImage={selectedColor?.images?.[0]?.url}
-                            countInStock={selectedVariant?.countInStock}
-                            className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
-                            showText={false}
-                          />
+                        <WishlistButton
+                          product={product}
+                          selectedColor={selectedColor}
+                          selectedStorage={selectedVariant?.storage}
+                          selectedPrice={selectedVariant?.price}
+                          selectedImage={selectedColor?.images?.[0]?.url}
+                          countInStock={selectedVariant?.countInStock}
+                          className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
+                          showText={false}
+                        />
                       </div>
 
                     </div>
@@ -894,75 +903,75 @@ navigate("/shipping");
         {/* Reviews Section */}
         <div className='mt-10'>
 
-          
+
           {/* Review Summary */}
-{/* Review Summary */}
-<div className="bg-white border rounded-xl p-6 mb-6 shadow-sm">
-  <h3 className="text-lg font-semibold text-gray-800 mb-5">
-      Customer Reviews Summary
-  </h3>
+          {/* Review Summary */}
+          <div className="bg-white border rounded-xl p-6 mb-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-800 mb-5">
+              Customer Reviews Summary
+            </h3>
 
-  <div className="flex flex-col md:flex-row gap-8">
-    {/* Left */}
-    <div className="md:w-56 flex flex-col items-center md:items-start">
-      <div className="text-5xl font-bold text-gray-900">
-        {product.rating.toFixed(1)}
-      </div>
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Left */}
+              <div className="md:w-56 flex flex-col items-center md:items-start">
+                <div className="text-5xl font-bold text-gray-900">
+                  {product.rating.toFixed(1)}
+                </div>
 
-      <div className="flex text-yellow-400 text-xl mt-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <span key={i}>
-            {product.rating >= i
-              ? "★"
-              : product.rating >= i - 0.5
-              ? "☆"
-              : "☆"}
-          </span>
-        ))}
-      </div>
+                <div className="flex text-yellow-400 text-xl mt-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <span key={i}>
+                      {product.rating >= i
+                        ? "★"
+                        : product.rating >= i - 0.5
+                          ? "☆"
+                          : "☆"}
+                    </span>
+                  ))}
+                </div>
 
-      <p className="text-sm text-gray-500 mt-2">
-         {product.numReviews} customer reviews
-      </p>
-    </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  {product.numReviews} customer reviews
+                </p>
+              </div>
 
-    {/* Right */}
-    <div className="flex-1">
-      {[5, 4, 3, 2, 1].map((star) => {
-        const count = product.reviews.filter(
-          (review) => review.rating === star
-        ).length;
+              {/* Right */}
+              <div className="flex-1">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const count = product.reviews.filter(
+                    (review) => review.rating === star
+                  ).length;
 
-        const percentage =
-          product.numReviews > 0
-            ? (count / product.numReviews) * 100
-            : 0;
+                  const percentage =
+                    product.numReviews > 0
+                      ? (count / product.numReviews) * 100
+                      : 0;
 
-        return (
-          <div
-            key={star}
-            className="flex items-center gap-3 mb-3"
-          >
-            <span className="w-8 text-sm font-medium">
-              {star}★
-            </span>
+                  return (
+                    <div
+                      key={star}
+                      className="flex items-center gap-3 mb-3"
+                    >
+                      <span className="w-8 text-sm font-medium">
+                        {star}★
+                      </span>
 
-            <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="bg-yellow-400 h-3 rounded-full transition-all duration-300"
-                style={{ width: `${percentage}%` }}
-              ></div>
+                      <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="bg-yellow-400 h-3 rounded-full transition-all duration-300"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+
+                      <span className="w-16 text-right text-sm text-gray-600">
+                        {count} ({Math.round(percentage)}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-
-            <span className="w-16 text-right text-sm text-gray-600">
-              {count} ({Math.round(percentage)}%)
-            </span>
           </div>
-        );
-      })}
-    </div>
-  </div>
-</div>
 
 
 
@@ -1042,8 +1051,8 @@ navigate("/shipping");
                       onClick={() => helpfulHandler(review._id)}
                       disabled={loadingHelpfulReview}
                       className={`flex items-center gap-1 hover:text-blue-600 disabled:opacity-50 ${userInfo && review.helpful?.includes(userInfo._id)
-                          ? 'text-blue-600 font-medium'
-                          : ''
+                        ? 'text-blue-600 font-medium'
+                        : ''
                         }`}
                     >
                       <FaThumbsUp size={14} />
@@ -1055,8 +1064,8 @@ navigate("/shipping");
                       onClick={() => notHelpfulHandler(review._id)}
                       disabled={loadingNotHelpfulReview}
                       className={`flex items-center gap-1 hover:text-red-600 disabled:opacity-50 ${userInfo && review.notHelpful?.includes(userInfo._id)
-                          ? 'text-red-600 font-medium'
-                          : ''
+                        ? 'text-red-600 font-medium'
+                        : ''
                         }`}
                     >
                       <FaThumbsDown size={14} />
@@ -1434,22 +1443,22 @@ navigate("/shipping");
                       {editRating === 0 && <p className='text-red-500 text-sm mt-1'>Please select a rating</p>}
                     </div>
                     {/* Review Title */}
-                    
-                      <div className="mb-4">
-                        <label className="block mb-2 font-semibold text-gray-700">
-                          Review Title <span className="text-gray-500 font-normal">(optional)</span>
-                        </label>
 
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          placeholder="Example: Great battery life"
-                          maxLength={120}
-                          className="w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                   
+                    <div className="mb-4">
+                      <label className="block mb-2 font-semibold text-gray-700">
+                        Review Title <span className="text-gray-500 font-normal">(optional)</span>
+                      </label>
+
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        placeholder="Example: Great battery life"
+                        maxLength={120}
+                        className="w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
 
                     {/* Comment */}
                     <div>
@@ -1541,17 +1550,17 @@ navigate("/shipping");
           )}
         </div>
       </div>
-{!isImageFullscreen && !isEditModalOpen && (
-      <StickyPurchaseBar
-  product={product}
-  selectedColor={selectedColor}
-  selectedVariant={selectedVariant}
-  qty={qty}
-  setQty={setQty}
-  addToCartHandler={addToCartHandler}
-  buyNowHandler={buyNowHandler}
-/>
-)}
+      {!isImageFullscreen && !isEditModalOpen && (
+        <StickyPurchaseBar
+          product={product}
+          selectedColor={selectedColor}
+          selectedVariant={selectedVariant}
+          qty={qty}
+          setQty={setQty}
+          addToCartHandler={addToCartHandler}
+          buyNowHandler={buyNowHandler}
+        />
+      )}
     </>
   )
 }
