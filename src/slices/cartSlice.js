@@ -33,11 +33,7 @@ const updateCartPrices = (state) => {
   )
 
   state.shippingPrice = addDecimals(state.itemsPrice > 100 ? 0 : 10)
-  //state.taxPrice = addDecimals(Number((0.15 * state.itemsPrice).toFixed(2)))
-  //state.taxPrice = addDecimals(0)
-  //   state.taxPrice = addDecimals(
-  //   state.paymentMethod === 'COD' ? Number((0.15 * state.itemsPrice).toFixed(2)) : 0
-  // )
+   
 
   state.totalPrice = addDecimals(
     Number(state.itemsPrice) +
@@ -67,18 +63,7 @@ const cartSlice = createSlice({
         state.cartItems = [
           ...state.cartItems,
           { ...item },
-          // {
-          //   product: item.product,
-          //   name: item.name,
-          //   slug: item.slug,
-          //   image: item.image,
-          //   price: item.price,
-          //   color: item.color || '',
-          //   storage: item.storage || '',
-          //   hexCode: item.hexCode || '',
-          //   countInStock: item.countInStock || 0,
-          //   qty: item.qty,
-          // },
+           
         ]
       }
 

@@ -21,17 +21,35 @@ const PlaceOrderScreen = () => {
   }
 
   // Calculate prices
-  const itemsPrice = addDecimals(
-    cart.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+  const originalItemsPrice = addDecimals(
+    cart.cartItems.reduce(
+      (acc, item) => acc + (item.originalPrice || item.price) * item.qty,
+      0
+    )
   )
+
+  const itemsPrice = addDecimals(
+    cart.cartItems.reduce(
+      (acc, item) => acc + item.price * item.qty,
+      0
+    )
+  )
+
+  const totalDiscount = addDecimals(
+    Number(originalItemsPrice) - Number(itemsPrice)
+  )
+
   const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
 
-  // FIX: Tax only for COD
   const taxPrice = addDecimals(
-    cart.paymentMethod === 'COD' ? Number((0.15 * itemsPrice).toFixed(2)) : 0
+    cart.paymentMethod === 'COD'
+      ? Number((0.15 * itemsPrice).toFixed(2))
+      : 0
   )
 
-  const totalPrice = addDecimals(Number(itemsPrice) + Number(shippingPrice) + Number(taxPrice))
+  const totalPrice = addDecimals(
+    Number(itemsPrice) + Number(shippingPrice) + Number(taxPrice)
+  )
 
   useEffect(() => {
     if (!cart.paymentMethod) {
@@ -51,10 +69,12 @@ const PlaceOrderScreen = () => {
           image: item.image,
           slug: item.slug,
           price: Number(item.price),
+          originalPrice: Number(item.originalPrice),
+          discountAmount: Number(item.discountAmount || 0),
           qty: item.qty,
           color: item.color,
           storage: item.storage,
-          variant: item.variant,
+          //variant: item.variant,
         })),
         shippingAddress: cart.shippingAddress,
         paymentMethod: cart.paymentMethod,
@@ -142,9 +162,37 @@ const PlaceOrderScreen = () => {
                       {item.storage && <p>Storage: {item.storage}</p>}
                     </div>
 
-                    <div className='text-gray-900 font-semibold text-sm mt-2'>
-                      {item.qty} x ${item.price} = ${addDecimals(item.qty * item.price)}
-                    </div>
+                    <div className="mt-2 text-sm space-y-1">
+  {item.discountAmount > 0 && (
+    <>
+      <p className="text-gray-500 line-through">
+        Original Price: ${addDecimals(item.originalPrice)}
+      </p>
+
+      <p className="text-green-600 font-medium">
+        You Save: ${addDecimals(item.discountAmount)}
+      </p>
+
+      <p className="font-semibold text-gray-900">
+        Price: ${addDecimals(item.price)}
+      </p>
+    </>
+  )}
+
+  {item.discountAmount <= 0 && (
+    <p className="font-semibold text-gray-900">
+      Price: ${addDecimals(item.price)}
+    </p>
+  )}
+
+  <p className="text-gray-900 font-semibold">
+    Qty: {item.qty}
+  </p>
+
+  <p className="text-lg font-bold text-gray-900">
+    Subtotal: ${addDecimals(item.qty * item.price)}
+  </p>
+</div>
                   </div>
                 </div>
               ))}
@@ -157,21 +205,36 @@ const PlaceOrderScreen = () => {
               <h2 className='text-2xl font-bold mb-6'>Order Summary</h2>
 
               <div className='space-y-3 mb-6'>
-                <div className='flex justify-between pb-3 border-b border-gray-200'>
-                  <span className='text-gray-600'>Items</span>
-                  <span className='font-semibold'>${itemsPrice}</span>
+                <div className="flex justify-between pb-3 border-b border-gray-200">
+                  <span className="text-gray-600">Original Price</span>
+                  <span className="font-semibold">${originalItemsPrice}</span>
                 </div>
-                <div className='flex justify-between pb-3 border-b border-gray-200'>
-                  <span className='text-gray-600'>Shipping</span>
-                  <span className='font-semibold'>${shippingPrice}</span>
+
+                <div className="flex justify-between pb-3 border-b border-gray-200">
+                  <span className="text-green-600">Discount</span>
+                  <span className="font-semibold text-green-600">
+                    -${totalDiscount}
+                  </span>
                 </div>
-                <div className='flex justify-between pb-3 border-b border-gray-200'>
-                  <span className='text-gray-600'>Tax</span>
-                  <span className='font-semibold'>${taxPrice}</span>
+
+                <div className="flex justify-between pb-3 border-b border-gray-200">
+                  <span className="text-gray-600">Items</span>
+                  <span className="font-semibold">${itemsPrice}</span>
                 </div>
-                <div className='flex justify-between pt-3'>
-                  <span className='text-lg font-bold'>Total</span>
-                  <span className='text-lg font-bold'>${totalPrice}</span>
+
+                <div className="flex justify-between pb-3 border-b border-gray-200">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="font-semibold">${shippingPrice}</span>
+                </div>
+
+                <div className="flex justify-between pb-3 border-b border-gray-200">
+                  <span className="text-gray-600">Tax</span>
+                  <span className="font-semibold">${taxPrice}</span>
+                </div>
+
+                <div className="flex justify-between pt-3">
+                  <span className="text-lg font-bold">Total</span>
+                  <span className="text-lg font-bold">${totalPrice}</span>
                 </div>
               </div>
 

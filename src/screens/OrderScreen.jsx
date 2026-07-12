@@ -33,6 +33,18 @@ const OrderScreen = () => {
   const { order, loading, error, successShip, successDeliver } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.auth);
 
+  const originalItemsPrice =
+  order?.orderItems?.reduce(
+    (acc, item) => acc + (item.originalPrice || item.price) * item.qty,
+    0
+  ) || 0;
+
+const totalDiscount =
+  order?.orderItems?.reduce(
+    (acc, item) => acc + (item.discountAmount || 0) * item.qty,
+    0
+  ) || 0;
+
   useEffect(() => {
     if (!userInfo) {
       navigate('/login');
@@ -218,10 +230,29 @@ const OrderScreen = () => {
                           </div>
                         </div>
                         
-                        <div className="flex items-end justify-between mt-2">
-                          <span className="text-sm text-gray-600">${item.price} each</span>
-                          <span className="text-lg font-bold text-gray-900">${(item.qty * item.price).toFixed(2)}</span>
-                        </div>
+                        <div className="mt-2 space-y-1">
+  {item.discountAmount > 0 && (
+    <>
+      <div className="text-sm text-gray-500 line-through">
+        Original: ${Number(item.originalPrice).toFixed(2)}
+      </div>
+
+      <div className="text-sm font-medium text-green-600">
+        Discount: -${Number(item.discountAmount).toFixed(2)}
+      </div>
+    </>
+  )}
+
+  <div className="flex items-end justify-between">
+    <span className="text-sm text-gray-600">
+      ${Number(item.price).toFixed(2)} each
+    </span>
+
+    <span className="text-lg font-bold text-gray-900">
+      ${(item.qty * item.price).toFixed(2)}
+    </span>
+  </div>
+</div>
                       </div>
                     </div>
                   ))}
@@ -240,6 +271,21 @@ const OrderScreen = () => {
                 <h2 className="text-lg font-bold text-gray-900">Order Summary</h2>
               </div>
               <div className="space-y-3 text-sm">
+                <div className="flex justify-between text-gray-600">
+  <span>Original Price</span>
+  <span className="font-medium text-gray-900">
+    ${originalItemsPrice}
+  </span>
+</div>
+
+{totalDiscount > 0 && (
+  <div className="flex justify-between text-green-600">
+    <span>Discount</span>
+    <span className="font-medium">
+      ${totalDiscount}
+    </span>
+  </div>
+)}
                 <div className="flex justify-between text-gray-600">
                   <span>Items Subtotal</span>
                   <span className="font-medium text-gray-900">${order.itemsPrice?.toFixed(2)}</span>

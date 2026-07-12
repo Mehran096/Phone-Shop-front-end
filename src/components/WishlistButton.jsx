@@ -56,9 +56,12 @@ const WishlistButton = ({
  
   const colorToSend = colorName || product?.variants?.[0]?.colors?.[0]?.name || ''
 const storageToSend = variantToSend?.storage || storageName || product?.variants?.[0]?.storage || ''
-const priceToSend = selectedPrice?? variantToSend?.colors?.find(c => c.name === colorToSend)?.price?? product?.variants?.[0]?.colors?.[0]?.price?? 0
+const priceToSend = selectedPrice?? variantToSend?.colors?.find(c => c.name === colorToSend)?.finalPrice?? product?.variants?.[0]?.colors?.[0]?.finalPrice?? 0
 const imageToSend = selectedImage || variantToSend?.colors?.find(c => c.name === colorToSend)?.images?.[0]?.url || product?.images?.[0]?.url || ''
 const stockToSend = countInStock?? variantToSend?.colors?.find(c => c.name === colorToSend)?.countInStock?? 0
+const originalPriceToSend = variantToSend?.colors?.find((c) => c.name === colorToSend)?.originalPrice || 0;
+
+const discountAmountToSend = variantToSend?.colors?.find((c) => c.name === colorToSend)?.discountAmount || 0;
 
 
   const wishlistHandler = () => {
@@ -89,6 +92,8 @@ const stockToSend = countInStock?? variantToSend?.colors?.find(c => c.name === c
         name: product.name,
         image: imageToSend,
         price: priceToSend,
+        originalPrice: originalPriceToSend,
+        discountAmount: discountAmountToSend,
         storage: storageToSend, // "256GB"
         color: colorToSend, // "Black"
         countInStock: stockToSend,

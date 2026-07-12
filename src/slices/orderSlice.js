@@ -13,7 +13,9 @@ export const createOrder = createAsyncThunk(
         name: item.name,
         image: item.image,
         slug: item.slug,
-        price: Number(item.price),  
+        price: Number(item.price),
+        originalPrice: Number(item.originalPrice),
+        discountAmount: Number(item.discountAmount || 0),  
         qty: item.qty,
         color: item.color,
         storage: item.storage,
@@ -23,11 +25,7 @@ export const createOrder = createAsyncThunk(
         orderItems,
         shippingAddress: orderData.shippingAddress,
         paymentMethod: 'COD',
-        //paymentMethod: orderData.paymentMethod, // USE THE REAL ONE, NOT 'COD'
-        // itemsPrice: orderData.itemsPrice,
-        // taxPrice: orderData.taxPrice,
-        // shippingPrice: orderData.shippingPrice,
-        // totalPrice: orderData.totalPrice,
+         
       }
 
       const { data } = await api.post('/orders', payload)
@@ -51,7 +49,9 @@ export const createCheckoutSession = createAsyncThunk(
         name: item.name,
         image: item.image,
         slug: item.slug,
-        price: Number(item.price),  
+        price: Number(item.price),
+        originalPrice: Number(item.originalPrice),
+        discountAmount: Number(item.discountAmount || 0),  
         qty: item.qty,
         color: item.color,
         storage: item.storage,

@@ -40,6 +40,15 @@ function CartScreen() {
   };
 
   const cartSubtotal = cartItems?.reduce((acc, item) => acc + item.qty * Number(item.price || 0), 0);
+  const originalSubtotal = cartItems.reduce(
+  (acc, item) => acc + (Number(item.originalPrice || item.price) * item.qty),
+  0
+);
+
+const totalSavings = cartItems.reduce(
+  (acc, item) => acc + (Number(item.discountAmount || 0) * item.qty),
+  0
+);
   const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
 
   //drop down qty 
@@ -137,9 +146,23 @@ const CustomDropdown = ({ value, onChange, options }) => {
                       </Link>
                       <p className="text-xs text-gray-600 mt-1">Color: <span className="font-medium">{item.color || 'Default'}</span></p>
                       <p className="text-xs text-gray-600">Storage: <span className="font-medium">{item.storage || 'N/A'}</span></p>
-                      <p className="text-lg font-bold text-gray-900 mt-2">
-                        ${Number(item.price || 0).toFixed(2)}
-                      </p>
+                      <div className="mt-2">
+  <p className="text-lg font-bold text-red-600">
+    ${Number(item.price || 0).toFixed(2)}
+  </p>
+
+  {item.originalPrice > item.price && (
+    <>
+      <p className="text-sm text-gray-500 line-through">
+        ${Number(item.originalPrice).toFixed(2)}
+      </p>
+
+      <p className="text-sm text-green-600 font-medium">
+        You save ${Number(item.discountAmount || 0).toFixed(2)}
+      </p>
+    </>
+  )}
+</div>
                     </div>
                   </div>
 
@@ -173,9 +196,26 @@ const CustomDropdown = ({ value, onChange, options }) => {
                 </h2>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between text-gray-600">
-                    <span>Subtotal ({cartItemsCount} items)</span>
-                    <span className="font-semibold text-gray-900">${cartSubtotal.toFixed(2)}</span>
-                  </div>
+  <span>Subtotal ({cartItemsCount} items)</span>
+
+  <div className="text-right">
+    <div className="font-semibold text-gray-900">
+      ${cartSubtotal.toFixed(2)}
+    </div>
+
+    {totalSavings > 0 && (
+      <>
+        <div className="text-xs text-gray-500 line-through">
+          ${originalSubtotal.toFixed(2)}
+        </div>
+
+        <div className="text-xs text-green-600 font-medium">
+          You save ${totalSavings.toFixed(2)}
+        </div>
+      </>
+    )}
+  </div>
+</div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
                     <span className="text-green-600 font-semibold">Free</span>

@@ -23,8 +23,24 @@ const ProductCreateScreen = () => {
     description: '',
     specs: {},
     specsJson: '',
-    colors: [{ name: '', hexCode: '#000000', files: [], images: [], price: '', countInStock: '', sku: '' }] // V37.03 KEY: add files:[]
-  }]);
+    colors: [{
+      name: '', 
+      hexCode: '#000000', 
+      files: [], 
+      images: [],
+      price: '', 
+      discount: {
+        type: "percentage",
+        value: "",
+        startDate: "",
+        endDate: "",
+        isActive: false,
+      }, 
+      countInStock: '', 
+      sku: '' 
+  }] // V37.03 KEY: add files:[]
+                }]);
+
   const [uploading, setUploading] = useState(false);
 
   const addVariantHandler = () => setVariants([...variants, {
@@ -32,8 +48,14 @@ const ProductCreateScreen = () => {
     description: '',
     specs: {},
     specsJson: '',
-    colors: [{ name: '', hexCode: '#000000', files: [], images: [], price: '', countInStock: '', sku: '' }] // V37.03 KEY
-  }]);
+    colors: [{ name: '', hexCode: '#000000', files: [], images: [], price: '',discount: {
+  type: "percentage",
+  value: "",
+  startDate: "",
+  endDate: "",
+  isActive: false,
+}, countInStock: '', sku: '' }] // V37.03 KEY
+          }]);
   const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i !== vIndex));
   const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
     { ...item, [field]: value } : item));
@@ -41,12 +63,48 @@ const ProductCreateScreen = () => {
     { ...item, specs: { ...item.specs, [field]: value } } : item));
   const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex ? {
     ...item,
-    colors: [...item.colors, { name: '', hexCode: '#000000', files: [], images: [], price: '', countInStock: '', sku: '' }]
-  } : item));
+    colors: [...item.colors, { name: '', hexCode: '#000000', files: [], images: [], price: '', discount: {
+  type: "percentage",
+  value: "",
+  startDate: "",
+  endDate: "",
+  isActive: false,
+}, countInStock: '', sku: '' }]
+        } : item));
   const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex ?
     { ...item, colors: item.colors.filter((_, ci) => ci !== cIndex) } : item));
-  const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
-    { ...item, colors: item.colors.map((c, ci) => ci === cIndex ? { ...c, [field]: value } : c) } : item));
+  const updateColor = (vIndex, cIndex, field, value) =>
+  setVariants((v) =>
+    v.map((item, i) =>
+      i === vIndex
+        ? {
+            ...item,
+            colors: item.colors.map((c, ci) => {
+              if (ci !== cIndex) return c;
+
+              // Handle nested discount fields
+              if (field.startsWith("discount.")) {
+                const discountField = field.split(".")[1];
+
+                return {
+                  ...c,
+                  discount: {
+                    ...c.discount,
+                    [discountField]: value,
+                  },
+                };
+              }
+
+              // Handle normal fields
+              return {
+                ...c,
+                [field]: value,
+              };
+            }),
+          }
+        : item
+    )
+  );
 
 
 
@@ -161,6 +219,13 @@ const ProductCreateScreen = () => {
                 hexCode: c.hexCode || '',
                 images: [...oldImages, ...newImages], // V37.06 KEY: send objects
                 price: Number(c.price),
+                discount: {
+  type: c.discount?.type || "percentage",
+  value: Number(c.discount?.value) || 0,
+  startDate: c.discount?.startDate || null,
+  endDate: c.discount?.endDate || null,
+  isActive: c.discount?.isActive ?? false,
+},
                 countInStock: Number(c.countInStock),
                 sku: c.sku
               }
@@ -283,13 +348,76 @@ const ProductCreateScreen = () => {
                         value={color.countInStock} onChange={e => updateColor(vIndex, cIndex, 'countInStock', e.target.value)}
                         className={inputClass} /></div>
                     </div>
-                    {/* sku */}
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2'>
+                    {/* discount date */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+  <div>
+    <label className={labelClass}>Start Date</label>
+    <input
+      type="date"
+      value={color.discount?.startDate || ""}
+      onChange={(e) =>
+        updateColor(vIndex, cIndex, "discount.startDate", e.target.value)
+      }
+      className={inputClass}
+    />
+  </div>
+
+  <div>
+    <label className={labelClass}>End Date</label>
+    <input
+      type="date"
+      value={color.discount?.endDate || ""}
+      onChange={(e) =>
+        updateColor(vIndex, cIndex, "discount.endDate", e.target.value)
+      }
+      className={inputClass}
+    />
+  </div>
+
+</div>
+                    {/* sku - discount*/}
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 mt-2'>
                        
-                      <div><label className={labelClass}>SKU</label><input type='text' placeholder='A17-256-BLK'
+                      
+                        <div>
+  <label className={labelClass}>Discount Type</label>
+
+  <select
+    value={color.discount?.type || "percentage"}
+    onChange={(e) =>
+      updateColor(vIndex, cIndex, "discount.type", e.target.value)
+    }
+    className={inputClass}
+  >
+    <option value="percentage">Percentage (%)</option>
+    <option value="fixed">Fixed Amount</option>
+  </select>
+</div>
+
+<div>
+  <label className={labelClass}>
+    {color.discount?.type === "fixed"
+      ? "Discount Amount"
+      : "Discount (%)"}
+  </label>
+
+  <input
+    type="number"
+    min="0"
+    placeholder="0"
+    value={color.discount?.value || ""}
+    onChange={(e) =>
+      updateColor(vIndex, cIndex, "discount.value", e.target.value)
+    }
+    className={inputClass}
+  />
+</div>
+<div><label className={labelClass}>SKU</label><input type='text' placeholder='A17-256-BLK'
                         value={color.sku} onChange={e => updateColor(vIndex, cIndex, 'sku', e.target.value)}
                         className={inputClass} /></div>
                     </div>
+                    
 
                     {/* V9.63 KEY: Compact Clean Upload UI */}
                     <label className={labelClass}>Images *</label>

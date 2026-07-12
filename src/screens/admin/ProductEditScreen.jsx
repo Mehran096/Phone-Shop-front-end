@@ -33,8 +33,24 @@ const ProductEditScreen = () => {
     storage: '',
     specs: {},
     specsJson: '',
-    colors: [{ name: '', hexCode: '', images: [], price: '', countInStock: '', sku: '' }]
+    colors: [{ 
+      name: '',
+       hexCode: '', 
+       images: [], 
+       price: '',
+       discount: {
+        type: "percentage",
+        value: "",
+        startDate: "",
+        endDate: "",
+        isActive: false,
+      },  
+
+       countInStock: '', 
+       sku: ''
+       }]
   }]);
+
   const [uploadingMap, setUploadingMap] = useState({});
   const [imagesToDelete, setImagesToDelete] = useState([]);
 
@@ -61,15 +77,26 @@ const ProductEditScreen = () => {
           ),
           newFiles: [],
           price: c.price || '',
+          discount: {
+    type: c.discount?.type || "percentage",
+    value: c.discount?.value || "",
+    startDate: c.discount?.startDate
+      ? c.discount.startDate.slice(0, 10)
+      : "",
+    endDate: c.discount?.endDate
+      ? c.discount.endDate.slice(0, 10)
+      : "",
+    isActive: c.discount?.isActive || false,
+  },
           countInStock: c.countInStock || '',
           sku: c.sku || '',
-        })) || [{ name: '', hexCode: '', images: [], price: '', countInStock: '', sku: '' }]
+        })) || [{ name: '', hexCode: '', images: [], price: '', discount: {type: "percentage", value: "", startDate: "", endDate: "", isActive: false,},  countInStock: '', sku: '' }]
       })) || [{
         storage: '',
         description: '',
         specs: {},
         specsJson: '',
-        colors: [{ name: '', hexCode: '', images: [], price: '', countInStock: '', sku: '' }]
+        colors: [{ name: '', hexCode: '', images: [], price: '', discount: {type: "percentage", value: "", startDate: "", endDate: "", isActive: false,}, countInStock: '', sku: '' }]
       }])
     }
   }, [product]);
@@ -79,7 +106,7 @@ const ProductEditScreen = () => {
     description: '',
     specs: {},
     specsJson: '',
-    colors: [{ name: '', hexCode: '', images: [], newFiles: [], price: '', countInStock: '', sku: '' }]
+    colors: [{ name: '', hexCode: '', images: [], newFiles: [], price: '', discount: {type: "percentage", value: "", startDate: "", endDate: "", isActive: false,}, countInStock: '', sku: '' }]
   }]);
   const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i !== vIndex));
   const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
@@ -87,11 +114,39 @@ const ProductEditScreen = () => {
   // const updateVariantSpec = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
   //   { ...item, specs: { ...item.specs, [field]: value } } : item));
   const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex ?
-    { ...item, colors: [...item.colors, { name: '', hexCode: '', images: [], newFiles: [], price: '', countInStock: '', sku: '' }] } : item));
+    { ...item, colors: [...item.colors, { name: '', hexCode: '', images: [], newFiles: [], price: '', discount: {type: "percentage", value: "", startDate: "", endDate: "", isActive: false,}, countInStock: '', sku: '' }] } : item));
   const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex ?
     { ...item, colors: item.colors.filter((_, ci) => ci !== cIndex) } : item));
-  const updateColor = (vIndex, cIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
-    { ...item, colors: item.colors.map((c, ci) => ci === cIndex ? { ...c, [field]: value } : c) } : item));
+  const updateColor = (vIndex, cIndex, field, value) =>
+                                        setVariants((v) =>
+                                          v.map((item, i) =>
+                                            i !== vIndex
+                                              ? item
+                                              : {
+                                                  ...item,
+                                                  colors: item.colors.map((c, ci) => {
+                                                    if (ci !== cIndex) return c;
+
+                                                    if (field.startsWith("discount.")) {
+                                                      const discountField = field.split(".")[1];
+
+                                                      return {
+                                                        ...c,
+                                                        discount: {
+                                                          ...c.discount,
+                                                          [discountField]: value,
+                                                        },
+                                                      };
+                                                    }
+
+                                                    return {
+                                                      ...c,
+                                                      [field]: value,
+                                                    };
+                                                  }),
+                                                }
+                                          )
+                                        );
 
   // V38.37 KEY: DON'T UPLOAD YET, JUST SAVE FILES TO STATE
   const uploadFileHandler = async (vIndex, cIndex, e) => {
@@ -380,6 +435,69 @@ const ProductEditScreen = () => {
                       />
                     </div>
                   </div>
+                  {/* discount-inputs */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+
+  <div>
+    <label className={labelClass}>Discount Type</label>
+    <select
+      value={color.discount.type}
+      onChange={(e) =>
+        updateColor(vIndex, cIndex, "discount.type", e.target.value)
+      }
+      className={inputClass}
+    >
+      <option value="percentage">Percentage (%)</option>
+      <option value="fixed">Fixed Amount</option>
+    </select>
+  </div>
+
+  <div>
+    <label className={labelClass}>
+      {color.discount.type === "percentage"
+        ? "Discount (%)"
+        : "Discount Amount"}
+    </label>
+
+    <input
+      type="number"
+      min="0"
+      placeholder="0"
+      value={color.discount.value}
+      onChange={(e) =>
+        updateColor(vIndex, cIndex, "discount.value", e.target.value)
+      }
+      className={inputClass}
+    />
+  </div>
+
+  <div>
+    <label className={labelClass}>Start Date</label>
+    <input
+      type="date"
+      value={color.discount.startDate?.slice(0, 10) || ""}
+      onChange={(e) =>
+        updateColor(vIndex, cIndex, "discount.startDate", e.target.value)
+      }
+      className={inputClass}
+    />
+  </div>
+
+  <div>
+    <label className={labelClass}>End Date</label>
+    <input
+      type="date"
+      value={color.discount.endDate?.slice(0, 10) || ""}
+      onChange={(e) =>
+        updateColor(vIndex, cIndex, "discount.endDate", e.target.value)
+      }
+      className={inputClass}
+    />
+  </div>
+
+  
+
+</div>
                   {/* sku */}
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2'>
                     
@@ -393,7 +511,7 @@ const ProductEditScreen = () => {
                         className={inputClass}
                       />
                     </div>
-
+                     
                   </div>
 
                   {/* IMAGES SECTION */}

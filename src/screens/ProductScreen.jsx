@@ -187,7 +187,10 @@ const ProductScreen = ({ isOnline }) => {
       name: product.name,
       slug: product.slug,
       image: imageUrl, // V15.3 KEY: Now https://res.cloudinary.com/...
-      price: price,
+      price: isDiscountActive ? finalPrice : price,
+          originalPrice: price,
+          discountAmount,
+          discount: selectedColor?.discount,
       color: selectedColor?.name || '',
       countInStock: selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0,
       storage: selectedVariant.storage || '',
@@ -210,7 +213,10 @@ const ProductScreen = ({ isOnline }) => {
       name: product.name,
       slug: product.slug,
       image: imageUrl,
-      price: price,
+      price: isDiscountActive ? finalPrice : price,
+        originalPrice: price,
+        discountAmount,
+        discount: selectedColor?.discount,
       color: selectedColor?.name || "",
       countInStock:
         selectedColor?.countInStock ??
@@ -555,8 +561,28 @@ const ProductScreen = ({ isOnline }) => {
   if (error || !product || !product.variants?.[0]?.colors?.[0])
     return <Message variant='danger'>Product not found or invalid V9.47 data</Message>;
 
-  const currentStock = selectedColor?.countInStock ?? product.countInStock ?? 0
-  const currentPrice = selectedColor?.price ?? product.price ?? 0
+  const currentStock = selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0;
+  //const currentPrice = selectedColor?.price ?? product.price ?? 0
+  // const currentStock =
+  // selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0;
+
+const price = Number(
+  selectedColor?.price ?? selectedVariant?.price ?? 0
+);
+
+const isDiscountActive =
+  selectedColor?.discount?.isActive &&
+  Number(selectedColor?.discount?.value) > 0;
+
+const discountValue = Number(selectedColor?.discount?.value ?? 0);
+
+const discountAmount = isDiscountActive
+  ? selectedColor?.discount?.type === "percentage"
+    ? (price * discountValue) / 100
+    : discountValue
+  : 0;
+
+const finalPrice = Math.max(0, price - discountAmount);
 
   const timeAgo = (date) => {
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -635,7 +661,10 @@ const ProductScreen = ({ isOnline }) => {
         <meta property="og:image" content={selectedColor?.images?.[0] || product?.image} />
         <meta property="og:url" content={`https://www.phone-store.asia/product/${product?.slug}`} />
         <meta property="og:type" content="product" />
-        <meta property="product:price:amount" content={currentPrice || product?.price} />
+        <meta
+            property="product:price:amount"
+            content={isDiscountActive ? finalPrice : price}
+          />
         <meta property="product:price:currency" content="PKR" />
 
         <script type="application/ld+json">
@@ -651,7 +680,7 @@ const ProductScreen = ({ isOnline }) => {
               "@type": "Offer",
               "url": `https://www.phone-store.asia/product/${product?.slug}`,
               "priceCurrency": "PKR",
-              "price": String(currentPrice || product?.price),
+              "price": String(isDiscountActive ? finalPrice : price),
               "availability": currentStock > 0
                 ? "https://schema.org/InStock"
                 : "https://schema.org/OutOfStock",
@@ -736,11 +765,35 @@ const ProductScreen = ({ isOnline }) => {
                     </a>
                   </div>
                 )}
-                <div className="sm:mb-5 mb-3">
+                {/* <div className="sm:mb-5 mb-3">
                   <span className="text-4xl sm:text-5xl font-extrabold text-blue-600">
                     ${selectedColor?.price ?? selectedVariant?.price ?? 0}
                   </span>
-                </div>
+                </div> */}
+                <div className="sm:mb-5 mb-3">
+  {isDiscountActive ? (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="text-4xl sm:text-5xl font-extrabold text-red-600">
+          ${finalPrice.toFixed(2)}
+        </span>
+
+        <span className="text-xl text-gray-500 line-through">
+          ${price.toFixed(2)}
+        </span>
+      </div>
+
+      <p className="text-green-600 font-semibold mt-1">
+        You save ${discountAmount.toFixed(2)}
+      </p>
+    </>
+  ) : (
+    <span className="text-4xl sm:text-5xl font-extrabold text-blue-600">
+      ${price.toFixed(2)}
+    </span>
+  )}
+</div>
+                
 
 
                 {/* Stock Status V12.2 KEY */}
@@ -930,7 +983,7 @@ const ProductScreen = ({ isOnline }) => {
               <h2 className='text-2xl font-bold text-gray-900 mb-4'>
                 Description {selectedVariant.storage ? `- ${selectedVariant.storage}` : ''} {/* V13.4 KEY */}
               </h2>
-              <div class='max-w-5xl'>
+              <div className='max-w-5xl'>
                 <p className='text-gray-700 leading-8 text-[15px] whitespace-pre-line'>
                   {selectedVariant.description || selectedColor?.description || product.description || 'No description available.'} {/* V13.4 */}
                 </p>
