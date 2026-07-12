@@ -248,7 +248,7 @@ const totalDiscount =
                               {item.qty} × ${Number(item.price).toFixed(2)} 
                             </span>
 
-                            <span className="text-lg font-bold text-gray-900 text-right">
+                            <span className="sm:text-lg font-bold text-gray-900">
                               ${(item.qty * item.price).toFixed(2)}
                             </span>
                           </div>
