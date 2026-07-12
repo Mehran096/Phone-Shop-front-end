@@ -141,7 +141,7 @@ const PlaceOrderScreen = () => {
                   className='flex gap-4 pb-4 border-b border-gray-200 last:border-0'
                 >
 
-                  <div className='w-28 h-28 flex-shrink-0 bg-gray-50 rounded-xl p-2'>
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0 bg-gray-50 rounded-xl p-2">
                     <img
                       src={item.image}
                       alt={item.name}
@@ -152,7 +152,7 @@ const PlaceOrderScreen = () => {
                   <div className='flex-1 min-w-0 flex-col justify-between'>
                     <Link
                       to={`/product/${item.slug}`}
-                      className='text-blue-600 hover:text-blue-800 font-medium text-base line-clamp-2'
+                      className='text-blue-600 hover:text-blue-800 font-medium text-sm md:text-base line-clamp-2'
                     >
                       {item.name}
                     </Link>
