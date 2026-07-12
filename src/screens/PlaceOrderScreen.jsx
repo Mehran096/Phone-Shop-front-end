@@ -163,36 +163,44 @@ const PlaceOrderScreen = () => {
                     </div>
 
                     <div className="mt-2 text-sm space-y-1">
-  {item.discountAmount > 0 && (
-    <>
-      <p className="text-gray-500 line-through">
-        Original Price: ${addDecimals(item.originalPrice)}
-      </p>
+                      {item.discountAmount > 0 && (
+                        <>
+                          <p className="text-gray-500 line-through">
+                            Original Price: ${addDecimals(item.originalPrice)}
+                          </p>
 
-      <p className="text-green-600 font-medium">
-        You Save: ${addDecimals(item.discountAmount)}
-      </p>
+                          <p className="text-green-600 font-medium">
+                            You Save: ${addDecimals(item.discountAmount)}
+                          </p>
 
-      <p className="font-semibold text-gray-900">
-        Price: ${addDecimals(item.price)}
-      </p>
-    </>
-  )}
+                          <p className="font-semibold text-gray-900">
+                            Price: ${addDecimals(item.price)}
+                          </p>
+                        </>
+                      )}
 
-  {item.discountAmount <= 0 && (
-    <p className="font-semibold text-gray-900">
-      Price: ${addDecimals(item.price)}
-    </p>
-  )}
+                      {item.discountAmount <= 0 && (
+                        <p className="font-semibold text-gray-900">
+                          Price: ${addDecimals(item.price)}
+                        </p>
+                      )}
 
-  <p className="text-gray-900 font-semibold">
-    Qty: {item.qty}
-  </p>
+                      <div className="mt-2 text-sm text-gray-600 font-medium">
+                        {item.qty} × ${addDecimals(item.price)}
+                      </div>
 
-  <p className="text-lg font-bold text-gray-900">
-    Subtotal: ${addDecimals(item.qty * item.price)}
-  </p>
-</div>
+                      <div className="flex items-center justify-between border-t pt-3 mt-3">
+                        <span className="text-base font-semibold">
+                          Subtotal
+                        </span>
+
+                        <span className="text-xl font-bold text-gray-900 whitespace-nowrap">
+                          ${addDecimals(item.qty * item.price)}
+                        </span>
+                      </div>
+
+
+                    </div>
                   </div>
                 </div>
               ))}

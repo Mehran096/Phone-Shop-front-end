@@ -231,28 +231,28 @@ const totalDiscount =
                         </div>
                         
                         <div className="mt-2 space-y-1">
-  {item.discountAmount > 0 && (
-    <>
-      <div className="text-sm text-gray-500 line-through">
-        Original: ${Number(item.originalPrice).toFixed(2)}
-      </div>
+                          {item.discountAmount > 0 && (
+                            <>
+                              <div className="text-sm text-gray-500 line-through">
+                                Original: ${Number(item.originalPrice).toFixed(2)}
+                              </div>
 
-      <div className="text-sm font-medium text-green-600">
-        Discount: -${Number(item.discountAmount).toFixed(2)}
-      </div>
-    </>
-  )}
+                              <div className="text-sm font-medium text-green-600">
+                                Discount: -${Number(item.discountAmount).toFixed(2)}
+                              </div>
+                            </>
+                          )}
 
-  <div className="flex items-end justify-between">
-    <span className="text-sm text-gray-600">
-      ${Number(item.price).toFixed(2)} each
-    </span>
+                          <div className="flex items-end justify-between gap-3">
+                            <span className="text-sm text-gray-600 whitespace-nowrap flex-shrink-0">
+                              {item.qty} × ${Number(item.price).toFixed(2)} 
+                            </span>
 
-    <span className="text-lg font-bold text-gray-900">
-      ${(item.qty * item.price).toFixed(2)}
-    </span>
-  </div>
-</div>
+                            <span className="text-lg font-bold text-gray-900 text-right">
+                              ${(item.qty * item.price).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
