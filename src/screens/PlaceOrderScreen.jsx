@@ -41,11 +41,13 @@ const PlaceOrderScreen = () => {
 
   const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
 
-  const taxPrice = addDecimals(
-    cart.paymentMethod === 'COD'
-      ? Number((0.15 * itemsPrice).toFixed(2))
-      : 0
-  )
+  const TAX_RATE = 5 / 100;
+
+const taxPrice = addDecimals(
+  cart.paymentMethod === 'COD'
+    ? Number((itemsPrice * TAX_RATE).toFixed(2))
+    : 0
+)
 
   const totalPrice = addDecimals(
     Number(itemsPrice) + Number(shippingPrice) + Number(taxPrice)
