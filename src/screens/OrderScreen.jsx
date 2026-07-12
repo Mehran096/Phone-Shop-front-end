@@ -301,7 +301,7 @@ const totalDiscount =
                 <div className="border-t border-gray-200 pt-3 mt-3">
                   <div className="flex justify-between items-baseline">
                     <span className="text-base font-bold text-gray-900">Order Total</span>
-                    <span className="text-2xl font-bold text-gray-900">${order.totalPrice?.toFixed(2)}</span>
+                    <span className="text-xl sm:text-2xl font-bold text-gray-900">${order.totalPrice?.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
