@@ -202,11 +202,11 @@ const totalDiscount =
                   {order.orderItems.map((item, index) => (
                     <div key={index} className="flex gap-4 p-3 rounded-lg hover:bg-gray-50 transition">
                       {/* Image */}
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
+                      <div className="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0">
                         <img 
                           src={item.image} 
                           alt={item.name} 
-                          className="w-full h-full object-contain rounded-md bg-gray-50 p-2 border-gray-100" 
+                          className="w-full h-full object-contain rounded-xl bg-gray-50 p-2 border-gray-100" 
                         />
                       </div>
                       
@@ -243,7 +243,7 @@ const totalDiscount =
                             </>
                           )}
 
-                          <div className="flex items-end justify-between gap-3">
+                          <div className="flex items-end justify-between gap-2 sm:gap-3">
                             <span className="text-sm text-gray-600 whitespace-nowrap flex-shrink-0">
                               {item.qty} × ${Number(item.price).toFixed(2)} 
                             </span>

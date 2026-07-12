@@ -194,7 +194,7 @@ const PlaceOrderScreen = () => {
                           Subtotal
                         </span>
 
-                        <span className="text-xl font-semibold text-gray-900 whitespace-nowrap">
+                        <span className="text-base sm:text-xl font-semibold text-gray-900 whitespace-nowrap">
                           ${addDecimals(item.qty * item.price)}
                         </span>
                       </div>
