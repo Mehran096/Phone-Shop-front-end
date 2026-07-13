@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import Product from '../components/Product'
 import { useSelector } from 'react-redux'
 import Paginate from '../components/Paginate'
-import { useGetProductsQuery } from '../slices/productsApiSlice'
+import { useGetProductsQuery, useGetBestSellerProductsQuery, } from '../slices/productsApiSlice'
 import HeroBanner from '../components/HeroBanner'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
@@ -23,6 +23,12 @@ const HomeScreen = ({ isOnline }) => {
     brand, // Fix 2: Send brand to API
     pageNumber,
   })
+
+  const {
+  data: bestSellers,
+  isLoading: bestSellerLoading,
+  error: bestSellerError,
+} = useGetBestSellerProductsQuery()
 
   const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'OPPO', 'ViVO']
 
@@ -146,6 +152,118 @@ const HomeScreen = ({ isOnline }) => {
           </>
         )}
       </div>
+      {/* Best Seller */}
+      {!keyword && !brand && (
+  <section className="mt-12 md:mt-16 lg:mt-20 py-16 bg-orange-50">
+
+    <div className="container mx-auto px-4">
+        <div className="text-center mb-10">
+        <span className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-orange-100 text-orange-600 text-sm font-semibold mb-3">
+            🔥 Trending
+        </span>
+
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+            Best Sellers
+        </h2>
+
+        <p className="mt-3 text-gray-500 text-sm sm:text-base max-w-2xl mx-auto">
+            Discover the smartphones customers are buying the most.
+        </p>
+    </div>
+    {bestSellerLoading ? (
+      <Loader />
+    ) : (
+     <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8'>
+        {bestSellers?.map((product) => (
+          <Product
+            key={product._id}
+            product={product}
+            userInfo={userInfo}
+          />
+        ))}
+      </div>
+    )}
+    </div>
+  </section>
+)}
+{/* New Arrivel */}
+{!keyword && !brand && (
+  <section className="mt-12 md:mt-16 lg:mt-20 py-16 bg-blue-50">
+
+  <div className="container mx-auto px-4">
+    <div className="text-center mb-10">
+        
+
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+             🆕 New Arrivals
+        </h2>
+
+        <p className="mt-3 text-gray-500 text-sm sm:text-base max-w-2xl mx-auto">
+           Freshly added smartphones
+        </p>
+    </div>
+     
+
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {data?.products
+        ?.slice()
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt) - new Date(a.createdAt)
+        )
+        .slice(0, 8)
+        .map((product) => (
+          <Product
+            key={product._id}
+            product={product}
+            userInfo={userInfo}
+          />
+        ))}
+    </div>
+    </div>
+  </section>
+)}
+
+{/* Deals & Discounts */}
+{!keyword && !brand && (
+  <section className="mt-12 md:mt-16 lg:mt-20 py-16 bg-red-50">
+
+    <div className="container mx-auto px-4">
+    
+
+     <div className="text-center mb-10">
+        
+
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+             💸 Deals & Discounts
+        </h2>
+
+        <p className="mt-3 text-gray-500 text-sm sm:text-base max-w-2xl mx-auto">
+           Save more on selected phones
+        </p>
+    </div>
+
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {data?.products
+        ?.filter((product) =>
+          product.variants?.some((variant) =>
+            variant.colors?.some(
+              (color) => color.discount?.isActive
+            )
+          )
+        )
+        .slice(0, 8)
+        .map((product) => (
+          <Product
+            key={product._id}
+            product={product}
+            userInfo={userInfo}
+          />
+        ))}
+    </div>
+     </div>
+  </section>
+)}
 
       {/* 4. Why Choose Us - Only on homepage */}
       {!keyword && !brand && ( // Fix 8: Hide when filtering by brand too

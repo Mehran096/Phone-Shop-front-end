@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { FaChevronLeft, FaChevronRight, FaTimes } from 'react-icons/fa'
+import { FaChevronLeft, FaChevronRight, FaTimes, FaBan } from 'react-icons/fa'
 
-const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen, setIsImageFullscreen, }) => {
+const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen, setIsImageFullscreen, stock }) => {
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
   //const [isFullscreen, setIsFullscreen] = useState(false)
@@ -81,6 +81,31 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
         <div
           className="flex-1 relative group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-w-0 w-full aspect-[4/5] md:aspect-auto md:h-[32rem] transition-all duration-300"
         >
+          {stock === 0 && (
+            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 lg:top-5 lg:left-5 z-30">
+              <div
+                className="
+                  flex items-center gap-2
+                  rounded-full
+                  bg-gradient-to-r from-red-700 via-red-600 to-red-500
+                  text-white
+                  px-3 py-1.5
+                  sm:px-4 sm:py-2
+                  text-[10px] sm:text-xs md:text-sm
+                  font-bold
+                  uppercase
+                  tracking-wider
+                  shadow-[0_10px_25px_rgba(239,68,68,0.45)]
+                  border border-white/20
+                  backdrop-blur-md
+                "
+              >
+
+                <FaBan className="text-xs sm:text-sm animate-pulse" />
+                <span>SOLD OUT</span>
+              </div>
+            </div>
+          )}
           <div
             className="w-full h-full flex items-center justify-center pt-12 pb-4 px-4 md:p-8"
             onTouchStart={onTouchStart}
@@ -90,7 +115,10 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             <img
               src={images[selectedIndex]}
               alt='Product'
-              className="h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
+              className={`h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer transition-all duration-300 ${stock === 0
+                ? "grayscale opacity-80"
+                : "group-hover:scale-105"
+                }`}
               onClick={() => {
                 setIsImageFullscreen(true);
               }}

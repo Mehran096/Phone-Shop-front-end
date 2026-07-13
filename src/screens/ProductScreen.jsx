@@ -188,9 +188,9 @@ const ProductScreen = ({ isOnline }) => {
       slug: product.slug,
       image: imageUrl, // V15.3 KEY: Now https://res.cloudinary.com/...
       price: isDiscountActive ? finalPrice : price,
-          originalPrice: price,
-          discountAmount,
-          discount: selectedColor?.discount,
+      originalPrice: price,
+      discountAmount,
+      discount: selectedColor?.discount,
       color: selectedColor?.name || '',
       countInStock: selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0,
       storage: selectedVariant.storage || '',
@@ -214,9 +214,9 @@ const ProductScreen = ({ isOnline }) => {
       slug: product.slug,
       image: imageUrl,
       price: isDiscountActive ? finalPrice : price,
-        originalPrice: price,
-        discountAmount,
-        discount: selectedColor?.discount,
+      originalPrice: price,
+      discountAmount,
+      discount: selectedColor?.discount,
       color: selectedColor?.name || "",
       countInStock:
         selectedColor?.countInStock ??
@@ -566,23 +566,23 @@ const ProductScreen = ({ isOnline }) => {
   // const currentStock =
   // selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0;
 
-const price = Number(
-  selectedColor?.price ?? selectedVariant?.price ?? 0
-);
+  const price = Number(
+    selectedColor?.price ?? selectedVariant?.price ?? 0
+  );
 
-const isDiscountActive =
-  selectedColor?.discount?.isActive &&
-  Number(selectedColor?.discount?.value) > 0;
+  const isDiscountActive =
+    selectedColor?.discount?.isActive &&
+    Number(selectedColor?.discount?.value) > 0;
 
-const discountValue = Number(selectedColor?.discount?.value ?? 0);
+  const discountValue = Number(selectedColor?.discount?.value ?? 0);
 
-const discountAmount = isDiscountActive
-  ? selectedColor?.discount?.type === "percentage"
-    ? (price * discountValue) / 100
-    : discountValue
-  : 0;
+  const discountAmount = isDiscountActive
+    ? selectedColor?.discount?.type === "percentage"
+      ? (price * discountValue) / 100
+      : discountValue
+    : 0;
 
-const finalPrice = Math.max(0, price - discountAmount);
+  const finalPrice = Math.max(0, price - discountAmount);
 
   const timeAgo = (date) => {
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -662,9 +662,9 @@ const finalPrice = Math.max(0, price - discountAmount);
         <meta property="og:url" content={`https://www.phone-store.asia/product/${product?.slug}`} />
         <meta property="og:type" content="product" />
         <meta
-            property="product:price:amount"
-            content={isDiscountActive ? finalPrice : price}
-          />
+          property="product:price:amount"
+          content={isDiscountActive ? finalPrice : price}
+        />
         <meta property="product:price:currency" content="PKR" />
 
         <script type="application/ld+json">
@@ -721,6 +721,7 @@ const finalPrice = Math.max(0, price - discountAmount);
                   setSelectedIndex={setSelectedImageIndex}
                   isImageFullscreen={isImageFullscreen}
                   setIsImageFullscreen={setIsImageFullscreen}
+                  stock={selectedColor.countInStock ?? 0}
                 />
               </div>
 
@@ -771,51 +772,73 @@ const finalPrice = Math.max(0, price - discountAmount);
                   </span>
                 </div> */}
                 <div className="sm:mb-5 mb-3">
-  {isDiscountActive ? (
-    <>
-      <div className="flex items-center gap-3">
-        <span className="text-4xl sm:text-5xl font-extrabold text-red-600">
-          ${finalPrice.toFixed(2)}
-        </span>
+                  {isDiscountActive ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className="text-4xl sm:text-5xl font-extrabold text-red-600">
+                          ${finalPrice.toFixed(2)}
+                        </span>
 
-        <span className="text-xl text-gray-500 line-through">
-          ${price.toFixed(2)}
-        </span>
-      </div>
+                        <span className="text-xl text-gray-500 line-through">
+                          ${price.toFixed(2)}
+                        </span>
+                      </div>
 
-      <p className="text-green-600 font-semibold mt-1">
-        You save ${discountAmount.toFixed(2)}
-      </p>
-    </>
-  ) : (
-    <span className="text-4xl sm:text-5xl font-extrabold text-blue-600">
-      ${price.toFixed(2)}
-    </span>
-  )}
-</div>
-                
+                      <p className="text-green-600 font-semibold mt-1">
+                        You save ${discountAmount.toFixed(2)}
+                      </p>
+                    </>
+                  ) : (
+                    <span className="text-4xl sm:text-5xl font-extrabold text-blue-600">
+                      ${price.toFixed(2)}
+                    </span>
+                  )}
+                </div>
 
 
-                {/* Stock Status V12.2 KEY */}
+
+                {/* Stock Status */}
                 <div className="sm:mb-7 mb-5">
-                  <span
-                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm border
-                        ${(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
-                        ? "bg-green-50 border-green-200 text-green-700"
-                        : "bg-red-50 border-red-200 text-red-700"
-                      }`}
-                  >
-                    <span
-                      className={`w-3 h-3 rounded-full animate-pulse
-                            ${(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
-                          ? "bg-green-500"
-                          : "bg-red-500"
-                        }`}
-                    />
-                    {(selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0) > 0
-                      ? `In Stock (${selectedColor?.countInStock ?? selectedVariant?.countInStock})`
-                      : 'Out of Stock'}
-                  </span>
+                  {(() => {
+                    const stock =
+                      selectedColor?.countInStock ??
+                      selectedVariant?.countInStock ??
+                      0;
+
+                    if (stock === 0) {
+                      return (
+                        <span className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm border bg-red-50 border-red-200 text-red-700">
+                          <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                          Out of Stock
+                        </span>
+                      );
+                    }
+
+                    if (stock <= 3) {
+                      return (
+                        <span className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm border bg-orange-50 border-orange-200 text-orange-700">
+                          <span className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
+                          Only {stock} Left
+                        </span>
+                      );
+                    }
+
+                    if (stock <= 10) {
+                      return (
+                        <span className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm border bg-yellow-50 border-yellow-200 text-yellow-700">
+                          <span className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse" />
+                          Low Stock ({stock})
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <span className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm border bg-green-50 border-green-200 text-green-700">
+                        <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                        In Stock ({stock})
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {/* V9.40 KEY: VARIANT SELECTOR = STORAGE 128GB/256GB/512GB */}
