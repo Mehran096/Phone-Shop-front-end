@@ -2,10 +2,37 @@ import { Link } from 'react-router-dom';
 import { FaEdit, FaStar } from 'react-icons/fa';
 
 const Product = ({ product, userInfo }) => {
-  const mainImage = product.variants?.[0]?.colors?.[0]?.images?.[0]?.url || '/images/placeholder-phone.jpg';
-  const allPrices = product.variants?.flatMap(v => v.colors?.map(c => Number(c.price)).filter(p => p > 0) || []) || [];
-  const mainPrice = allPrices.length > 0 ? Math.min(...allPrices).toLocaleString('en-US') : null;
-  const firstVariantColors = product.variants?.[0]?.colors || [];
+  // Find the variant/color to display
+  const selectedVariant =
+    product.defaultStorage
+      ? product.variants?.find(
+        (variant) => variant.storage === product.defaultStorage
+      )
+      : product.variants?.[0];
+
+     //console.log(selectedVariant)
+
+  const selectedColor =
+    product.defaultColor
+      ? selectedVariant?.colors?.find(
+        (color) => color.name === product.defaultColor
+      )
+      : selectedVariant?.colors?.[0];
+//  console.log(product.defaultStorage);
+// console.log(product.defaultColor);
+  // Image
+  const mainImage =
+    selectedColor?.images?.[0]?.url ||
+    '/images/placeholder-phone.jpg';
+
+  // Price
+  const mainPrice =
+    selectedColor?.price
+      ? Number(selectedColor.price).toLocaleString('en-US')
+      : null;
+
+  // Colors
+  const firstVariantColors = selectedVariant?.colors || [];
   //console.log(firstVariantColors)
   const rating = product.rating || 0;
   const numReviews = product.numReviews || 0;
@@ -20,7 +47,16 @@ const Product = ({ product, userInfo }) => {
         </Link>
       )}
 
-      <Link to={`/product/${product.slug}`} className='block'>
+      <Link
+        to={
+          product.defaultStorage && product.defaultColor
+            ? `/product/${product.slug}?storage=${encodeURIComponent(
+              product.defaultStorage
+            )}&color=${encodeURIComponent(product.defaultColor)}`
+            : `/product/${product.slug}`
+        }
+        className='block'
+      >
         {/* V9.80 KEY: h-40 mobile, h-48 desktop. Big enough to breathe */}
         <div className='h-36 sm:h-48 overflow-hidden bg-gray-50 flex items-center justify-center'>
           <img src={mainImage} alt={product.name} className='h-full w-full object-contain p-2 sm:p-3 group-hover:scale-105 transition-transform duration-300' loading="lazy" />
@@ -28,7 +64,13 @@ const Product = ({ product, userInfo }) => {
       </Link>
 
       <div className='p-3 sm:p-4 flex-col flex-1'>
-        <Link to={`/product/${product.slug}`} className='block mb-1.5'>
+        <Link to={
+          product.defaultStorage && product.defaultColor
+            ? `/product/${product.slug}?storage=${encodeURIComponent(
+              product.defaultStorage
+            )}&color=${encodeURIComponent(product.defaultColor)}`
+            : `/product/${product.slug}`
+        } className='block mb-1.5'>
           <h3 className='text-[15px] sm:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-indigo-600 leading-snug'>
             {product.name}
           </h3>

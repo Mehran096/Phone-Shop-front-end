@@ -87,7 +87,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                 className="
                   flex items-center gap-2
                   rounded-full
-                  bg-gradient-to-r from-red-700 via-red-600 to-red-500
+                  bg-gradient-to-r from-gray-700 via-gray-600 to-gray-500
                   text-white
                   px-3 py-1.5
                   sm:px-4 sm:py-2
@@ -95,14 +95,15 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                   font-bold
                   uppercase
                   tracking-wider
-                  shadow-[0_10px_25px_rgba(239,68,68,0.45)]
+                  
                   border border-white/20
                   backdrop-blur-md
+                   
                 "
               >
 
                 <FaBan className="text-xs sm:text-sm animate-pulse" />
-                <span>SOLD OUT</span>
+                <span className='animate-pulse'>SOLD OUT</span>
               </div>
             </div>
           )}

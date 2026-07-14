@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import RatingStars from '../components/RatingStars';
 //import ReviewsModal from '../components/ReviewsModal';
 import OfflineMessage from '../components/OfflineMessage'
@@ -50,6 +50,10 @@ const ProductScreen = ({ isOnline }) => {
   const productId = slug
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const [searchParams] = useSearchParams();
+
+const dealStorage = searchParams.get('storage');
+const dealColor = searchParams.get('color');
 
   const { userInfo } = useSelector((state) => state.auth)
   const { data: product, isLoading, error, refetch } = useGetProductBySlugQuery(slug)
@@ -119,6 +123,26 @@ const ProductScreen = ({ isOnline }) => {
   //const [removedImageIds, setRemovedImageIds] = useState([]);
 
   const [editColor, setEditColor] = useState(null);
+
+
+  useEffect(() => {
+  if (!product || !dealStorage || !dealColor) return;
+
+  const variantIndex = product.variants.findIndex(
+    (variant) => variant.storage === dealStorage
+  );
+
+  if (variantIndex === -1) return;
+
+  const colorIndex = product.variants[variantIndex].colors.findIndex(
+    (color) => color.name === dealColor
+  );
+
+  if (colorIndex === -1) return;
+
+  setSelectedVariantIndex(variantIndex);
+  setSelectedColorIndex(colorIndex);
+}, [product, dealStorage, dealColor]);
 
   // const startEdit = (review) => {
   //   setEditingReview(review);
@@ -853,9 +877,24 @@ const ProductScreen = ({ isOnline }) => {
                           key={vIdx}
                           type="button"
                           onClick={() => {
-                            setSelectedVariantIndex(vIdx);
-                            setSelectedColorIndex(0);
-                          }}
+                                  // Remember the currently selected color
+                                  const currentColorName = selectedColor?.name;
+
+                                  // Find the same color in the new storage
+                                  const newColorIndex = product.variants[vIdx].colors.findIndex(
+                                    (color) => color.name === currentColorName
+                                  );
+
+                                  setSelectedVariantIndex(vIdx);
+
+                                  if (newColorIndex !== -1) {
+                                    // Keep the same color
+                                    setSelectedColorIndex(newColorIndex);
+                                  } else {
+                                    // Color doesn't exist in this storage
+                                    setSelectedColorIndex(0);
+                                  }
+                                }}
                           className={`
                                 min-w-[80px] md:min-w-[96px] lg:min-w-[90px]
                                 h-12 md:h-14

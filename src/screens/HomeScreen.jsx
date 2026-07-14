@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import Product from '../components/Product'
 import { useSelector } from 'react-redux'
 import Paginate from '../components/Paginate'
-import { useGetProductsQuery, useGetBestSellerProductsQuery, } from '../slices/productsApiSlice'
+import { useGetProductsQuery, useGetBestSellerProductsQuery, useGetDealsProductsQuery, useGetNewArrivalProductsQuery, } from '../slices/productsApiSlice'
 import HeroBanner from '../components/HeroBanner'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
@@ -29,6 +29,18 @@ const HomeScreen = ({ isOnline }) => {
   isLoading: bestSellerLoading,
   error: bestSellerError,
 } = useGetBestSellerProductsQuery()
+
+const {
+  data: deals,
+  isLoading: dealsLoading,
+  error: dealsError,
+} = useGetDealsProductsQuery();
+
+const {
+  data: newArrivals,
+  isLoading: arrivalLoading,
+  error: arrivalError,
+} = useGetNewArrivalProductsQuery();
 
   const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'OPPO', 'ViVO']
 
@@ -159,7 +171,7 @@ const HomeScreen = ({ isOnline }) => {
     <div className="container mx-auto px-4">
         <div className="text-center mb-10">
         <span className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-orange-100 text-orange-600 text-sm font-semibold mb-3">
-            🔥 Trending
+            Trending
         </span>
 
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
@@ -195,31 +207,29 @@ const HomeScreen = ({ isOnline }) => {
         
 
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
-             🆕 New Arrivals
+              New Arrivals
         </h2>
 
         <p className="mt-3 text-gray-500 text-sm sm:text-base max-w-2xl mx-auto">
            Freshly added smartphones
         </p>
+        
     </div>
      
-
+{arrivalLoading ? (
+      <Loader />
+    ) : (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {data?.products
-        ?.slice()
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt) - new Date(a.createdAt)
-        )
-        .slice(0, 8)
-        .map((product) => (
-          <Product
-            key={product._id}
-            product={product}
-            userInfo={userInfo}
-          />
-        ))}
+      
+      {newArrivals?.map((product) => (
+  <Product
+    key={product._id}
+    product={product}
+    userInfo={userInfo}
+  />
+))}
     </div>
+    )}
     </div>
   </section>
 )}
@@ -227,41 +237,43 @@ const HomeScreen = ({ isOnline }) => {
 {/* Deals & Discounts */}
 {!keyword && !brand && (
   <section className="mt-12 md:mt-16 lg:mt-20 py-16 bg-red-50">
-
     <div className="container mx-auto px-4">
-    
 
-     <div className="text-center mb-10">
-        
-
+      <div className="text-center mb-10">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
-             💸 Deals & Discounts
+          💸 Deals & Discounts
         </h2>
 
         <p className="mt-3 text-gray-500 text-sm sm:text-base max-w-2xl mx-auto">
-           Save more on selected phones
+          Save more on selected phones
         </p>
-    </div>
+        <Link
+  to="/deals"
+  className="text-blue-600 hover:text-blue-700 font-semibold hover:underline"
+>
+  View All →
+</Link>
+      </div>
 
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {data?.products
-        ?.filter((product) =>
-          product.variants?.some((variant) =>
-            variant.colors?.some(
-              (color) => color.discount?.isActive
-            )
-          )
-        )
-        .slice(0, 8)
-        .map((product) => (
-          <Product
-            key={product._id}
-            product={product}
-            userInfo={userInfo}
-          />
-        ))}
+      {dealsLoading ? (
+        <Loader />
+      ) : dealsError ? (
+        <Message variant="danger">
+          {dealsError?.data?.message || dealsError?.error || 'Failed to load deals'}
+        </Message>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {deals?.map((product) => (
+            <Product
+              key={product._id}
+              product={product}
+              userInfo={userInfo}
+            />
+          ))}
+        </div>
+      )}
+
     </div>
-     </div>
   </section>
 )}
 

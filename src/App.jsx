@@ -33,6 +33,7 @@ import WishlistScreen from './screens/WishlistScreen'
 import ShippingPolicyScreen from './screens/ShippingPolicyScreen';
 import MyAccountScreen from './screens/MyAccountScreen';
 import ProductReviewsScreen from './screens/ProductReviewsScreen';
+import DealsScreen from './screens/DealsScreen';
 
 
 import { FaExclamationTriangle } from 'react-icons/fa'
@@ -127,6 +128,7 @@ const dispatch = useDispatch()
           <Routes>
             <Route path="/" element={<HomeScreen isOnline={isOnline} />} />
             <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
+            <Route path='/deals' element={<DealsScreen isOnline={isOnline}/>} />
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
