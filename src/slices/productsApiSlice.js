@@ -10,6 +10,17 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Products'],
       keepUnusedDataFor: 5,
     }),
+    getSearchSuggestions: builder.query({
+      query: (keyword) => ({
+        url: '/products',
+        params: {
+          keyword,
+          pageSize: 6,
+          suggestions: true,
+        },
+      }),
+      keepUnusedDataFor: 5,
+    }),
     getProductDetails: builder.query({
       query: (id) => `/products/${id}`,
       keepUnusedDataFor: 5,
@@ -40,20 +51,20 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       ],
     }),
     getBestSellerProducts: builder.query({
-  query: () => '/products/bestsellers',
-  providesTags: ['Products'],
-  keepUnusedDataFor: 5,
-}),
-getDealsProducts: builder.query({
-  query: () => '/products/deals',
-  providesTags: ['Products'],
-  keepUnusedDataFor: 5,
-}),
-getNewArrivalProducts: builder.query({
-  query: () => '/products/new-arrivals',
-  providesTags: ['Products'],
-  keepUnusedDataFor: 5,
-}),
+      query: () => '/products/bestsellers',
+      providesTags: ['Products'],
+      keepUnusedDataFor: 5,
+    }),
+    getDealsProducts: builder.query({
+      query: () => '/products/deals',
+      providesTags: ['Products'],
+      keepUnusedDataFor: 5,
+    }),
+    getNewArrivalProducts: builder.query({
+      query: () => '/products/new-arrivals',
+      providesTags: ['Products'],
+      keepUnusedDataFor: 5,
+    }),
     updateProductSpecs: builder.mutation({
       query: ({ productId, specs }) => ({
         url: `/products/${productId}/specs`,
@@ -138,14 +149,14 @@ getNewArrivalProducts: builder.query({
       ],
     }),
     markReviewNotHelpful: builder.mutation({
-  query: ({ productId, reviewId }) => ({
-    url: `/products/${productId}/reviews/${reviewId}/not-helpful`,
-    method: 'PUT',
-  }),
-  invalidatesTags: (result, error, { productId }) => [
-    { type: 'Product', id: productId },
-  ],
-}),
+      query: ({ productId, reviewId }) => ({
+        url: `/products/${productId}/reviews/${reviewId}/not-helpful`,
+        method: 'PUT',
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: 'Product', id: productId },
+      ],
+    }),
     addAdminReply: builder.mutation({
       query: ({ productId, reviewId, reply }) => ({
         url: `/products/${productId}/reviews/${reviewId}/reply`,
@@ -224,6 +235,7 @@ getNewArrivalProducts: builder.query({
 
 export const {
   useGetProductsQuery,
+  useGetSearchSuggestionsQuery,
   useGetProductDetailsQuery,
   useGetProductBySlugQuery,
   useCreateProductMutation,

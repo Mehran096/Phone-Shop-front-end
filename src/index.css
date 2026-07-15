@@ -10,6 +10,16 @@ html, body, #root {
 
 /* react-phone-number-input Tailwind styles */
 /* V34.53 KEY: NUKE LIB DEFAULT STYLES */
+/* Hide scrollbar but keep scrolling */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE & Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
 .PhoneInput {
   gap: 0.5rem !important;
   border: none !important;
