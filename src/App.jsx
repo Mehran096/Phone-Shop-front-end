@@ -34,16 +34,17 @@ import ShippingPolicyScreen from './screens/ShippingPolicyScreen';
 import MyAccountScreen from './screens/MyAccountScreen';
 import ProductReviewsScreen from './screens/ProductReviewsScreen';
 import DealsScreen from './screens/DealsScreen';
+import SearchBox from './components/SearchBox';
 
 
-import { FaExclamationTriangle } from 'react-icons/fa'
+import { FaExclamationTriangle, FaWifi } from 'react-icons/fa'
 import { setCartItems } from './slices/cartSlice'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
- 
+  
 
 
  
@@ -116,6 +117,18 @@ const dispatch = useDispatch()
     <>
       <div className="flex flex-col min-h-screen">
         <Header isOnline={isOnline} />
+         {/* MOBILE SEARCH BAR - Only shows on mobile */}
+      <div className='md:hidden bg-gray-900 px-4 py-1 sticky top-0 z-40 border-b border-gray-800'>
+        <div className='relative'>
+          {isOnline ? (
+            <SearchBox />
+          ) : (
+            <div className='bg-gray-800 text-gray-400 px-4 py-2 rounded-lg flex items-center w-full'>
+              <FaWifi className='mr-2' /> Search disabled
+            </div>
+          )}
+        </div>
+      </div>
 
         {!isOnline && (
         <div className='alert alert-warning text-center mb-0 rounded-0'>

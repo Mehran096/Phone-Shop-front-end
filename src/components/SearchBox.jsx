@@ -196,7 +196,7 @@ const SearchBox = ({ onSearchComplete }) => {
           className='px-4 py-2 border rounded-r-lg focus:outline-none shrink-0 focus:ring-2 focus:ring-blue-500'
         >
 
-          <FaSearch className='text-white-500 w-5 h-5' />
+          <FaSearch className='text-white sm:text-white-500 w-5 h-5' />
         </button>
       </form>
      {showSuggestions && keyword.trim().length >= 2 && (

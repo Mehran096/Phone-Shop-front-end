@@ -293,7 +293,7 @@ const Header = ({ isOnline }) => {
       {isMobileMenuOpen && (
         <div className='md:hidden pl-5 fixed top-16 left-0 right-0 bottom-0 bg-gray-900 z-50 overflow-y-auto'>
           <div className='pr-5 py-4'>
-            <SearchBox onSearchComplete={closeMobileMenu} />
+            {/* <SearchBox onSearchComplete={closeMobileMenu} /> */}
 
             <Link
               to='/cart'
@@ -351,7 +351,7 @@ const Header = ({ isOnline }) => {
                 </Link>
                 <button
                   onClick={() => { logoutHandler(); closeMobileMenu() }}
-                  className='flex items-center gap-2 py-2 hover:text-blue-400'
+                  className='flex items-center gap-2 py-2 hover:text-red-400'
                 >
                   <IoLogOutOutline className="text-xl" />
                   Logout
