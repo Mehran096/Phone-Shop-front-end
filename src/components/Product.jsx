@@ -89,6 +89,7 @@ const Product = ({ product, userInfo }) => {
                 defaultStorage:product.variants?.[0].storage,
                 defaultColor:product.variants?.[0].colors?.[0].name,
                 specs: product.variants?.[0]?.specs || {},
+                variants:product.variants
                  
               })
             )
