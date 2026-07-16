@@ -35,7 +35,9 @@ import MyAccountScreen from './screens/MyAccountScreen';
 import ProductReviewsScreen from './screens/ProductReviewsScreen';
 import DealsScreen from './screens/DealsScreen';
 import SearchBox from './components/SearchBox';
-
+import CompareScreen from './screens/CompareScreen';
+import CompareBar from './components/CompareBar';
+ 
 
 import { FaExclamationTriangle, FaWifi } from 'react-icons/fa'
 import { setCartItems } from './slices/cartSlice'
@@ -45,7 +47,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
   
-
+ 
 
  
 
@@ -142,6 +144,7 @@ const dispatch = useDispatch()
             <Route path="/" element={<HomeScreen isOnline={isOnline} />} />
             <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
             <Route path='/deals' element={<DealsScreen isOnline={isOnline}/>} />
+            <Route path="/compare" element={<CompareScreen />} />
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
@@ -179,6 +182,7 @@ const dispatch = useDispatch()
           </Routes>
           <ToastContainer />
         </main>
+        <CompareBar />
         <Footer />
       </div>
     </>

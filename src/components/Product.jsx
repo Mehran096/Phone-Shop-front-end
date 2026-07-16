@@ -1,7 +1,21 @@
 import { Link } from 'react-router-dom';
-import { FaEdit, FaStar } from 'react-icons/fa';
+import { FaEdit, FaStar, FaBalanceScale } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  addToCompare,
+  removeFromCompare,
+} from '../slices/compareSlice';
 
 const Product = ({ product, userInfo }) => {
+  const dispatch = useDispatch();
+
+  const { products: compareProducts } = useSelector(
+    (state) => state.compare
+  );
+
+  const isCompared = compareProducts.some(
+    (item) => item._id === product._id
+  );
   // Find the variant/color to display
   const selectedVariant =
     product.defaultStorage
@@ -10,7 +24,7 @@ const Product = ({ product, userInfo }) => {
       )
       : product.variants?.[0];
 
-     //console.log(selectedVariant)
+  //console.log(selectedVariant)
 
   const selectedColor =
     product.defaultColor
@@ -18,8 +32,8 @@ const Product = ({ product, userInfo }) => {
         (color) => color.name === product.defaultColor
       )
       : selectedVariant?.colors?.[0];
-//  console.log(product.defaultStorage);
-// console.log(product.defaultColor);
+  //  console.log(product.defaultStorage);
+  // console.log(product.defaultColor);
   // Image
   const mainImage =
     selectedColor?.images?.[0]?.url ||
@@ -46,7 +60,48 @@ const Product = ({ product, userInfo }) => {
           <FaEdit size={12} />
         </Link>
       )}
+      <button
+        type="button"
+        className={`absolute top-3 left-3 z-10 flex items-center justify-center
+              w-9 h-9 rounded-full border shadow transition-all
+              ${isCompared
+            ? 'bg-blue-600 text-white border-blue-600'
+            : 'bg-white text-gray-600 border-gray-200  hover:text-white'
+          }`}
+        title="Compare"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
 
+          if (isCompared) {
+            dispatch(removeFromCompare(product._id));
+          } else {
+            dispatch(
+              addToCompare({
+                _id: product._id,
+                slug: product.slug,
+                name: product.name,
+                brand: product.brand,
+                defaultImage: mainImage,
+                defaultPrice: mainPrice,
+                rating: product.rating,
+                numReviews: product.numReviews,
+                defaultStorage:product.variants?.[0].storage,
+                defaultColor:product.variants?.[0].colors?.[0].name,
+                specs: product.variants?.[0]?.specs || {},
+                 
+              })
+            )
+          }
+        }}
+
+      >
+        <FaBalanceScale
+          size={20}
+          className="text-gray-800 hover:text-gray-800"
+        />
+      </button>
+<div></div>
       <Link
         to={
           product.defaultStorage && product.defaultColor
