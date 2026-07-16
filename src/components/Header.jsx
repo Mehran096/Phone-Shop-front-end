@@ -9,9 +9,9 @@ import { clearCartItems } from '../slices/cartSlice'
 import { getWishlist, resetWishlist } from '../slices/wishlistSlice'
 import SearchBox from './SearchBox'
 import { FaWifi } from 'react-icons/fa'
-import CollapsibleMenu from './CollapsibleMenu'; 
+import CollapsibleMenu from './CollapsibleMenu';
 import api from '../utils/axios'
- 
+
 
 const Header = ({ isOnline }) => {
   const [userDropdown, setUserDropdown] = useState(false)
@@ -34,29 +34,29 @@ const Header = ({ isOnline }) => {
   const activeBrand = searchParams.get('brand')
 
   const logoutHandler = async () => {
-  // 1. Clear cart merge flag BEFORE userInfo is wiped
-  if (userInfo?._id) {
-    localStorage.removeItem(`cartMerged_${userInfo._id}`)
+    // 1. Clear cart merge flag BEFORE userInfo is wiped
+    if (userInfo?._id) {
+      localStorage.removeItem(`cartMerged_${userInfo._id}`)
 
-    // Wipe DB cart on logout
-    //await api.put('/users/cart', { cartItems: [] }, { withCredentials: true })
+      // Wipe DB cart on logout
+      //await api.put('/users/cart', { cartItems: [] }, { withCredentials: true })
+    }
+
+    try {
+      await api.post('/users/logout', {}, { withCredentials: true })
+    } catch (err) {
+      console.error('Logout API error:', err.message)
+    }
+
+
+    // 3. Your existing Redux cleanup
+    dispatch(logout())
+    dispatch(clearCartItems())
+    dispatch(resetWishlist())
+    navigate('/login')
+    setUserDropdown(false)
+    setIsMobileMenuOpen(false)
   }
-
-  try {
-    await api.post('/users/logout', {}, { withCredentials: true })
-  } catch (err) {
-    console.error('Logout API error:', err.message)
-  }
-
-  
-  // 3. Your existing Redux cleanup
-  dispatch(logout())
-  dispatch(clearCartItems())
-  dispatch(resetWishlist())
-  navigate('/login')
-  setUserDropdown(false)
-  setIsMobileMenuOpen(false)
-}
 
   const handleBrandClick = (brand) => {
     navigate(`/products?brand=${brand}`)
@@ -64,10 +64,10 @@ const Header = ({ isOnline }) => {
   }
 
   useEffect(() => {
-  if (userInfo) {
-    dispatch(getWishlist())
-  }
-}, [dispatch, userInfo])
+    if (userInfo) {
+      dispatch(getWishlist())
+    }
+  }, [dispatch, userInfo])
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -116,14 +116,14 @@ const Header = ({ isOnline }) => {
 
           {/* Desktop Search */}
           <div className='hidden md:flex flex-1 justify-center mx-8 max-w-md'>
-  {isOnline ? (
-    <SearchBox onSearchComplete={closeMobileMenu} />
-  ) : (
-    <div className='bg-gray-700 text-gray-400 px-4 py-2 rounded flex items-center w-full'>
-      <FaWifi className='mr-2' /> Search disabled
-    </div>
-  )}
-</div>
+            {isOnline ? (
+              <SearchBox onSearchComplete={closeMobileMenu} />
+            ) : (
+              <div className='bg-gray-700 text-gray-400 px-4 py-2 rounded flex items-center w-full'>
+                <FaWifi className='mr-2' /> Search disabled
+              </div>
+            )}
+          </div>
 
           {/* Desktop Menu */}
           <div className='hidden md:flex items-center space-x-6 pr-5'>
@@ -148,27 +148,27 @@ const Header = ({ isOnline }) => {
             </Link>
 
             {/* ADD THIS - Wishlist Link */}
-{userInfo && (
-  <Link
-    to='/wishlist'
-    className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white rounded-sm 
+            {userInfo && (
+              <Link
+                to='/wishlist'
+                className='flex items-center gap-2 px-2 py-1 border border-transparent hover:border-white rounded-sm 
     transition-all duration-100'
-  >
-    <FaHeart className='text-xl' />
-    <div className='flex flex-col leading-tight relative'>
-      <span className='text-xs text-gray-300'>
-        {wishlistItems.length > 0 ? `${wishlistItems.length} Items` : 'Your'}
-      </span>
-      <span className='text-sm font-bold'>Wishlist</span>
-      {wishlistItems.length > 0 && (
-        <span className='absolute -top-1 -right-6 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex 
+              >
+                <FaHeart className='text-xl' />
+                <div className='flex flex-col leading-tight relative'>
+                  <span className='text-xs text-gray-300'>
+                    {wishlistItems.length > 0 ? `${wishlistItems.length} Items` : 'Your'}
+                  </span>
+                  <span className='text-sm font-bold'>Wishlist</span>
+                  {wishlistItems.length > 0 && (
+                    <span className='absolute -top-1 -right-6 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex 
         items-center justify-center'>
-          {wishlistItems.length}
-        </span>
-      )}
-    </div>
-  </Link>
-)}
+                      {wishlistItems.length}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            )}
 
 
             {userInfo ? (
@@ -196,7 +196,7 @@ const Header = ({ isOnline }) => {
                   >
                     My Orders
                   </Link>
-                  
+
 
                   <button
                     onClick={logoutHandler}
@@ -257,14 +257,26 @@ const Header = ({ isOnline }) => {
               </div>
             )}
           </div>
-
+         
+        <div className='md:hidden lg:hidden gap-3 flex pr-5'>
+             {/* Cart */}
+          <Link to="/cart" className="relative">
+            <FaShoppingCart className="text-white text-2xl" />
+            {cartItems?.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {cartItems.reduce((a, c) => a + c.qty, 0)}
+              </span>
+            )}
+          </Link>
           {/* Mobile Hamburger */}
           <button
-            className='md:hidden text-2xl pr-5'
+            className='md:hidden text-2xl'
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
           </button>
+        </div>
+          
         </div>
       </nav>
 
@@ -278,8 +290,8 @@ const Header = ({ isOnline }) => {
                 onClick={() => handleBrandClick(brand)}
                 className={`text-sm px-2 py-1 border border-transparent rounded-sm transition-all 
                   duration-100 ${activeBrand === brand
-                  ? 'text-white border-white font-bold'  // bold when active
-                  : 'text-gray-200 hover:text-white hover:border-white font-normal'
+                    ? 'text-white border-white font-bold'  // bold when active
+                    : 'text-gray-200 hover:text-white hover:border-white font-normal'
                   }`}
               >
                 {brand}
@@ -303,17 +315,17 @@ const Header = ({ isOnline }) => {
               <FaShoppingCart />
               Cart {cartCount > 0 && `(${cartCount})`}
             </Link>
-          {/* wishlist */}
+            {/* wishlist */}
             {userInfo && (
-        <Link
-          to='/wishlist'
-          className='flex items-center gap-2 py-2 hover:text-red-400 border-t border-gray-700 pt-4 mt-2'
-          onClick={closeMobileMenu}
-        >
-          <FaHeart />
-          Wishlist {wishlistItems.length > 0 && `(${wishlistItems.length})`}
-        </Link>
-      )}
+              <Link
+                to='/wishlist'
+                className='flex items-center gap-2 py-2 hover:text-red-400 border-t border-gray-700 pt-4 mt-2'
+                onClick={closeMobileMenu}
+              >
+                <FaHeart />
+                Wishlist {wishlistItems.length > 0 && `(${wishlistItems.length})`}
+              </Link>
+            )}
 
             {/* Brands - Mobile */}
             <div className='border-t border-gray-700 pt-4 mt-2'>
