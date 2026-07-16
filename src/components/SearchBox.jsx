@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaSearch } from 'react-icons/fa'
+import { FaSearch, FaTimes } from 'react-icons/fa'
 import { useGetSearchSuggestionsQuery } from '../slices/productsApiSlice';
 
 const SearchBox = ({ onSearchComplete }) => {
@@ -39,24 +39,24 @@ const SearchBox = ({ onSearchComplete }) => {
   }, [keyword]);
 
   useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (
-      searchRef.current &&
-      !searchRef.current.contains(event.target)
-    ) {
-      setShowSuggestions(false);
-      setSelectedIndex(-1);
-      setDisplayKeyword(keyword);
-      //setKeyword('')
-    }
-  };
+    const handleClickOutside = (event) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        setDisplayKeyword(keyword);
+        //setKeyword('')
+      }
+    };
 
-  document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
 
-  return () => {
-    document.removeEventListener('mousedown', handleClickOutside);
-  };
-}, [keyword]);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [keyword]);
 
   const submitHandler = (e) => {
     e.preventDefault()
@@ -91,15 +91,15 @@ const SearchBox = ({ onSearchComplete }) => {
     );
   };
 
-  const handleBlur = () => {
-  setTimeout(() => {
-    setShowSuggestions(false);
-    setSelectedIndex(-1);
+  //   const handleBlur = () => {
+  //   setTimeout(() => {
+  //     setShowSuggestions(false);
+  //     setSelectedIndex(-1);
 
-    // Restore what the user actually typed
-    setDisplayKeyword(keyword);
-  }, 150);
-};
+  //     // Restore what the user actually typed
+  //     setDisplayKeyword(keyword);
+  //   }, 150);
+  // };
 
   const totalItems = products.length + 1;
 
@@ -161,36 +161,53 @@ const SearchBox = ({ onSearchComplete }) => {
         break;
 
       case 'Escape':
-  e.preventDefault();
+        e.preventDefault();
 
-  // Restore the user's original typed text
-  setShowSuggestions(false);
-  setDisplayKeyword(keyword);
-  // Remove the highlighted item
-  setSelectedIndex(-1);
+        // Restore the user's original typed text
+        setShowSuggestions(false);
+        setDisplayKeyword(keyword);
+        // Remove the highlighted item
+        setSelectedIndex(-1);
 
-  break;
+        break;
     }
   };
 
   return (
     <div className='relative w-full' ref={searchRef}>
       <form onSubmit={submitHandler} className='flex w-full pr-2'>
-        <input
-          type='text'
-          onKeyDown={handleKeyDown}
-          name="search"
-          autoComplete="off"
-          onChange={(e) => {
-            setKeyword(e.target.value);
-            setDisplayKeyword(e.target.value);
-            setShowSuggestions(true);
-          }}
-          value={displayKeyword}
-          onBlur={handleBlur}
-          placeholder='Search phones, brands...'
-          className='flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-        />
+        <div className="relative flex-1">
+          <input
+            type='text'
+            onKeyDown={handleKeyDown}
+            name="search"
+            autoComplete="off"
+            onChange={(e) => {
+              setKeyword(e.target.value);
+              setDisplayKeyword(e.target.value);
+              setShowSuggestions(true);
+            }}
+            value={displayKeyword}
+            //onBlur={handleBlur}
+            placeholder='Search phones, brands...'
+            className='flex-1 w-full px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
+          />
+
+          {displayKeyword && (
+            <button
+              type="button"
+              onClick={() => {
+                setKeyword('');
+                setDisplayKeyword('');
+                setShowSuggestions(false);
+                setSelectedIndex(-1);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+            >
+              <FaTimes size={14} />
+            </button>
+          )}
+        </div>
         <button
           type='submit'
           className='px-4 py-2 border rounded-r-lg focus:outline-none shrink-0 focus:ring-2 focus:ring-blue-500'
@@ -199,35 +216,50 @@ const SearchBox = ({ onSearchComplete }) => {
           <FaSearch className='text-white sm:text-white-500 w-5 h-5' />
         </button>
       </form>
-     {showSuggestions && keyword.trim().length >= 2 && (
-        <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto hide-scrollbar">
+      {showSuggestions && keyword.trim().length >= 2 && (
+        <div className="absolute left-0 right-0 mt-1 bg-white transition-all ease-out duration-150 border border-gray-200 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto hide-scrollbar">
 
           {isLoading ? (
-            <div className="px-4 py-3 text-gray-500">
-              Searching...
-            </div>
+            <>
+              {[...Array(5)].map((_, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-4 px-5 py-4 sm:px-4 animate-pulse"
+                >
+                  {/* Image Skeleton */}
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-200 rounded-md flex-shrink-0" />
+
+                  {/* Text Skeleton */}
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/3 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  </div>
+                </div>
+              ))}
+            </>
           ) : products.length > 0 ? (
             <>
               {products.map((product, index) => (
                 <div
                   key={product._id}
                   ref={(el) => (itemRefs.current[index] = el)}
-                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selectedIndex === index
+                  className={`flex items-center gap-4 px-5 py-4 border-b border-gray-100 last:border-b-0 cursor-pointer transition-all duration-150 ${selectedIndex === index
                       ? 'bg-blue-50'
-                      : 'hover:bg-gray-100'
+                      : 'hover:bg-gray-50'
                     }`}
                   onClick={() => {
                     navigate(`/product/${product.slug}`);
                     setKeyword('');
                     setDisplayKeyword('');
-                    setShowSuggestions(false); 
+                    setShowSuggestions(false);
                     if (onSearchComplete) onSearchComplete();
                   }}
                 >
                   <img
                     src={product.colors[0]?.images?.[0]?.url}
                     alt={product.name}
-                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-md"
+                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg bg-gray-50 p-1"
                   />
 
                   <div className="flex-1 min-w-0">
@@ -235,12 +267,12 @@ const SearchBox = ({ onSearchComplete }) => {
                       {highlightText(product.name, keyword)}
                     </h4>
 
-                    <p className="text-xs sm:text-sm text-gray-500">
+                    <p className="text-xs uppercase traching-wide sm:text-sm text-gray-500">
                       {product.brand}
                     </p>
 
                     <p className="text-sm font-semibold text-blue-600">
-                      From $. {product.minPrice?.toLocaleString()}
+                      From ${product.minPrice?.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -248,24 +280,23 @@ const SearchBox = ({ onSearchComplete }) => {
               ))}
 
               <div
-  ref={(el) => (itemRefs.current[products.length] = el)}
-  className={`border-t border-gray-200 px-4 py-3 text-center font-medium cursor-pointer transition-colors ${
-    selectedIndex === products.length
-      ? 'bg-blue-50 text-blue-600'
-      : 'text-blue-600 hover:bg-blue-50'
-  }`}
-  onClick={() => {
-    navigate(`/?keyword=${keyword.trim()}&pageNumber=1`);
-    setKeyword('');
-    setDisplayKeyword('');
-    setSelectedIndex(-1);
-  setShowSuggestions(false);
+                ref={(el) => (itemRefs.current[products.length] = el)}
+                className={`border-t border-gray-200 px-4 py-3 text-center font-medium cursor-pointer transition-colors ${selectedIndex === products.length
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-blue-600 hover:bg-blue-50'
+                  }`}
+                onClick={() => {
+                  navigate(`/?keyword=${keyword.trim()}&pageNumber=1`);
+                  setKeyword('');
+                  setDisplayKeyword('');
+                  setSelectedIndex(-1);
+                  setShowSuggestions(false);
 
-    if (onSearchComplete) onSearchComplete();
-  }}
->
-  View all results →
-</div>
+                  if (onSearchComplete) onSearchComplete();
+                }}
+              >
+                View all results →
+              </div>
             </>
           ) : (
             <div className="px-4 py-3 text-gray-500">
