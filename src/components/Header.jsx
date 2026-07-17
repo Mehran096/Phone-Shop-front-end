@@ -314,7 +314,7 @@ const Header = ({ isOnline, isMobileMenuOpen,
             ? "opacity-100"
             : "opacity-0 pointer-events-none"
           }
-  `}
+        `}
       />
       {/* Dark Overlay close*/}
       <div
@@ -331,15 +331,13 @@ const Header = ({ isOnline, isMobileMenuOpen,
           }
         `}
       >
-        <div className="px-6 py-6 space-y-6">
-
-
-
+        <div className="px-6 pb-6 space-y-6">
+ 
           {/* wishlist */}
           {userInfo && (
             <Link
               to='/wishlist'
-              className='flex items-center gap-2 py-2 hover:text-red-400 border-t border-gray-700 pt-7'
+              className='flex items-center gap-2 py-2 hover:text-red-400   border-gray-700 pt-7'
               onClick={closeMobileMenu}
             >
               <FaHeart />
