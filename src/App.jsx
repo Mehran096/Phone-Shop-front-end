@@ -55,10 +55,20 @@ import api from './utils/axios';
 
 function App() {
   const { pathname, search } = useLocation()
+ 
   const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 const dispatch = useDispatch()
   const { userInfo } = useSelector((state) => state.auth)
   const { cartItems } = useSelector((state) => state.cart)
+
+   const showCompareBar =
+  !isMobileMenuOpen &&
+  (
+    pathname === "/" ||
+    pathname === "/products" ||
+    pathname === "/deals"
+  );
 
  useEffect(() => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
@@ -118,7 +128,8 @@ const dispatch = useDispatch()
   return (
     <>
       <div className="flex flex-col min-h-screen">
-        <Header isOnline={isOnline} />
+        <Header isOnline={isOnline} isMobileMenuOpen={isMobileMenuOpen}
+              setIsMobileMenuOpen={setIsMobileMenuOpen} />
          {/* MOBILE SEARCH BAR - Only shows on mobile */}
       <div className='md:hidden bg-gray-900 px-4 py-1 sticky top-0 z-40 border-b border-gray-800'>
         <div className='relative'>
@@ -150,7 +161,7 @@ const dispatch = useDispatch()
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
             <Route path='/returns' element={<ReturnRefundScreen />} />
             <Route path='/contact' element={<ContactScreen />} />
-            <Route path="/product/:slug" element={<ProductScreen isOnline={isOnline}/>} />
+            <Route path="/product/:slug" element={<ProductScreen isOnline={isOnline} isMobileMenuOpen={isMobileMenuOpen}/>} />
             <Route path="/products/:slug/reviews" element={<ProductReviewsScreen />}/>
             <Route path="/cart" element={<CartScreen />} />
             <Route path="/shipping" element={<ShippingScreen />} />
@@ -182,7 +193,7 @@ const dispatch = useDispatch()
           </Routes>
           <ToastContainer />
         </main>
-        <CompareBar />
+        {showCompareBar && <CompareBar />}
         <Footer />
       </div>
     </>

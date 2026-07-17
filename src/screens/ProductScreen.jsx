@@ -45,7 +45,7 @@ import WishlistButton from '../components/WishlistButton'
 
 
 
-const ProductScreen = ({ isOnline }) => {
+const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   const { slug } = useParams()
   const productId = slug
   const navigate = useNavigate()
@@ -1733,7 +1733,7 @@ const dealColor = searchParams.get('color');
           )}
         </div>
       </div>
-      {!isImageFullscreen && !isEditModalOpen && (
+      {!isImageFullscreen && !isEditModalOpen && !isMobileMenuOpen && (
         <StickyPurchaseBar
           product={product}
           selectedColor={selectedColor}

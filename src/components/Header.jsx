@@ -11,12 +11,14 @@ import SearchBox from './SearchBox'
 import { FaWifi } from 'react-icons/fa'
 import CollapsibleMenu from './CollapsibleMenu';
 import api from '../utils/axios'
+import CompareBar from './CompareBar'
 
 
-const Header = ({ isOnline }) => {
+const Header = ({ isOnline, isMobileMenuOpen,
+  setIsMobileMenuOpen, }) => {
   const [userDropdown, setUserDropdown] = useState(false)
   const [adminDropdown, setAdminDropdown] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  //const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
 
 
@@ -257,26 +259,26 @@ const Header = ({ isOnline }) => {
               </div>
             )}
           </div>
-         
-        <div className='md:hidden lg:hidden gap-3 flex pr-5'>
-             {/* Cart */}
-          <Link to="/cart" className="relative">
-            <FaShoppingCart className="text-white text-2xl" />
-            {cartItems?.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {cartItems.reduce((a, c) => a + c.qty, 0)}
-              </span>
-            )}
-          </Link>
-          {/* Mobile Hamburger */}
-          <button
-            className='md:hidden text-2xl'
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-          </button>
-        </div>
-          
+
+          <div className='md:hidden lg:hidden gap-3 flex pr-5'>
+            {/* Cart */}
+            <Link to="/cart" className="relative">
+              <FaShoppingCart className="text-white text-2xl" />
+              {cartItems?.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartItems.reduce((a, c) => a + c.qty, 0)}
+                </span>
+              )}
+            </Link>
+            {/* Mobile Hamburger */}
+            <button
+              className='md:hidden text-2xl'
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+            </button>
+          </div>
+
         </div>
       </nav>
 
@@ -302,9 +304,19 @@ const Header = ({ isOnline }) => {
       </div>
 
       {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className='md:hidden pl-5 fixed top-16 left-0 right-0 bottom-0 bg-gray-900 z-50 overflow-y-auto'>
-          <div className='pr-5 py-4'>
+       
+        <div
+          className={`
+    md:hidden fixed top-16 left-0 bottom-0 w-full
+    bg-gray-900 z-50 overflow-y-auto
+    transition-transform duration-300 ease-in-out
+    ${isMobileMenuOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
+            }
+          `}
+        >
+          <div className='py-4 pl-7'>
             {/* <SearchBox onSearchComplete={closeMobileMenu} /> */}
 
             <Link
@@ -397,7 +409,7 @@ const Header = ({ isOnline }) => {
             )}
           </div>
         </div>
-      )}
+       
     </header>
   )
 }
