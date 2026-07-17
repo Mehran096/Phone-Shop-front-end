@@ -10,15 +10,16 @@ const CompareBar = () => {
   if (products.length === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-2xl">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+    
+  <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-2xl">
+    <div className="w-full lg:max-w-7xl lg:mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
 
-        <div className="flex gap-3 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
+      <div className="flex gap-3 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
 
           {products.map((product) => (
             <div
               key={product._id}
-              className="flex w-56 sm:w-64 flex-shrink-0 justify-end gap-2 w-full lg:w-auto items-center bg-gray-100 rounded-lg px-3 py-2"
+              className="flex flex-1 lg:flex-none items-center justify-between lg:justify-end gap-2 bg-gray-100 rounded-lg px-3 py-2"
             >
               <img
                 src={product.defaultImage}
