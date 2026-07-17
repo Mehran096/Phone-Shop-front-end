@@ -10,54 +10,75 @@ const CompareBar = () => {
   if (products.length === 0) return null;
 
   return (
-    
-  <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-2xl">
-    <div className="w-full lg:max-w-7xl lg:mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
 
-      <div className="flex gap-3 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-2xl">
+      <div className="w-full lg:max-w-7xl lg:mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+
+        <div className="flex gap-3 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
 
           {products.map((product) => (
             <div
               key={product._id}
-              className="flex flex-1 lg:flex-none items-center justify-between lg:justify-end gap-2 bg-gray-100 rounded-lg px-3 py-2"
+              className="relative flex-shrink-0 w-16 h-16 lg:w-auto lg:h-auto flex items-center gap-2 bg-gray-100 rounded-lg p-2"
             >
+              {/* Remove Button */}
+              <button
+                onClick={() => dispatch(removeFromCompare(product._id))}
+                className="absolute -top-1 -right-1 lg:hidden w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center"
+              >
+                ✕
+              </button>
+
+              {/* Image */}
               <img
                 src={product.defaultImage}
                 alt={product.name}
-                className="w-12 h-12 object-contain"
+                className="w-12 h-12 lg:w-16 lg:h-16 object-contain rounded"
               />
 
-              <div>
+              {/* Desktop Only */}
+              <div className="hidden lg:block">
                 <p className="text-sm font-medium line-clamp-1">
                   {product.name}
                 </p>
 
                 <button
-                  onClick={() =>
-                    dispatch(removeFromCompare(product._id))
-                  }
-                  className="text-xs text-red-500"
+                  onClick={() => dispatch(removeFromCompare(product._id))}
+                  className="text-xs text-red-500 hover:text-red-700"
                 >
                   Remove
                 </button>
               </div>
             </div>
           ))}
-
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex w-full lg:w-auto gap-3">
 
           <button
             onClick={() => dispatch(clearCompare())}
-            className="px-4 py-2 border rounded-lg"
+            className="
+      flex-1 lg:flex-none
+      py-3 px-4 lg:py-2
+      border rounded-lg
+      text-center
+      font-medium
+    "
           >
             Clear
           </button>
 
           <Link
             to="/compare"
-            className="px-5 py-2 rounded-lg bg-blue-600 text-white"
+            className="
+      flex-1 lg:flex-none
+      py-3 px-4 lg:py-2
+      rounded-lg
+      bg-blue-600
+      text-white
+      text-center
+      font-medium
+    "
           >
             Compare ({products.length})
           </Link>
