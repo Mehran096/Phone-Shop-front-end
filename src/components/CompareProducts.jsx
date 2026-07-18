@@ -511,11 +511,11 @@ const CompareProducts = ({products, showRemove=true,}) => {
                 className="w-full bg-white rounded-xl border shadow-sm overflow-hidden"
               >
                 {/* Product Image */}
-                <div className="relative bg-gray-50 p-3 flex justify-center">
+                <div className="relative bg-gray-50 pt-8 pb-6 flex justify-center">
                     {showRemove && (
                   <button
                     onClick={() => dispatch(removeFromCompare(product._id))}
-                    className="absolute top-1 right-1 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center hover:bg-red-50"
+                    className="absolute top-5 right-4 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center hover:bg-red-50"
                   >
                     ✕
                   </button>
