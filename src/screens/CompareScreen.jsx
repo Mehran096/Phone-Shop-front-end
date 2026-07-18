@@ -69,7 +69,7 @@ const CompareScreen = () => {
   //console.log(products);
   const TableRow = ({ title, renderValue }) => (
     <tr className="border-b last:border-b-0">
-      <td className="bg-gray-50 font-semibold text-gray-800 px-5 py-4 w-56">
+      <td className="bg-gray-50 font-semibold text-gray-800 px-5 py-4 min-w-[260px] text-center">
         {title}
       </td>
 
@@ -125,10 +125,51 @@ const CompareScreen = () => {
 
   return (
     <>
+      <div className="flex items-center justify-between mb-6 mt-5">
+        <Link
+          to="/"
+          className="inline-flex ml-2 items-center gap-2 text-blue-600 hover:underline"
+        >
+          ← Back to Home
+        </Link>
+
+        <h1 className="text-xl text-center lg:text-3xl font-bold">
+          Compare Phones
+        </h1>
+
+        <div className='mr-28 lg:mr-4'></div>
+      </div>
       {/* Desktop */}
-      <div className="hidden lg:block overflow-x-auto rounded-xl border bg-white shadow-sm">
-        <table className="min-w-[900px] w-full border-collapse">
-          <thead>
+      <div className="hidden mx-2 lg:block overflow-x-auto rounded-xl border bg-white shadow-sm">
+        <table className="min-w-[1200px] w-full border-collapse">
+          <thead className='w-56'>
+            <TableRow
+              title="image"
+              renderValue={(product) => {
+                const variant = getSelectedVariant(product);
+                const color = getSelectedColor(product, variant);
+
+                return (
+                  <div className="flex flex-col items-center py-4">
+                    <img
+                      src={
+                        color?.images?.[0]?.url ||
+                        product.defaultImage
+                      }
+                      alt={product.name}
+                      className="h-52 w-auto object-contain"
+                    />
+
+                    <button
+                      onClick={() => dispatch(removeFromCompare(product._id))}
+                      className="mt-4 text-sm text-red-500 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                );
+              }}
+            />
             <TableRow
               title="Name"
               renderValue={(product) => (
@@ -167,7 +208,7 @@ const CompareScreen = () => {
             <TableRow
               title="Storage"
               renderValue={(product) => <select
-                className="mt-3 w-full border rounded-md p-2"
+                className="mt-2 w-full border rounded-md p-2"
                 value={selectedVariants[product._id]?.storage || ""}
                 onChange={(e) =>
                   setSelectedVariants((prev) => ({
@@ -197,7 +238,7 @@ const CompareScreen = () => {
 
                 return (
                   <select
-                    className="border rounded-md px-2 py-1 w-full"
+                    className="mt-2 border rounded-md p-2  w-full"
                     value={selectedVariants[product._id]?.color || ""}
                     onChange={(e) =>
                       setSelectedVariants((prev) => ({
@@ -299,7 +340,7 @@ const CompareScreen = () => {
 
         </table>
         <div className="mt-10">
-          <h2 className="text-2xl font-bold mb-4">Performance</h2>
+          <h2 className="text-2xl font-bold mb-4 ml-2">Performance</h2>
 
           <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
             <tbody>
@@ -349,7 +390,7 @@ const CompareScreen = () => {
           </table>
         </div>
         <div className="mt-10">
-          <h2 className="text-2xl font-bold mb-4">Display</h2>
+          <h2 className="text-2xl font-bold mb-4 ml-2">Display</h2>
 
           <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
             <tbody>
@@ -367,7 +408,7 @@ const CompareScreen = () => {
           </table>
         </div>
         <div className="mt-10">
-          <h2 className="text-2xl font-bold mb-4">Camera</h2>
+          <h2 className="text-2xl font-bold mb-4 ml-2">Camera</h2>
 
           <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
             <tbody>
@@ -394,7 +435,7 @@ const CompareScreen = () => {
           </table>
         </div>
         <div className="mt-10">
-          <h2 className="text-2xl font-bold mb-4">Battery</h2>
+          <h2 className="text-2xl font-bold mb-4 ml-2">Battery</h2>
 
           <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
             <tbody>
@@ -411,7 +452,7 @@ const CompareScreen = () => {
           </table>
         </div>
         <div className="mt-10">
-          <h2 className="text-2xl font-bold mb-4">Design</h2>
+          <h2 className="text-2xl font-bold mb-4 ml-2">Design</h2>
 
           <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
             <tbody>
@@ -444,7 +485,7 @@ const CompareScreen = () => {
           </table>
         </div>
         <div className="mt-10 mb-10">
-          <h2 className="text-2xl font-bold mb-4">Connectivity</h2>
+          <h2 className="text-2xl font-bold mb-4 ml-2">Connectivity</h2>
 
           <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
             <tbody>
@@ -468,7 +509,7 @@ const CompareScreen = () => {
     MOBILE LAYOUT
 ========================= */}
       <div className="lg:hidden">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 ml-2">
 
           {products.map((product) => {
             const variant = getSelectedVariant(product);
@@ -653,12 +694,14 @@ const CompareScreen = () => {
 
                 </div>
 
+                
               </div>
             );
           })}
         </div>
+        
         {/* Specifications */}
-        <div className="space-y-6 mt-8">
+        <div className="space-y-6 mt-8 mx-2">
 
           {/* Performance */}
           <div className="bg-white rounded-xl shadow border">
@@ -674,23 +717,23 @@ const CompareScreen = () => {
 
                     <div className="space-y-2 text-sm">
                       <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Chipset</span>
-                       <span className="break-words text-gray-900">{variant.specs?.Chipset || "-"}</span>
+                        <span className="font-medium text-gray-700">Chipset</span>
+                        <span className="break-words text-gray-900">{variant.specs?.Chipset || "-"}</span>
                       </div>
 
                       <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">RAM</span>
-                       <span className="break-words text-gray-900">{variant.specs?.RAM || "-"}</span>
-                      </div>
-
-                     <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Storage</span>
-                       <span className="break-words text-gray-900">{variant.specs?.Storage || "-"}</span>
+                        <span className="font-medium text-gray-700">RAM</span>
+                        <span className="break-words text-gray-900">{variant.specs?.RAM || "-"}</span>
                       </div>
 
                       <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Operating System</span>
-                       <span className="break-words text-gray-900">{variant.specs?.OS || "-"}</span>
+                        <span className="font-medium text-gray-700">Storage</span>
+                        <span className="break-words text-gray-900">{variant.specs?.Storage || "-"}</span>
+                      </div>
+
+                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                        <span className="font-medium text-gray-700">Operating System</span>
+                        <span className="break-words text-gray-900">{variant.specs?.OS || "-"}</span>
                       </div>
                     </div>
                   </div>
@@ -740,12 +783,12 @@ const CompareScreen = () => {
 
                     <div className="space-y-2 text-sm">
                       <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Rear Camera</span>
+                        <span className="font-medium text-gray-700">Rear Camera</span>
                         <span className="break-words text-gray-900">{variant.specs?.["Rear Camera"] || "-"}</span>
                       </div>
 
                       <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Front Camera</span>
+                        <span className="font-medium text-gray-700">Front Camera</span>
                         <span className="break-words text-gray-900">{variant.specs?.["Front Camera"] || "-"}</span>
                       </div>
                     </div>
@@ -791,13 +834,13 @@ const CompareScreen = () => {
 
                     <div className="space-y-2 text-sm">
                       <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Build</span>
-                         <span className="break-words text-gray-900">{variant.specs?.Build || "-"}</span>
+                        <span className="font-medium text-gray-700">Build</span>
+                        <span className="break-words text-gray-900">{variant.specs?.Build || "-"}</span>
                       </div>
 
                       <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Other</span>
-                         <span className="break-words text-gray-900">{variant.specs?.Other || "-"}</span>
+                        <span className="font-medium text-gray-700">Other</span>
+                        <span className="break-words text-gray-900">{variant.specs?.Other || "-"}</span>
                       </div>
                     </div>
                   </div>
@@ -820,7 +863,7 @@ const CompareScreen = () => {
 
                     <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
                       <span className="font-medium text-gray-700">Connectivity</span>
-                     <span className="break-words text-gray-900">{variant.specs?.Connectivity || "-"}</span>
+                      <span className="break-words text-gray-900">{variant.specs?.Connectivity || "-"}</span>
                     </div>
                   </div>
                 );
