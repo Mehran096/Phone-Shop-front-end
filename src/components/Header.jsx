@@ -14,8 +14,30 @@ import api from '../utils/axios'
 import CompareBar from './CompareBar'
 
 
-const Header = ({ isOnline, isMobileMenuOpen,
-  setIsMobileMenuOpen, }) => {
+const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
+  const location = useLocation();
+
+  const hideSearchPages = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/cart",
+    "/shipping",
+    "/payment",
+    "/placeorder",
+    "/order-success",
+      
+  ] 
+
+ const hideSearch =
+  hideSearchPages.includes(location.pathname) ||
+  location.pathname.startsWith("/reset-password/") ||
+  location.pathname.startsWith("/order/") ||
+  (
+    location.pathname.startsWith("/products/") &&
+    location.pathname.endsWith("/reviews")
+  );
+
   const [userDropdown, setUserDropdown] = useState(false)
   const [adminDropdown, setAdminDropdown] = useState(false)
   //const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -117,6 +139,7 @@ const Header = ({ isOnline, isMobileMenuOpen,
           </Link>
 
           {/* Desktop Search */}
+          {!hideSearch &&
           <div className='hidden md:flex flex-1 justify-center mx-8 max-w-md'>
             {isOnline ? (
               <SearchBox onSearchComplete={closeMobileMenu} />
@@ -126,6 +149,7 @@ const Header = ({ isOnline, isMobileMenuOpen,
               </div>
             )}
           </div>
+          }
 
           {/* Desktop Menu */}
           <div className='hidden md:flex items-center space-x-6 pr-5'>
