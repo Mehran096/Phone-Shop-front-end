@@ -127,7 +127,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
     <>
     
       {/* Desktop */}
-      <div className="hidden mx-2 lg:block overflow-x-auto rounded-xl border bg-white shadow-sm">
+      <div className="hidden lg:block overflow-x-auto rounded-xl border bg-white shadow-sm">
         <table className="min-w-[1200px] w-full border-collapse">
           <thead className='w-56'>
             <TableRow
@@ -498,7 +498,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
     MOBILE LAYOUT
 ========================= */}
       <div className="lg:hidden">
-        <div className="grid grid-cols-2 gap-3 mx-2">
+        <div className="grid grid-cols-2 gap-2">
 
           {products.map((product) => {
             const variant = getSelectedVariant(product);
@@ -508,10 +508,10 @@ const CompareProducts = ({products, showRemove=true,}) => {
             return (
               <div
                 key={product._id}
-                className="bg-white rounded-xl border shadow-sm overflow-hidden"
+                className="w-full bg-white rounded-xl border shadow-sm overflow-hidden"
               >
                 {/* Product Image */}
-                <div className="relative bg-gray-50 p-6 flex justify-center">
+                <div className="relative bg-gray-50 p-3 flex justify-center">
                     {showRemove && (
                   <button
                     onClick={() => dispatch(removeFromCompare(product._id))}
