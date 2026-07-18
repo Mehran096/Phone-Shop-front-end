@@ -547,7 +547,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                   </p> */}
 
                   {/* Price */}
-                  <div className="mt-3 text-2xl font-bold text-blue-600">
+                  <div className="mt-2 text-2xl font-bold text-blue-600">
                     ${getSelectedColor(product)?.price?.toLocaleString() || 0}
                   </div>
 
