@@ -79,12 +79,12 @@ const CompareBar = () => {
                 <button
                   onClick={() => dispatch(clearCompare())}
                   className="
-      flex-1 lg:flex-none
-      py-3 px-4 lg:py-2
-      border rounded-lg
-      text-center
-      font-medium
-    "
+                    flex-1 lg:flex-none
+                    py-2 px-4 lg:py-2
+                    border rounded-lg
+                    text-center
+                    font-medium
+                  "
                 >
                   Clear
                 </button>
@@ -92,14 +92,14 @@ const CompareBar = () => {
                 <Link
                   to="/compare"
                   className="
-      flex-1 lg:flex-none
-      py-3 px-4 lg:py-2
-      rounded-lg
-      bg-blue-600
-      text-white
-      text-center
-      font-medium
-    "
+                  flex-1 lg:flex-none
+                  py-2 px-4 lg:py-2
+                  rounded-lg
+                  bg-blue-600
+                  text-white
+                  text-center
+                  font-medium
+                "
                 >
                   Compare ({products.length})
                 </Link>
