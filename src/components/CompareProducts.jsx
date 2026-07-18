@@ -542,9 +542,9 @@ const CompareProducts = ({products, showRemove=true,}) => {
                     {product.name}
                   </h2>
 
-                  <p className="text-sm text-gray-500">
+                  {/* <p className="text-sm text-gray-500">
                     {product.brand}
-                  </p>
+                  </p> */}
 
                   {/* Price */}
                   <div className="mt-3 text-2xl font-bold text-blue-600">
@@ -640,7 +640,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                     </select>
 
                   </div>
-
+                 {showRemove && (
                   <MobileSection
                     title="Overview"
                     sectionKey="overview"
@@ -680,6 +680,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                     </div>
 
                   </MobileSection>
+                 )}
 
                 </div>
 
