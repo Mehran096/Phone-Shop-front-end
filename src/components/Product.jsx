@@ -65,12 +65,12 @@ const Product = ({ product, userInfo }) => {
        className={`absolute z-10 flex items-center justify-center
           w-9 h-9 rounded-full border shadow transition-all
 
-          top-2 right-2 lg:top-3 lg:left-3 lg:right-auto
+          top-1 left-1 lg:top-3 lg:left-3 lg:right-auto
 
           ${
             isCompared
               ? "bg-blue-600 text-white border-blue-600"
-              : "bg-white text-gray-600 border-gray-200 hover:bg-blue-600 hover:text-white hover:border-blue-600"
+              : "bg-white text-gray-600 border-gray-200 hover:text-white hover:border-blue-600"
           }`}
         title="Compare"
         onClick={(e) => {
@@ -103,7 +103,7 @@ const Product = ({ product, userInfo }) => {
       >
         <FaBalanceScale
           size={18}
-          className="text-gray-800 hover:text-gray-800"
+          className={isCompared ? "text-white" : "text-gray-700"}
         />
       </button>
 <div></div>
