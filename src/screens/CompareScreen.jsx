@@ -125,20 +125,22 @@ const CompareScreen = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6 mt-5">
-  <Link
-    to="/"
-    className="w-32 lg:w-44 text-blue-600 hover:underline ml-2"
-  >
-    ← <span className="hidden sm:inline">Back to Home</span>
-  </Link>
+      <div className="relative flex items-center justify-center mb-6 mt-5 px-4">
+        <Link
+          to="/"
+          className="absolute left-4 text-blue-600"
+        >
+          <span className='text-sm'>←  Back to Home</span>
+        </Link>
 
-  <h1 className="text-xl lg:text-3xl font-bold text-center flex">
-    Compare Phones
-  </h1>
 
-  <div className="w-32 lg:w-42" />
-</div>
+        <h1 className="font-bold text-center">
+          <span className="text-xl lg:hidden">Compare</span>
+          <span className="hidden lg:inline text-3xl">
+            Compare Phones
+          </span>
+        </h1>
+      </div>
       {/* Desktop */}
       <div className="hidden mx-2 lg:block overflow-x-auto rounded-xl border bg-white shadow-sm">
         <table className="min-w-[1200px] w-full border-collapse">
@@ -694,12 +696,12 @@ const CompareScreen = () => {
 
                 </div>
 
-                
+
               </div>
             );
           })}
         </div>
-        
+
         {/* Specifications */}
         <div className="space-y-6 mt-8 mx-2">
 
