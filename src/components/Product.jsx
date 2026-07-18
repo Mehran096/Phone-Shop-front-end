@@ -63,7 +63,7 @@ const Product = ({ product, userInfo }) => {
       <button
         type="button"
        className={`absolute z-10 flex items-center justify-center
-          w-9 h-9 rounded-full border shadow transition-all
+           w-7 h-7  lg:w-9 lg:h-9 rounded-full border shadow transition-all
 
           top-1 left-1 lg:top-3 lg:left-3 lg:right-auto
 
