@@ -5,7 +5,8 @@ import {
   addToCompare,
   removeFromCompare,
 } from '../slices/compareSlice';
-
+import { toast } from 'react-toastify';
+ 
 const Product = ({ product, userInfo }) => {
   const dispatch = useDispatch();
 
@@ -63,7 +64,7 @@ const Product = ({ product, userInfo }) => {
       <button
         type="button"
        className={`absolute z-10 flex items-center justify-center
-           w-6 h-6  lg:w-9 lg:h-9 rounded-full border shadow transition-all
+           w-7 h-7  lg:w-9 lg:h-9 rounded-full border shadow transition-all
 
           top-1 left-1 lg:top-3 lg:left-3 lg:right-auto
 
@@ -80,6 +81,10 @@ const Product = ({ product, userInfo }) => {
           if (isCompared) {
             dispatch(removeFromCompare(product._id));
           } else {
+             if (compareProducts.length >= 4) {
+      toast.warning("You can compare up to 4 phones only.");
+      return;
+    }
             dispatch(
               addToCompare({
                 _id: product._id,
@@ -97,6 +102,7 @@ const Product = ({ product, userInfo }) => {
                  
               })
             )
+            toast.success("Added to compare");
           }
         }}
 
@@ -118,7 +124,7 @@ const Product = ({ product, userInfo }) => {
         className='block'
       >
         {/* V9.80 KEY: h-40 mobile, h-48 desktop. Big enough to breathe */}
-        <div className='h-36 sm:h-48 overflow-hidden bg-gray-50 flex items-center justify-center'>
+        <div className='h-32 sm:h-48 overflow-hidden bg-gray-50 flex items-center justify-center'>
           <img src={mainImage} alt={product.name} className='h-full w-full object-contain p-2 sm:p-3 group-hover:scale-105 transition-transform duration-300' loading="lazy" />
         </div>
       </Link>
