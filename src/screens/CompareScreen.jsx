@@ -133,7 +133,7 @@ const CompareScreen = () => {
     ← <span className="hidden sm:inline">Back to Home</span>
   </Link>
 
-  <h1 className="text-xl lg:text-3xl font-bold text-center flex-1">
+  <h1 className="text-xl lg:text-3xl font-bold text-center flex">
     Compare Phones
   </h1>
 
@@ -509,7 +509,7 @@ const CompareScreen = () => {
     MOBILE LAYOUT
 ========================= */}
       <div className="lg:hidden">
-        <div className="grid grid-cols-2 gap-3 ml-2">
+        <div className="grid grid-cols-2 gap-3 mx-2">
 
           {products.map((product) => {
             const variant = getSelectedVariant(product);
