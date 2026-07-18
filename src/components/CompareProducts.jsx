@@ -515,7 +515,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                     {showRemove && (
                   <button
                     onClick={() => dispatch(removeFromCompare(product._id))}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center hover:bg-red-50"
+                    className="absolute top-1 right-1 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center hover:bg-red-50"
                   >
                     ✕
                   </button>
