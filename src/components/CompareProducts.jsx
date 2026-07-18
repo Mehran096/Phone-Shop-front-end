@@ -150,7 +150,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                   </button>
   
                   {open && (
-                      <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] 
+                      <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[999] 
             max-h-60 overflow-y-auto">
                           {options.map((opt) => (
                               <button
@@ -556,7 +556,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
             return (
               <div
                 key={product._id}
-                className="w-full bg-white rounded-xl border shadow-sm overflow-hidden"
+                className="w-full bg-white rounded-xl border shadow-sm overflow-visible"
               >
                 {/* Product Image */}
                 <div className="relative bg-gray-50 pt-8 pb-6 flex justify-center">
@@ -643,7 +643,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                                     value: v.storage,
                                     label: v.storage,
                                 }))}
-                                label="Select Storage"
+                                label="SelectStorage"
                             />
 
                                 
