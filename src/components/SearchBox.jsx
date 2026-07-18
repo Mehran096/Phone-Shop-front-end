@@ -175,7 +175,7 @@ const SearchBox = ({ onSearchComplete }) => {
 
   return (
     <div className='relative w-full' ref={searchRef}>
-      <form onSubmit={submitHandler} className='flex w-full pr-2'>
+      <form onSubmit={submitHandler} className='flex w-full'>
         <div className="relative flex-1">
           <input
             type='text'

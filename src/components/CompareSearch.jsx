@@ -182,47 +182,47 @@ const CompareSearch = ({ currentSlug, setCompareSlug, }) => {
 
     return (
         <div className='relative w-full' ref={searchRef}>
-            <form onSubmit={submitHandler} className='flex w-full pr-2'>
-                <div className="relative flex-1">
-                    <input
-                        type='text'
-                        onKeyDown={handleKeyDown}
-                        name="search"
-                        autoComplete="off"
-                        onChange={(e) => {
-                            setKeyword(e.target.value);
-                            setDisplayKeyword(e.target.value);
-                            setShowSuggestions(true);
-                        }}
-                        value={displayKeyword}
-                        //onBlur={handleBlur}
-                        placeholder="Search another phone..."
-                        className='flex-1 w-full px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-                    />
+            <form onSubmit={submitHandler} className="relative w-full">
+  {/* Search icon */}
+  <FaSearch
+    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+    size={18}
+  />
 
-                    {displayKeyword && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setKeyword('');
-                                setDisplayKeyword('');
-                                setShowSuggestions(false);
-                                setSelectedIndex(-1);
-                            }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
-                        >
-                            <FaTimes size={14} />
-                        </button>
-                    )}
-                </div>
-                <button
-                    type='submit'
-                    className='px-4 py-2 border rounded-r-lg focus:outline-none shrink-0 focus:ring-2 focus:ring-blue-500'
-                >
+  <input
+    type="text"
+    name="search"
+    autoComplete="off"
+    onKeyDown={handleKeyDown}
+    onChange={(e) => {
+      setKeyword(e.target.value);
+      setDisplayKeyword(e.target.value);
+      setShowSuggestions(true);
+    }}
+    value={displayKeyword}
+    placeholder="Search another phone..."
+    className="w-full pl-11 pr-10 py-3 border border-gray-300 rounded-lg
+               bg-white text-gray-900
+               focus:outline-none focus:ring-2 focus:ring-blue-500
+               placeholder:text-gray-400"
+  />
 
-                    <FaSearch className='text-gray sm:text-gray-500 w-5 h-5' />
-                </button>
-            </form>
+  {displayKeyword && (
+    <button
+      type="button"
+      onClick={() => {
+        setKeyword("");
+        setDisplayKeyword("");
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+      }}
+      className="absolute right-4 top-1/2 -translate-y-1/2
+                 text-gray-400 hover:text-gray-700"
+    >
+      <FaTimes size={16} />
+    </button>
+  )}
+</form>
             {showSuggestions && keyword.trim().length >= 2 && (
                 <div className="absolute left-0 right-0 mt-1 bg-white transition-all ease-out duration-150 border border-gray-200 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto hide-scrollbar">
 

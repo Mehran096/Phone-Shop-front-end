@@ -1073,16 +1073,16 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
           </div>
         </div>
         {/* compare phone section */}
-        <div className="mt-10 rounded-xl border bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <FaBalanceScale className="text-blue-600 text-2xl" />
+        <div className="mt-8 rounded-xl border bg-white p-4 lg:p-6 shadow-sm">
+          <div className="flex items-start sm:items-center gap-3">
+            <FaBalanceScale className="text-blue-600 text-xl lg:text-2xl mt-1 sm:mt-0" />
 
-            <h2 className="text-xl lg:text-2xl font-bold">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight">
               Compare with another phone
             </h2>
           </div>
 
-          <p className="text-gray-500 mt-2">
+          <p className="mt-2 text-sm sm:text-base text-gray-500 max-w-3xl">
             Choose another phone to compare specifications,
             price, camera, display and performance.
           </p>
@@ -1094,15 +1094,20 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
               setCompareSlug={setCompareSlug}
             />
           </div>
-          {compareLoading ? (
-            <div className="mt-6 text-center text-gray-500">
-              Loading comparison...
-            </div>
-          ) : (
-            compareProducts?.length === 2 && (
-              <CompareProducts products={compareProducts} showRemove={false} />
-            )
-          )}
+          <div className="mt-6">
+            {compareLoading ? (
+              <div className="text-center text-gray-500">
+                Loading comparison...
+              </div>
+            ) : (
+              compareProducts?.length === 2 && (
+                <CompareProducts
+                  products={compareProducts}
+                  showRemove={false}
+                />
+              )
+            )}
+          </div>
         </div>
 
 
