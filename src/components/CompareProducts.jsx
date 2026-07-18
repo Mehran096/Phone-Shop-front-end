@@ -528,7 +528,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                           variant.colors?.[0]?.name)
                     )?.images?.[0]?.url}
                     alt={product.name}
-                    className="h-52 object-contain"
+                    className="h-40 w-auto object-contain"
                   />
 
 
@@ -538,7 +538,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                 {/* Product Info */}
                 <div className="p-4">
 
-                  <h2 className="font-semibold text-lg">
+                  <h2 className="font-semibold text-lg line-clamp-2">
                     {product.name}
                   </h2>
 
