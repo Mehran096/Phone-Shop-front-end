@@ -5,7 +5,8 @@ import {
   addToCompare,
   removeFromCompare,
 } from '../slices/compareSlice';
-
+import { FaChevronDown } from 'react-icons/fa';
+ 
 const CompareProducts = ({products, showRemove=true,}) => {
   const dispatch = useDispatch();
   //const { products } = useSelector((state) => state.compare);
@@ -573,39 +574,42 @@ const CompareProducts = ({products, showRemove=true,}) => {
                 {/* Variant Selectors */}
                 <div className="border-t p-4 space-y-4">
 
-                  {/* Storage */}
-                  <div>
+                        {/* Storage */}
+                        <div>
+                            <label className="block text-sm font-medium mb-1">
+                                Storage
+                            </label>
 
-                    <label className="block text-sm font-medium mb-1">
-                      Storage
-                    </label>
+                            <div className="relative">
+                                <select
+                                    className="w-full appearance-none border rounded-lg p-2 pr-10 bg-white"
+                                    value={selectedVariants[product._id]?.storage || ""}
+                                    onChange={(e) =>
+                                        setSelectedVariants((prev) => ({
+                                            ...prev,
+                                            [product._id]: {
+                                                ...prev[product._id],
+                                                storage: e.target.value,
+                                            },
+                                        }))
+                                    }
+                                >
+                                    {product.variants.map((v) => (
+                                        <option
+                                            key={v.storage}
+                                            value={v.storage}
+                                        >
+                                            {v.storage}
+                                        </option>
+                                    ))}
+                                </select>
 
-                    <select
-                      className="w-full border rounded-lg p-2"
-                      value={
-                        selectedVariants[product._id]?.storage || ""
-                      }
-                      onChange={(e) =>
-                        setSelectedVariants((prev) => ({
-                          ...prev,
-                          [product._id]: {
-                            ...prev[product._id],
-                            storage: e.target.value,
-                          },
-                        }))
-                      }
-                    >
-                      {product.variants.map((v) => (
-                        <option
-                          key={v.storage}
-                          value={v.storage}
-                        >
-                          {v.storage}
-                        </option>
-                      ))}
-                    </select>
-
-                  </div>
+                                <FaChevronDown
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                                    size={14}
+                                />
+                            </div>
+                        </div>
 
                   {/* Color */}
                   <div>
