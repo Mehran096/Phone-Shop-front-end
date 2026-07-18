@@ -624,7 +624,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                         {/* Storage */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
-                                Storage
+                               Select Storage
                             </label>
 
                             <div className="relative border rounded-lg">
@@ -643,7 +643,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                                     value: v.storage,
                                     label: v.storage,
                                 }))}
-                                label="SelectStorage"
+                                label="storage"
                             />
 
                                 
@@ -653,7 +653,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                   {/* Color */}
                  <div>
                     <label className="block text-sm font-medium mb-1">
-                        Color
+                       Select Color
                     </label>
                      <div className="relative border rounded-lg">
                     <CustomDropdown
@@ -671,7 +671,7 @@ const CompareProducts = ({products, showRemove=true,}) => {
                         value: color.name,
                         label: color.name,
                         }))}
-                        label="Select Color"
+                        label="Color"
                     />
                     </div>
                 </div>
