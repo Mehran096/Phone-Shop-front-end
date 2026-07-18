@@ -247,7 +247,7 @@ const ProductReviewsScreen = () => {
                                 type="button"
                                 onClick={() => { onChange(opt.value); setOpen(false); }}
                                 className={`w-full text-left px-4 py-2.5 text-sm text-gray-900
-                   hover:bg-gray-100 ${value === opt ? 'bg-gray-100 font-medium' : ''}`}
+                   hover:bg-gray-100 ${value === opt.value ? 'bg-gray-100 font-medium' : ''}`}
                             >
                                 {opt.label}
                             </button>

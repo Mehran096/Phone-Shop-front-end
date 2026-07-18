@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import {
@@ -123,6 +123,53 @@ const CompareProducts = ({products, showRemove=true,}) => {
       </div>
     );
   };
+
+  //custom drop down for mobile
+   const CustomDropdown = ({ value, onChange, options, label, displayMap = {} }) => {
+          const [open, setOpen] = useState(false);
+          const ref = useRef(null);
+  
+          useEffect(() => {
+              const handleClickOutside = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
+              document.addEventListener("mousedown", handleClickOutside);
+              return () => document.removeEventListener("mousedown", handleClickOutside);
+          }, []);
+  
+          return (
+              <div ref={ref} className="relative w-full md:w-auto md:min-w-[160px]">
+                  <button
+                      type="button"
+                      onClick={() => setOpen(!open)}
+                      className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white 
+            hover:border-gray-400 transition"
+                  >
+                      <span className="text-gray-900">
+                          {options.find((opt) => opt.value === value)?.label || label}
+                      </span>
+                      <FaChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+                  </button>
+  
+                  {open && (
+                      <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] 
+            max-h-60 overflow-y-auto">
+                          {options.map((opt) => (
+                              <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => { onChange(opt.value); setOpen(false); }}
+                                  className={`w-full text-left px-4 py-2.5 text-sm text-gray-900
+                                    hover:bg-gray-100 ${
+                                        value === opt.value ? 'bg-gray-100 font-medium' : ''
+                                    }`}
+                              >
+                                  {opt.label}
+                              </button>
+                          ))}
+                      </div>
+                  )}
+              </div>
+          );
+      };
 
   return (
     <>
@@ -580,70 +627,54 @@ const CompareProducts = ({products, showRemove=true,}) => {
                                 Storage
                             </label>
 
-                            <div className="relative">
-                                <select
-                                    className="w-full appearance-none border rounded-lg p-2 pr-10 bg-white"
-                                    value={selectedVariants[product._id]?.storage || ""}
-                                    onChange={(e) =>
-                                        setSelectedVariants((prev) => ({
-                                            ...prev,
-                                            [product._id]: {
-                                                ...prev[product._id],
-                                                storage: e.target.value,
-                                            },
-                                        }))
-                                    }
-                                >
-                                    {product.variants.map((v) => (
-                                        <option
-                                            key={v.storage}
-                                            value={v.storage}
-                                        >
-                                            {v.storage}
-                                        </option>
-                                    ))}
-                                </select>
+                            <div className="relative border rounded-lg">
+                                                        <CustomDropdown
+                                value={selectedVariants[product._id]?.storage || ""}
+                                onChange={(storage) =>
+                                    setSelectedVariants((prev) => ({
+                                        ...prev,
+                                        [product._id]: {
+                                            ...prev[product._id],
+                                            storage,
+                                        },
+                                    }))
+                                }
+                                options={product.variants.map((v) => ({
+                                    value: v.storage,
+                                    label: v.storage,
+                                }))}
+                                label="Select Storage"
+                            />
 
-                                <FaChevronDown
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                                    size={14}
-                                />
+                                
                             </div>
                         </div>
 
                   {/* Color */}
-                  <div>
-
+                 <div>
                     <label className="block text-sm font-medium mb-1">
-                      Color
+                        Color
                     </label>
-
-                    <select
-                      className="w-full border rounded-lg p-2"
-                      value={
-                        selectedVariants[product._id]?.color || ""
-                      }
-                      onChange={(e) =>
+                     <div className="relative border rounded-lg">
+                    <CustomDropdown
+                        value={selectedVariants[product._id]?.color || ""}
+                        onChange={(color) =>
                         setSelectedVariants((prev) => ({
-                          ...prev,
-                          [product._id]: {
+                            ...prev,
+                            [product._id]: {
                             ...prev[product._id],
-                            color: e.target.value,
-                          },
+                            color,
+                            },
                         }))
-                      }
-                    >
-                      {variant.colors.map((color) => (
-                        <option
-                          key={color.name}
-                          value={color.name}
-                        >
-                          {color.name}
-                        </option>
-                      ))}
-                    </select>
-
-                  </div>
+                        }
+                        options={variant.colors.map((color) => ({
+                        value: color.name,
+                        label: color.name,
+                        }))}
+                        label="Select Color"
+                    />
+                    </div>
+                </div>
                  {showRemove && (
                   <MobileSection
                     title="Overview"
