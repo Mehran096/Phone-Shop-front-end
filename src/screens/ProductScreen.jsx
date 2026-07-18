@@ -11,6 +11,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import {
   useGetProductDetailsQuery,
   useGetProductBySlugQuery,
+  useGetCompareProductsQuery,
   useCreateProductReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
@@ -36,11 +37,14 @@ import {
   FaThumbsUp,
   FaThumbsDown,
   FaHeart,
-  FaMemory, FaHdd, FaMobileAlt, FaCamera, FaBatteryFull, FaMicrochip,
+  FaMemory, FaHdd, FaMobileAlt, FaCamera, FaBatteryFull, FaMicrochip, FaBalanceScale, FaSearch,
 } from 'react-icons/fa'
+
 import { toast } from 'react-toastify'
 import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
+import CompareProducts from '../components/CompareProducts';
+import CompareSearch from '../components/CompareSearch';
 
 
 
@@ -52,8 +56,8 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   const dispatch = useDispatch()
   const [searchParams] = useSearchParams();
 
-const dealStorage = searchParams.get('storage');
-const dealColor = searchParams.get('color');
+  const dealStorage = searchParams.get('storage');
+  const dealColor = searchParams.get('color');
 
   const { userInfo } = useSelector((state) => state.auth)
   const { data: product, isLoading, error, refetch } = useGetProductBySlugQuery(slug)
@@ -66,6 +70,19 @@ const dealColor = searchParams.get('color');
   const [markReviewNotHelpful, { isLoading: loadingNotHelpfulReview },] = useMarkReviewNotHelpfulMutation();
   const [uploadReviewImage, { isLoading: loadingUpload }] = useUploadReviewImageMutation();
   const [deleteCloudinaryImage] = useDeleteCloudinaryImageMutation();
+  // Compare state
+  const [compareSlug, setCompareSlug] = useState("");
+
+  // Compare query
+  const {
+    data: compareProducts,
+    isLoading: compareLoading,
+  } = useGetCompareProductsQuery(
+    [product?.slug, compareSlug],
+    {
+      skip: !product?.slug || !compareSlug,
+    }
+  );
 
 
 
@@ -126,23 +143,23 @@ const dealColor = searchParams.get('color');
 
 
   useEffect(() => {
-  if (!product || !dealStorage || !dealColor) return;
+    if (!product || !dealStorage || !dealColor) return;
 
-  const variantIndex = product.variants.findIndex(
-    (variant) => variant.storage === dealStorage
-  );
+    const variantIndex = product.variants.findIndex(
+      (variant) => variant.storage === dealStorage
+    );
 
-  if (variantIndex === -1) return;
+    if (variantIndex === -1) return;
 
-  const colorIndex = product.variants[variantIndex].colors.findIndex(
-    (color) => color.name === dealColor
-  );
+    const colorIndex = product.variants[variantIndex].colors.findIndex(
+      (color) => color.name === dealColor
+    );
 
-  if (colorIndex === -1) return;
+    if (colorIndex === -1) return;
 
-  setSelectedVariantIndex(variantIndex);
-  setSelectedColorIndex(colorIndex);
-}, [product, dealStorage, dealColor]);
+    setSelectedVariantIndex(variantIndex);
+    setSelectedColorIndex(colorIndex);
+  }, [product, dealStorage, dealColor]);
 
   // const startEdit = (review) => {
   //   setEditingReview(review);
@@ -877,24 +894,24 @@ const dealColor = searchParams.get('color');
                           key={vIdx}
                           type="button"
                           onClick={() => {
-                                  // Remember the currently selected color
-                                  const currentColorName = selectedColor?.name;
+                            // Remember the currently selected color
+                            const currentColorName = selectedColor?.name;
 
-                                  // Find the same color in the new storage
-                                  const newColorIndex = product.variants[vIdx].colors.findIndex(
-                                    (color) => color.name === currentColorName
-                                  );
+                            // Find the same color in the new storage
+                            const newColorIndex = product.variants[vIdx].colors.findIndex(
+                              (color) => color.name === currentColorName
+                            );
 
-                                  setSelectedVariantIndex(vIdx);
+                            setSelectedVariantIndex(vIdx);
 
-                                  if (newColorIndex !== -1) {
-                                    // Keep the same color
-                                    setSelectedColorIndex(newColorIndex);
-                                  } else {
-                                    // Color doesn't exist in this storage
-                                    setSelectedColorIndex(0);
-                                  }
-                                }}
+                            if (newColorIndex !== -1) {
+                              // Keep the same color
+                              setSelectedColorIndex(newColorIndex);
+                            } else {
+                              // Color doesn't exist in this storage
+                              setSelectedColorIndex(0);
+                            }
+                          }}
                           className={`
                                 min-w-[80px] md:min-w-[96px] lg:min-w-[90px]
                                 h-12 md:h-14
@@ -1054,6 +1071,38 @@ const dealColor = searchParams.get('color');
             </div>
 
           </div>
+        </div>
+        {/* compare phone section */}
+        <div className="mt-10 rounded-xl border bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <FaBalanceScale className="text-blue-600 text-2xl" />
+
+            <h2 className="text-xl lg:text-2xl font-bold">
+              Compare with another phone
+            </h2>
+          </div>
+
+          <p className="text-gray-500 mt-2">
+            Choose another phone to compare specifications,
+            price, camera, display and performance.
+          </p>
+          <div className="relative mt-4">
+            {/* <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /> */}
+
+            <CompareSearch
+              currentSlug={product.slug}
+              setCompareSlug={setCompareSlug}
+            />
+          </div>
+          {compareLoading ? (
+            <div className="mt-6 text-center text-gray-500">
+              Loading comparison...
+            </div>
+          ) : (
+            compareProducts?.length === 2 && (
+              <CompareProducts products={compareProducts} showRemove={false} />
+            )
+          )}
         </div>
 
 

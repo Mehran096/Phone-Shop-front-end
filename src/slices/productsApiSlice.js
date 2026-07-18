@@ -67,12 +67,14 @@ export const productsApiSlice = apiSlice.injectEndpoints({
     }),
     getCompareProducts: builder.query({
   query: (slugs) => ({
-    url: `/products/compare`,
+    url: "/products/compare",
     params: {
-      slugs: slugs.join(','),
+      slugs: Array.isArray(slugs)
+        ? slugs.join(",")
+        : slugs,
     },
   }),
-  providesTags: ['Products'],
+  providesTags: ["Products"],
   keepUnusedDataFor: 5,
 }),
     updateProductSpecs: builder.mutation({
