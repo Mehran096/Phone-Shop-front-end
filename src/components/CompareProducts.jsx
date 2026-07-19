@@ -805,7 +805,7 @@ const CompareProducts = ({ products, showRemove = true, }) => {
   `}
         >
           <div className="bg-white border-b shadow-sm">
-            <div className="grid grid-cols-2 gap-2 px-2 py-2">
+            <div className="grid grid-cols-2 gap-2 px-2 py-1">
               {products.map((product) => {
                 const variant = getSelectedVariant(product);
                 const color = getSelectedColor(product);
