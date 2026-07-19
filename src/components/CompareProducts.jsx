@@ -106,51 +106,167 @@ const CompareProducts = ({ products, showRemove = true, }) => {
   };
 
   const isBestValue = (specKey, value) => {
-    if (!comparableSpecs.includes(specKey)) return false;
+  if (!comparableSpecs.includes(specKey)) return false;
 
+  // Special handling for Chipset
+  if (specKey === "Chipset") {
     const values = products.map((product) => {
       const variant = getSelectedVariant(product);
-      return extractNumber(variant.specs?.[specKey]);
+      return getChipsetRank(variant.specs?.Chipset);
     });
 
     const max = Math.max(...values);
 
-    return extractNumber(value) === max && max > 0;
-  };
+    return getChipsetRank(value) === max && max > 0;
+  }
 
-  //handler for specs difference
-  const shouldShowRow = (specKey) => {
-    if (!showDifferences) return true;
+  if (specKey === "Storage") {
+  const values = products.map((product) => {
+    const variant = getSelectedVariant(product);
+    return getStorageScore(variant.specs?.Storage);
+  });
 
-    const values = products.map((product) => {
-      const variant = getSelectedVariant(product);
-      return (variant.specs?.[specKey] || "").trim();
-    });
+  const max = Math.max(...values);
 
-    return new Set(values).size > 1;
-  };
+  return getStorageScore(value) === max && max > 0;
+}
 
-  //handler for specs calculation
-//   const calculateComparisonScore = (variant) => {
-//   let score = 0;
+  if (specKey === "RAM") {
+  const values = products.map((product) => {
+    const variant = getSelectedVariant(product);
+    return getRamScore(variant.specs?.RAM);
+  });
 
-//   // Performance
-//   if (variant.specs?.Chipset) score += 30;
-//   if (variant.specs?.RAM) score += 15;
-//   if (variant.specs?.Storage) score += 10;
+  const max = Math.max(...values);
 
-//   // Display
-//   if (variant.specs?.Display) score += 15;
+  return getRamScore(value) === max && max > 0;
+}
 
-//   // Camera
-//   if (variant.specs?.["Rear Camera"]) score += 15;
-//   if (variant.specs?.["Front Camera"]) score += 5;
+if (specKey === "Battery") {
+  const values = products.map((product) => {
+    const variant = getSelectedVariant(product);
+    return getBatteryScore(variant.specs?.Battery);
+  });
 
-//   // Battery
-//   if (variant.specs?.Battery) score += 10;
+  const max = Math.max(...values);
 
-//   return score;
-// };
+  return getBatteryScore(value) === max && max > 0;
+}
+
+
+
+  // Default numeric comparison
+  const values = products.map((product) => {
+    const variant = getSelectedVariant(product);
+    return extractNumber(variant.specs?.[specKey]);
+  });
+
+  const max = Math.max(...values);
+
+  return extractNumber(value) === max && max > 0;
+};
+
+  
+
+  
+const CHIPSET_RANKS = {
+  // Apple
+  "Apple A19": 100,
+  "Apple A19 Pro": 101,
+  "Apple A18": 96,
+  "Apple A18 Pro": 98,
+  "Apple A17 Pro": 94,
+  "Apple A16 Bionic": 90,
+  "Apple A15 Bionic": 86,
+  "Apple A14 Bionic": 82,
+  "Apple A13 Bionic": 78,
+
+  // Snapdragon
+  "Snapdragon 8 Elite": 99,
+  "Snapdragon 8 Gen 4": 97,
+  "Snapdragon 8 Gen 3": 95,
+  "Snapdragon 8 Gen 2": 91,
+  "Snapdragon 8 Gen 1": 87,
+  "Snapdragon 888": 83,
+  "Snapdragon 870": 80,
+  "Snapdragon 865": 76,
+
+  // MediaTek
+  "Dimensity 9400": 98,
+  "Dimensity 9300": 95,
+  "Dimensity 9200": 91,
+  "Dimensity 9000": 88,
+
+  // Google
+  "Google Tensor G5": 96,
+  "Google Tensor G4": 92,
+  "Google Tensor G3": 88,
+  "Google Tensor G2": 84,
+
+  // Samsung
+  "Exynos 2500": 96,
+  "Exynos 2400": 92,
+  "Exynos 2200": 86,
+};
+
+
+
+const getChipsetRank = (chipset = "") => {
+  for (const key of Object.keys(CHIPSET_RANKS)) {
+    if (chipset.toLowerCase().includes(key.toLowerCase())) {
+      return CHIPSET_RANKS[key];
+    }
+  }
+
+  return 0;
+};
+
+const getRamScore = (ram = "") => {
+  const size = parseInt(ram) || 0;
+
+  let typeBonus = 0;
+
+  const lowerRam = ram.toLowerCase();
+
+  if (lowerRam.includes("lpddr5x")) typeBonus = 3;
+  else if (lowerRam.includes("lpddr5")) typeBonus = 2;
+  else if (lowerRam.includes("lpddr4x")) typeBonus = 1;
+
+  return size * 10 + typeBonus;
+};
+
+const getStorageScore = (storage = "") => {
+  const lower = storage.toLowerCase();
+
+  let size = parseFloat(storage) || 0;
+
+  if (lower.includes("tb")) {
+    size *= 1024;
+  }
+
+  return size;
+};
+
+const getBatteryScore = (battery = "") => {
+  const lower = battery.toLowerCase();
+
+  // Battery capacity (mAh)
+  const capacityMatch = lower.match(/(\d+)\s*mah/);
+  const capacity = capacityMatch ? parseInt(capacityMatch[1]) : 0;
+
+  // Charging speed (W)
+  const chargingMatch = lower.match(/(\d+)\s*w/);
+  const charging = chargingMatch ? parseInt(chargingMatch[1]) : 0;
+
+  // Weight:
+  // Capacity is more important than charging speed
+  return capacity + charging * 5;
+};
+
+// console.log(getChipsetRank("Apple A19 Pro"));
+// console.log(getChipsetRank("Apple A14 Bionic"));
+// console.log(getChipsetRank("Snapdragon 8 Elite"));
+
 const SCORE_WEIGHTS = {
   Chipset: 30,
   RAM: 15,
@@ -161,6 +277,8 @@ const SCORE_WEIGHTS = {
   Build: 3,
   Connectivity: 2,
 };
+
+
 const calculateScore = (variant) => {
   let score = 0;
 
@@ -210,6 +328,18 @@ const winner =
     : null;
 
 
+
+    //handler for specs difference
+  const shouldShowRow = (specKey) => {
+    if (!showDifferences) return true;
+
+    const values = products.map((product) => {
+      const variant = getSelectedVariant(product);
+      return (variant.specs?.[specKey] || "").trim();
+    });
+
+    return new Set(values).size > 1;
+  };
   //const variant = getSelectedVariant(product);
   //console.log(products);
   const TableRow = ({ title, renderValue }) => (
@@ -961,7 +1091,7 @@ const winner =
     {/* Product 1 */}
     <div className="text-center">
       <h3 className="text-sm font-semibold truncate">
-        {products[0].name}
+        {products?.[0]?.name}
       </h3>
 
       <p className="mt-2 text-3xl font-bold text-blue-600">
@@ -979,7 +1109,7 @@ const winner =
     {/* Product 2 */}
     <div className="text-center">
       <h3 className="text-sm font-semibold truncate">
-        {products[1].name}
+        {products?.[1]?.name}
       </h3>
 
       <p className="mt-2 text-3xl font-bold text-blue-600">
