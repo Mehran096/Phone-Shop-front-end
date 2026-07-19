@@ -5,7 +5,7 @@ import {
   addToCompare,
   removeFromCompare,
 } from '../slices/compareSlice';
-import { FaChevronDown } from 'react-icons/fa';
+import { FaChevronDown, FaTrophy } from 'react-icons/fa';
 
 const CompareProducts = ({ products, showRemove = true, }) => {
   const dispatch = useDispatch();
@@ -129,6 +129,8 @@ const shouldShowRow = (specKey) => {
 
   return new Set(values).size > 1;
 };
+
+ 
 
 
   //const variant = getSelectedVariant(product);
@@ -811,15 +813,15 @@ const shouldShowRow = (specKey) => {
                 return (
                   <div
                     key={product._id}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 bg-white border rounded-lg p-2 shadow-sm"
                   >
                     <img
                       src={color?.images?.[0]?.url || product.defaultImage}
                       alt={product.name}
-                      className="w-10 h-10 object-contain"
+                      className="w-12 h-12 object-contain flex-shrink-0"
                     />
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold truncate">
                         {product.name}
                       </p>
@@ -827,6 +829,9 @@ const shouldShowRow = (specKey) => {
                       <p className="text-[11px] text-gray-500 truncate">
                         {variant.storage} • {color?.name}
                       </p>
+                      <p className="text-xs font-bold text-blue-600">
+  ${color?.price || product.price}
+</p>
                     </div>
                   </div>
                 );
@@ -883,7 +888,15 @@ const shouldShowRow = (specKey) => {
                           ? "bg-green-100 text-green-700 font-semibold"
                           : "text-gray-900"
                       }`}
-                    >{variant.specs?.Chipset || "-"}</span>
+                    >{variant.specs?.Chipset || "-"}
+
+                    {isBestValue("Chipset", variant.specs?.Chipset) && (
+                        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 py-1 text-[11px] font-semibold text-white">
+                          <FaTrophy className="text-[10px]" />
+                          Best
+                        </span>
+                      )}
+                    </span>
                       </div>
                       )}
 
@@ -898,6 +911,12 @@ const shouldShowRow = (specKey) => {
                         >
                           {variant.specs?.RAM || "-"}
                         </span>
+                        {isBestValue("RAM", variant.specs?.RAM) && (
+                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
+                          <FaTrophy size={10} />
+                          Best
+                        </span>
+                      )}
                       </div>
 )}
 {shouldShowRow("Storage") && (
@@ -910,6 +929,12 @@ const shouldShowRow = (specKey) => {
                           : "text-gray-900"
                       }`}
                     >{variant.specs?.Storage || "-"}</span>
+                    {isBestValue("Storage", variant.specs?.Storage) && (
+                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
+                          <FaTrophy size={10} />
+                          Best
+                        </span>
+                      )}
                       </div>
 )}
 {shouldShowRow("OS") && (
@@ -922,6 +947,12 @@ const shouldShowRow = (specKey) => {
                           : "text-gray-900"
                       }`}
                     >{variant.specs?.OS || "-"}</span>
+                    {isBestValue("OS", variant.specs?.OS) && (
+                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
+                          <FaTrophy size={10} />
+                          Best
+                        </span>
+                      )}
                       </div>
 )}
                     </div>
@@ -957,6 +988,12 @@ const shouldShowRow = (specKey) => {
                     >
                         {variant.specs?.Display || "-"}
                       </span>
+                      {isBestValue("Display", variant.specs?.Display) && (
+                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
+                          <FaTrophy size={10} />
+                          Best
+                        </span>
+                      )}
                     </div>
 )}
                   </div>
@@ -988,6 +1025,12 @@ const shouldShowRow = (specKey) => {
                           : "text-gray-900"
                       }`}
                     >{variant.specs?.["Rear Camera"] || "-"}</span>
+                    {isBestValue("Rear Camera", variant.specs?.["Rear Camera"]) && (
+                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
+                          <FaTrophy size={10} />
+                          Best
+                        </span>
+                      )}
                       </div>
                       )}
                       {shouldShowRow("Front Camera") && (
@@ -1000,6 +1043,12 @@ const shouldShowRow = (specKey) => {
                           : "text-gray-900"
                       }`}
                     >{variant.specs?.["Front Camera"] || "-"}</span>
+                    {isBestValue("Front Camera", variant.specs?.["Front Camera"]) && (
+                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
+                          <FaTrophy size={10} />
+                          Best
+                        </span>
+                      )}
                       </div>
                       )}
                     </div>
@@ -1031,7 +1080,14 @@ const shouldShowRow = (specKey) => {
                       }`}
                     >
                       {variant.specs?.Battery || "-"}
+                      
                     </span>
+                    {isBestValue("Battery", variant.specs?.Battery) && (
+                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
+                          <FaTrophy size={10} />
+                          Best
+                        </span>
+                      )}
                     </div>
  )}
                   </div>
