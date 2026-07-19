@@ -81,21 +81,21 @@ const CompareProducts = ({ products, showRemove = true, }) => {
 
   //for spesc highlights
   const comparableSpecs = [
-  "RAM",
-  "Storage",
-  "Battery",
-  "Refresh Rate",
-  "Charging",
-  "Brightness",
-  "Display",
-  "OS",
-  "Chipset",
-  "Rear Camera",
-  "Front Camera",
-  "Build",
-  "Other",
-  "Connectivity",
-];
+    "RAM",
+    "Storage",
+    "Battery",
+    "Refresh Rate",
+    "Charging",
+    "Brightness",
+    "Display",
+    "OS",
+    "Chipset",
+    "Rear Camera",
+    "Front Camera",
+    "Build",
+    "Other",
+    "Connectivity",
+  ];
 
   //handler for specs
   const extractNumber = (value) => {
@@ -106,31 +106,31 @@ const CompareProducts = ({ products, showRemove = true, }) => {
   };
 
   const isBestValue = (specKey, value) => {
-  if (!comparableSpecs.includes(specKey)) return false;
+    if (!comparableSpecs.includes(specKey)) return false;
 
-  const values = products.map((product) => {
-    const variant = getSelectedVariant(product);
-    return extractNumber(variant.specs?.[specKey]);
-  });
+    const values = products.map((product) => {
+      const variant = getSelectedVariant(product);
+      return extractNumber(variant.specs?.[specKey]);
+    });
 
-  const max = Math.max(...values);
+    const max = Math.max(...values);
 
-  return extractNumber(value) === max && max > 0;
-};
+    return extractNumber(value) === max && max > 0;
+  };
 
-//handler for specs difference
-const shouldShowRow = (specKey) => {
-  if (!showDifferences) return true;
+  //handler for specs difference
+  const shouldShowRow = (specKey) => {
+    if (!showDifferences) return true;
 
-  const values = products.map((product) => {
-    const variant = getSelectedVariant(product);
-    return (variant.specs?.[specKey] || "").trim();
-  });
+    const values = products.map((product) => {
+      const variant = getSelectedVariant(product);
+      return (variant.specs?.[specKey] || "").trim();
+    });
 
-  return new Set(values).size > 1;
-};
+    return new Set(values).size > 1;
+  };
 
- 
+
 
 
   //const variant = getSelectedVariant(product);
@@ -818,7 +818,7 @@ const shouldShowRow = (specKey) => {
                     <img
                       src={color?.images?.[0]?.url || product.defaultImage}
                       alt={product.name}
-                      className="w-12 h-12 object-contain flex-shrink-0"
+                      className="w-10 h-10 object-contain flex-shrink-0"
                     />
 
                     <div className="min-w-0 flex-1">
@@ -830,8 +830,8 @@ const shouldShowRow = (specKey) => {
                         {variant.storage} • {color?.name}
                       </p>
                       <p className="text-xs font-bold text-blue-600">
-  ${color?.price || product.price}
-</p>
+                        ${color?.price || product.price}
+                      </p>
                     </div>
                   </div>
                 );
@@ -842,25 +842,25 @@ const shouldShowRow = (specKey) => {
         {/* Specifications Difference */}
 
         <div className="flex items-center justify-between mx-2 mt-2 mb-4">
-  <h2 className="text-lg font-bold">
-    Specifications
-  </h2>
+          <h2 className="text-lg font-bold">
+            Specifications
+          </h2>
 
-  <label className="flex items-center gap-2 cursor-pointer">
-    <input
-      type="checkbox"
-      checked={showDifferences}
-      onChange={() =>
-        setShowDifferences((prev) => !prev)
-      }
-      className="w-4 h-4 accent-blue-600"
-    />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showDifferences}
+              onChange={() =>
+                setShowDifferences((prev) => !prev)
+              }
+              className="w-4 h-4 accent-blue-600"
+            />
 
-    <span className="text-sm font-medium">
-      Show only differences
-    </span>
-  </label>
-</div>
+            <span className="text-sm font-medium">
+              Show only differences
+            </span>
+          </label>
+        </div>
 
         {/* Specifications */}
         <div className="space-y-6 mt-8 mx-2">
@@ -880,81 +880,83 @@ const shouldShowRow = (specKey) => {
                     <div className="space-y-2 text-sm">
 
                       {shouldShowRow("Chipset") && (
-                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                        <span className="font-medium text-gray-700">Chipset</span>
-                         <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Chipset", variant.specs?.Chipset)
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >{variant.specs?.Chipset || "-"}
+                        <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                          <span className="font-medium text-gray-700">Chipset</span>
+                          <span
+                            className={`break-words rounded px-2 py-1 ${isBestValue("Chipset", variant.specs?.Chipset)
+                                ? "bg-green-100 text-green-700 font-semibold"
+                                : "text-gray-900"
+                              }`}
+                          >{variant.specs?.Chipset || "-"}
 
-                    {isBestValue("Chipset", variant.specs?.Chipset) && (
-                        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 py-1 text-[11px] font-semibold text-white">
-                          <FaTrophy className="text-[10px]" />
-                          Best
-                        </span>
-                      )}
-                    </span>
-                      </div>
+                            {isBestValue("Chipset", variant.specs?.Chipset) && (
+                              <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5  text-[10px] font-semibold text-white">
+                                <FaTrophy className="text-[10px]" />
+                                Best
+                              </span>
+                            )}
+                          </span>
+                        </div>
                       )}
 
-{shouldShowRow("RAM") && (
-                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                        <span className="font-medium text-gray-700">RAM</span>
-                        <span
-                          className={`break-words rounded px-2 py-1 ${isBestValue("RAM", variant.specs?.RAM)
+                      {shouldShowRow("RAM") && (
+                        <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                          <span className="font-medium text-gray-700">RAM</span>
+                          <span
+                            className={`break-words rounded px-2 py-1 ${isBestValue("RAM", variant.specs?.RAM)
                               ? "bg-green-100 text-green-700 font-semibold"
                               : "text-gray-900"
-                            }`}
-                        >
-                          {variant.specs?.RAM || "-"}
-                        </span>
-                        {isBestValue("RAM", variant.specs?.RAM) && (
-                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
-                          <FaTrophy size={10} />
-                          Best
-                        </span>
+                              }`}
+                          >
+                            {variant.specs?.RAM || "-"}
+                            {isBestValue("RAM", variant.specs?.RAM) && (
+                              <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                                <FaTrophy className="text-[10px]" />
+                                Best
+                              </span>
+                            )}
+                          </span>
+
+                        </div>
                       )}
-                      </div>
-)}
-{shouldShowRow("Storage") && (
-                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                        <span className="font-medium text-gray-700">Storage</span>
-                         <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Storage", variant.specs?.Storage)
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >{variant.specs?.Storage || "-"}</span>
-                    {isBestValue("Storage", variant.specs?.Storage) && (
-                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
-                          <FaTrophy size={10} />
-                          Best
-                        </span>
+                      {shouldShowRow("Storage") && (
+                        <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                          <span className="font-medium text-gray-700">Storage</span>
+                          <span
+                            className={`break-words rounded px-2 py-1 ${isBestValue("Storage", variant.specs?.Storage)
+                                ? "bg-green-100 text-green-700 font-semibold"
+                                : "text-gray-900"
+                              }`}
+                          >{variant.specs?.Storage || "-"}
+                            {isBestValue("Storage", variant.specs?.Storage) && (
+                              <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                                <FaTrophy className="text-[10px]" />
+                                Best
+                              </span>
+                            )}
+                          </span>
+
+                        </div>
                       )}
-                      </div>
-)}
-{shouldShowRow("OS") && (
-                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                        <span className="font-medium text-gray-700">Operating System</span>
-                         <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("OS", variant.specs?.OS)
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >{variant.specs?.OS || "-"}</span>
-                    {isBestValue("OS", variant.specs?.OS) && (
-                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
-                          <FaTrophy size={10} />
-                          Best
-                        </span>
+                      {shouldShowRow("OS") && (
+                        <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                          <span className="font-medium text-gray-700">Operating System</span>
+                          <span
+                            className={`break-words rounded px-2 py-1 ${isBestValue("OS", variant.specs?.OS)
+                                ? "bg-green-100 text-green-700 font-semibold"
+                                : "text-gray-900"
+                              }`}
+                          >{variant.specs?.OS || "-"}
+                            {isBestValue("OS", variant.specs?.OS) && (
+                              <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                                <FaTrophy className="text-[10px]" />
+                                Best
+                              </span>
+                            )}
+                          </span>
+
+                        </div>
                       )}
-                      </div>
-)}
                     </div>
                   </div>
                 );
@@ -973,29 +975,29 @@ const shouldShowRow = (specKey) => {
                 return (
                   <div key={product._id} className="border rounded-lg p-4">
                     <h3 className="font-semibold mb-3">{product.name}</h3>
-{shouldShowRow("Display") && (
-                    <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">
-                        Display
-                      </span>
-
-                      <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Display", variant.specs?.Display)
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >
-                        {variant.specs?.Display || "-"}
-                      </span>
-                      {isBestValue("Display", variant.specs?.Display) && (
-                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
-                          <FaTrophy size={10} />
-                          Best
+                    {shouldShowRow("Display") && (
+                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                        <span className="font-medium text-gray-700">
+                          Display
                         </span>
-                      )}
-                    </div>
-)}
+
+                        <span
+                          className={`break-words rounded px-2 py-1 ${isBestValue("Display", variant.specs?.Display)
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
+                            }`}
+                        >
+                          {variant.specs?.Display || "-"}
+                          {isBestValue("Display", variant.specs?.Display) && (
+                            <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                              <FaTrophy className="text-[10px]" />
+                              Best
+                            </span>
+                          )}
+                        </span>
+
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1016,40 +1018,43 @@ const shouldShowRow = (specKey) => {
 
                     <div className="space-y-2 text-sm">
                       {shouldShowRow("Rear Camera") && (
-                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                        <span className="font-medium text-gray-700">Rear Camera</span>
-                        <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Rear Camera", variant.specs?.["Rear Camera"])
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >{variant.specs?.["Rear Camera"] || "-"}</span>
-                    {isBestValue("Rear Camera", variant.specs?.["Rear Camera"]) && (
-                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
-                          <FaTrophy size={10} />
-                          Best
-                        </span>
-                      )}
-                      </div>
+                        <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                          <span className="font-medium text-gray-700">Rear Camera</span>
+                          <span
+                            className={`break-words rounded px-2 py-1 ${isBestValue("Rear Camera", variant.specs?.["Rear Camera"])
+                                ? "bg-green-100 text-green-700 font-semibold"
+                                : "text-gray-900"
+                              }`}
+                          >{variant.specs?.["Rear Camera"] || "-"}
+                            {isBestValue("Rear Camera", variant.specs?.["Rear Camera"]) && (
+                              <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                                <FaTrophy className="text-[10px]" />
+                                Best
+                              </span>
+                            )}
+                          </span>
+
+                        </div>
                       )}
                       {shouldShowRow("Front Camera") && (
-                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                        <span className="font-medium text-gray-700">Front Camera</span>
-                        <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Front Camera", variant.specs?.["Front Camera"])
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >{variant.specs?.["Front Camera"] || "-"}</span>
-                    {isBestValue("Front Camera", variant.specs?.["Front Camera"]) && (
-                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
-                          <FaTrophy size={10} />
-                          Best
-                        </span>
-                      )}
-                      </div>
+                        <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                          <span className="font-medium text-gray-700">Front Camera</span>
+                          <span
+                            className={`break-words rounded px-2 py-1 ${isBestValue("Front Camera", variant.specs?.["Front Camera"])
+                                ? "bg-green-100 text-green-700 font-semibold"
+                                : "text-gray-900"
+                              }`}
+                          >{variant.specs?.["Front Camera"] || "-"}
+
+                            {isBestValue("Front Camera", variant.specs?.["Front Camera"]) && (
+                              <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                                <FaTrophy className="text-[10px]" />
+                                Best
+                              </span>
+                            )}
+                          </span>
+
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1069,27 +1074,26 @@ const shouldShowRow = (specKey) => {
                 return (
                   <div key={product._id} className="border rounded-lg p-4">
                     <h3 className="font-semibold mb-3">{product.name}</h3>
- {shouldShowRow("Battery") && (
-                    <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Battery</span>
-                      <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Battery", variant.specs?.Battery)
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      {variant.specs?.Battery || "-"}
-                      
-                    </span>
-                    {isBestValue("Battery", variant.specs?.Battery) && (
-                        <span className="ml-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] text-white">
-                          <FaTrophy size={10} />
-                          Best
+                    {shouldShowRow("Battery") && (
+                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                        <span className="font-medium text-gray-700">Battery</span>
+                        <span
+                          className={`break-words rounded px-2 py-1 ${isBestValue("Battery", variant.specs?.Battery)
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
+                            }`}
+                        >
+                          {variant.specs?.Battery || "-"}
+                          {isBestValue("Battery", variant.specs?.Battery) && (
+                            <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                              <FaTrophy className="text-[10px]" />
+                              Best
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </div>
- )}
+
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1109,31 +1113,43 @@ const shouldShowRow = (specKey) => {
                     <h3 className="font-semibold mb-3">{product.name}</h3>
 
                     <div className="space-y-2 text-sm">
-                       {shouldShowRow("Build") && (
-                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                        <span className="font-medium text-gray-700">Build</span>
-                        <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Build", variant.specs?.Build)
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >{variant.specs?.Build || "-"}</span>
-                      </div>
-                       )}
+                      {shouldShowRow("Build") && (
+                        <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                          <span className="font-medium text-gray-700">Build</span>
+                          <span
+                            className={`break-words rounded px-2 py-1 ${isBestValue("Build", variant.specs?.Build)
+                                ? "bg-green-100 text-green-700 font-semibold"
+                                : "text-gray-900"
+                              }`}
+                          >{variant.specs?.Build || "-"}
+                            {isBestValue("Build", variant.specs?.Build) && (
+                              <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                                <FaTrophy className="text-[10px]" />
+                                Best
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      )}
 
- {shouldShowRow("Other") && (
-                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                        <span className="font-medium text-gray-700">Other</span>
-                        <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Other", variant.specs?.Other)
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >{variant.specs?.Other || "-"}</span>
-                      </div>
- )}
+                      {shouldShowRow("Other") && (
+                        <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                          <span className="font-medium text-gray-700">Other</span>
+                          <span
+                            className={`break-words rounded px-2 py-1 ${isBestValue("Other", variant.specs?.Other)
+                                ? "bg-green-100 text-green-700 font-semibold"
+                                : "text-gray-900"
+                              }`}
+                          >{variant.specs?.Other || "-"}
+                            {isBestValue("Other", variant.specs?.Other) && (
+                              <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                                <FaTrophy className="text-[10px]" />
+                                Best
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -1152,18 +1168,25 @@ const shouldShowRow = (specKey) => {
                 return (
                   <div key={product._id} className="border rounded-lg p-4">
                     <h3 className="font-semibold mb-3">{product.name}</h3>
-{shouldShowRow("Connectivity") && (
-                    <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
-                      <span className="font-medium text-gray-700">Connectivity</span>
-                      <span
-                      className={`break-words rounded px-2 py-1 ${
-                        isBestValue("Connectivity", variant.specs?.Connectivity)
-                          ? "bg-green-100 text-green-700 font-semibold"
-                          : "text-gray-900"
-                      }`}
-                    >{variant.specs?.Connectivity || "-"}</span>
-                    </div>
-)}
+                    {shouldShowRow("Connectivity") && (
+                      <div className="grid grid-cols-[110px_1fr] gap-3 text-sm">
+                        <span className="font-medium text-gray-700">Connectivity</span>
+                        <span
+                          className={`break-words rounded px-2 py-1 ${isBestValue("Connectivity", variant.specs?.Connectivity)
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
+                            }`}
+                        >{variant.specs?.Connectivity || "-"}
+                          {isBestValue("Connectivity", variant.specs?.Connectivity) && (
+                            <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 text-[10px] font-semibold text-white">
+                              <FaTrophy className="text-[10px]" />
+                              Best
+                            </span>
+                          )}
+
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
