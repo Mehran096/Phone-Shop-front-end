@@ -130,7 +130,84 @@ const CompareProducts = ({ products, showRemove = true, }) => {
     return new Set(values).size > 1;
   };
 
+  //handler for specs calculation
+//   const calculateComparisonScore = (variant) => {
+//   let score = 0;
 
+//   // Performance
+//   if (variant.specs?.Chipset) score += 30;
+//   if (variant.specs?.RAM) score += 15;
+//   if (variant.specs?.Storage) score += 10;
+
+//   // Display
+//   if (variant.specs?.Display) score += 15;
+
+//   // Camera
+//   if (variant.specs?.["Rear Camera"]) score += 15;
+//   if (variant.specs?.["Front Camera"]) score += 5;
+
+//   // Battery
+//   if (variant.specs?.Battery) score += 10;
+
+//   return score;
+// };
+const SCORE_WEIGHTS = {
+  Chipset: 30,
+  RAM: 15,
+  Storage: 10,
+  Display: 15,
+  RearCamera: 15,
+  Battery: 10,
+  Build: 3,
+  Connectivity: 2,
+};
+const calculateScore = (variant) => {
+  let score = 0;
+
+  if (isBestValue("Chipset", variant.specs?.Chipset))
+  score += SCORE_WEIGHTS.Chipset;
+
+if (isBestValue("RAM", variant.specs?.RAM))
+  score += SCORE_WEIGHTS.RAM;
+
+if (isBestValue("Storage", variant.specs?.Storage))
+  score += SCORE_WEIGHTS.Storage;
+
+ if (isBestValue("Rear Camera", variant.specs?.["Rear Camera"]))
+    score += SCORE_WEIGHTS.RearCamera;
+
+if (isBestValue("Display", variant.specs?.Display))
+  score += SCORE_WEIGHTS.Display;
+
+if (isBestValue("Connectivity", variant.specs?.Connectivity))
+  score += SCORE_WEIGHTS.Connectivity;
+
+if (isBestValue("Build", variant.specs?.Build))
+  score += SCORE_WEIGHTS.Build;
+
+if (isBestValue("Battery", variant.specs?.Battery))
+  score += SCORE_WEIGHTS.Battery;
+
+
+  return score;
+};
+
+const score1 =
+  products.length > 0
+    ? calculateScore(getSelectedVariant(products[0]))
+    : 0;
+
+const score2 =
+  products.length > 1
+    ? calculateScore(getSelectedVariant(products[1]))
+    : 0;
+ 
+const winner =
+  score1 > score2
+    ? products[0]
+    : score2 > score1
+    ? products[1]
+    : null;
 
 
   //const variant = getSelectedVariant(product);
@@ -618,6 +695,8 @@ const CompareProducts = ({ products, showRemove = true, }) => {
           {products.map((product) => {
             const variant = getSelectedVariant(product);
             const color = getSelectedColor(product);
+            const score = calculateScore(variant);
+            
 
 
             return (
@@ -681,6 +760,27 @@ const CompareProducts = ({ products, showRemove = true, }) => {
                       ({product.numReviews})
                     </span>
 
+                  </div>
+
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-500">
+                        Comparison Score
+                      </span>
+
+                      <span className="font-bold text-blue-600">
+                        {score}
+                      </span>
+                    </div>
+
+                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 rounded-full"
+                        style={{
+                          width: `${score}%`,
+                        }}
+                      />
+                    </div>
                   </div>
 
                 </div>
@@ -796,14 +896,14 @@ const CompareProducts = ({ products, showRemove = true, }) => {
         {/* sticky header */}
         <div
           className={`
-    sticky top-16 z-40 lg:hidden
-    transition-all duration-300 ease-in-out mt-2
-    ${showStickyHeader
-              ? "translate-y-0 opacity-100"
-              : "-translate-y-full opacity-0 pointer-events-none"
-            }
-  `}
-        >
+              sticky top-16 z-40 lg:hidden
+              transition-all duration-300 ease-in-out mt-2
+              ${showStickyHeader
+                        ? "translate-y-0 opacity-100"
+                        : "-translate-y-full opacity-0 pointer-events-none"
+                      }
+            `}
+                  >
           <div className="bg-white border-b shadow-sm">
             <div className="grid grid-cols-2 gap-2 px-2 py-1">
               {products.map((product) => {
@@ -839,6 +939,63 @@ const CompareProducts = ({ products, showRemove = true, }) => {
             </div>
           </div>
         </div>
+      {/* Specifications total score */}
+      <div className="mx-2  mb-6 rounded-xl border bg-white p-5 shadow">
+  <h2 className="mb-4 text-lg font-bold text-center">
+    Comparison Score
+  </h2>
+  {winner ? (
+  <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-center">
+    🏆 <span className="font-semibold text-green-700">
+      {winner.name} is the overall winner
+    </span>
+  </div>
+) : (
+  <div className="mb-4 rounded-lg bg-gray-100 p-3 text-center text-gray-600">
+    Both phones are evenly matched.
+  </div>
+)}
+
+
+  <div className="grid grid-cols-2 gap-4">
+    {/* Product 1 */}
+    <div className="text-center">
+      <h3 className="text-sm font-semibold truncate">
+        {products[0].name}
+      </h3>
+
+      <p className="mt-2 text-3xl font-bold text-blue-600">
+        {score1}
+      </p>
+
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
+        <div
+          className="h-full rounded-full bg-blue-600"
+          style={{ width: `${score1}%` }}
+        />
+      </div>
+    </div>
+
+    {/* Product 2 */}
+    <div className="text-center">
+      <h3 className="text-sm font-semibold truncate">
+        {products[1].name}
+      </h3>
+
+      <p className="mt-2 text-3xl font-bold text-blue-600">
+        {score2}
+      </p>
+
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
+        <div
+          className="h-full rounded-full bg-blue-600"
+          style={{ width: `${score2}%` }}
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
         {/* Specifications Difference */}
 
         <div className="flex items-center justify-between mx-2 mt-2 mb-4">
