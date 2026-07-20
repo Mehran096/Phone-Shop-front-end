@@ -106,230 +106,500 @@ const CompareProducts = ({ products, showRemove = true, }) => {
   };
 
   const isBestValue = (specKey, value) => {
-  if (!comparableSpecs.includes(specKey)) return false;
+    if (!comparableSpecs.includes(specKey)) return false;
 
-  // Special handling for Chipset
-  if (specKey === "Chipset") {
+    // Special handling for Chipset
+    if (specKey === "Chipset") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getChipsetRank(variant.specs?.Chipset);
+      });
+
+      const max = Math.max(...values);
+
+      return getChipsetRank(value) === max && max > 0;
+    }
+
+    if (specKey === "Storage") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getStorageScore(variant.specs?.Storage);
+      });
+
+      const max = Math.max(...values);
+
+      return getStorageScore(value) === max && max > 0;
+    }
+
+    if (specKey === "RAM") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getRamScore(variant.specs?.RAM);
+      });
+
+      const max = Math.max(...values);
+
+      return getRamScore(value) === max && max > 0;
+    }
+
+    if (specKey === "Battery") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getBatteryScore(variant.specs?.Battery);
+      });
+
+      const max = Math.max(...values);
+
+      return getBatteryScore(value) === max && max > 0;
+    }
+
+    if (specKey === "Display") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getDisplayScore(variant.specs?.Display);
+      });
+
+      const max = Math.max(...values);
+
+      return getDisplayScore(value) === max && max > 0;
+    }
+
+    if (specKey === "Rear Camera") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getRearCameraScore(variant.specs?.["Rear Camera"]);
+      });
+
+      const max = Math.max(...values);
+
+      return getRearCameraScore(value) === max && max > 0;
+    }
+
+    if (specKey === "Front Camera") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getRearCameraScore(variant.specs?.["Front Camera"]);
+      });
+
+      const max = Math.max(...values);
+
+      return getRearCameraScore(value) === max && max > 0;
+    }
+
+    if (specKey === "Build") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getBuildScore(variant.specs?.Build);
+      });
+
+      const max = Math.max(...values);
+
+      return getBuildScore(value) === max && max > 0;
+    }
+
+    if (specKey === "Connectivity") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getConnectivityScore(variant.specs?.Connectivity);
+      });
+
+      const max = Math.max(...values);
+
+      return getConnectivityScore(value) === max && max > 0;
+    }
+
+    if (specKey === "OS") {
+      const values = products.map((product) => {
+        const variant = getSelectedVariant(product);
+        return getOSScore(variant.specs?.OS);
+      });
+
+      const max = Math.max(...values);
+
+      return getOSScore(value) === max && max > 0;
+    }
+
+
+
+    // Default numeric comparison
     const values = products.map((product) => {
       const variant = getSelectedVariant(product);
-      return getChipsetRank(variant.specs?.Chipset);
+      return extractNumber(variant.specs?.[specKey]);
     });
 
     const max = Math.max(...values);
 
-    return getChipsetRank(value) === max && max > 0;
-  }
-
-  if (specKey === "Storage") {
-  const values = products.map((product) => {
-    const variant = getSelectedVariant(product);
-    return getStorageScore(variant.specs?.Storage);
-  });
-
-  const max = Math.max(...values);
-
-  return getStorageScore(value) === max && max > 0;
-}
-
-  if (specKey === "RAM") {
-  const values = products.map((product) => {
-    const variant = getSelectedVariant(product);
-    return getRamScore(variant.specs?.RAM);
-  });
-
-  const max = Math.max(...values);
-
-  return getRamScore(value) === max && max > 0;
-}
-
-if (specKey === "Battery") {
-  const values = products.map((product) => {
-    const variant = getSelectedVariant(product);
-    return getBatteryScore(variant.specs?.Battery);
-  });
-
-  const max = Math.max(...values);
-
-  return getBatteryScore(value) === max && max > 0;
-}
+    return extractNumber(value) === max && max > 0;
+  };
 
 
 
-  // Default numeric comparison
-  const values = products.map((product) => {
-    const variant = getSelectedVariant(product);
-    return extractNumber(variant.specs?.[specKey]);
-  });
 
-  const max = Math.max(...values);
+  const CHIPSET_RANKS = {
+    // Apple
+    "Apple A19": 100,
+    "Apple A19 Pro": 101,
+    "Apple A18": 96,
+    "Apple A18 Pro": 98,
+    "Apple A17 Pro": 94,
+    "Apple A16 Bionic": 90,
+    "Apple A15 Bionic": 86,
+    "Apple A14 Bionic": 82,
+    "Apple A13 Bionic": 78,
 
-  return extractNumber(value) === max && max > 0;
-};
+    // Snapdragon
+    "Snapdragon 8 Elite": 99,
+    "Snapdragon 8 Gen 4": 97,
+    "Snapdragon 8 Gen 3": 95,
+    "Snapdragon 8 Gen 2": 91,
+    "Snapdragon 8 Gen 1": 87,
+    "Snapdragon 888": 83,
+    "Snapdragon 870": 80,
+    "Snapdragon 865": 76,
 
-  
+    // MediaTek
+    "Dimensity 9400": 98,
+    "Dimensity 9300": 95,
+    "Dimensity 9200": 91,
+    "Dimensity 9000": 88,
 
-  
-const CHIPSET_RANKS = {
-  // Apple
-  "Apple A19": 100,
-  "Apple A19 Pro": 101,
-  "Apple A18": 96,
-  "Apple A18 Pro": 98,
-  "Apple A17 Pro": 94,
-  "Apple A16 Bionic": 90,
-  "Apple A15 Bionic": 86,
-  "Apple A14 Bionic": 82,
-  "Apple A13 Bionic": 78,
+    // Google
+    "Google Tensor G5": 96,
+    "Google Tensor G4": 92,
+    "Google Tensor G3": 88,
+    "Google Tensor G2": 84,
 
-  // Snapdragon
-  "Snapdragon 8 Elite": 99,
-  "Snapdragon 8 Gen 4": 97,
-  "Snapdragon 8 Gen 3": 95,
-  "Snapdragon 8 Gen 2": 91,
-  "Snapdragon 8 Gen 1": 87,
-  "Snapdragon 888": 83,
-  "Snapdragon 870": 80,
-  "Snapdragon 865": 76,
+    // Samsung
+    "Exynos 2500": 96,
+    "Exynos 2400": 92,
+    "Exynos 2200": 86,
+  };
 
-  // MediaTek
-  "Dimensity 9400": 98,
-  "Dimensity 9300": 95,
-  "Dimensity 9200": 91,
-  "Dimensity 9000": 88,
+  const DISPLAY_PANEL_RANKS = {
+    "super retina xdr oled": 100,
+    "dynamic amoled 2x": 98,
+    "ltpo amoled": 96,
+    "amoled": 92,
+    "oled": 88,
+    "ips lcd": 70,
+    "lcd": 60,
+  };
 
-  // Google
-  "Google Tensor G5": 96,
-  "Google Tensor G4": 92,
-  "Google Tensor G3": 88,
-  "Google Tensor G2": 84,
+  const BUILD_MATERIAL_RANKS = {
+    "grade 5 titanium": 100,
+    "titanium": 95,
+    "ceramic": 90,
+    "stainless steel": 85,
+    "aluminum": 75,
+    "glass": 65,
+    "plastic": 50,
+  };
 
-  // Samsung
-  "Exynos 2500": 96,
-  "Exynos 2400": 92,
-  "Exynos 2200": 86,
-};
+  const getBuildScore = (build = "") => {
+    const text = build.toLowerCase();
 
-
-
-const getChipsetRank = (chipset = "") => {
-  for (const key of Object.keys(CHIPSET_RANKS)) {
-    if (chipset.toLowerCase().includes(key.toLowerCase())) {
-      return CHIPSET_RANKS[key];
+    for (const material of Object.keys(BUILD_MATERIAL_RANKS)) {
+      if (text.includes(material)) {
+        return BUILD_MATERIAL_RANKS[material];
+      }
     }
-  }
 
-  return 0;
-};
+    return 0;
+  };
 
-const getRamScore = (ram = "") => {
-  const size = parseInt(ram) || 0;
+  const getDisplayScore = (display = "") => {
+    const text = display.toLowerCase();
 
-  let typeBonus = 0;
+    let score = 0;
 
-  const lowerRam = ram.toLowerCase();
+    // Panel Quality
+    for (const panel in DISPLAY_PANEL_RANKS) {
+      if (text.includes(panel)) {
+        score += DISPLAY_PANEL_RANKS[panel];
+        break;
+      }
+    }
 
-  if (lowerRam.includes("lpddr5x")) typeBonus = 3;
-  else if (lowerRam.includes("lpddr5")) typeBonus = 2;
-  else if (lowerRam.includes("lpddr4x")) typeBonus = 1;
+    // Refresh Rate
+    const refresh = text.match(/(\d+)\s*hz/i);
+    if (refresh) {
+      score += Number(refresh[1]);
+    }
 
-  return size * 10 + typeBonus;
-};
+    // Peak Brightness
+    const brightness = text.match(/(\d+)\s*nits?/i);
+    if (brightness) {
+      score += Math.round(Number(brightness[1]) / 100);
+    }
 
-const getStorageScore = (storage = "") => {
-  const lower = storage.toLowerCase();
-
-  let size = parseFloat(storage) || 0;
-
-  if (lower.includes("tb")) {
-    size *= 1024;
-  }
-
-  return size;
-};
-
-const getBatteryScore = (battery = "") => {
-  const lower = battery.toLowerCase();
-
-  // Battery capacity (mAh)
-  const capacityMatch = lower.match(/(\d+)\s*mah/);
-  const capacity = capacityMatch ? parseInt(capacityMatch[1]) : 0;
-
-  // Charging speed (W)
-  const chargingMatch = lower.match(/(\d+)\s*w/);
-  const charging = chargingMatch ? parseInt(chargingMatch[1]) : 0;
-
-  // Weight:
-  // Capacity is more important than charging speed
-  return capacity + charging * 5;
-};
-
-// console.log(getChipsetRank("Apple A19 Pro"));
-// console.log(getChipsetRank("Apple A14 Bionic"));
-// console.log(getChipsetRank("Snapdragon 8 Elite"));
-
-const SCORE_WEIGHTS = {
-  Chipset: 30,
-  RAM: 15,
-  Storage: 10,
-  Display: 15,
-  RearCamera: 15,
-  Battery: 10,
-  Build: 3,
-  Connectivity: 2,
-};
-
-
-const calculateScore = (variant) => {
-  let score = 0;
-
-  if (isBestValue("Chipset", variant.specs?.Chipset))
-  score += SCORE_WEIGHTS.Chipset;
-
-if (isBestValue("RAM", variant.specs?.RAM))
-  score += SCORE_WEIGHTS.RAM;
-
-if (isBestValue("Storage", variant.specs?.Storage))
-  score += SCORE_WEIGHTS.Storage;
-
- if (isBestValue("Rear Camera", variant.specs?.["Rear Camera"]))
-    score += SCORE_WEIGHTS.RearCamera;
-
-if (isBestValue("Display", variant.specs?.Display))
-  score += SCORE_WEIGHTS.Display;
-
-if (isBestValue("Connectivity", variant.specs?.Connectivity))
-  score += SCORE_WEIGHTS.Connectivity;
-
-if (isBestValue("Build", variant.specs?.Build))
-  score += SCORE_WEIGHTS.Build;
-
-if (isBestValue("Battery", variant.specs?.Battery))
-  score += SCORE_WEIGHTS.Battery;
-
-
-  return score;
-};
-
-const score1 =
-  products.length > 0
-    ? calculateScore(getSelectedVariant(products[0]))
-    : 0;
-
-const score2 =
-  products.length > 1
-    ? calculateScore(getSelectedVariant(products[1]))
-    : 0;
- 
-const winner =
-  score1 > score2
-    ? products[0]
-    : score2 > score1
-    ? products[1]
-    : null;
+    return score;
+  };
 
 
 
-    //handler for specs difference
+  const getChipsetRank = (chipset = "") => {
+    for (const key of Object.keys(CHIPSET_RANKS)) {
+      if (chipset.toLowerCase().includes(key.toLowerCase())) {
+        return CHIPSET_RANKS[key];
+      }
+    }
+
+    return 0;
+  };
+
+  const getRamScore = (ram = "") => {
+    const size = parseInt(ram) || 0;
+
+    let typeBonus = 0;
+
+    const lowerRam = ram.toLowerCase();
+
+    if (lowerRam.includes("lpddr5x")) typeBonus = 3;
+    else if (lowerRam.includes("lpddr5")) typeBonus = 2;
+    else if (lowerRam.includes("lpddr4x")) typeBonus = 1;
+
+    return size * 10 + typeBonus;
+  };
+
+  const getStorageScore = (storage = "") => {
+    const lower = storage.toLowerCase();
+
+    let size = parseFloat(storage) || 0;
+
+    if (lower.includes("tb")) {
+      size *= 1024;
+    }
+
+    return size;
+  };
+
+  const getBatteryScore = (battery = "") => {
+    const lower = battery.toLowerCase();
+
+    // Battery capacity (mAh)
+    const capacityMatch = lower.match(/(\d+)\s*mah/);
+    const capacity = capacityMatch ? parseInt(capacityMatch[1]) : 0;
+
+    // Charging speed (W)
+    const chargingMatch = lower.match(/(\d+)\s*w/);
+    const charging = chargingMatch ? parseInt(chargingMatch[1]) : 0;
+
+    // Weight:
+    // Capacity is more important than charging speed
+    return capacity + charging * 5;
+  };
+
+  const getRearCameraScore = (camera = "") => {
+    const text = camera.toLowerCase();
+
+    let score = 0;
+
+    // Main camera MP
+    const mainMatch = text.match(/(\d+)\s*mp/);
+    if (mainMatch) {
+      score += parseInt(mainMatch[1]);
+    }
+
+    // OIS
+    if (text.includes("ois")) score += 20;
+
+    // Telephoto
+    if (text.includes("telephoto")) score += 20;
+
+    // Periscope
+    if (text.includes("periscope")) score += 30;
+
+    // Ultrawide
+    if (text.includes("ultra wide")) score += 15;
+
+    // Optical Zoom
+    const zoom = text.match(/(\d+)x/);
+    if (zoom) {
+      score += parseInt(zoom[1]) * 5;
+    }
+
+    return score;
+  };
+
+  const getFrontCameraScore = (camera = "") => {
+    const text = camera.toLowerCase();
+
+    let score = 0;
+
+    const mp = text.match(/(\d+)\s*mp/);
+    if (mp) score += parseInt(mp[1]);
+
+    if (text.includes("autofocus")) score += 15;
+    if (text.includes("ois")) score += 20;
+    if (text.includes("4k")) score += 10;
+
+    return score;
+  };
+
+  const getConnectivityScore = (connectivity = "") => {
+    const text = connectivity.toLowerCase();
+
+    let score = 0;
+
+    // Cellular
+    if (text.includes("5g")) score += 30;
+
+    // Wi-Fi
+    if (text.includes("wi-fi 7")) score += 25;
+    else if (text.includes("wi-fi 6e")) score += 20;
+    else if (text.includes("wi-fi 6")) score += 15;
+
+    // Bluetooth
+    if (text.includes("bluetooth 5.4")) score += 15;
+    else if (text.includes("bluetooth 5.3")) score += 14;
+    else if (text.includes("bluetooth 5.2")) score += 13;
+    else if (text.includes("bluetooth 5.1")) score += 12;
+
+    // USB
+    if (text.includes("usb-c 4")) score += 20;
+    else if (text.includes("usb-c 3.2")) score += 18;
+    else if (text.includes("usb-c 3.1")) score += 16;
+    else if (text.includes("usb-c 2")) score += 10;
+
+    // Extras
+    if (text.includes("nfc")) score += 8;
+    if (text.includes("satellite")) score += 10;
+    if (text.includes("uwb")) score += 8;
+
+    return score;
+  };
+
+  const getOSScore = (os = "") => {
+    const text = os.toLowerCase();
+
+    let score = 0;
+
+    // OS Version
+    const version = text.match(/(ios|android)\s*(\d+)/i);
+    if (version) {
+      score += parseInt(version[2]) * 2;
+    }
+
+    // Software Updates
+    const updates = text.match(/(\d+)\s*years?/i);
+    if (updates) {
+      score += parseInt(updates[1]) * 5;
+    }
+
+    // AI Features
+    if (
+      text.includes("apple intelligence") ||
+      text.includes("galaxy ai") ||
+      text.includes("gemini")
+    ) {
+      score += 20;
+    }
+
+    return score;
+  };
+
+  // console.log(getChipsetRank("Apple A19 Pro"));
+  // console.log(getChipsetRank("Apple A14 Bionic"));
+  // console.log(getChipsetRank("Snapdragon 8 Elite"));
+
+  const SCORE_WEIGHTS = {
+    Chipset: 25,
+    RAM: 10,
+    Storage: 8,
+    Display: 15,
+    "Rear Camera": 15,
+    "Front Camera": 5,
+    Battery: 10,
+    OS: 5,
+    Build: 4,
+    Connectivity: 3,
+  };
+
+
+  const calculateScore = (variant) => {
+    let score = 0;
+
+    if (isBestValue("Chipset", variant.specs?.Chipset))
+      score += SCORE_WEIGHTS.Chipset;
+
+    if (isBestValue("RAM", variant.specs?.RAM))
+      score += SCORE_WEIGHTS.RAM;
+
+    if (isBestValue("Storage", variant.specs?.Storage))
+      score += SCORE_WEIGHTS.Storage;
+
+    if (isBestValue("Display", variant.specs?.Display))
+      score += SCORE_WEIGHTS.Display;
+
+    if (isBestValue("Rear Camera", variant.specs?.["Rear Camera"]))
+      score += SCORE_WEIGHTS["Rear Camera"];
+
+    if (isBestValue("Front Camera", variant.specs?.["Front Camera"]))
+      score += SCORE_WEIGHTS["Front Camera"];
+
+    if (isBestValue("Battery", variant.specs?.Battery))
+      score += SCORE_WEIGHTS.Battery;
+
+    if (isBestValue("OS", variant.specs?.OS))
+      score += SCORE_WEIGHTS.OS;
+
+    if (isBestValue("Build", variant.specs?.Build))
+      score += SCORE_WEIGHTS.Build;
+
+    if (isBestValue("Connectivity", variant.specs?.Connectivity))
+      score += SCORE_WEIGHTS.Connectivity;
+
+    return score;
+  };
+
+  const score1 =
+    products.length > 0
+      ? calculateScore(getSelectedVariant(products[0]))
+      : 0;
+
+  const score2 =
+    products.length > 1
+      ? calculateScore(getSelectedVariant(products[1]))
+      : 0;
+
+  const winner =
+    score1 > score2
+      ? products[0]
+      : score2 > score1
+        ? products[1]
+        : null;
+
+
+  //progress bar helper
+  const getScoreColor = (score) => {
+    if (score >= 80)
+      return {
+        bar: "bg-green-500",
+        text: "text-green-600",
+      };
+
+    if (score >= 60)
+      return {
+        bar: "bg-yellow-500",
+        text: "text-yellow-600",
+      };
+
+    if (score >= 40)
+      return {
+        bar: "bg-blue-500",
+        text: "text-blue-600",
+      };
+
+    return {
+      bar: "bg-red-500",
+      text: "text-red-600",
+    };
+  };
+
+  const score1Style = getScoreColor(score1);
+  const score2Style = getScoreColor(score2);
+
+  //handler for specs difference
   const shouldShowRow = (specKey) => {
     if (!showDifferences) return true;
 
@@ -826,7 +1096,7 @@ const winner =
             const variant = getSelectedVariant(product);
             const color = getSelectedColor(product);
             const score = calculateScore(variant);
-            
+
 
 
             return (
@@ -1029,11 +1299,11 @@ const winner =
               sticky top-16 z-40 lg:hidden
               transition-all duration-300 ease-in-out mt-2
               ${showStickyHeader
-                        ? "translate-y-0 opacity-100"
-                        : "-translate-y-full opacity-0 pointer-events-none"
-                      }
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-full opacity-0 pointer-events-none"
+            }
             `}
-                  >
+        >
           <div className="bg-white border-b shadow-sm">
             <div className="grid grid-cols-2 gap-2 px-2 py-1">
               {products.map((product) => {
@@ -1069,62 +1339,63 @@ const winner =
             </div>
           </div>
         </div>
-      {/* Specifications total score */}
-      <div className="mx-2  mb-6 rounded-xl border bg-white p-5 shadow">
-  <h2 className="mb-4 text-lg font-bold text-center">
-    Comparison Score
-  </h2>
-  {winner ? (
-  <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-center">
-    🏆 <span className="font-semibold text-green-700">
-      {winner.name} is the overall winner
-    </span>
-  </div>
-) : (
-  <div className="mb-4 rounded-lg bg-gray-100 p-3 text-center text-gray-600">
-    Both phones are evenly matched.
-  </div>
-)}
+        {/* Specifications total score */}
+        <div className="mx-2  mb-6 rounded-xl border bg-white p-5 shadow">
+          <h2 className="mb-4 text-lg font-bold text-center">
+            Comparison Score
+          </h2>
+          {winner ? (
+            <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-center">
+              🏆 <span className="font-semibold text-green-700">
+                {winner.name} is the overall winner
+              </span>
+            </div>
+          ) : (
+            <div className="mb-4 rounded-lg bg-gray-100 p-3 text-center text-gray-600">
+              Both phones are evenly matched.
+            </div>
+          )}
 
 
-  <div className="grid grid-cols-2 gap-4">
-    {/* Product 1 */}
-    <div className="text-center">
-      <h3 className="text-sm font-semibold truncate">
-        {products?.[0]?.name}
-      </h3>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Product 1 */}
+            <div className="text-center">
+              <h3 className="text-sm font-semibold truncate">
+                {products?.[0]?.name}
+              </h3>
 
-      <p className="mt-2 text-3xl font-bold text-blue-600">
-        {score1}
-      </p>
+              <p className={`text-3xl font-bold ${score1Style.text}`}>
+                {score1}/100
+              </p>
 
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
-        <div
-          className="h-full rounded-full bg-blue-600"
-          style={{ width: `${score1}%` }}
-        />
-      </div>
-    </div>
+              <div className="h-2 mt-1 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${score1Style.bar}`}
+                  style={{ width: `${score1}%` }}
+                />
+              </div>
+            </div>
 
-    {/* Product 2 */}
-    <div className="text-center">
-      <h3 className="text-sm font-semibold truncate">
-        {products?.[1]?.name}
-      </h3>
+            {/* Product 2 */}
+            <div className="text-center">
+              <h3 className="text-sm font-semibold truncate">
+                {products?.[1]?.name}
+              </h3>
 
-      <p className="mt-2 text-3xl font-bold text-blue-600">
-        {score2}
-      </p>
+              <p className={`text-3xl font-bold ${score2Style.text}`}>
+                {score2}/100
+              </p>
 
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
-        <div
-          className="h-full rounded-full bg-blue-600"
-          style={{ width: `${score2}%` }}
-        />
-      </div>
-    </div>
-  </div>
-</div>
+              <div className="h-2 mt-1 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${score2Style.bar}`}
+                  style={{ width: `${score2}%` }}
+                />
+              </div>
+
+            </div>
+          </div>
+        </div>
 
         {/* Specifications Difference */}
 
@@ -1171,8 +1442,8 @@ const winner =
                           <span className="font-medium text-gray-700">Chipset</span>
                           <span
                             className={`break-words rounded px-2 py-1 ${isBestValue("Chipset", variant.specs?.Chipset)
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "text-gray-900"
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
                               }`}
                           >{variant.specs?.Chipset || "-"}
 
@@ -1211,8 +1482,8 @@ const winner =
                           <span className="font-medium text-gray-700">Storage</span>
                           <span
                             className={`break-words rounded px-2 py-1 ${isBestValue("Storage", variant.specs?.Storage)
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "text-gray-900"
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
                               }`}
                           >{variant.specs?.Storage || "-"}
                             {isBestValue("Storage", variant.specs?.Storage) && (
@@ -1230,8 +1501,8 @@ const winner =
                           <span className="font-medium text-gray-700">Operating System</span>
                           <span
                             className={`break-words rounded px-2 py-1 ${isBestValue("OS", variant.specs?.OS)
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "text-gray-900"
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
                               }`}
                           >{variant.specs?.OS || "-"}
                             {isBestValue("OS", variant.specs?.OS) && (
@@ -1270,8 +1541,8 @@ const winner =
 
                         <span
                           className={`break-words rounded px-2 py-1 ${isBestValue("Display", variant.specs?.Display)
-                              ? "bg-green-100 text-green-700 font-semibold"
-                              : "text-gray-900"
+                            ? "bg-green-100 text-green-700 font-semibold"
+                            : "text-gray-900"
                             }`}
                         >
                           {variant.specs?.Display || "-"}
@@ -1309,8 +1580,8 @@ const winner =
                           <span className="font-medium text-gray-700">Rear Camera</span>
                           <span
                             className={`break-words rounded px-2 py-1 ${isBestValue("Rear Camera", variant.specs?.["Rear Camera"])
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "text-gray-900"
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
                               }`}
                           >{variant.specs?.["Rear Camera"] || "-"}
                             {isBestValue("Rear Camera", variant.specs?.["Rear Camera"]) && (
@@ -1328,8 +1599,8 @@ const winner =
                           <span className="font-medium text-gray-700">Front Camera</span>
                           <span
                             className={`break-words rounded px-2 py-1 ${isBestValue("Front Camera", variant.specs?.["Front Camera"])
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "text-gray-900"
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
                               }`}
                           >{variant.specs?.["Front Camera"] || "-"}
 
@@ -1366,8 +1637,8 @@ const winner =
                         <span className="font-medium text-gray-700">Battery</span>
                         <span
                           className={`break-words rounded px-2 py-1 ${isBestValue("Battery", variant.specs?.Battery)
-                              ? "bg-green-100 text-green-700 font-semibold"
-                              : "text-gray-900"
+                            ? "bg-green-100 text-green-700 font-semibold"
+                            : "text-gray-900"
                             }`}
                         >
                           {variant.specs?.Battery || "-"}
@@ -1405,8 +1676,8 @@ const winner =
                           <span className="font-medium text-gray-700">Build</span>
                           <span
                             className={`break-words rounded px-2 py-1 ${isBestValue("Build", variant.specs?.Build)
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "text-gray-900"
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
                               }`}
                           >{variant.specs?.Build || "-"}
                             {isBestValue("Build", variant.specs?.Build) && (
@@ -1424,8 +1695,8 @@ const winner =
                           <span className="font-medium text-gray-700">Other</span>
                           <span
                             className={`break-words rounded px-2 py-1 ${isBestValue("Other", variant.specs?.Other)
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "text-gray-900"
+                              ? "bg-green-100 text-green-700 font-semibold"
+                              : "text-gray-900"
                               }`}
                           >{variant.specs?.Other || "-"}
                             {isBestValue("Other", variant.specs?.Other) && (
@@ -1460,8 +1731,8 @@ const winner =
                         <span className="font-medium text-gray-700">Connectivity</span>
                         <span
                           className={`break-words rounded px-2 py-1 ${isBestValue("Connectivity", variant.specs?.Connectivity)
-                              ? "bg-green-100 text-green-700 font-semibold"
-                              : "text-gray-900"
+                            ? "bg-green-100 text-green-700 font-semibold"
+                            : "text-gray-900"
                             }`}
                         >{variant.specs?.Connectivity || "-"}
                           {isBestValue("Connectivity", variant.specs?.Connectivity) && (
