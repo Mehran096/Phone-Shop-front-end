@@ -6,8 +6,9 @@ import {
   removeFromCompare,
 } from '../slices/compareSlice';
 import { FaChevronDown, FaTrophy } from 'react-icons/fa';
-
-const CompareProducts = ({ products, showRemove = true, }) => {
+import CompareSearch from './CompareSearch';
+ 
+const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
   const dispatch = useDispatch();
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [showDifferences, setShowDifferences] = useState(false);
@@ -612,20 +613,24 @@ const CompareProducts = ({ products, showRemove = true, }) => {
   };
   //const variant = getSelectedVariant(product);
   //console.log(products);
+
+//   const replaceProduct = (index, newProduct) => {
+//   console.log("Replace:", index, newProduct);
+// };
   const TableRow = ({ title, renderValue }) => (
     <tr className="border-b last:border-b-0">
       <td className="bg-gray-50 font-semibold text-gray-800 px-5 py-4 min-w-[260px] text-center">
         {title}
       </td>
 
-      {products.map((product) => (
-        <td
-          key={product._id}
-          className="px-5 py-4 text-center"
-        >
-          {renderValue(product)}
-        </td>
-      ))}
+      {products.map((product, index) => (
+  <td
+    key={`${product._id}-${index}`}
+    className="px-5 py-4 text-center"
+  >
+    {renderValue(product, index)}
+  </td>
+))}
     </tr>
   );
 
@@ -721,6 +726,21 @@ const CompareProducts = ({ products, showRemove = true, }) => {
       <div className="hidden lg:block overflow-x-auto rounded-xl border bg-white shadow-sm">
         <table className="min-w-[1200px] w-full border-collapse">
           <thead className='w-56'>
+
+{showRemove && (
+            <TableRow
+            title="Search"
+            renderValue={(product, index) => (
+            <CompareSearch
+            currentSlug={product.slug}
+            compareProductIds={products}
+            onSelect={(selectedProduct) =>
+              onReplace(index, selectedProduct)
+            }
+          />
+            )}
+          />
+)}
             <TableRow
               title="image"
               renderValue={(product) => {
@@ -1092,18 +1112,31 @@ const CompareProducts = ({ products, showRemove = true, }) => {
 
         <div className="grid grid-cols-2 gap-2">
 
-          {products.map((product) => {
+          {products.slice(0, 2).map((product, index) => {
             const variant = getSelectedVariant(product);
             const color = getSelectedColor(product);
             const score = calculateScore(variant);
+            const compareProductIds = products.map((p) => p._id);
 
 
 
             return (
               <div
-                key={product._id}
+               key={`${product._id}-${index}`}
                 className="w-full bg-white rounded-xl border shadow-md overflow-visible"
               >
+                {showRemove && (
+                <div className="p-2 border-b">
+                  <CompareSearch
+                    currentSlug={product.slug}
+                    compareProductIds={compareProductIds}
+                    onSelect={(selectedProduct) =>
+                      onReplace(index, selectedProduct)
+                    }
+                  />
+                </div>
+                )}
+
                 {/* Product Image */}
                 <div className="relative bg-gray-50 pt-8 pb-6 flex justify-center">
                   {showRemove && (
@@ -1306,7 +1339,7 @@ const CompareProducts = ({ products, showRemove = true, }) => {
         >
           <div className="bg-white border-b shadow-sm">
             <div className="grid grid-cols-2 gap-2 px-2 py-1">
-              {products.map((product) => {
+              {products.slice(0, 2).map((product) => {
                 const variant = getSelectedVariant(product);
                 const color = getSelectedColor(product);
 

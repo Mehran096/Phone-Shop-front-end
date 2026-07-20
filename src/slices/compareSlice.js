@@ -30,6 +30,12 @@ const compareSlice = createSlice({
       );
     },
 
+    replaceCompareProduct: (state, action) => {
+  const { index, product } = action.payload;
+
+  state.products[index] = product;
+},
+
     clearCompare: (state) => {
       state.products = [];
     },
@@ -39,6 +45,7 @@ const compareSlice = createSlice({
 export const {
   addToCompare,
   removeFromCompare,
+  replaceCompareProduct,
   clearCompare,
 } = compareSlice.actions;
 

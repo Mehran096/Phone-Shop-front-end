@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FaSearch, FaTimes } from 'react-icons/fa'
 import { useGetSearchSuggestionsQuery } from '../slices/productsApiSlice';
 
-const CompareSearch = ({ currentSlug, setCompareSlug, }) => {
+const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, compareProductIds=[] }) => {
     const navigate = useNavigate()
     const itemRefs = useRef([]);
     const searchRef = useRef(null);
@@ -20,9 +20,15 @@ const CompareSearch = ({ currentSlug, setCompareSlug, }) => {
         }
     );
 
-    const products = (suggestions || []).filter(
-        (product) => product.slug !== currentSlug
-    );
+    const products = (suggestions || []).filter((product) => {
+  // Don't show the current phone
+  if (product.slug === currentSlug) return false;
+
+  // Don't show phones already in comparison
+  return !compareProductIds.some(
+    (p) => p._id === product._id
+  );
+});
 
     useEffect(() => {
         setSelectedIndex(-1);
@@ -61,24 +67,26 @@ const CompareSearch = ({ currentSlug, setCompareSlug, }) => {
         };
     }, [keyword]);
 
-    const submitHandler = (e) => {
-        e.preventDefault();
+   const submitHandler = (e) => {
+    e.preventDefault();
 
-        if (
-            keyword.trim() &&
-            products.length > 0
-        ) {
-            const selectedProduct =
-                selectedIndex >= 0
-                    ? products[selectedIndex]
-                    : products[0];
+    if (keyword.trim() && products.length > 0) {
+        const selectedProduct =
+            selectedIndex >= 0
+                ? products[selectedIndex]
+                : products[0];
 
+        if (onSelect) {
+            onSelect(selectedProduct);
+        } else {
             setCompareSlug(selectedProduct.slug);
-            setKeyword(selectedProduct.name);
-            setDisplayKeyword(selectedProduct.name);
-            setShowSuggestions(false);
         }
-    };
+
+        setKeyword(selectedProduct.name);
+        setDisplayKeyword(selectedProduct.name);
+        setShowSuggestions(false);
+    }
+};
 
 
     const highlightText = (text, keyword) => {
@@ -152,20 +160,27 @@ const CompareSearch = ({ currentSlug, setCompareSlug, }) => {
 
                 break;
 
-            case 'Enter':
-                if (selectedIndex >= 0) {
-                    e.preventDefault();
+           case "Enter":
+    if (selectedIndex >= 0) {
+        e.preventDefault();
 
-                    if (selectedIndex < products.length) {
-                        setCompareSlug(products[selectedIndex].slug);
-                        setKeyword(products[selectedIndex].name);
-                        setDisplayKeyword(products[selectedIndex].name);
-                    }
+        if (selectedIndex < products.length) {
+            const selectedProduct = products[selectedIndex];
 
-                    setShowSuggestions(false);
-                    setSelectedIndex(-1);
-                }
-                break;
+            if (onSelect) {
+                onSelect(selectedProduct);
+            } else if (setCompareSlug) {
+                setCompareSlug(selectedProduct.slug);
+            }
+
+            setKeyword(selectedProduct.name);
+            setDisplayKeyword(selectedProduct.name);
+        }
+
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+    }
+    break;
 
             case 'Escape':
                 e.preventDefault();
@@ -248,20 +263,25 @@ const CompareSearch = ({ currentSlug, setCompareSlug, }) => {
                     ) : products.length > 0 ? (
                         <>
                             {products.map((product, index) => (
-                                <div
-                                    key={product._id}
+                                 <div
+                                     key={`${product._id}-${index}`}
                                     ref={(el) => (itemRefs.current[index] = el)}
                                     className={`flex items-center gap-4 px-5 py-4 border-b border-gray-100 last:border-b-0 cursor-pointer transition-all duration-150 ${selectedIndex === index
                                         ? 'bg-blue-50'
                                         : 'hover:bg-gray-50'
                                         }`}
                                     onClick={() => {
-                                        setCompareSlug(product.slug);
+                                        if (onSelect) {
+                                            onSelect(product);
+                                        } else if (setCompareSlug) {
+                                            setCompareSlug(product.slug);
+                                        }
+
                                         setKeyword(product.name);
                                         setDisplayKeyword(product.name);
                                         setShowSuggestions(false);
                                         setSelectedIndex(-1);
-                                        }}
+                                    }}
                                 >
                                     <img
                                         src={product.colors[0]?.images?.[0]?.url}

@@ -6,7 +6,7 @@ import {
   removeFromCompare,
 } from '../slices/compareSlice';
 import { toast } from 'react-toastify';
- 
+
 const Product = ({ product, userInfo }) => {
   const dispatch = useDispatch();
 
@@ -63,28 +63,32 @@ const Product = ({ product, userInfo }) => {
       )}
       <button
         type="button"
-       className={`absolute z-10 flex items-center justify-center
+        className={`absolute z-10 flex items-center justify-center
            w-7 h-7  lg:w-9 lg:h-9 rounded-full border shadow transition-all
 
           top-1 left-1 lg:top-3 lg:left-3 lg:right-auto
 
-          ${
-            isCompared
-              ? "bg-blue-600 text-white border-blue-600"
-              : "bg-white text-gray-600 border-gray-200 hover:text-white hover:border-blue-600"
+          ${isCompared
+            ? "bg-blue-600 text-white border-blue-600"
+            : "bg-white text-gray-600 border-gray-200 hover:text-white hover:border-blue-600"
           }`}
         title="Compare"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
 
+          const maxCompare = window.innerWidth < 1024 ? 2 : 4;
+
           if (isCompared) {
             dispatch(removeFromCompare(product._id));
           } else {
-             if (compareProducts.length >= 4) {
-      toast.warning("You can compare up to 4 phones only.");
-      return;
-    }
+            if (compareProducts.length >= maxCompare) {
+              toast.warning(
+                `You can compare up to ${maxCompare} phones only.`
+              );
+              return;
+            }
+
             dispatch(
               addToCompare({
                 _id: product._id,
@@ -95,13 +99,13 @@ const Product = ({ product, userInfo }) => {
                 defaultPrice: mainPrice,
                 rating: product.rating,
                 numReviews: product.numReviews,
-                defaultStorage:product.variants?.[0].storage,
-                defaultColor:product.variants?.[0].colors?.[0].name,
+                defaultStorage: product.variants?.[0].storage,
+                defaultColor: product.variants?.[0].colors?.[0].name,
                 specs: product.variants?.[0]?.specs || {},
-                variants:product.variants
-                 
+                variants: product.variants,
               })
-            )
+            );
+
             toast.success("Added to compare");
           }
         }}
@@ -112,7 +116,7 @@ const Product = ({ product, userInfo }) => {
           className={isCompared ? "text-white" : "text-gray-700"}
         />
       </button>
-<div></div>
+      <div></div>
       <Link
         to={
           product.defaultStorage && product.defaultColor
