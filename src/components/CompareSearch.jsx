@@ -266,7 +266,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, compareProductId
                                  <div
                                      key={`${product._id}-${index}`}
                                     ref={(el) => (itemRefs.current[index] = el)}
-                                    className={`flex items-center gap-4 px-5 py-4 border-b border-gray-100 last:border-b-0 cursor-pointer transition-all duration-150 ${selectedIndex === index
+                                    className={`flex items-center gap-1 sm:gap-4 px-2 sm:px-5 py-3 sm:py-4 border-b border-gray-100 last:border-b-0 cursor-pointer transition-all duration-150 ${selectedIndex === index
                                         ? 'bg-blue-50'
                                         : 'hover:bg-gray-50'
                                         }`}
@@ -286,11 +286,11 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, compareProductId
                                     <img
                                         src={product.colors[0]?.images?.[0]?.url}
                                         alt={product.name}
-                                        className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg bg-gray-50 p-1"
+                                        className="w-10 h-10 sm:w-16 sm:h-16 object-contain rounded-lg bg-gray-50 p-1"
                                     />
 
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                                        <h4 className="text-xs sm:text-base font-medium text-gray-900 truncate">
                                             {highlightText(product.name, keyword)}
                                         </h4>
 
@@ -298,7 +298,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, compareProductId
                                             {product.brand}
                                         </p>
 
-                                        <p className="text-sm font-semibold text-blue-600">
+                                        <p className="text-xs font-semibold text-blue-600">
                                             From ${product.minPrice?.toLocaleString()}
                                         </p>
                                     </div>
