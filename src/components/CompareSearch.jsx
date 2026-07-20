@@ -266,7 +266,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, compareProductId
                                  <div
                                      key={`${product._id}-${index}`}
                                     ref={(el) => (itemRefs.current[index] = el)}
-                                    className={`flex items-center gap-1 sm:gap-4 px-2 sm:px-5 py-3 sm:py-4 border-b border-gray-100 last:border-b-0 cursor-pointer transition-all duration-150 ${selectedIndex === index
+                                    className={`flex items-center gap-1 sm:gap-4 px-1 sm:px-5 py-3 sm:py-4 border-b border-gray-100 last:border-b-0 cursor-pointer transition-all duration-150 ${selectedIndex === index
                                         ? 'bg-blue-50'
                                         : 'hover:bg-gray-50'
                                         }`}
