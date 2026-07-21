@@ -9,20 +9,27 @@ const compareSlice = createSlice({
   initialState,
   reducers: {
     addToCompare: (state, action) => {
-      const product = action.payload;
+  const product = action.payload;
 
-      // Already added
-      const exists = state.products.find(
-        (x) => x._id === product._id
-      );
+  const exists = state.products.find(
+    (x) => x?._id === product._id
+  );
 
-      if (exists) return;
+  if (exists) return;
 
-      // Maximum 4 phones
-      if (state.products.length >= 4) return;
+  // Reuse an empty slot first
+  const emptyIndex = state.products.findIndex((x) => x === null);
 
-      state.products.push(product);
-    },
+  if (emptyIndex !== -1) {
+    state.products[emptyIndex] = product;
+    return;
+  }
+
+  // Maximum 4 real phones
+  if (state.products.filter(Boolean).length >= 4) return;
+
+  state.products.push(product);
+},
 
     clearCompareSlot: (state, action) => {
   state.products[action.payload] = null;

@@ -14,9 +14,13 @@ const Product = ({ product, userInfo }) => {
     (state) => state.compare
   );
 
-  const isCompared = compareProducts
-  .filter(Boolean)
-  .some((item) => item._id === product._id);
+   const activeCompareProducts = compareProducts.filter(Boolean);
+//    console.log("compareProducts:", compareProducts);
+// console.log("activeCompareProducts:", activeCompareProducts);
+
+  const isCompared = activeCompareProducts.some(
+    (item) => item?._id === product._id
+  );
   // Find the variant/color to display
   const selectedVariant =
     product.defaultStorage
@@ -80,9 +84,10 @@ const Product = ({ product, userInfo }) => {
           const maxCompare = window.innerWidth < 1024 ? 2 : 4;
 
           if (isCompared) {
+            
             dispatch(removeFromCompare(product._id));
           } else {
-            if (compareProducts.length >= maxCompare) {
+            if (activeCompareProducts.length >= maxCompare) {
               toast.warning(
                 `You can compare up to ${maxCompare} phones only.`
               );

@@ -8,7 +8,7 @@ const CompareBar = () => {
   const [showCompareBar, setShowCompareBar] = useState(true);
 
   const { products } = useSelector((state) => state.compare);
-  console.log(products)
+  //console.log(products)
   if (products.length === 0) return null;
 
   return (
@@ -38,7 +38,7 @@ const CompareBar = () => {
               <div className="flex gap-3 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
 
                 {products.map((product, index) => {
-                   console.log(product);
+                   //console.log(product);
                    if (!product) {
                         return (
                           <div
@@ -68,7 +68,7 @@ const CompareBar = () => {
                       src={product?.defaultImage}
                       alt={product?.name || ""}
                       className="w-12 h-12 lg:w-16 lg:h-16 object-contain rounded"
-                       onError={(e) => console.log("Broken image:", product)}
+                       //onError={(e) => console.log("Broken image:", product)}
                     />
                    
 

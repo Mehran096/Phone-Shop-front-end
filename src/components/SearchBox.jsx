@@ -71,25 +71,31 @@ const SearchBox = ({ onSearchComplete }) => {
   }
 
 
-  const highlightText = (text, keyword) => {
-    if (!keyword) return text;
+  const highlightText = (text = "", keyword = "") => {
+  if (!keyword) return text;
 
-    const regex = new RegExp(`(${keyword})`, 'gi');
-    const parts = text.split(regex);
+  // Escape special regex characters
+  const escapedKeyword = keyword.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    "\\$&"
+  );
 
-    return parts.map((part, index) =>
-      part.toLowerCase() === keyword.toLowerCase() ? (
-        <span
-          key={index}
-          className="font-bold text-blue-600"
-        >
-          {part}
-        </span>
-      ) : (
-        part
-      )
-    );
-  };
+  const regex = new RegExp(`(${escapedKeyword})`, "gi");
+  const parts = text.split(regex);
+
+  return parts.map((part, index) =>
+    part.toLowerCase() === keyword.toLowerCase() ? (
+      <span
+        key={index}
+        className="font-bold text-blue-600"
+      >
+        {part}
+      </span>
+    ) : (
+      part
+    )
+  );
+};
 
   //   const handleBlur = () => {
   //   setTimeout(() => {

@@ -7,7 +7,7 @@ import {
 } from '../slices/compareSlice';
 import { FaChevronDown, FaTrophy } from 'react-icons/fa';
 import CompareSearch from './CompareSearch';
- 
+
 const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) => {
   const dispatch = useDispatch();
   const [showStickyHeader, setShowStickyHeader] = useState(false);
@@ -50,16 +50,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   }, [products]);
 
   const getSelectedVariant = (product) => {
-  if (!product) return null;
+    if (!product) return null;
 
-  const selected = selectedVariants[product._id];
+    const selected = selectedVariants[product._id];
 
-  return (
-    product.variants.find(
-      (v) => v.storage === selected?.storage
-    ) || product.variants[0]
-  );
-};
+    return (
+      product.variants.find(
+        (v) => v.storage === selected?.storage
+      ) || product.variants[0]
+    );
+  };
 
   //for mobile screen only
   useEffect(() => {
@@ -137,7 +137,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
     }
 
     if (specKey === "RAM") {
-      const values =getValidProducts().map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getRamScore(variant.specs?.RAM);
       });
@@ -227,14 +227,14 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
 
     // Default numeric comparison
-   const values = products
-  .map((product) => {
-    if (!product) return null;
+    const values = products
+      .map((product) => {
+        if (!product) return null;
 
-    const variant = getSelectedVariant(product);
-    return variant?.specs?.[specKey];
-  })
-  .filter(Boolean);
+        const variant = getSelectedVariant(product);
+        return variant?.specs?.[specKey];
+      })
+      .filter(Boolean);
 
     const max = Math.max(...values);
 
@@ -623,9 +623,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   //const variant = getSelectedVariant(product);
   //console.log(products);
 
-//   const replaceProduct = (index, newProduct) => {
-//   console.log("Replace:", index, newProduct);
-// };
+  //   const replaceProduct = (index, newProduct) => {
+  //   console.log("Replace:", index, newProduct);
+  // };
   const TableRow = ({ title, renderValue }) => (
     <tr className="border-b last:border-b-0">
       <td className="bg-gray-50 font-semibold text-gray-800 px-5 py-4 min-w-[260px] text-center">
@@ -633,13 +633,13 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
       </td>
 
       {products.map((product, index) => (
-  <td
-    key={product ? `${product._id}-${index}` : `empty-${index}`}
-    className="px-5 py-4 text-center"
-  >
-    {renderValue(product, index)}
-  </td>
-))}
+        <td
+          key={product ? `${product._id}-${index}` : `empty-${index}`}
+          className="w-70 min-w-[320px] max-w-[320px] px-5 py-4 text-center align-top"
+        >
+          {renderValue(product, index)}
+        </td>
+      ))}
     </tr>
   );
 
@@ -736,51 +736,50 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
         <table className="min-w-[1200px] w-full border-collapse">
           <thead className='w-56'>
 
-    {showRemove && (
-  <TableRow
-    title="Search"
-    renderValue={(product, index) => (
-      <CompareSearch
-        currentSlug={product?.slug || null}
-        compareProductIds={products
-          .filter(Boolean)
-          .map((p) => p._id)}
-        onSelect={(selectedProduct) =>
-          onReplace(index, selectedProduct)
-        }
-      />
-    )}
-  />
-)}
+            {showRemove && (
+              <TableRow
+                title="Search"
+                renderValue={(product, index) => (
+
+                  <CompareSearch
+                    currentSlug={product?.slug || null}
+                    compareProductIds={products
+                      .filter(Boolean)
+                      .map((p) => p._id)}
+                    onSelect={(selectedProduct) =>
+                      onReplace(index, selectedProduct)
+                    }
+                  />
+
+                )}
+              />
+            )}
             <TableRow
               title="image"
               renderValue={(product, index) => {
                 const compareProductIds = products.filter(Boolean).map((p) => p._id);
                 if (!product) {
-                return (
-                  <div className="flex flex-col items-center py-4">
-                    <CompareSearch
-                      currentSlug={null}
-                      compareProductIds={compareProductIds}
-                      onSelect={(selectedProduct) =>
-                        onReplace(index, selectedProduct)
-                      }
-                    />
-                  </div>
-                );
-              }
+                  return (
+                    <div className="flex flex-col items-center py-4 px-10">
+                      <span className="text-gray-400 italic">
+                        No phone selected.
+                        Search and add a phone to compare.
+                      </span>
+                    </div>
+                  );
+                }
                 const variant = getSelectedVariant(product);
                 const color = getSelectedColor(product, variant);
 
                 return (
-                  <div className="flex flex-col items-center py-4">
+                  <div className="w-full flex flex-col items-center py-4">
                     <img
                       src={
                         color?.images?.[0]?.url ||
                         product.defaultImage
                       }
                       alt={product.name}
-                      className="h-52 w-auto object-contain"
+                      className="w-56 h-56 object-contain"
                     />
 
                     {showRemove && (
@@ -795,55 +794,55 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                 );
               }}
             />
-           <TableRow
-  title="Name"
-  renderValue={(product) =>
-    product ? (
-      <span className="font-medium">
-        {product.name}
-      </span>
-    ) : (
-      <span className="text-gray-400 italic">
-        No phone selected
-      </span>
-    )
-  }
-/>
+            <TableRow
+              title="Name"
+              renderValue={(product) =>
+                product ? (
+                  <span className="font-medium">
+                    {product.name}
+                  </span>
+                ) : (
+                  <span className="text-gray-400 italic">
+                    No phone selected
+                  </span>
+                )
+              }
+            />
 
-           <TableRow
-  title="Brand"
-  renderValue={(product) =>
-    product ? product.brand || "-" : "-"
-  }
-/>
+            <TableRow
+              title="Brand"
+              renderValue={(product) =>
+                product ? product.brand || "-" : "-"
+              }
+            />
 
-<TableRow
-  title="Starting Price"
-  renderValue={(product) => {
-    if (!product) return "-";
+            <TableRow
+              title="Starting Price"
+              renderValue={(product) => {
+                if (!product) return "-";
 
-    const color = getSelectedColor(product);
-    return `$${color?.price || 0}`;
-  }}
-/>
+                const color = getSelectedColor(product);
+                return `$${color?.price || 0}`;
+              }}
+            />
 
-<TableRow
-  title="Rating"
-  renderValue={(product) =>
-    product ? (
-      <>⭐ {product.rating?.toFixed(1) || "0.0"}</>
-    ) : (
-      "-"
-    )
-  }
-/>
+            <TableRow
+              title="Rating"
+              renderValue={(product) =>
+                product ? (
+                  <>⭐ {product.rating?.toFixed(1) || "0.0"}</>
+                ) : (
+                  "-"
+                )
+              }
+            />
 
-<TableRow
-  title="Reviews"
-  renderValue={(product) =>
-    product ? product.numReviews : "-"
-  }
-/>
+            <TableRow
+              title="Reviews"
+              renderValue={(product) =>
+                product ? product.numReviews : "-"
+              }
+            />
             <TableRow
               title="Storage"
               renderValue={(product) => {
@@ -878,7 +877,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             <TableRow
               title="Colors"
               renderValue={(product) => {
-                 if (!product) return "-";
+                if (!product) return "-";
                 const variant = getSelectedVariant(product);
 
                 return (
@@ -907,35 +906,35 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                 );
               }}
             />
-           <TableRow
-            title="Display"
-            renderValue={(product) => {
-              if (!product) return "-";
+            <TableRow
+              title="Display"
+              renderValue={(product) => {
+                if (!product) return "-";
 
-              const variant = getSelectedVariant(product);
-              return variant?.specs?.Display || "-";
-            }}
-          />
+                const variant = getSelectedVariant(product);
+                return variant?.specs?.Display || "-";
+              }}
+            />
 
-          <TableRow
-            title="RAM"
-            renderValue={(product) => {
-              if (!product) return "-";
+            <TableRow
+              title="RAM"
+              renderValue={(product) => {
+                if (!product) return "-";
 
-              const variant = getSelectedVariant(product);
-              return variant?.specs?.RAM || "-";
-            }}
-          />
+                const variant = getSelectedVariant(product);
+                return variant?.specs?.RAM || "-";
+              }}
+            />
 
-          <TableRow
-            title="Rear Camera"
-            renderValue={(product) => {
-              if (!product) return "-";
+            <TableRow
+              title="Rear Camera"
+              renderValue={(product) => {
+                if (!product) return "-";
 
-              const variant = getSelectedVariant(product);
-              return variant?.specs?.["Rear Camera"] || "-";
-            }}
-          />
+                const variant = getSelectedVariant(product);
+                return variant?.specs?.["Rear Camera"] || "-";
+              }}
+            />
 
             <TableRow
               title="Front Camera"
@@ -1001,10 +1000,19 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                 title="Chipset"
 
                 renderValue={(product) => {
-                  if (!product) return "-";
+                  if (!product) {
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected
+                          Search and add a phone to compare.
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
 
-                  return variant?.specs?.Chipset || "-";
+                  return variant?.specs?.Chipset || "Search and add a phone to compare.";
                 }}
 
               />
@@ -1054,7 +1062,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
               <TableRow
                 title="Display"
                 renderValue={(product) => {
-                  if (!product) return "-";
+                  if (!product) {
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected
+                          Search and add a phone to compare.
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
 
                   return variant?.specs?.Display || "-";
@@ -1074,7 +1091,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                 title="Rear Camera"
 
                 renderValue={(product) => {
-                  if (!product) return "-";
+                  if (!product) {
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected
+                          Search and add a phone to compare.
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
                   return variant?.specs?.["Rear Camera"] || "-";
                 }}
@@ -1102,7 +1128,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
               <TableRow
                 title="Battery"
                 renderValue={(product) => {
-                  if (!product) return "-";
+                  if (!product) {
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected
+                          Search and add a phone to compare.
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
                   return variant?.specs?.Battery || "-";
                 }}
@@ -1120,7 +1155,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
               <TableRow
                 title="Build"
                 renderValue={(product) => {
-                  if (!product) return "-";
+                  if (!product) {
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected
+                          Search and add a phone to compare.
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
                   return variant?.specs?.Build || "-";
                 }}
@@ -1156,7 +1200,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                 title="Connectivity"
 
                 renderValue={(product) => {
-                  if (!product) return "-";
+                  if (!product) {
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected
+                          Search and add a phone to compare.
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
                   return variant?.specs?.Connectivity || "-";
                 }}
@@ -1176,215 +1229,215 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
         <div className="grid grid-cols-2 gap-2">
 
           {products.slice(0, 2).map((product, index) => {
-           const variant = product ? getSelectedVariant(product) : null;
+            const variant = product ? getSelectedVariant(product) : null;
             const color = product ? getSelectedColor(product) : null;
             const score = variant ? calculateScore(variant) : 0;
-           const compareProductIds = products.filter(Boolean).map((p) => p._id);
+            const compareProductIds = products.filter(Boolean).map((p) => p._id);
 
 
 
             return (
               <div
-               key={product ? `${product._id}-${index}` : `empty-${index}`}
+                key={product ? `${product._id}-${index}` : `empty-${index}`}
                 className="w-full bg-white rounded-xl border shadow-md overflow-visible"
               >
-                 {!product ? (
-                
-                <div className="p-2 border-b">
-                  <CompareSearch
-                    currentSlug={null}
-                    compareProductIds={compareProductIds}
-                    onSelect={(selectedProduct) =>
-                      onReplace(index, selectedProduct)
-                    }
-                  />
-                </div>
-                
-              ) : (
-                <>
-                {/* Product Image */}
-                <div className="relative bg-gray-50 pt-8 pb-6 flex justify-center">
-                  {showRemove && (
-                    <button
-                     onClick={() => onClear(index)}
-                      className="absolute top-1 right-1 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center hover:bg-red-50"
-                    >
-                      ✕
-                    </button>
-                  )}
-                  <img
-                    src={variant.colors?.find(
-                      (c) =>
-                        c.name ===
-                        (selectedVariants[product._id]?.color ||
-                          variant.colors?.[0]?.name)
-                    )?.images?.[0]?.url}
-                    alt={product.name}
-                    className="h-40 w-auto object-contain"
-                  />
+                {!product ? (
+
+                  <div className="p-2 border-b">
+                    <CompareSearch
+                      currentSlug={null}
+                      compareProductIds={compareProductIds}
+                      onSelect={(selectedProduct) =>
+                        onReplace(index, selectedProduct)
+                      }
+                    />
+                  </div>
+
+                ) : (
+                  <>
+                    {/* Product Image */}
+                    <div className="relative bg-gray-50 pt-8 pb-6 flex justify-center">
+                      {showRemove && (
+                        <button
+                          onClick={() => onClear(index)}
+                          className="absolute top-1 right-1 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center hover:bg-red-50"
+                        >
+                          ✕
+                        </button>
+                      )}
+                      <img
+                        src={variant.colors?.find(
+                          (c) =>
+                            c.name ===
+                            (selectedVariants[product._id]?.color ||
+                              variant.colors?.[0]?.name)
+                        )?.images?.[0]?.url}
+                        alt={product.name}
+                        className="h-40 w-auto object-contain"
+                      />
 
 
 
-                </div>
+                    </div>
 
-                {/* Product Info */}
-                <div className="p-4">
+                    {/* Product Info */}
+                    <div className="p-4">
 
-                  <h2 className="font-semibold text-lg line-clamp-2">
-                    {product.name}
-                  </h2>
+                      <h2 className="font-semibold text-lg line-clamp-2">
+                        {product.name}
+                      </h2>
 
-                  {/* <p className="text-sm text-gray-500">
+                      {/* <p className="text-sm text-gray-500">
                     {product.brand}
                   </p> */}
 
-                  {/* Price */}
-                  <div className="mt-2 text-2xl font-bold text-blue-600">
-                    ${getSelectedColor(product)?.price?.toLocaleString() || 0}
-                  </div>
-
-                  {/* Rating */}
-                  <div className="flex items-center gap-2 mt-2">
-
-                    <span className="text-yellow-500">
-                      ★
-                    </span>
-
-                    <span className="font-medium">
-                      {product.rating?.toFixed(1) || 0}
-                    </span>
-
-                    <span className="text-gray-500">
-                      ({product.numReviews})
-                    </span>
-
-                  </div>
-
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-500">
-                        Comparison Score
-                      </span>
-
-                      <span className="font-bold text-blue-600">
-                        {score}
-                      </span>
-                    </div>
-
-                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-600 rounded-full"
-                        style={{
-                          width: `${score}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Variant Selectors */}
-                <div className="border-t p-4 space-y-4">
-
-                  {/* Storage */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Select Storage
-                    </label>
-
-                    <div className="relative border rounded-lg">
-                      <CustomDropdown
-                        value={selectedVariants[product._id]?.storage || ""}
-                        onChange={(storage) =>
-                          setSelectedVariants((prev) => ({
-                            ...prev,
-                            [product._id]: {
-                              ...prev[product._id],
-                              storage,
-                            },
-                          }))
-                        }
-                        options={product.variants.map((v) => ({
-                          value: v.storage,
-                          label: v.storage,
-                        }))}
-                        label="storage"
-                      />
-
-
-                    </div>
-                  </div>
-
-                  {/* Color */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Select Color
-                    </label>
-                    <div className="relative border rounded-lg">
-                      <CustomDropdown
-                        value={selectedVariants[product._id]?.color || ""}
-                        onChange={(color) =>
-                          setSelectedVariants((prev) => ({
-                            ...prev,
-                            [product._id]: {
-                              ...prev[product._id],
-                              color,
-                            },
-                          }))
-                        }
-                        options={variant.colors.map((color) => ({
-                          value: color.name,
-                          label: color.name,
-                        }))}
-                        label="Color"
-                      />
-                    </div>
-                  </div>
-                  {showRemove && (
-                    <MobileSection
-                      title="Overview"
-                      sectionKey="overview"
-                      openSections={openSections}
-                      setOpenSections={setOpenSections}
-                    >
-
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">
-                          Reviews
-                        </span>
-
-                        <span>
-                          {product.numReviews}
-                        </span>
+                      {/* Price */}
+                      <div className="mt-2 text-2xl font-bold text-blue-600">
+                        ${getSelectedColor(product)?.price?.toLocaleString() || 0}
                       </div>
 
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">
-                          Storage
+                      {/* Rating */}
+                      <div className="flex items-center gap-2 mt-2">
+
+                        <span className="text-yellow-500">
+                          ★
                         </span>
 
-                        <span>
-                          {variant.storage}
+                        <span className="font-medium">
+                          {product.rating?.toFixed(1) || 0}
                         </span>
+
+                        <span className="text-gray-500">
+                          ({product.numReviews})
+                        </span>
+
                       </div>
 
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">
-                          Color
-                        </span>
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-500">
+                            Comparison Score
+                          </span>
 
-                        <span>
-                          {selectedVariants[product._id]?.color ||
-                            variant.colors?.[0]?.name}
-                        </span>
+                          <span className="font-bold text-blue-600">
+                            {score}
+                          </span>
+                        </div>
+
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-600 rounded-full"
+                            style={{
+                              width: `${score}%`,
+                            }}
+                          />
+                        </div>
                       </div>
 
-                    </MobileSection>
-                  )}
+                    </div>
 
-                </div>
-                </>
-              )}
+                    {/* Variant Selectors */}
+                    <div className="border-t p-4 space-y-4">
+
+                      {/* Storage */}
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Select Storage
+                        </label>
+
+                        <div className="relative border rounded-lg">
+                          <CustomDropdown
+                            value={selectedVariants[product._id]?.storage || ""}
+                            onChange={(storage) =>
+                              setSelectedVariants((prev) => ({
+                                ...prev,
+                                [product._id]: {
+                                  ...prev[product._id],
+                                  storage,
+                                },
+                              }))
+                            }
+                            options={product.variants.map((v) => ({
+                              value: v.storage,
+                              label: v.storage,
+                            }))}
+                            label="storage"
+                          />
+
+
+                        </div>
+                      </div>
+
+                      {/* Color */}
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Select Color
+                        </label>
+                        <div className="relative border rounded-lg">
+                          <CustomDropdown
+                            value={selectedVariants[product._id]?.color || ""}
+                            onChange={(color) =>
+                              setSelectedVariants((prev) => ({
+                                ...prev,
+                                [product._id]: {
+                                  ...prev[product._id],
+                                  color,
+                                },
+                              }))
+                            }
+                            options={variant.colors.map((color) => ({
+                              value: color.name,
+                              label: color.name,
+                            }))}
+                            label="Color"
+                          />
+                        </div>
+                      </div>
+                      {showRemove && (
+                        <MobileSection
+                          title="Overview"
+                          sectionKey="overview"
+                          openSections={openSections}
+                          setOpenSections={setOpenSections}
+                        >
+
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">
+                              Reviews
+                            </span>
+
+                            <span>
+                              {product.numReviews}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">
+                              Storage
+                            </span>
+
+                            <span>
+                              {variant.storage}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">
+                              Color
+                            </span>
+
+                            <span>
+                              {selectedVariants[product._id]?.color ||
+                                variant.colors?.[0]?.name}
+                            </span>
+                          </div>
+
+                        </MobileSection>
+                      )}
+
+                    </div>
+                  </>
+                )}
 
               </div>
             );
@@ -1425,12 +1478,12 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                 }
                 const variant = getSelectedVariant(product);
                 const color = getSelectedColor(product);
-                
-  
+
+
                 return (
-                 
+
                   <div
-                   key={product._id} 
+                    key={product._id}
                     className="flex items-center gap-2 bg-white border rounded-lg p-2 shadow-sm"
                   >
                     <img
@@ -1453,7 +1506,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                     </div>
                   </div>
                 );
-             
+
               })}
             </div>
           </div>
@@ -1519,7 +1572,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
         {/* Specifications Difference */}
 
         <div className="flex items-center justify-between mx-2 mt-2 mb-4">
-          <h2 className="text-lg font-bold">
+          <h2 className="text-sm sm:text-lg font-bold">
             Specifications
           </h2>
 
@@ -1548,20 +1601,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
             <div className="space-y-4 p-4">
               {products.map((product, index) => {
-               const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                const compareProductIds = products.filter(Boolean).map((p) => p._id);
                 if (!product) {
                   return (
                     <div
                       key={`empty-${index}`}
                       className="bg-white border rounded-lg p-2 shadow-sm"
                     >
-                      <CompareSearch
-                        currentSlug={null}
-                        compareProductIds={compareProductIds}
-                        onSelect={(selectedProduct) =>
-                          onReplace(index, selectedProduct)
-                        }
-                      />
+                      <span className="text-gray-400 italic">
+                        Search and add a phone to compare.
+                      </span>
                     </div>
                   );
                 }
@@ -1664,20 +1713,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
             <div className="space-y-4 p-4">
               {products.map((product, index) => {
-               const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                const compareProductIds = products.filter(Boolean).map((p) => p._id);
                 if (!product) {
                   return (
                     <div
                       key={`empty-${index}`}
                       className="bg-white border rounded-lg p-2 shadow-sm"
                     >
-                      <CompareSearch
-                        currentSlug={null}
-                        compareProductIds={compareProductIds}
-                        onSelect={(selectedProduct) =>
-                          onReplace(index, selectedProduct)
-                        }
-                      />
+                      <span className="text-gray-400 italic">
+                        Search and add a phone to compare.
+                      </span>
                     </div>
                   );
                 }
@@ -1721,20 +1766,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
             <div className="space-y-4 p-4">
               {products.map((product, index) => {
-               const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                const compareProductIds = products.filter(Boolean).map((p) => p._id);
                 if (!product) {
                   return (
                     <div
                       key={`empty-${index}`}
                       className="bg-white border rounded-lg p-2 shadow-sm"
                     >
-                      <CompareSearch
-                        currentSlug={null}
-                        compareProductIds={compareProductIds}
-                        onSelect={(selectedProduct) =>
-                          onReplace(index, selectedProduct)
-                        }
-                      />
+                      <span className="text-gray-400 italic">
+                        No phone selected
+                      </span>
                     </div>
                   );
                 }
@@ -1804,13 +1845,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                       key={`empty-${index}`}
                       className="bg-white border rounded-lg p-2 shadow-sm"
                     >
-                      <CompareSearch
-                        currentSlug={null}
-                        compareProductIds={compareProductIds}
-                        onSelect={(selectedProduct) =>
-                          onReplace(index, selectedProduct)
-                        }
-                      />
+                      <span className="text-gray-400 italic">
+                        No phone selected
+                      </span>
                     </div>
                   );
                 }
@@ -1858,13 +1895,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                       key={`empty-${index}`}
                       className="bg-white border rounded-lg p-2 shadow-sm"
                     >
-                      <CompareSearch
-                        currentSlug={null}
-                        compareProductIds={compareProductIds}
-                        onSelect={(selectedProduct) =>
-                          onReplace(index, selectedProduct)
-                        }
-                      />
+                      <span className="text-gray-400 italic">
+                        No phone selected
+                      </span>
                     </div>
                   );
                 }
@@ -1932,13 +1965,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                       key={`empty-${index}`}
                       className="bg-white border rounded-lg p-2 shadow-sm"
                     >
-                      <CompareSearch
-                        currentSlug={null}
-                        compareProductIds={compareProductIds}
-                        onSelect={(selectedProduct) =>
-                          onReplace(index, selectedProduct)
-                        }
-                      />
+                      <span className="text-gray-400 italic">
+                        No phone selected
+                      </span>
                     </div>
                   );
                 }
