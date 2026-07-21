@@ -8,7 +8,7 @@ import {
 import { FaChevronDown, FaTrophy } from 'react-icons/fa';
 import CompareSearch from './CompareSearch';
  
-const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
+const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) => {
   const dispatch = useDispatch();
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [showDifferences, setShowDifferences] = useState(false);
@@ -16,7 +16,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
   const [selectedVariants, setSelectedVariants] = useState(() => {
     const obj = {};
 
-    products.forEach((product) => {
+    products.filter(Boolean).forEach((product) => {
       obj[product._id] = {
         storage: product.defaultStorage,
         color: product.defaultColor,
@@ -39,7 +39,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
   useEffect(() => {
     const obj = {};
 
-    products.forEach((product) => {
+    products.filter(Boolean).forEach((product) => {
       obj[product._id] = {
         storage: product.defaultStorage,
         color: product.defaultColor,
@@ -50,14 +50,16 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
   }, [products]);
 
   const getSelectedVariant = (product) => {
-    const selected = selectedVariants[product._id];
+  if (!product) return null;
 
-    return (
-      product.variants.find(
-        (v) => v.storage === selected?.storage
-      ) || product.variants[0]
-    );
-  };
+  const selected = selectedVariants[product._id];
+
+  return (
+    product.variants.find(
+      (v) => v.storage === selected?.storage
+    ) || product.variants[0]
+  );
+};
 
   //for mobile screen only
   useEffect(() => {
@@ -71,6 +73,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
   }, []);
 
   const getSelectedColor = (product) => {
+    if (!product) return null
     const variant = getSelectedVariant(product);
 
     return (
@@ -107,11 +110,12 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
   };
 
   const isBestValue = (specKey, value) => {
+    const getValidProducts = () => products.filter(Boolean);
     if (!comparableSpecs.includes(specKey)) return false;
 
     // Special handling for Chipset
     if (specKey === "Chipset") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getChipsetRank(variant.specs?.Chipset);
       });
@@ -122,7 +126,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "Storage") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getStorageScore(variant.specs?.Storage);
       });
@@ -133,7 +137,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "RAM") {
-      const values = products.map((product) => {
+      const values =getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getRamScore(variant.specs?.RAM);
       });
@@ -144,7 +148,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "Battery") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getBatteryScore(variant.specs?.Battery);
       });
@@ -155,7 +159,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "Display") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getDisplayScore(variant.specs?.Display);
       });
@@ -166,7 +170,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "Rear Camera") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getRearCameraScore(variant.specs?.["Rear Camera"]);
       });
@@ -177,7 +181,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "Front Camera") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getRearCameraScore(variant.specs?.["Front Camera"]);
       });
@@ -188,7 +192,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "Build") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getBuildScore(variant.specs?.Build);
       });
@@ -199,7 +203,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "Connectivity") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getConnectivityScore(variant.specs?.Connectivity);
       });
@@ -210,7 +214,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
     }
 
     if (specKey === "OS") {
-      const values = products.map((product) => {
+      const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
         return getOSScore(variant.specs?.OS);
       });
@@ -223,10 +227,14 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
 
 
     // Default numeric comparison
-    const values = products.map((product) => {
-      const variant = getSelectedVariant(product);
-      return extractNumber(variant.specs?.[specKey]);
-    });
+   const values = products
+  .map((product) => {
+    if (!product) return null;
+
+    const variant = getSelectedVariant(product);
+    return variant?.specs?.[specKey];
+  })
+  .filter(Boolean);
 
     const max = Math.max(...values);
 
@@ -518,6 +526,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
 
 
   const calculateScore = (variant) => {
+    if (!variant) return 0;
     let score = 0;
 
     if (isBestValue("Chipset", variant.specs?.Chipset))
@@ -625,7 +634,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
 
       {products.map((product, index) => (
   <td
-    key={`${product._id}-${index}`}
+    key={product ? `${product._id}-${index}` : `empty-${index}`}
     className="px-5 py-4 text-center"
   >
     {renderValue(product, index)}
@@ -727,23 +736,39 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
         <table className="min-w-[1200px] w-full border-collapse">
           <thead className='w-56'>
 
-{showRemove && (
-            <TableRow
-            title="Search"
-            renderValue={(product, index) => (
-            <CompareSearch
-            currentSlug={product.slug}
-            compareProductIds={products}
-            onSelect={(selectedProduct) =>
-              onReplace(index, selectedProduct)
-            }
-          />
-            )}
-          />
+    {showRemove && (
+  <TableRow
+    title="Search"
+    renderValue={(product, index) => (
+      <CompareSearch
+        currentSlug={product?.slug || null}
+        compareProductIds={products
+          .filter(Boolean)
+          .map((p) => p._id)}
+        onSelect={(selectedProduct) =>
+          onReplace(index, selectedProduct)
+        }
+      />
+    )}
+  />
 )}
             <TableRow
               title="image"
-              renderValue={(product) => {
+              renderValue={(product, index) => {
+                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                if (!product) {
+                return (
+                  <div className="flex flex-col items-center py-4">
+                    <CompareSearch
+                      currentSlug={null}
+                      compareProductIds={compareProductIds}
+                      onSelect={(selectedProduct) =>
+                        onReplace(index, selectedProduct)
+                      }
+                    />
+                  </div>
+                );
+              }
                 const variant = getSelectedVariant(product);
                 const color = getSelectedColor(product, variant);
 
@@ -760,7 +785,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
 
                     {showRemove && (
                       <button
-                        onClick={() => dispatch(removeFromCompare(product._id))}
+                        onClick={() => onClear(index)}
                         className="mt-4 text-sm text-red-500 hover:underline"
                       >
                         Remove
@@ -770,70 +795,90 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 );
               }}
             />
-            <TableRow
-              title="Name"
-              renderValue={(product) => (
-                <span className="font-medium">
-                  {product.name}
-                </span>
-              )}
-            />
+           <TableRow
+  title="Name"
+  renderValue={(product) =>
+    product ? (
+      <span className="font-medium">
+        {product.name}
+      </span>
+    ) : (
+      <span className="text-gray-400 italic">
+        No phone selected
+      </span>
+    )
+  }
+/>
 
-            <TableRow
-              title="Brand"
-              renderValue={(product) => product.brand}
-            />
-            <TableRow
-              title="Starting Price"
-              renderValue={(product) => {
+           <TableRow
+  title="Brand"
+  renderValue={(product) =>
+    product ? product.brand || "-" : "-"
+  }
+/>
 
-                const color = getSelectedColor(product);
-                return `$${color.price}`;
-              }}
+<TableRow
+  title="Starting Price"
+  renderValue={(product) => {
+    if (!product) return "-";
 
-            />
+    const color = getSelectedColor(product);
+    return `$${color?.price || 0}`;
+  }}
+/>
 
-            <TableRow
-              title="Rating"
-              renderValue={(product) => (
-                <>
-                  ⭐ {product.rating?.toFixed(1) || 0}
-                </>
-              )}
-            />
-            <TableRow
-              title="Reviews"
-              renderValue={(product) => product.numReviews}
-            />
+<TableRow
+  title="Rating"
+  renderValue={(product) =>
+    product ? (
+      <>⭐ {product.rating?.toFixed(1) || "0.0"}</>
+    ) : (
+      "-"
+    )
+  }
+/>
+
+<TableRow
+  title="Reviews"
+  renderValue={(product) =>
+    product ? product.numReviews : "-"
+  }
+/>
             <TableRow
               title="Storage"
-              renderValue={(product) => <select
-                className="mt-2 w-full border rounded-md p-2"
-                value={selectedVariants[product._id]?.storage || ""}
-                onChange={(e) =>
-                  setSelectedVariants((prev) => ({
-                    ...prev,
-                    [product._id]: {
-                      ...prev[product._id],
-                      storage: e.target.value,
-                    },
-                  }))
-                }
-              >
-                {product.variants.map((variant) => (
+              renderValue={(product) => {
+                if (!product) return "-";
 
-                  <option
-                    key={variant.storage}
-                    value={variant.storage}
+                return (
+                  <select
+                    className="mt-2 w-full border rounded-md p-2"
+                    value={selectedVariants[product._id]?.storage || ""}
+                    onChange={(e) =>
+                      setSelectedVariants((prev) => ({
+                        ...prev,
+                        [product._id]: {
+                          ...prev[product._id],
+                          storage: e.target.value,
+                        },
+                      }))
+                    }
                   >
-                    {variant.storage}
-                  </option>
-                ))}
-              </select>}
+                    {product.variants.map((variant) => (
+                      <option
+                        key={variant.storage}
+                        value={variant.storage}
+                      >
+                        {variant.storage}
+                      </option>
+                    ))}
+                  </select>
+                );
+              }}
             />
             <TableRow
               title="Colors"
               renderValue={(product) => {
+                 if (!product) return "-";
                 const variant = getSelectedVariant(product);
 
                 return (
@@ -862,40 +907,43 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 );
               }}
             />
-            <TableRow
-              title="Display"
-              renderValue={(product) => {
-                const variant = getSelectedVariant(product);
+           <TableRow
+            title="Display"
+            renderValue={(product) => {
+              if (!product) return "-";
 
-                return variant.specs?.Display || "-";
-              }}
-            />
+              const variant = getSelectedVariant(product);
+              return variant?.specs?.Display || "-";
+            }}
+          />
 
-            <TableRow
-              title="RAM"
-              renderValue={(product) => {
-                const variant = getSelectedVariant(product);
+          <TableRow
+            title="RAM"
+            renderValue={(product) => {
+              if (!product) return "-";
 
-                return variant.specs?.RAM || "-";
-              }}
-            />
+              const variant = getSelectedVariant(product);
+              return variant?.specs?.RAM || "-";
+            }}
+          />
 
-            <TableRow
-              title="Rear Camera"
+          <TableRow
+            title="Rear Camera"
+            renderValue={(product) => {
+              if (!product) return "-";
 
-              renderValue={(product) => {
-                const variant = getSelectedVariant(product);
-                return variant.specs?.["Rear Camera"] || "-";
-              }}
-
-            />
+              const variant = getSelectedVariant(product);
+              return variant?.specs?.["Rear Camera"] || "-";
+            }}
+          />
 
             <TableRow
               title="Front Camera"
 
               renderValue={(product) => {
+                if (!product) return "-";
                 const variant = getSelectedVariant(product);
-                return variant.specs?.["Front Camera"] || "-";
+                return variant?.specs?.["Front Camera"] || "-";
               }}
 
 
@@ -904,8 +952,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
             <TableRow
               title="Battery"
               renderValue={(product) => {
+                if (!product) return "-";
                 const variant = getSelectedVariant(product);
-                return variant.specs?.Battery || "-";
+                return variant?.specs?.Battery || "-";
               }}
 
             />
@@ -913,16 +962,18 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
             <TableRow
               title="Chipset"
               renderValue={(product) => {
+                if (!product) return "-";
                 const variant = getSelectedVariant(product);
-                return variant.specs?.Chipset || "-";
+                return variant?.specs?.Chipset || "-";
               }}
             />
 
             <TableRow
               title="Operating System"
               renderValue={(product) => {
+                if (!product) return "-";
                 const variant = getSelectedVariant(product);
-                return variant.specs?.OS || "-";
+                return variant?.specs?.OS || "-";
               }}
             />
 
@@ -930,8 +981,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
               title="Build"
 
               renderValue={(product) => {
+                if (!product) return "-";
                 const variant = getSelectedVariant(product);
-                return variant.specs?.Build || "-";
+                return variant?.specs?.Build || "-";
               }}
             />
 
@@ -949,9 +1001,10 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 title="Chipset"
 
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
 
-                  return variant.specs?.Chipset || "-";
+                  return variant?.specs?.Chipset || "-";
                 }}
 
               />
@@ -960,9 +1013,10 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 title="RAM"
 
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
 
-                  return variant.specs?.RAM || "-";
+                  return variant?.specs?.RAM || "-";
                 }}
               />
 
@@ -970,9 +1024,10 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 title="Storage"
 
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
 
-                  return variant.specs?.Storage || "-";
+                  return variant?.specs?.Storage || "-";
                 }}
               />
 
@@ -980,9 +1035,10 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 title="Operating System"
 
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
 
-                  return variant.specs?.OS || "-";
+                  return variant?.specs?.OS || "-";
                 }}
               />
 
@@ -998,9 +1054,10 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
               <TableRow
                 title="Display"
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
 
-                  return variant.specs?.Display || "-";
+                  return variant?.specs?.Display || "-";
                 }}
               />
 
@@ -1017,8 +1074,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 title="Rear Camera"
 
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
-                  return variant.specs?.["Rear Camera"] || "-";
+                  return variant?.specs?.["Rear Camera"] || "-";
                 }}
               />
 
@@ -1026,8 +1084,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 title="Front Camera"
 
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
-                  return variant.specs?.["Front Camera"] || "-";
+                  return variant?.specs?.["Front Camera"] || "-";
                 }}
               />
 
@@ -1043,8 +1102,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
               <TableRow
                 title="Battery"
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
-                  return variant.specs?.Battery || "-";
+                  return variant?.specs?.Battery || "-";
                 }}
               />
 
@@ -1060,8 +1120,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
               <TableRow
                 title="Build"
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
-                  return variant.specs?.Build || "-";
+                  return variant?.specs?.Build || "-";
                 }}
               />
 
@@ -1069,8 +1130,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 title="Other"
 
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
-                  return variant.specs?.Other || "-";
+                  return variant?.specs?.Other || "-";
                 }}
               />
 
@@ -1094,8 +1156,9 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                 title="Connectivity"
 
                 renderValue={(product) => {
+                  if (!product) return "-";
                   const variant = getSelectedVariant(product);
-                  return variant.specs?.Connectivity || "-";
+                  return variant?.specs?.Connectivity || "-";
                 }}
 
               />
@@ -1113,35 +1176,37 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
         <div className="grid grid-cols-2 gap-2">
 
           {products.slice(0, 2).map((product, index) => {
-            const variant = getSelectedVariant(product);
-            const color = getSelectedColor(product);
-            const score = calculateScore(variant);
-            const compareProductIds = products.map((p) => p._id);
+           const variant = product ? getSelectedVariant(product) : null;
+            const color = product ? getSelectedColor(product) : null;
+            const score = variant ? calculateScore(variant) : 0;
+           const compareProductIds = products.filter(Boolean).map((p) => p._id);
 
 
 
             return (
               <div
-               key={`${product._id}-${index}`}
+               key={product ? `${product._id}-${index}` : `empty-${index}`}
                 className="w-full bg-white rounded-xl border shadow-md overflow-visible"
               >
-                {showRemove && (
+                 {!product ? (
+                
                 <div className="p-2 border-b">
                   <CompareSearch
-                    currentSlug={product.slug}
+                    currentSlug={null}
                     compareProductIds={compareProductIds}
                     onSelect={(selectedProduct) =>
                       onReplace(index, selectedProduct)
                     }
                   />
                 </div>
-                )}
-
+                
+              ) : (
+                <>
                 {/* Product Image */}
                 <div className="relative bg-gray-50 pt-8 pb-6 flex justify-center">
                   {showRemove && (
                     <button
-                      onClick={() => dispatch(removeFromCompare(product._id))}
+                     onClick={() => onClear(index)}
                       className="absolute top-1 right-1 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center hover:bg-red-50"
                     >
                       ✕
@@ -1318,7 +1383,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                   )}
 
                 </div>
-
+                </>
+              )}
 
               </div>
             );
@@ -1339,13 +1405,32 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
         >
           <div className="bg-white border-b shadow-sm">
             <div className="grid grid-cols-2 gap-2 px-2 py-1">
-              {products.slice(0, 2).map((product) => {
+              {products.slice(0, 2).map((product, index) => {
+                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                if (!product) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="bg-white border rounded-lg p-2 shadow-sm"
+                    >
+                      <CompareSearch
+                        currentSlug={null}
+                        compareProductIds={compareProductIds}
+                        onSelect={(selectedProduct) =>
+                          onReplace(index, selectedProduct)
+                        }
+                      />
+                    </div>
+                  );
+                }
                 const variant = getSelectedVariant(product);
                 const color = getSelectedColor(product);
-
+                
+  
                 return (
+                 
                   <div
-                    key={product._id}
+                   key={product._id} 
                     className="flex items-center gap-2 bg-white border rounded-lg p-2 shadow-sm"
                   >
                     <img
@@ -1368,6 +1453,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
                     </div>
                   </div>
                 );
+             
               })}
             </div>
           </div>
@@ -1461,7 +1547,24 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
             <h2 className="text-lg font-bold p-4 border-b">Performance</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product) => {
+              {products.map((product, index) => {
+               const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                if (!product) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="bg-white border rounded-lg p-2 shadow-sm"
+                    >
+                      <CompareSearch
+                        currentSlug={null}
+                        compareProductIds={compareProductIds}
+                        onSelect={(selectedProduct) =>
+                          onReplace(index, selectedProduct)
+                        }
+                      />
+                    </div>
+                  );
+                }
                 const variant = getSelectedVariant(product);
 
                 return (
@@ -1560,7 +1663,24 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
             <h2 className="text-lg font-bold p-4 border-b">Display</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product) => {
+              {products.map((product, index) => {
+               const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                if (!product) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="bg-white border rounded-lg p-2 shadow-sm"
+                    >
+                      <CompareSearch
+                        currentSlug={null}
+                        compareProductIds={compareProductIds}
+                        onSelect={(selectedProduct) =>
+                          onReplace(index, selectedProduct)
+                        }
+                      />
+                    </div>
+                  );
+                }
                 const variant = getSelectedVariant(product);
 
                 return (
@@ -1600,7 +1720,24 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
             <h2 className="text-lg font-bold p-4 border-b">Camera</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product) => {
+              {products.map((product, index) => {
+               const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                if (!product) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="bg-white border rounded-lg p-2 shadow-sm"
+                    >
+                      <CompareSearch
+                        currentSlug={null}
+                        compareProductIds={compareProductIds}
+                        onSelect={(selectedProduct) =>
+                          onReplace(index, selectedProduct)
+                        }
+                      />
+                    </div>
+                  );
+                }
                 const variant = getSelectedVariant(product);
 
                 return (
@@ -1659,7 +1796,24 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
             <h2 className="text-lg font-bold p-4 border-b">Battery</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product) => {
+              {products.map((product, index) => {
+                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                if (!product) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="bg-white border rounded-lg p-2 shadow-sm"
+                    >
+                      <CompareSearch
+                        currentSlug={null}
+                        compareProductIds={compareProductIds}
+                        onSelect={(selectedProduct) =>
+                          onReplace(index, selectedProduct)
+                        }
+                      />
+                    </div>
+                  );
+                }
                 const variant = getSelectedVariant(product);
 
                 return (
@@ -1696,7 +1850,24 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
             <h2 className="text-lg font-bold p-4 border-b">Design</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product) => {
+              {products.map((product, index) => {
+                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                if (!product) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="bg-white border rounded-lg p-2 shadow-sm"
+                    >
+                      <CompareSearch
+                        currentSlug={null}
+                        compareProductIds={compareProductIds}
+                        onSelect={(selectedProduct) =>
+                          onReplace(index, selectedProduct)
+                        }
+                      />
+                    </div>
+                  );
+                }
                 const variant = getSelectedVariant(product);
 
                 return (
@@ -1753,7 +1924,24 @@ const CompareProducts = ({ products, showRemove = true, onReplace, }) => {
             <h2 className="text-lg font-bold p-4 border-b">Connectivity</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product) => {
+              {products.map((product, index) => {
+                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                if (!product) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="bg-white border rounded-lg p-2 shadow-sm"
+                    >
+                      <CompareSearch
+                        currentSlug={null}
+                        compareProductIds={compareProductIds}
+                        onSelect={(selectedProduct) =>
+                          onReplace(index, selectedProduct)
+                        }
+                      />
+                    </div>
+                  );
+                }
                 const variant = getSelectedVariant(product);
 
                 return (

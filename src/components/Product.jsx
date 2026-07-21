@@ -14,9 +14,9 @@ const Product = ({ product, userInfo }) => {
     (state) => state.compare
   );
 
-  const isCompared = compareProducts.some(
-    (item) => item._id === product._id
-  );
+  const isCompared = compareProducts
+  .filter(Boolean)
+  .some((item) => item._id === product._id);
   // Find the variant/color to display
   const selectedVariant =
     product.defaultStorage
@@ -95,8 +95,13 @@ const Product = ({ product, userInfo }) => {
                 slug: product.slug,
                 name: product.name,
                 brand: product.brand,
-                defaultImage: mainImage,
-                defaultPrice: mainPrice,
+                defaultImage:
+                  product.variants?.[0]?.colors?.[0]?.images?.[0]?.url ||
+                  product.defaultImage,
+
+                defaultPrice:
+                  product.variants?.[0]?.colors?.[0]?.price ||
+                  product.defaultPrice,
                 rating: product.rating,
                 numReviews: product.numReviews,
                 defaultStorage: product.variants?.[0].storage,

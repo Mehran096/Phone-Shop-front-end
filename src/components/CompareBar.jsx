@@ -8,7 +8,7 @@ const CompareBar = () => {
   const [showCompareBar, setShowCompareBar] = useState(true);
 
   const { products } = useSelector((state) => state.compare);
-
+  console.log(products)
   if (products.length === 0) return null;
 
   return (
@@ -37,7 +37,20 @@ const CompareBar = () => {
 
               <div className="flex gap-3 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
 
-                {products.map((product) => (
+                {products.map((product, index) => {
+                   console.log(product);
+                   if (!product) {
+                        return (
+                          <div
+                            key={`empty-${index}`}
+                            className="w-12 h-12 border rounded flex items-center justify-center text-gray-400"
+                          >
+                            +
+                          </div>
+                        );
+                      }
+
+                      return (
                   <div
                     key={product._id}
                     className="relative flex-shrink-0 w-16 h-16 lg:w-auto lg:h-auto flex items-center gap-2 bg-gray-100 rounded-lg p-2"
@@ -52,10 +65,12 @@ const CompareBar = () => {
 
                     {/* Image */}
                     <img
-                      src={product.defaultImage}
-                      alt={product.name}
+                      src={product?.defaultImage}
+                      alt={product?.name || ""}
                       className="w-12 h-12 lg:w-16 lg:h-16 object-contain rounded"
+                       onError={(e) => console.log("Broken image:", product)}
                     />
+                   
 
                     {/* Desktop Only */}
                     <div className="hidden lg:block">
@@ -71,7 +86,8 @@ const CompareBar = () => {
                       </button>
                     </div>
                   </div>
-                ))}
+                      )
+})}
               </div>
 
               <div className="flex w-full lg:w-auto gap-3">

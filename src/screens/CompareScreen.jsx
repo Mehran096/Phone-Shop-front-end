@@ -3,6 +3,7 @@ import {  Link  } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux';
 import {
   replaceCompareProduct,
+  clearCompareSlot
 } from "../slices/compareSlice";
 
 import CompareProducts from '../components/CompareProducts';
@@ -18,7 +19,7 @@ const dispatch = useDispatch();
 
   const replaceProduct = (index, product) => {
   const alreadyExists = products.some(
-    (p, i) => i !== index && p._id === product._id
+    (p, i) => i !== index && p?._id === product._id
   );
 
   if (alreadyExists) {
@@ -34,8 +35,12 @@ const dispatch = useDispatch();
         slug: product.slug,
         name: product.name,
         brand: product.brand,
-        defaultImage: product.defaultImage,
-        defaultPrice: product.defaultPrice,
+        defaultImage:
+    product.variants?.[0]?.colors?.[0]?.images?.[0]?.url ||
+    product.defaultImage,
+  defaultPrice:
+    product.variants?.[0]?.colors?.[0]?.price ||
+    product.defaultPrice,
         rating: product.rating,
         numReviews: product.numReviews,
         defaultStorage: product.variants?.[0].storage,
@@ -45,6 +50,10 @@ const dispatch = useDispatch();
       },
     })
   );
+};
+
+const clearSlot = (index) => {
+  dispatch(clearCompareSlot(index));
 };
 
 
@@ -70,6 +79,7 @@ const dispatch = useDispatch();
        
   products={products}
   onReplace={replaceProduct}
+  onClear={clearSlot}
 />
 
     </>
