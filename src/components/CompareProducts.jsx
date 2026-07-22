@@ -25,6 +25,21 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
     return obj;
   });
+
+  //for sticky specs scrolling
+  const performanceRef = useRef(null);
+  const displayRef = useRef(null);
+  const cameraRef = useRef(null);
+  const batteryRef = useRef(null);
+  const connectivityRef = useRef(null);
+  const designRef = useRef(null);
+
+  const scrollToSection = (ref) => {
+    ref.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
   //for mobile screen only /start
   const [openSections, setOpenSections] = useState({
     overview: true,
@@ -1511,6 +1526,54 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             </div>
           </div>
         </div>
+        {/* specs sticky bar */}
+        <div className="sticky top-[132px] z-30 bg-white border-b shadow-sm mt-1">
+          <div className="flex overflow-x-auto scrollbar-hide whitespace-nowrap">
+
+            <button
+              onClick={() => scrollToSection(performanceRef)}
+              className="px-5 py-1 font-medium hover:text-blue-600"
+            >
+              Performance
+            </button>
+
+            <button
+              onClick={() => scrollToSection(displayRef)}
+              className="px-5 py-1 font-medium hover:text-blue-600"
+            >
+              Display
+            </button>
+
+            <button
+              onClick={() => scrollToSection(cameraRef)}
+              className="px-5 py-1 font-medium hover:text-blue-600"
+            >
+              Camera
+            </button>
+
+            <button
+              onClick={() => scrollToSection(batteryRef)}
+              className="px-5 py-1 font-medium hover:text-blue-600"
+            >
+              Battery
+            </button>
+
+            <button
+              onClick={() => scrollToSection(designRef)}
+              className="px-5 py-1 font-medium hover:text-blue-600"
+            >
+              Design
+            </button>
+
+            <button
+              onClick={() => scrollToSection(connectivityRef)}
+              className="px-5 py-1 font-medium hover:text-blue-600"
+            >
+              Connectivity
+            </button>
+
+          </div>
+        </div>
         {/* Specifications total score */}
         <div className="mx-2  mb-6 rounded-xl border bg-white p-5 shadow">
           <h2 className="mb-4 text-lg font-bold text-center">
@@ -1596,7 +1659,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
         <div className="space-y-6 mt-8 mx-2">
 
           {/* Performance */}
-          <div className="bg-white rounded-xl shadow border">
+          <div ref={performanceRef} className="bg-white rounded-xl shadow border">
             <h2 className="text-lg font-bold p-4 border-b">Performance</h2>
 
             <div className="space-y-4 p-4">
@@ -1708,7 +1771,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
           </div>
 
           {/* Display */}
-          <div className="bg-white rounded-xl shadow border">
+          <div ref={displayRef} className="bg-white rounded-xl shadow border">
             <h2 className="text-lg font-bold p-4 border-b">Display</h2>
 
             <div className="space-y-4 p-4">
@@ -1761,7 +1824,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
           </div>
 
           {/* Camera */}
-          <div className="bg-white rounded-xl shadow border">
+          <div ref={cameraRef} className="bg-white rounded-xl shadow border">
             <h2 className="text-lg font-bold p-4 border-b">Camera</h2>
 
             <div className="space-y-4 p-4">
@@ -1833,7 +1896,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
           </div>
 
           {/* Battery */}
-          <div className="bg-white rounded-xl shadow border">
+          <div ref={batteryRef} className="bg-white rounded-xl shadow border">
             <h2 className="text-lg font-bold p-4 border-b">Battery</h2>
 
             <div className="space-y-4 p-4">
@@ -1883,7 +1946,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
           </div>
 
           {/* Design */}
-          <div className="bg-white rounded-xl shadow border">
+          <div ref={designRef} className="bg-white rounded-xl shadow border">
             <h2 className="text-lg font-bold p-4 border-b">Design</h2>
 
             <div className="space-y-4 p-4">
@@ -1953,7 +2016,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
           </div>
 
           {/* Connectivity */}
-          <div className="bg-white rounded-xl shadow border">
+          <div ref={connectivityRef} className="bg-white rounded-xl shadow border">
             <h2 className="text-lg font-bold p-4 border-b">Connectivity</h2>
 
             <div className="space-y-4 p-4">
