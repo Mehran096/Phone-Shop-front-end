@@ -35,10 +35,11 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   const designRef = useRef(null);
 
   const scrollToSection = (ref) => {
-    ref.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    const offset = 180;
+   window.scrollTo({
+    top: ref.current.offsetTop - offset,
+    behavior: "smooth",
+  });
   };
   //for mobile screen only /start
   const [openSections, setOpenSections] = useState({
@@ -1527,7 +1528,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
           </div>
         </div>
         {/* specs sticky bar */}
-        <div className="sticky top-[132px] z-30 bg-white border-b shadow-sm mt-1">
+        <div className="sticky top-[132px] z-30 bg-white border-b shadow-sm">
           <div className="flex overflow-x-auto scrollbar-hide whitespace-nowrap">
 
             <button
