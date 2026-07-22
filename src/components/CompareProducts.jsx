@@ -33,6 +33,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   const batteryRef = useRef(null);
   const connectivityRef = useRef(null);
   const designRef = useRef(null);
+  const phoneRef = useRef(null);
 
   const scrollToSection = (ref) => {
     const offset = 180;
@@ -1500,6 +1501,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
                   <div
                     key={product._id}
+                    onClick={() => scrollToSection(phoneRef)}
+                    ref={phoneRef}
                     className="flex items-center gap-2 bg-white border rounded-lg p-2 shadow-sm"
                   >
                     <img
