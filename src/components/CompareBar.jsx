@@ -8,8 +8,19 @@ const CompareBar = () => {
   const [showCompareBar, setShowCompareBar] = useState(true);
 
   const { products } = useSelector((state) => state.compare);
+
+  const maxCompare = window.innerWidth < 1024 ? 2 : 4;
+
+const displayProducts = [...products];
+
+while (displayProducts.length < maxCompare) {
+  displayProducts.push(null);
+}
+
+const hasProducts = displayProducts.some(Boolean);
   //console.log(products)
   if (products.length === 0) return null;
+
 
   return (
     <>
@@ -37,7 +48,7 @@ const CompareBar = () => {
 
               <div className="flex gap-3 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
 
-                {products.map((product, index) => {
+                {displayProducts.map((product, index) => {
                    //console.log(product);
                    if (!product) {
                         return (
@@ -109,7 +120,7 @@ const CompareBar = () => {
                 >
                   Clear
                 </button>
-
+{hasProducts && (
                 <Link
                   to="/compare"
                   className="
@@ -122,8 +133,9 @@ const CompareBar = () => {
                   font-medium
                 "
                 >
-                  Compare ({products.length})
+                  Compare ({displayProducts.length})
                 </Link>
+)}
 
               </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import {
@@ -9,6 +9,18 @@ import { FaChevronDown, FaTrophy } from 'react-icons/fa';
 import CompareSearch from './CompareSearch';
 
 const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) => {
+  const maxCompare = window.innerWidth < 1024 ? 2 : 4;
+
+  const displayProducts = useMemo(() => {
+    const slots = [...products];
+
+    while (slots.length < maxCompare) {
+      slots.push(null);
+    }
+
+    return slots;
+  }, [products, maxCompare]);
+
   const dispatch = useDispatch();
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [showDifferences, setShowDifferences] = useState(false);
@@ -16,7 +28,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   const [selectedVariants, setSelectedVariants] = useState(() => {
     const obj = {};
 
-    products.filter(Boolean).forEach((product) => {
+    displayProducts.filter(Boolean).forEach((product) => {
       obj[product._id] = {
         storage: product.defaultStorage,
         color: product.defaultColor,
@@ -36,11 +48,12 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   const phoneRef = useRef(null);
 
   const scrollToSection = (ref) => {
+    if (!ref.current) return;
     const offset = 180;
-   window.scrollTo({
-    top: ref.current.offsetTop - offset,
-    behavior: "smooth",
-  });
+    window.scrollTo({
+      top: ref.current.offsetTop - offset,
+      behavior: "smooth",
+    });
   };
   //for mobile screen only /start
   const [openSections, setOpenSections] = useState({
@@ -56,7 +69,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   useEffect(() => {
     const obj = {};
 
-    products.filter(Boolean).forEach((product) => {
+    displayProducts.filter(Boolean).forEach((product) => {
       obj[product._id] = {
         storage: product.defaultStorage,
         color: product.defaultColor,
@@ -116,6 +129,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
     "Build",
     "Other",
     "Connectivity",
+    "Other",
   ];
 
   //handler for specs
@@ -127,19 +141,19 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   };
 
   const isBestValue = (specKey, value) => {
-    const getValidProducts = () => products.filter(Boolean);
+    const getValidProducts = () => displayProducts.filter(Boolean);
     if (!comparableSpecs.includes(specKey)) return false;
 
     // Special handling for Chipset
     if (specKey === "Chipset") {
       const values = getValidProducts().map((product) => {
         const variant = getSelectedVariant(product);
-        return getChipsetRank(variant.specs?.Chipset);
+        return getChipsetScore(variant.specs?.Chipset);
       });
 
       const max = Math.max(...values);
 
-      return getChipsetRank(value) === max && max > 0;
+      return getChipsetScore(value) === max && max > 0;
     }
 
     if (specKey === "Storage") {
@@ -241,10 +255,21 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
       return getOSScore(value) === max && max > 0;
     }
 
+    if (specKey === "Other") {
+      const values = getValidProducts().map((product) => {
+        const variant = getSelectedVariant(product);
+        return getOtherScore(variant.specs?.Other);
+      });
+
+      const max = Math.max(...values);
+
+      return getOtherScore(value) === max && max > 0;
+    }
+
 
 
     // Default numeric comparison
-    const values = products
+    const values = displayProducts
       .map((product) => {
         if (!product) return null;
 
@@ -258,15 +283,193 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
     return extractNumber(value) === max && max > 0;
   };
 
+  //helper for all specs calculation getAbcScore /start
+  const normalizeScore = (current, values) => {
+  const validValues = values.filter((v) => typeof v === "number" && !isNaN(v));
+
+  if (!validValues.length) return 0;
+
+  const max = Math.max(...validValues);
+
+  if (max === 0) return 0;
+
+  return current / max;
+};
+
+const getComparisonValues = (key, parser) => {
+  return displayProducts
+    .filter(Boolean)
+    .map((product) => {
+      const variant = getSelectedVariant(product);
+      return parser(variant?.specs?.[key]);
+    });
+};
+// end
+ 
 
 
+  const BUILD_MATERIAL_RANKS = {
+  "grade 5 titanium": 100,
+  "grade 2 titanium": 95,
+  "titanium": 90,
+
+  "stainless steel": 85,
+
+  "aluminum": 75,
+  "aluminium": 75,
+
+  "glass": 65,
+
+  "plastic": 45,
+  "polycarbonate": 40,
+};
+
+ const parseBuild = (build = "") => {
+  const text = build.toLowerCase();
+
+  let score = 0;
+
+  // Main Material
+  for (const [material, value] of Object.entries(BUILD_MATERIAL_RANKS)) {
+    if (text.includes(material)) {
+      score += value;
+      break;
+    }
+  }
+
+  // Front Glass Protection
+  if (text.includes("ceramic shield")) score += 80;
+  else if (text.includes("gorilla glass armor")) score += 75;
+  else if (text.includes("gorilla glass victus 2")) score += 70;
+  else if (text.includes("gorilla glass victus")) score += 65;
+  else if (text.includes("gorilla glass 7")) score += 60;
+  else if (text.includes("gorilla glass 6")) score += 55;
+  else if (text.includes("gorilla glass 5")) score += 50;
+
+  // IP Rating
+  if (text.includes("ip69")) score += 60;
+  else if (text.includes("ip68")) score += 55;
+  else if (text.includes("ip67")) score += 45;
+  else if (text.includes("ip65")) score += 35;
+  else if (text.includes("ip64")) score += 25;
+  else if (text.includes("ip54")) score += 15;
+
+  // Foldables
+  if (text.includes("armor flex hinge")) score += 30;
+  if (text.includes("flex hinge")) score += 25;
+
+  return score;
+};
+
+ const getBuildScore = (build = "") => {
+  return normalizeScore(
+    parseBuild(build),
+    getComparisonValues("Build", parseBuild)
+  );
+};
+
+  const DISPLAY_PANEL_RANKS = {
+  // Apple
+  "super retina xdr oled": 100,
+  "super retina xdr": 98,
+
+  // Samsung
+  "dynamic amoled 2x": 98,
+  "dynamic amoled": 96,
+
+  // LTPO
+  "ltpo amoled": 95,
+  "ltpo oled": 94,
+
+  // AMOLED
+  "super amoled": 92,
+  "fluid amoled": 91,
+  "flexible amoled": 90,
+  "amoled": 88,
+
+  // OLED
+  "p-oled": 86,
+  "poled": 86,
+  "oled": 84,
+
+  // LCD
+  "mini led": 80,
+  "ips lcd": 70,
+  "tft lcd": 60,
+  "lcd": 55,
+};
+
+  const parseDisplay = (display = "") => {
+  const text = display.toLowerCase();
+
+  let score = 0;
+
+  // Panel
+  for (const [panel, value] of Object.entries(DISPLAY_PANEL_RANKS)) {
+    if (text.includes(panel)) {
+      score += value;
+      break;
+    }
+  }
+
+  // Refresh Rate
+  const refresh = text.match(/(\d+)\s*hz/i);
+  if (refresh) {
+    score += Number(refresh[1]);
+  }
+
+  // Peak Brightness
+  const brightness = text.match(/(\d+)\s*nits?/i);
+  if (brightness) {
+    score += Math.round(Number(brightness[1]) / 50);
+  }
+
+  // Resolution
+  if (text.includes("8k")) score += 40;
+  else if (text.includes("4k")) score += 30;
+  else if (text.includes("qhd")) score += 25;
+  else if (text.includes("2k")) score += 25;
+  else if (text.includes("fhd")) score += 18;
+  else if (text.includes("hd")) score += 10;
+
+  // LTPO
+  if (text.includes("ltpo")) score += 25;
+
+  // HDR
+  if (text.includes("dolby vision")) score += 25;
+  else if (text.includes("hdr10+")) score += 20;
+  else if (text.includes("hdr10")) score += 15;
+
+  // Always-On Display
+  if (
+    text.includes("always-on") ||
+    text.includes("always on")
+  ) {
+    score += 10;
+  }
+
+  // PWM Dimming
+  const pwm = text.match(/(\d+)\s*hz pwm/i);
+  if (pwm) {
+    score += Math.round(Number(pwm[1]) / 200);
+  }
+
+  return score;
+};
+
+  const getDisplayScore = (display = "") => {
+  return normalizeScore(
+    parseDisplay(display),
+    getComparisonValues("Display", parseDisplay)
+  );
+};
 
   const CHIPSET_RANKS = {
     // Apple
-    "Apple A19": 100,
     "Apple A19 Pro": 101,
-    "Apple A18": 96,
+    "Apple A19": 100,
     "Apple A18 Pro": 98,
+    "Apple A18": 96,
     "Apple A17 Pro": 94,
     "Apple A16 Bionic": 90,
     "Apple A15 Bionic": 86,
@@ -277,17 +480,24 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
     "Snapdragon 8 Elite": 99,
     "Snapdragon 8 Gen 4": 97,
     "Snapdragon 8 Gen 3": 95,
+    "Snapdragon 8s Gen 3": 93,
     "Snapdragon 8 Gen 2": 91,
+    "Snapdragon 8+ Gen 1": 89,
     "Snapdragon 8 Gen 1": 87,
+    "Snapdragon 7+ Gen 3": 86,
     "Snapdragon 888": 83,
     "Snapdragon 870": 80,
     "Snapdragon 865": 76,
 
     // MediaTek
     "Dimensity 9400": 98,
+    "Dimensity 9300+": 97,
     "Dimensity 9300": 95,
+    "Dimensity 9200+": 93,
     "Dimensity 9200": 91,
     "Dimensity 9000": 88,
+    "Dimensity 8400": 87,
+    "Dimensity 8300": 84,
 
     // Google
     "Google Tensor G5": 96,
@@ -301,235 +511,498 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
     "Exynos 2200": 86,
   };
 
-  const DISPLAY_PANEL_RANKS = {
-    "super retina xdr oled": 100,
-    "dynamic amoled 2x": 98,
-    "ltpo amoled": 96,
-    "amoled": 92,
-    "oled": 88,
-    "ips lcd": 70,
-    "lcd": 60,
-  };
+  const parseChipset = (chipset = "") => {
+    const text = chipset.toLowerCase();
 
-  const BUILD_MATERIAL_RANKS = {
-    "grade 5 titanium": 100,
-    "titanium": 95,
-    "ceramic": 90,
-    "stainless steel": 85,
-    "aluminum": 75,
-    "glass": 65,
-    "plastic": 50,
-  };
-
-  const getBuildScore = (build = "") => {
-    const text = build.toLowerCase();
-
-    for (const material of Object.keys(BUILD_MATERIAL_RANKS)) {
-      if (text.includes(material)) {
-        return BUILD_MATERIAL_RANKS[material];
+    for (const [name, score] of Object.entries(CHIPSET_RANKS)) {
+      if (text.includes(name.toLowerCase())) {
+        return score;
       }
     }
 
     return 0;
   };
 
-  const getDisplayScore = (display = "") => {
-    const text = display.toLowerCase();
+  const getChipsetScore = (chipset = "") => {
+  const current = parseChipset(chipset);
 
-    let score = 0;
+  return normalizeScore(
+    current,
+    getComparisonValues("Chipset", parseChipset)
+  );
+};
 
-    // Panel Quality
-    for (const panel in DISPLAY_PANEL_RANKS) {
-      if (text.includes(panel)) {
-        score += DISPLAY_PANEL_RANKS[panel];
-        break;
-      }
+const RAM_TYPE_BONUS = {
+  "lpddr6": 25,
+  "lpddr5x": 20,
+  "lpddr5": 15,
+  "lpddr4x": 8,
+  "lpddr4": 5,
+};
+  const parseRam = (ram = "") => {
+  const text = ram.toLowerCase();
+
+  const size = parseFloat(text) || 0;
+
+  let bonus = 0;
+
+  for (const type in RAM_TYPE_BONUS) {
+    if (text.includes(type)) {
+      bonus = RAM_TYPE_BONUS[type];
+      break;
     }
+  }
 
-    // Refresh Rate
-    const refresh = text.match(/(\d+)\s*hz/i);
-    if (refresh) {
-      score += Number(refresh[1]);
+  // Capacity is much more important than RAM type.
+  return size * 100 + bonus;
+};
+
+
+ const getRamScore = (ram = "") => {
+  return normalizeScore(
+    parseRam(ram),
+    getComparisonValues("RAM", parseRam)
+  );
+};
+
+ const STORAGE_TYPE_BONUS = {
+  "ufs 5.0": 40,
+  "ufs 4.1": 38,
+  "ufs 4.0": 35,
+  "ufs 3.1": 25,
+  "ufs 3.0": 20,
+  "ufs 2.2": 12,
+  "ufs 2.1": 10,
+  "emmc": 5,
+};
+
+const parseStorage = (storage = "") => {
+  const text = storage.toLowerCase();
+
+  // Capacity
+  let size = parseFloat(text) || 0;
+
+  if (text.includes("tb")) {
+    size *= 1024;
+  }
+
+  // Storage Type Bonus
+  let bonus = 0;
+
+  for (const type in STORAGE_TYPE_BONUS) {
+    if (text.includes(type)) {
+      bonus = STORAGE_TYPE_BONUS[type];
+      break;
     }
+  }
 
-    // Peak Brightness
-    const brightness = text.match(/(\d+)\s*nits?/i);
-    if (brightness) {
-      score += Math.round(Number(brightness[1]) / 100);
-    }
-
-    return score;
-  };
-
-
-
-  const getChipsetRank = (chipset = "") => {
-    for (const key of Object.keys(CHIPSET_RANKS)) {
-      if (chipset.toLowerCase().includes(key.toLowerCase())) {
-        return CHIPSET_RANKS[key];
-      }
-    }
-
-    return 0;
-  };
-
-  const getRamScore = (ram = "") => {
-    const size = parseInt(ram) || 0;
-
-    let typeBonus = 0;
-
-    const lowerRam = ram.toLowerCase();
-
-    if (lowerRam.includes("lpddr5x")) typeBonus = 3;
-    else if (lowerRam.includes("lpddr5")) typeBonus = 2;
-    else if (lowerRam.includes("lpddr4x")) typeBonus = 1;
-
-    return size * 10 + typeBonus;
-  };
+  // Capacity is much more important than storage type
+  return size * 10 + bonus;
+};
 
   const getStorageScore = (storage = "") => {
-    const lower = storage.toLowerCase();
+  return normalizeScore(
+    parseStorage(storage),
+    getComparisonValues("Storage", parseStorage)
+  );
+};
 
-    let size = parseFloat(storage) || 0;
 
-    if (lower.includes("tb")) {
-      size *= 1024;
+ const parseBattery = (battery = "") => {
+  const text = battery.toLowerCase();
+
+  let score = 0;
+
+  // Battery Capacity (mAh)
+  const capacity = text.match(/(\d+)\s*mah/i);
+  if (capacity) {
+    score += parseInt(capacity[1]);
+  }
+
+  // Wired Charging (W)
+  const wired = text.match(/(\d+)\s*w/i);
+  if (wired) {
+    score += parseInt(wired[1]) * 10;
+  }
+
+  // Wireless Charging
+  const wireless = text.match(/wireless.*?(\d+)\s*w/i);
+  if (wireless) {
+    score += parseInt(wireless[1]) * 8;
+  }
+
+  // Reverse Wireless Charging
+  if (text.includes("reverse wireless")) {
+    score += 80;
+  }
+
+  // Silicon Carbon Battery
+  if (
+    text.includes("silicon carbon") ||
+    text.includes("si/c")
+  ) {
+    score += 150;
+  }
+
+  return score;
+};
+
+ const getBatteryScore = (battery = "") => {
+  return normalizeScore(
+    parseBattery(battery),
+    getComparisonValues("Battery", parseBattery)
+  );
+};
+
+  const parseRearCamera = (camera = "") => {
+  const text = camera.toLowerCase();
+
+  let score = 0;
+
+  // Main Camera (MP)
+  const main = text.match(/(\d+)\s*mp/i);
+  if (main) {
+    score += parseInt(main[1]) * 8;
+  }
+
+  // OIS
+  if (text.includes("ois")) {
+    score += 150;
+  }
+
+  // Telephoto
+  if (text.includes("telephoto")) {
+    score += 180;
+  }
+
+  // Periscope
+  if (text.includes("periscope")) {
+    score += 250;
+  }
+
+  // Ultrawide
+  if (
+    text.includes("ultra wide") ||
+    text.includes("ultrawide")
+  ) {
+    score += 120;
+  }
+
+  // Optical Zoom
+  const opticalZoom = text.match(/(\d+(\.\d+)?)x/i);
+  if (opticalZoom) {
+    score += Number(opticalZoom[1]) * 40;
+  }
+
+  // Laser Autofocus
+  if (text.includes("laser af")) {
+    score += 80;
+  }
+
+  // PDAF
+  if (text.includes("pdaf")) {
+    score += 60;
+  }
+
+  // HDR
+  if (text.includes("hdr")) {
+    score += 40;
+  }
+
+  // Dolby Vision Recording
+  if (text.includes("dolby vision")) {
+    score += 100;
+  }
+
+  // 8K Recording
+  if (text.includes("8k")) {
+    score += 120;
+  } else if (text.includes("4k")) {
+    score += 60;
+  }
+
+  return score;
+};
+
+ const getRearCameraScore = (camera = "") => {
+  return normalizeScore(
+    parseRearCamera(camera),
+    getComparisonValues("Rear Camera", parseRearCamera)
+  );
+};
+
+  const parseFrontCamera = (camera = "") => {
+  const text = camera.toLowerCase();
+
+  let score = 0;
+
+  // Selfie Camera (MP)
+  const mp = text.match(/(\d+)\s*mp/i);
+  if (mp) {
+    score += parseInt(mp[1]) * 8;
+  }
+
+  // Autofocus
+  if (text.includes("autofocus") || text.includes("af")) {
+    score += 150;
+  }
+
+  // OIS
+  if (text.includes("ois")) {
+    score += 180;
+  }
+
+  // HDR
+  if (text.includes("hdr")) {
+    score += 50;
+  }
+
+  // Dolby Vision Video
+  if (text.includes("dolby vision")) {
+    score += 100;
+  }
+
+  // Video Recording
+  if (text.includes("8k")) {
+    score += 120;
+  } else if (text.includes("4k")) {
+    score += 80;
+  } else if (text.includes("1080p")) {
+    score += 40;
+  }
+
+  // Dual Front Camera
+  if (text.includes("dual")) {
+    score += 80;
+  }
+
+  // TOF / Depth Sensor
+  if (
+    text.includes("tof") ||
+    text.includes("depth sensor")
+  ) {
+    score += 60;
+  }
+
+  return score;
+};
+
+ const getFrontCameraScore = (camera = "") => {
+  return normalizeScore(
+    parseFrontCamera(camera),
+    getComparisonValues("Front Camera", parseFrontCamera)
+  );
+};
+
+  const parseConnectivity = (connectivity = "") => {
+  const text = connectivity.toLowerCase();
+
+  let score = 0;
+
+  // Cellular
+  if (text.includes("6g")) score += 120;
+  else if (text.includes("5g")) score += 100;
+  else if (text.includes("4g")) score += 50;
+
+  // Wi-Fi
+  if (text.includes("wi-fi 7")) score += 80;
+  else if (text.includes("wi-fi 6e")) score += 70;
+  else if (text.includes("wi-fi 6")) score += 60;
+  else if (text.includes("wi-fi 5")) score += 40;
+
+  // Bluetooth
+  if (text.includes("bluetooth 6")) score += 60;
+  else if (text.includes("bluetooth 5.4")) score += 55;
+  else if (text.includes("bluetooth 5.3")) score += 50;
+  else if (text.includes("bluetooth 5.2")) score += 45;
+  else if (text.includes("bluetooth 5.1")) score += 40;
+  else if (text.includes("bluetooth 5.0")) score += 35;
+
+  // USB
+  if (text.includes("usb-c 4")) score += 70;
+  else if (text.includes("usb 4")) score += 70;
+  else if (text.includes("usb-c 3.2")) score += 60;
+  else if (text.includes("usb 3.2")) score += 60;
+  else if (text.includes("usb-c 3.1")) score += 50;
+  else if (text.includes("usb 3.1")) score += 50;
+  else if (text.includes("usb-c 2")) score += 30;
+  else if (text.includes("usb 2.0")) score += 30;
+
+  // NFC
+  if (text.includes("nfc")) score += 30;
+
+  // Ultra Wideband
+  if (text.includes("uwb")) score += 35;
+
+  // Satellite Communication
+  if (text.includes("satellite")) score += 40;
+
+  // eSIM
+  if (text.includes("esim")) score += 25;
+
+  // Dual SIM
+  if (text.includes("dual sim")) score += 15;
+
+  // Infrared Blaster
+  if (
+    text.includes("infrared") ||
+    text.includes("ir blaster")
+  ) {
+    score += 20;
+  }
+
+  return score;
+};
+
+ const getConnectivityScore = (connectivity = "") => {
+  return normalizeScore(
+    parseConnectivity(connectivity),
+    getComparisonValues("Connectivity", parseConnectivity)
+  );
+};
+
+  const parseOS = (os = "") => {
+  const text = os.toLowerCase();
+
+  let score = 0;
+
+  // Android / iOS Version
+  const version = text.match(/(android|ios)\s*(\d+)/i);
+
+  if (version) {
+    const osName = version[1].toLowerCase();
+    const osVersion = parseInt(version[2]);
+
+    if (osName === "android") {
+      score += osVersion * 15;
+    } else if (osName === "ios") {
+      score += osVersion * 15;
     }
+  }
 
-    return size;
-  };
+  // Major Android Skins
+  if (text.includes("one ui")) score += 30;
+  else if (text.includes("oxygenos")) score += 28;
+  else if (text.includes("hyperos")) score += 26;
+  else if (text.includes("coloros")) score += 24;
+  else if (text.includes("funtouch")) score += 20;
+  else if (text.includes("magicos")) score += 22;
+  else if (text.includes("nothing os")) score += 25;
 
-  const getBatteryScore = (battery = "") => {
-    const lower = battery.toLowerCase();
+  // Software Updates
+  const updates = text.match(/(\d+)\s*years?/i);
 
-    // Battery capacity (mAh)
-    const capacityMatch = lower.match(/(\d+)\s*mah/);
-    const capacity = capacityMatch ? parseInt(capacityMatch[1]) : 0;
+  if (updates) {
+    score += parseInt(updates[1]) * 40;
+  }
 
-    // Charging speed (W)
-    const chargingMatch = lower.match(/(\d+)\s*w/);
-    const charging = chargingMatch ? parseInt(chargingMatch[1]) : 0;
+  // AI Features
+  if (text.includes("apple intelligence")) score += 80;
+  if (text.includes("galaxy ai")) score += 80;
+  if (text.includes("gemini")) score += 70;
+  if (text.includes("circle to search")) score += 30;
+  if (text.includes("live translate")) score += 25;
 
-    // Weight:
-    // Capacity is more important than charging speed
-    return capacity + charging * 5;
-  };
+  // Security Updates
+  const security = text.match(/(\d+)\s*years?\s*security/i);
 
-  const getRearCameraScore = (camera = "") => {
-    const text = camera.toLowerCase();
+  if (security) {
+    score += parseInt(security[1]) * 15;
+  }
 
-    let score = 0;
+  // Desktop Mode
+  if (text.includes("dex")) score += 40;
+  if (text.includes("ready for")) score += 35;
 
-    // Main camera MP
-    const mainMatch = text.match(/(\d+)\s*mp/);
-    if (mainMatch) {
-      score += parseInt(mainMatch[1]);
-    }
-
-    // OIS
-    if (text.includes("ois")) score += 20;
-
-    // Telephoto
-    if (text.includes("telephoto")) score += 20;
-
-    // Periscope
-    if (text.includes("periscope")) score += 30;
-
-    // Ultrawide
-    if (text.includes("ultra wide")) score += 15;
-
-    // Optical Zoom
-    const zoom = text.match(/(\d+)x/);
-    if (zoom) {
-      score += parseInt(zoom[1]) * 5;
-    }
-
-    return score;
-  };
-
-  const getFrontCameraScore = (camera = "") => {
-    const text = camera.toLowerCase();
-
-    let score = 0;
-
-    const mp = text.match(/(\d+)\s*mp/);
-    if (mp) score += parseInt(mp[1]);
-
-    if (text.includes("autofocus")) score += 15;
-    if (text.includes("ois")) score += 20;
-    if (text.includes("4k")) score += 10;
-
-    return score;
-  };
-
-  const getConnectivityScore = (connectivity = "") => {
-    const text = connectivity.toLowerCase();
-
-    let score = 0;
-
-    // Cellular
-    if (text.includes("5g")) score += 30;
-
-    // Wi-Fi
-    if (text.includes("wi-fi 7")) score += 25;
-    else if (text.includes("wi-fi 6e")) score += 20;
-    else if (text.includes("wi-fi 6")) score += 15;
-
-    // Bluetooth
-    if (text.includes("bluetooth 5.4")) score += 15;
-    else if (text.includes("bluetooth 5.3")) score += 14;
-    else if (text.includes("bluetooth 5.2")) score += 13;
-    else if (text.includes("bluetooth 5.1")) score += 12;
-
-    // USB
-    if (text.includes("usb-c 4")) score += 20;
-    else if (text.includes("usb-c 3.2")) score += 18;
-    else if (text.includes("usb-c 3.1")) score += 16;
-    else if (text.includes("usb-c 2")) score += 10;
-
-    // Extras
-    if (text.includes("nfc")) score += 8;
-    if (text.includes("satellite")) score += 10;
-    if (text.includes("uwb")) score += 8;
-
-    return score;
-  };
+  return score;
+};
 
   const getOSScore = (os = "") => {
-    const text = os.toLowerCase();
+  return normalizeScore(
+    parseOS(os),
+    getComparisonValues("OS", parseOS)
+  );
+};
 
-    let score = 0;
+  const parseOther = (other = "") => {
+  const text = other.toLowerCase();
 
-    // OS Version
-    const version = text.match(/(ios|android)\s*(\d+)/i);
-    if (version) {
-      score += parseInt(version[2]) * 2;
-    }
+  let score = 0;
 
-    // Software Updates
-    const updates = text.match(/(\d+)\s*years?/i);
-    if (updates) {
-      score += parseInt(updates[1]) * 5;
-    }
+  // Audio
+  if (text.includes("stereo speakers")) score += 40;
+  else if (text.includes("stereo")) score += 30;
 
-    // AI Features
-    if (
-      text.includes("apple intelligence") ||
-      text.includes("galaxy ai") ||
-      text.includes("gemini")
-    ) {
-      score += 20;
-    }
+  if (text.includes("dolby atmos")) score += 25;
 
-    return score;
-  };
+  if (
+    text.includes("hi-res audio") ||
+    text.includes("hi res audio")
+  ) {
+    score += 20;
+  }
+
+  // Cooling
+  if (
+    text.includes("vapor chamber") ||
+    text.includes("vc cooling")
+  ) {
+    score += 40;
+  }
+
+  // Haptics
+  if (
+    text.includes("x-axis") ||
+    text.includes("linear motor")
+  ) {
+    score += 35;
+  }
+
+  // Fingerprint
+  if (text.includes("ultrasonic fingerprint")) {
+    score += 40;
+  } else if (
+    text.includes("in-display fingerprint") ||
+    text.includes("under display fingerprint")
+  ) {
+    score += 30;
+  } else if (text.includes("side fingerprint")) {
+    score += 20;
+  }
+
+  // Face Unlock
+  if (text.includes("face id")) {
+    score += 40;
+  } else if (
+    text.includes("3d face unlock") ||
+    text.includes("3d face")
+  ) {
+    score += 35;
+  } else if (text.includes("face unlock")) {
+    score += 20;
+  }
+
+  // Emergency SOS
+  if (text.includes("emergency sos")) {
+    score += 15;
+  }
+
+  return score;
+};
+
+ const getOtherScore = (other = "") => {
+  return normalizeScore(
+    parseOther(other),
+    getComparisonValues("Other", parseOther)
+  );
+};
 
   // console.log(getChipsetRank("Apple A19 Pro"));
   // console.log(getChipsetRank("Apple A14 Bionic"));
   // console.log(getChipsetRank("Snapdragon 8 Elite"));
 
   const SCORE_WEIGHTS = {
-    Chipset: 25,
+    Chipset: 23,
     RAM: 10,
     Storage: 8,
     Display: 15,
@@ -539,6 +1012,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
     OS: 5,
     Build: 4,
     Connectivity: 3,
+    Other: 2,
   };
 
 
@@ -546,54 +1020,66 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
     if (!variant) return 0;
     let score = 0;
 
-    if (isBestValue("Chipset", variant.specs?.Chipset))
-      score += SCORE_WEIGHTS.Chipset;
+    score +=
+      getChipsetScore(variant.specs?.Chipset) *
+      SCORE_WEIGHTS.Chipset;
 
-    if (isBestValue("RAM", variant.specs?.RAM))
-      score += SCORE_WEIGHTS.RAM;
+    score +=
+      getRamScore(variant.specs?.RAM) *
+      SCORE_WEIGHTS.RAM;
 
-    if (isBestValue("Storage", variant.specs?.Storage))
-      score += SCORE_WEIGHTS.Storage;
+    score +=
+      getStorageScore(variant.specs?.Storage) *
+      SCORE_WEIGHTS.Storage;
 
-    if (isBestValue("Display", variant.specs?.Display))
-      score += SCORE_WEIGHTS.Display;
+    score +=
+      getDisplayScore(variant.specs?.Display) *
+      SCORE_WEIGHTS.Display;
 
-    if (isBestValue("Rear Camera", variant.specs?.["Rear Camera"]))
-      score += SCORE_WEIGHTS["Rear Camera"];
+    score +=
+      getRearCameraScore(variant.specs?.["Rear Camera"]) *
+      SCORE_WEIGHTS["Rear Camera"];
 
-    if (isBestValue("Front Camera", variant.specs?.["Front Camera"]))
-      score += SCORE_WEIGHTS["Front Camera"];
+    score +=
+      getFrontCameraScore(variant.specs?.["Front Camera"]) *
+      SCORE_WEIGHTS["Front Camera"];
 
-    if (isBestValue("Battery", variant.specs?.Battery))
-      score += SCORE_WEIGHTS.Battery;
+    score +=
+      getBatteryScore(variant.specs?.Battery) *
+      SCORE_WEIGHTS.Battery;
 
-    if (isBestValue("OS", variant.specs?.OS))
-      score += SCORE_WEIGHTS.OS;
+    score +=
+      getOSScore(variant.specs?.OS) *
+      SCORE_WEIGHTS.OS;
 
-    if (isBestValue("Build", variant.specs?.Build))
-      score += SCORE_WEIGHTS.Build;
+    score +=
+      getBuildScore(variant.specs?.Build) *
+      SCORE_WEIGHTS.Build;
 
-    if (isBestValue("Connectivity", variant.specs?.Connectivity))
-      score += SCORE_WEIGHTS.Connectivity;
+    score +=
+      getOtherScore(variant.specs?.Other) *
+      SCORE_WEIGHTS.Other;
 
-    return score;
+    score +=
+      getConnectivityScore(variant.specs?.Connectivity) *
+      SCORE_WEIGHTS.Connectivity;
+
+    return Math.round(score);
   };
 
-  const score1 =
-    products.length > 0
-      ? calculateScore(getSelectedVariant(products[0]))
-      : 0;
+  const score1 = displayProducts[0]
+    ? calculateScore(getSelectedVariant(displayProducts[0]))
+    : 0;
 
-  const score2 =
-    products.length > 1
-      ? calculateScore(getSelectedVariant(products[1]))
-      : 0;
+  const score2 = displayProducts[1]
+    ? calculateScore(getSelectedVariant(displayProducts[1]))
+    : 0;
 
   const winner =
     score1 > score2
-      ? products[0]
+      ? displayProducts[0]
       : score2 > score1
-        ? products[1]
+        ? displayProducts[1]
         : null;
 
 
@@ -630,15 +1116,13 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
   const shouldShowRow = (specKey) => {
     if (!showDifferences) return true;
 
-    const values = products.map((product) => {
+    const values = displayProducts.map((product) => {
       const variant = getSelectedVariant(product);
       return (variant.specs?.[specKey] || "").trim();
     });
 
     return new Set(values).size > 1;
   };
-  //const variant = getSelectedVariant(product);
-  //console.log(products);
 
   //   const replaceProduct = (index, newProduct) => {
   //   console.log("Replace:", index, newProduct);
@@ -649,7 +1133,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
         {title}
       </td>
 
-      {products.map((product, index) => (
+      {displayProducts.map((product, index) => (
         <td
           key={product ? `${product._id}-${index}` : `empty-${index}`}
           className="w-70 min-w-[320px] max-w-[320px] px-5 py-4 text-center align-top"
@@ -760,7 +1244,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
                   <CompareSearch
                     currentSlug={product?.slug || null}
-                    compareProductIds={products
+                    compareProductIds={displayProducts
                       .filter(Boolean)
                       .map((p) => p._id)}
                     onSelect={(selectedProduct) =>
@@ -774,7 +1258,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             <TableRow
               title="image"
               renderValue={(product, index) => {
-                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+                const compareProductIds = displayProducts.filter(Boolean).map((p) => p._id);
                 if (!product) {
                   return (
                     <div className="flex flex-col items-center py-4 px-10">
@@ -1245,11 +1729,11 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
         <div className="grid grid-cols-2 gap-2">
 
-          {products.slice(0, 2).map((product, index) => {
+          {displayProducts.slice(0, 2).map((product, index) => {
             const variant = product ? getSelectedVariant(product) : null;
             const color = product ? getSelectedColor(product) : null;
             const score = variant ? calculateScore(variant) : 0;
-            const compareProductIds = products.filter(Boolean).map((p) => p._id);
+            const compareProductIds = displayProducts.filter(Boolean).map((p) => p._id);
 
 
 
@@ -1476,8 +1960,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
         >
           <div className="bg-white border-b shadow-sm">
             <div className="grid grid-cols-2 gap-2 px-2 py-1">
-              {products.slice(0, 2).map((product, index) => {
-                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+              {displayProducts.slice(0, 2).map((product, index) => {
+                const compareProductIds = displayProducts.filter(Boolean).map((p) => p._id);
                 if (!product) {
                   return (
                     <div
@@ -1600,7 +2084,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             {/* Product 1 */}
             <div className="text-center">
               <h3 className="text-sm font-semibold truncate">
-                {products?.[0]?.name}
+                {displayProducts?.[0]?.name}
               </h3>
 
               <p className={`text-3xl font-bold ${score1Style.text}`}>
@@ -1618,7 +2102,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             {/* Product 2 */}
             <div className="text-center">
               <h3 className="text-sm font-semibold truncate">
-                {products?.[1]?.name}
+                {displayProducts?.[1]?.name}
               </h3>
 
               <p className={`text-3xl font-bold ${score2Style.text}`}>
@@ -1667,8 +2151,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             <h2 className="text-lg font-bold p-4 border-b">Performance</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product, index) => {
-                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+              {displayProducts.map((product, index) => {
+
                 if (!product) {
                   return (
                     <div
@@ -1779,8 +2263,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             <h2 className="text-lg font-bold p-4 border-b">Display</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product, index) => {
-                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+              {displayProducts.map((product, index) => {
+
                 if (!product) {
                   return (
                     <div
@@ -1832,8 +2316,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             <h2 className="text-lg font-bold p-4 border-b">Camera</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product, index) => {
-                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+              {displayProducts.map((product, index) => {
+
                 if (!product) {
                   return (
                     <div
@@ -1904,8 +2388,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             <h2 className="text-lg font-bold p-4 border-b">Battery</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product, index) => {
-                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+              {displayProducts.map((product, index) => {
+
                 if (!product) {
                   return (
                     <div
@@ -1954,8 +2438,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             <h2 className="text-lg font-bold p-4 border-b">Design</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product, index) => {
-                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+              {displayProducts.map((product, index) => {
+
                 if (!product) {
                   return (
                     <div
@@ -2024,8 +2508,8 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
             <h2 className="text-lg font-bold p-4 border-b">Connectivity</h2>
 
             <div className="space-y-4 p-4">
-              {products.map((product, index) => {
-                const compareProductIds = products.filter(Boolean).map((p) => p._id);
+              {displayProducts.map((product, index) => {
+
                 if (!product) {
                   return (
                     <div
