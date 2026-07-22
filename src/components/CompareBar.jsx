@@ -53,7 +53,7 @@ const CompareBar = () => {
                       return (
                   <div
                     key={product._id}
-                    className="relative flex-shrink-0 w-16 h-16 lg:w-auto lg:h-auto flex items-center gap-2 bg-gray-100 rounded-lg p-2"
+                    className="relative flex-shrink-0 w-30 h-30 lg:w-auto lg:h-auto flex items-center gap-2 bg-gray-100 rounded-lg p-2"
                   >
                     {/* Remove Button */}
                     <button
@@ -70,7 +70,12 @@ const CompareBar = () => {
                       className="w-12 h-12 lg:w-16 lg:h-16 object-contain rounded"
                        //onError={(e) => console.log("Broken image:", product)}
                     />
-                   
+                   <div className="flex flex-1  lg:hidden">
+                      <p className="text-xs font-medium line-clamp-1">
+                        {product.name}
+                      </p>
+ 
+                    </div>
 
                     {/* Desktop Only */}
                     <div className="hidden lg:block">
