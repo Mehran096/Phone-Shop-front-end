@@ -1258,9 +1258,12 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="image"
               renderValue={(product, index) => {
-                const compareProductIds = displayProducts.filter(Boolean).map((p) => p._id);
+                
+                
                 if (!product) {
+                  if(!showRemove) return null
                   return (
+                    
                     <div className="flex flex-col items-center py-4 px-10">
                       <span className="text-gray-400 italic">
                         No phone selected.
@@ -1269,6 +1272,7 @@ const parseStorage = (storage = "") => {
                     </div>
                   );
                 }
+                
                 const variant = getSelectedVariant(product);
                 const color = getSelectedColor(product, variant);
 
@@ -1302,10 +1306,13 @@ const parseStorage = (storage = "") => {
                   <span className="font-medium">
                     {product.name}
                   </span>
+                  
                 ) : (
+                showRemove && (
                   <span className="text-gray-400 italic">
                     No phone selected
                   </span>
+                )
                 )
               }
             />
@@ -1313,14 +1320,29 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="Brand"
               renderValue={(product) =>
-                product ? product.brand || "-" : "-"
+                  
+                product ? product.brand || "-" : 
+                showRemove && (
+                "-"
+                )
+                 
               }
             />
 
             <TableRow
               title="Starting Price"
               renderValue={(product) => {
-                if (!product) return "-";
+                  
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
 
                 const color = getSelectedColor(product);
                 return `$${color?.price || 0}`;
@@ -1333,7 +1355,9 @@ const parseStorage = (storage = "") => {
                 product ? (
                   <>⭐ {product.rating?.toFixed(1) || "0.0"}</>
                 ) : (
+                  showRemove && (
                   "-"
+                  )
                 )
               }
             />
@@ -1341,13 +1365,26 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="Reviews"
               renderValue={(product) =>
-                product ? product.numReviews : "-"
+
+                product ? product.numReviews : 
+                 showRemove && (
+                "-"
+                 )
               }
             />
             <TableRow
               title="Storage"
               renderValue={(product) => {
-                if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
 
                 return (
                   <select
@@ -1378,7 +1415,16 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="Colors"
               renderValue={(product) => {
-                if (!product) return "-";
+                if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                 const variant = getSelectedVariant(product);
 
                 return (
@@ -1410,7 +1456,16 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="Display"
               renderValue={(product) => {
-                if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
 
                 const variant = getSelectedVariant(product);
                 return variant?.specs?.Display || "-";
@@ -1420,7 +1475,16 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="RAM"
               renderValue={(product) => {
-                if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
 
                 const variant = getSelectedVariant(product);
                 return variant?.specs?.RAM || "-";
@@ -1430,7 +1494,16 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="Rear Camera"
               renderValue={(product) => {
-                if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
 
                 const variant = getSelectedVariant(product);
                 return variant?.specs?.["Rear Camera"] || "-";
@@ -1441,7 +1514,16 @@ const parseStorage = (storage = "") => {
               title="Front Camera"
 
               renderValue={(product) => {
-                if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                 const variant = getSelectedVariant(product);
                 return variant?.specs?.["Front Camera"] || "-";
               }}
@@ -1452,7 +1534,16 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="Battery"
               renderValue={(product) => {
-                if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                 const variant = getSelectedVariant(product);
                 return variant?.specs?.Battery || "-";
               }}
@@ -1462,7 +1553,16 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="Chipset"
               renderValue={(product) => {
-                if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                 const variant = getSelectedVariant(product);
                 return variant?.specs?.Chipset || "-";
               }}
@@ -1471,7 +1571,16 @@ const parseStorage = (storage = "") => {
             <TableRow
               title="Operating System"
               renderValue={(product) => {
-                if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                 const variant = getSelectedVariant(product);
                 return variant?.specs?.OS || "-";
               }}
@@ -1481,7 +1590,16 @@ const parseStorage = (storage = "") => {
               title="Build"
 
               renderValue={(product) => {
-                if (!product) return "-";
+                if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                 const variant = getSelectedVariant(product);
                 return variant?.specs?.Build || "-";
               }}
@@ -1502,10 +1620,20 @@ const parseStorage = (storage = "") => {
 
                 renderValue={(product) => {
                   if (!product) {
+                      if (!product) {
+                     if(!showRemove) return null
                     return (
                       <div className="flex flex-col items-center py-4">
                         <span className="text-gray-400 italic">
-                          No phone selected
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected.
                           Search and add a phone to compare.
                         </span>
                       </div>
@@ -1522,7 +1650,16 @@ const parseStorage = (storage = "") => {
                 title="RAM"
 
                 renderValue={(product) => {
-                  if (!product) return "-";
+                  if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
 
                   return variant?.specs?.RAM || "-";
@@ -1533,7 +1670,16 @@ const parseStorage = (storage = "") => {
                 title="Storage"
 
                 renderValue={(product) => {
-                  if (!product) return "-";
+                   if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
 
                   return variant?.specs?.Storage || "-";
@@ -1544,7 +1690,16 @@ const parseStorage = (storage = "") => {
                 title="Operating System"
 
                 renderValue={(product) => {
-                  if (!product) return "-";
+                 if (!product) {
+                     if(!showRemove) return null
+                    return (
+                      <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          No phone selected 
+                        </span>
+                      </div>
+                    );
+                  }
                   const variant = getSelectedVariant(product);
 
                   return variant?.specs?.OS || "-";
@@ -1564,10 +1719,11 @@ const parseStorage = (storage = "") => {
                 title="Display"
                 renderValue={(product) => {
                   if (!product) {
+                      if(!showRemove) return null
                     return (
                       <div className="flex flex-col items-center py-4">
                         <span className="text-gray-400 italic">
-                          No phone selected
+                          No phone selected.
                           Search and add a phone to compare.
                         </span>
                       </div>
@@ -1593,10 +1749,11 @@ const parseStorage = (storage = "") => {
 
                 renderValue={(product) => {
                   if (!product) {
+                      if(!showRemove) return null
                     return (
                       <div className="flex flex-col items-center py-4">
                         <span className="text-gray-400 italic">
-                          No phone selected
+                          No phone selected.
                           Search and add a phone to compare.
                         </span>
                       </div>
@@ -1611,7 +1768,17 @@ const parseStorage = (storage = "") => {
                 title="Front Camera"
 
                 renderValue={(product) => {
-                  if (!product) return "-";
+                  if (!product){
+                     if(!showRemove) return null
+                       return(
+                        <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          
+                          Search and add a phone to compare.
+                        </span>
+                      </div>
+                      ) 
+                  }
                   const variant = getSelectedVariant(product);
                   return variant?.specs?.["Front Camera"] || "-";
                 }}
@@ -1630,10 +1797,11 @@ const parseStorage = (storage = "") => {
                 title="Battery"
                 renderValue={(product) => {
                   if (!product) {
+                     if(!showRemove) return null
                     return (
                       <div className="flex flex-col items-center py-4">
                         <span className="text-gray-400 italic">
-                          No phone selected
+                          No phone selected.
                           Search and add a phone to compare.
                         </span>
                       </div>
@@ -1657,10 +1825,11 @@ const parseStorage = (storage = "") => {
                 title="Build"
                 renderValue={(product) => {
                   if (!product) {
+                     if(!showRemove) return null
                     return (
                       <div className="flex flex-col items-center py-4">
                         <span className="text-gray-400 italic">
-                          No phone selected
+                          No phone selected.
                           Search and add a phone to compare.
                         </span>
                       </div>
@@ -1675,7 +1844,17 @@ const parseStorage = (storage = "") => {
                 title="Other"
 
                 renderValue={(product) => {
-                  if (!product) return "-";
+                   if (!product){
+                     if(!showRemove) return null
+                       return(
+                        <div className="flex flex-col items-center py-4">
+                        <span className="text-gray-400 italic">
+                          
+                          Search and add a phone to compare.
+                        </span>
+                      </div>
+                      ) 
+                  }
                   const variant = getSelectedVariant(product);
                   return variant?.specs?.Other || "-";
                 }}
@@ -1701,15 +1880,16 @@ const parseStorage = (storage = "") => {
                 title="Connectivity"
 
                 renderValue={(product) => {
-                  if (!product) {
-                    return (
-                      <div className="flex flex-col items-center py-4">
+                  if (!product){
+                     if(!showRemove) return null
+                       return(
+                        <div className="flex flex-col items-center py-4">
                         <span className="text-gray-400 italic">
-                          No phone selected
+                          
                           Search and add a phone to compare.
                         </span>
                       </div>
-                    );
+                      ) 
                   }
                   const variant = getSelectedVariant(product);
                   return variant?.specs?.Connectivity || "-";
