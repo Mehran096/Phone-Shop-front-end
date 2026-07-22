@@ -5,7 +5,7 @@ import {
   addToCompare,
   removeFromCompare,
 } from '../slices/compareSlice';
-import { FaChevronDown, FaTrophy } from 'react-icons/fa';
+import { FaChevronDown, FaTrophy, } from 'react-icons/fa';
 import CompareSearch from './CompareSearch';
 
 const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) => {
