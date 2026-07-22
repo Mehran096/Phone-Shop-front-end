@@ -1255,6 +1255,7 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
             return (
               <div
+                ref={phoneRef}
                 key={product ? `${product._id}-${index}` : `empty-${index}`}
                 className="w-full bg-white rounded-xl border shadow-md overflow-visible"
               >
@@ -1502,7 +1503,6 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
                   <div
                     key={product._id}
                     onClick={() => scrollToSection(phoneRef)}
-                    ref={phoneRef}
                     className="flex items-center gap-2 bg-white border rounded-lg p-2 shadow-sm"
                   >
                     <img
