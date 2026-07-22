@@ -1536,42 +1536,42 @@ const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) =>
 
             <button
               onClick={() => scrollToSection(performanceRef)}
-              className="px-5 py-1 font-medium hover:text-blue-600"
+              className="px-3 py-1 font-medium hover:text-blue-600"
             >
               Performance
             </button>
 
             <button
               onClick={() => scrollToSection(displayRef)}
-              className="px-5 py-1 font-medium hover:text-blue-600"
+              className="px-3 py-1 font-medium hover:text-blue-600"
             >
               Display
             </button>
 
             <button
               onClick={() => scrollToSection(cameraRef)}
-              className="px-5 py-1 font-medium hover:text-blue-600"
+              className="px-3 py-1 font-medium hover:text-blue-600"
             >
               Camera
             </button>
 
             <button
               onClick={() => scrollToSection(batteryRef)}
-              className="px-5 py-1 font-medium hover:text-blue-600"
+              className="px-3 py-1 font-medium hover:text-blue-600"
             >
               Battery
             </button>
 
             <button
               onClick={() => scrollToSection(designRef)}
-              className="px-5 py-1 font-medium hover:text-blue-600"
+              className="px-3 py-1 font-medium hover:text-blue-600"
             >
               Design
             </button>
 
             <button
               onClick={() => scrollToSection(connectivityRef)}
-              className="px-5 py-1 font-medium hover:text-blue-600"
+              className="px-3 py-1 font-medium hover:text-blue-600"
             >
               Connectivity
             </button>
