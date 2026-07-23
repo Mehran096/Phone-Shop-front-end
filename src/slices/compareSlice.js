@@ -47,6 +47,10 @@ const compareSlice = createSlice({
   state.products[index] = product;
 },
 
+setCompareProducts: (state, action) => {
+  state.products = action.payload;
+},
+
     clearCompare: (state) => {
       state.products = [];
     },
@@ -58,6 +62,7 @@ export const {
   removeFromCompare,
   replaceCompareProduct,
   clearCompareSlot,
+  setCompareProducts,
   clearCompare,
 } = compareSlice.actions;
 

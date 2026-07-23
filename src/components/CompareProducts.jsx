@@ -9,7 +9,14 @@ import { FaChevronDown, FaTrophy, } from 'react-icons/fa';
 import CompareSearch from './CompareSearch';
 
 const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) => {
-  const maxCompare = window.innerWidth < 1024 ? 2 : 4;
+ const isPrinting = window.matchMedia("print").matches;
+
+const maxCompare =
+  isPrinting
+    ? 4
+    : window.innerWidth < 1024
+      ? 2
+      : 4;
 
   const displayProducts = useMemo(() => {
     const slots = [...products];
@@ -1129,14 +1136,14 @@ const parseStorage = (storage = "") => {
   // };
   const TableRow = ({ title, renderValue }) => (
     <tr className="border-b last:border-b-0">
-      <td className="bg-gray-50 font-semibold text-gray-800 px-5 py-4 min-w-[260px] text-center">
+      <td className="bg-gray-50 font-semibold text-gray-800 print:min-w-[150px] px-5 py-4 min-w-[260px] text-center">
         {title}
       </td>
 
       {displayProducts.map((product, index) => (
         <td
           key={product ? `${product._id}-${index}` : `empty-${index}`}
-          className="w-70 min-w-[320px] max-w-[320px] px-5 py-4 text-center align-top"
+          className="w-70 print:min-w-[150px] print:max-w-[150px] min-w-[320px] max-w-[320px] px-5 py-4 text-center align-top"
         >
           {renderValue(product, index)}
         </td>
@@ -1233,7 +1240,7 @@ const parseStorage = (storage = "") => {
     <>
 
       {/* Desktop */}
-      <div className="hidden lg:block overflow-x-auto rounded-xl border bg-white shadow-sm">
+      <div className="hidden lg:block print:block overflow-x-auto rounded-xl border bg-white shadow-sm">
         <table className="min-w-[1200px] w-full border-collapse">
           <thead className='w-56'>
 
@@ -1905,7 +1912,7 @@ const parseStorage = (storage = "") => {
       {/* =========================
     MOBILE LAYOUT
 ========================= */}
-      <div className="lg:hidden bg-gray-100">
+      <div className="lg:hidden print:hidden bg-gray-100">
 
         <div className="grid grid-cols-2 gap-2">
 

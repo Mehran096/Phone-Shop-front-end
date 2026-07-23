@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import {  Link  } from 'react-router-dom'
+import { Link, useSearchParams } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import {
   replaceCompareProduct,
-  clearCompareSlot
+  clearCompareSlot,
+  setCompareProducts,
 } from "../slices/compareSlice";
 
 import CompareProducts from '../components/CompareProducts';
+import  ComparePrint from '../components/ComparePrint';
+import { useGetCompareProductsQuery } from "../slices/productsApiSlice";
+ 
 import { 
   FaShareAlt,    
   FaFileExport,
@@ -21,8 +25,25 @@ import html2canvas from "html2canvas";
 const CompareScreen = () => {
 
   const compareRef = useRef(null);
+  const printRef = useRef(null);
 
 const dispatch = useDispatch();
+
+const [searchParams] = useSearchParams();
+ 
+
+const phoneSlugs =
+  searchParams.get("phones")?.split(",").filter(Boolean) || [];
+
+const {
+  data: sharedProducts,
+  isSuccess,
+} = useGetCompareProductsQuery(phoneSlugs, {
+  skip: phoneSlugs.length === 0,
+});
+
+//console.log(result);
+ 
   const { products } = useSelector((state) => state.compare);
   const [showExportMenu, setShowExportMenu] = useState(false);
    
@@ -61,6 +82,50 @@ const dispatch = useDispatch();
     })
   );
 };
+
+useEffect(() => {
+  if (
+    isSuccess &&
+    sharedProducts?.length &&
+    products.length === 0
+  ) {
+    const formattedProducts = sharedProducts.map((product) => ({
+      _id: product._id,
+      slug: product.slug,
+      name: product.name,
+      brand: product.brand,
+
+      defaultImage:
+        product.variants?.[0]?.colors?.[0]?.images?.[0]?.url ||
+        product.defaultImage,
+
+      defaultPrice:
+        product.variants?.[0]?.colors?.[0]?.price ||
+        product.defaultPrice,
+
+      rating: product.rating,
+      numReviews: product.numReviews,
+
+      defaultStorage:
+        product.variants?.[0]?.storage || "",
+
+      defaultColor:
+        product.variants?.[0]?.colors?.[0]?.name || "",
+
+      specs:
+        product.variants?.[0]?.specs || {},
+
+      variants: product.variants || [],
+    }));
+
+    dispatch(setCompareProducts(formattedProducts));
+  }
+}, [
+  dispatch,
+  isSuccess,
+  sharedProducts,
+  products.length,
+]);
 
 //handler for Export start
 const handleExportPDF = async () => {
@@ -134,7 +199,50 @@ const handleExportImage = async () => {
 
 const handlePrint = () => {
   setShowExportMenu(false);
-  window.print();
+
+  if (!printRef.current) return;
+
+  const printWindow = window.open("", "_blank");
+
+  if (!printWindow) {
+    toast.error("Please allow popups to print.");
+    return;
+  }
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Phone Comparison</title>
+
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 6mm;
+          }
+
+          body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: Arial, sans-serif;
+          }
+        </style>
+      </head>
+
+      <body>
+        ${printRef.current.innerHTML}
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+
+  printWindow.focus();
+
+  printWindow.onload = () => {
+    printWindow.print();
+    printWindow.close();
+  };
 };
 //end Export handler
 const clearSlot = (index) => {
@@ -178,7 +286,7 @@ const handleShare = async () => {
   <div>
     <Link
       to="/"
-      className="text-blue-600 text-sm"
+      className="text-blue-600 text-sm print:hidden"
     >
       ← Go Back
     </Link>
@@ -187,15 +295,15 @@ const handleShare = async () => {
   {/* Center */}
   <div className="text-center">
     <h1 className="font-bold">
-      <span className="text-xl lg:hidden">Compare</span>
-      <span className="hidden lg:inline text-3xl">
+      <span className="text-xl lg:hidden print:hidden">Compare</span>
+      <span className="hidden lg:inline print:inline text-3xl">
         Compare Phones
       </span>
     </h1>
   </div>
 
   {/* Right */}
-  <div className="flex justify-end gap-2">
+  <div className="flex justify-end gap-2 print:hidden">
     {/* Share Button */}
    <button
   onClick={handleShare}
@@ -246,6 +354,8 @@ const handleShare = async () => {
   </div>
 </div>
 
+
+
 <div ref={compareRef}>
 <CompareProducts
   products={products}
@@ -253,6 +363,16 @@ const handleShare = async () => {
   onClear={clearSlot}
 />
 </div>
+
+<div className="hidden">
+  <div ref={printRef}>
+    <ComparePrint
+      products={products}
+    />
+  </div>
+</div>
+
+
 
     </>
   );

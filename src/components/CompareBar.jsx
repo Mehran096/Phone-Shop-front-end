@@ -18,6 +18,11 @@ while (displayProducts.length < maxCompare) {
 }
 
 const hasProducts = displayProducts.some(Boolean);
+
+const compareUrl = `/compare?phones=${displayProducts
+  .filter(Boolean)
+  .map((product) => product.slug)
+  .join(",")}`;
   //console.log(products)
   if (products.length === 0) return null;
 
@@ -120,10 +125,10 @@ const hasProducts = displayProducts.some(Boolean);
                 >
                   Clear
                 </button>
-{hasProducts && (
+            {hasProducts && (
                 <Link
-                  to="/compare"
-                  className="
+                to={compareUrl}
+                className="
                   flex-1 lg:flex-none
                   py-2 px-4 lg:py-2
                   rounded-lg
@@ -132,10 +137,10 @@ const hasProducts = displayProducts.some(Boolean);
                   text-center
                   font-medium
                 "
-                >
-                  Compare ({displayProducts.length})
-                </Link>
-)}
+              >
+                Compare ({displayProducts.length})
+              </Link>
+                )}
 
               </div>
 
