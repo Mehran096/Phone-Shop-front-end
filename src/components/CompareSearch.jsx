@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FaSearch, FaTimes } from 'react-icons/fa'
 import { useGetSearchSuggestionsQuery } from '../slices/productsApiSlice';
 
-const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, compareProductIds=[] }) => {
+const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compareProductIds=[] }) => {
     const navigate = useNavigate()
     const itemRefs = useRef([]);
     const searchRef = useRef(null);
@@ -200,6 +200,14 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, compareProductId
                 break;
         }
     };
+
+    if (disabled) {
+  return (
+    <div className="h-10 flex items-center justify-center border rounded">
+      Updating...
+    </div>
+  );
+}
 
     return (
         <div className='relative w-full' ref={searchRef}>

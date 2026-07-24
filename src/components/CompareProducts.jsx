@@ -8,7 +8,8 @@ import {
 import { FaChevronDown, FaTrophy, } from 'react-icons/fa';
 import CompareSearch from './CompareSearch';
 
-const CompareProducts = ({ products, showRemove = true, onReplace, onClear }) => {
+const CompareProducts = ({ products, showRemove = true, onReplace, onClear, updating }) => {
+  //console.count("CompareProducts");
  const isPrinting = window.matchMedia("print").matches;
 
 const maxCompare =
@@ -73,18 +74,30 @@ const maxCompare =
     connectivity: false,
   });
   //for mobile screen only /end
-  useEffect(() => {
-    const obj = {};
+ useEffect(() => {
+  setSelectedVariants((prev) => {
+    let changed = false;
+    const next = { ...prev };
 
     displayProducts.filter(Boolean).forEach((product) => {
-      obj[product._id] = {
-        storage: product.defaultStorage,
-        color: product.defaultColor,
-      };
+      const current = next[product._id];
+
+      if (
+        !current ||
+        current.storage !== product.defaultStorage ||
+        current.color !== product.defaultColor
+      ) {
+        next[product._id] = {
+          storage: product.defaultStorage,
+          color: product.defaultColor,
+        };
+        changed = true;
+      }
     });
 
-    setSelectedVariants(obj);
-  }, [products]);
+    return changed ? next : prev;
+  });
+}, [products]);
 
   const getSelectedVariant = (product) => {
     if (!product) return null;
@@ -1250,6 +1263,7 @@ const parseStorage = (storage = "") => {
                 renderValue={(product, index) => (
 
                   <CompareSearch
+                  disabled={updating}
                     currentSlug={product?.slug || null}
                     compareProductIds={displayProducts
                       .filter(Boolean)

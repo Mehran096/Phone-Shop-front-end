@@ -19,7 +19,7 @@ while (displayProducts.length < maxCompare) {
 
 const hasProducts = displayProducts.some(Boolean);
 
-const compareUrl = `/compare?phones=${displayProducts
+const compareUrl = `/compare?phones=${products
   .filter(Boolean)
   .map((product) => product.slug)
   .join(",")}`;

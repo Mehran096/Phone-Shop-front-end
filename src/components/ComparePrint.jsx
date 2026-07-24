@@ -1,8 +1,7 @@
  import { useState, useEffect, useMemo } from "react";
 
 const  ComparePrint = ({ products, showRemove }) => {
-   console.log("CompareScreen products:", products);
-console.log("CompareScreen length:", products.length);
+   
   const displayProducts = useMemo(() => {
   const slots = [...products];
 
@@ -31,18 +30,30 @@ console.log("CompareScreen length:", products.length);
 
    
   
-  useEffect(() => {
-    const obj = {};
+ useEffect(() => {
+  setSelectedVariants((prev) => {
+    let changed = false;
+    const next = { ...prev };
 
     displayProducts.filter(Boolean).forEach((product) => {
-      obj[product._id] = {
-        storage: product.defaultStorage,
-        color: product.defaultColor,
-      };
+      const current = next[product._id];
+
+      if (
+        !current ||
+        current.storage !== product.defaultStorage ||
+        current.color !== product.defaultColor
+      ) {
+        next[product._id] = {
+          storage: product.defaultStorage,
+          color: product.defaultColor,
+        };
+        changed = true;
+      }
     });
 
-    setSelectedVariants(obj);
-  }, [products]);
+    return changed ? next : prev;
+  });
+}, [products]);
 
   const getSelectedVariant = (product) => {
     if (!product) return null;
@@ -71,9 +82,7 @@ console.log("CompareScreen length:", products.length);
  
  
 
-  //   const replaceProduct = (index, newProduct) => {
-  //   console.log("Replace:", index, newProduct);
-  // };
+   
   const TableRow = ({ title, renderValue }) => (
     <tr className="border-b last:border-b-0">
       <td className="bg-gray-50 font-semibold text-gray-800 px-5 py-4 min-w-[260px] text-center">

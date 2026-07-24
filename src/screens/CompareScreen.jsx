@@ -20,35 +20,80 @@ import {
 import { toast } from 'react-toastify';
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import Loader from '../components/Loader';
  
 
 const CompareScreen = () => {
 
   const compareRef = useRef(null);
   const printRef = useRef(null);
+  const timeoutRef = useRef(null);
+  timeoutRef.current = setTimeout(() => setUpdating(false), 2000)
+  useEffect(() => {
+    return () => clearTimeout(timeoutRef.current);
+  }, [])
 
 const dispatch = useDispatch();
 
-const [searchParams] = useSearchParams();
+//const [searchParams] = useSearchParams();
+const [searchParams, setSearchParams] = useSearchParams();
  
 
 const phoneSlugs =
-  searchParams.get("phones")?.split(",").filter(Boolean) || [];
+  searchParams.get("phones")?.split(",") || [];
+
+// Only real slugs go to the API
+const apiSlugs = phoneSlugs.filter((slug) => slug !== "_");
+
+  //console.log("phoneSlugs:", phoneSlugs);
 
 const {
   data: sharedProducts,
   isSuccess,
-} = useGetCompareProductsQuery(phoneSlugs, {
-  skip: phoneSlugs.length === 0,
+  isLoading
+} = useGetCompareProductsQuery(apiSlugs, {
+  skip: apiSlugs.length === 0,
 });
+
+
 
 //console.log(result);
  
   const { products } = useSelector((state) => state.compare);
   const [showExportMenu, setShowExportMenu] = useState(false);
-   
+  const [updating, setUpdating] = useState(false);
 
-  const replaceProduct = (index, product) => {
+  const compareProducts =
+  products.length > 0
+    ? products
+    : sharedProducts
+    ? sharedProducts.map((product) => ({
+        _id: product._id,
+        slug: product.slug,
+        name: product.name,
+        brand: product.brand,
+        defaultImage:
+          product.variants?.[0]?.colors?.[0]?.images?.[0]?.url ||
+          product.defaultImage,
+        defaultPrice:
+          product.variants?.[0]?.colors?.[0]?.price ||
+          product.defaultPrice,
+        rating: product.rating,
+        numReviews: product.numReviews,
+        defaultStorage: product.variants?.[0]?.storage || "",
+        defaultColor: product.variants?.[0]?.colors?.[0]?.name || "",
+        specs: product.variants?.[0]?.specs || {},
+        variants: product.variants || [],
+      }))
+    : [];
+   
+// console.log("RTK Query:", {
+//   isSuccess,
+//   sharedProducts,
+//   products,
+// });
+ const replaceProduct = (index, product) => {
+  setUpdating(true);
   const alreadyExists = products.some(
     (p, i) => i !== index && p?._id === product._id
   );
@@ -58,73 +103,99 @@ const {
     return;
   }
 
+  // Build the new compare product first
+  const newProduct = {
+    _id: product._id,
+    slug: product.slug,
+    name: product.name,
+    brand: product.brand,
+    defaultImage:
+      product.variants?.[0]?.colors?.[0]?.images?.[0]?.url ||
+      product.defaultImage,
+    defaultPrice:
+      product.variants?.[0]?.colors?.[0]?.price ||
+      product.defaultPrice,
+    rating: product.rating,
+    numReviews: product.numReviews,
+    defaultStorage: product.variants?.[0].storage,
+    defaultColor: product.variants?.[0].colors?.[0].name,
+    specs: product.variants?.[0]?.specs || {},
+    variants: product.variants,
+  };
+
+  // Create the updated compare array
+  const updatedProducts = [...products];
+  updatedProducts[index] = newProduct;
+
+  // Update Redux
   dispatch(
     replaceCompareProduct({
       index,
-      product: {
-        _id: product._id,
-        slug: product.slug,
-        name: product.name,
-        brand: product.brand,
-        defaultImage:
-    product.variants?.[0]?.colors?.[0]?.images?.[0]?.url ||
-    product.defaultImage,
-  defaultPrice:
-    product.variants?.[0]?.colors?.[0]?.price ||
-    product.defaultPrice,
-        rating: product.rating,
-        numReviews: product.numReviews,
-        defaultStorage: product.variants?.[0].storage,
-        defaultColor: product.variants?.[0].colors?.[0].name,
-        specs: product.variants?.[0]?.specs || {},
-        variants: product.variants,
-      },
+      product: newProduct,
     })
+  );
+ setTimeout(() => {
+    setUpdating(false);
+  }, 2000);
+
+  // Update URL from the updated compare array
+  const finalSlugs = updatedProducts.map((p) => p ? p.slug : "_");
+
+  setSearchParams(
+    {
+      phones: finalSlugs.join(","),
+    },
+    {
+      replace: true,
+    }
   );
 };
 
 useEffect(() => {
-  if (
-    isSuccess &&
-    sharedProducts?.length &&
-    products.length === 0
-  ) {
-    const formattedProducts = sharedProducts.map((product) => ({
+  if (!isSuccess || !sharedProducts) return;
+
+  const formattedProducts = phoneSlugs.map((slug) => {
+    if (slug === "_") return null;
+
+    const product = sharedProducts.find((p) => p.slug === slug);
+
+    if (!product) return null;
+
+    return {
       _id: product._id,
       slug: product.slug,
       name: product.name,
       brand: product.brand,
-
       defaultImage:
         product.variants?.[0]?.colors?.[0]?.images?.[0]?.url ||
         product.defaultImage,
-
       defaultPrice:
         product.variants?.[0]?.colors?.[0]?.price ||
         product.defaultPrice,
-
       rating: product.rating,
       numReviews: product.numReviews,
-
-      defaultStorage:
-        product.variants?.[0]?.storage || "",
-
-      defaultColor:
-        product.variants?.[0]?.colors?.[0]?.name || "",
-
-      specs:
-        product.variants?.[0]?.specs || {},
-
+      defaultStorage: product.variants?.[0]?.storage || "",
+      defaultColor: product.variants?.[0]?.colors?.[0]?.name || "",
+      specs: product.variants?.[0]?.specs || {},
       variants: product.variants || [],
-    }));
+    };
+  });
 
+  
+
+  // Prevent dispatching if nothing has changed
+  const current = JSON.stringify(products);
+  const next = JSON.stringify(formattedProducts);
+
+  if (current !== next) {
     dispatch(setCompareProducts(formattedProducts));
   }
 }, [
   dispatch,
   isSuccess,
   sharedProducts,
-  products.length,
+  phoneSlugs,
+  products,
 ]);
 
 //handler for Export start
@@ -245,13 +316,38 @@ const handlePrint = () => {
   };
 };
 //end Export handler
+
 const clearSlot = (index) => {
+  setUpdating(true);
+  // Create updated array
+  const updatedProducts = [...products];
+  updatedProducts[index] = null;
+
+  // Update Redux
   dispatch(clearCompareSlot(index));
+
+   setTimeout(() => {
+    setUpdating(false);
+  }, 2000);
+
+  // Update URL
+  const finalSlugs = updatedProducts.map((p) =>
+    p ? p.slug : "_"
+  );
+
+  setSearchParams(
+    {
+      phones: finalSlugs.join(","),
+    },
+    {
+      replace: true,
+    }
+  );
 };
 
 //handler for share
 const handleShare = async () => {
-  const activeProducts = products.filter(Boolean);
+  const activeProducts = compareProducts.filter(Boolean);
 
   if (!activeProducts.length) {
     toast.warning("Please add at least one phone.");
@@ -278,7 +374,7 @@ const handleShare = async () => {
   }
 };
 
-
+if (isLoading) return <Loader />;
   return (
     <>
       <div className="grid grid-cols-3 items-center mb-6 mt-5 px-4">
@@ -343,7 +439,7 @@ const handleShare = async () => {
 
       <button
       onClick={handlePrint}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition"
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition lg:hidden"
       >
         <FaPrint className="text-gray-700" />
         Print
@@ -358,16 +454,17 @@ const handleShare = async () => {
 
 <div ref={compareRef}>
 <CompareProducts
-  products={products}
+  products={compareProducts}
   onReplace={replaceProduct}
   onClear={clearSlot}
+  updating={updating}
 />
 </div>
 
 <div className="hidden">
   <div ref={printRef}>
     <ComparePrint
-      products={products}
+      products={compareProducts}
     />
   </div>
 </div>
