@@ -70,7 +70,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   const [markReviewNotHelpful, { isLoading: loadingNotHelpfulReview },] = useMarkReviewNotHelpfulMutation();
   const [uploadReviewImage, { isLoading: loadingUpload }] = useUploadReviewImageMutation();
   const [deleteCloudinaryImage] = useDeleteCloudinaryImageMutation();
-  
+
   // Compare state
   const [compareSlug, setCompareSlug] = useState("");
 
@@ -90,7 +90,10 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
 //compare page route for comparison/ start
 const handleCompareThisPhone = () => {
   // Navigate with query: /compare?phones=iphone-17-pro-max
-  navigate(`/compare?phones=${product.slug}`);
+  //navigate(`/compare?phones=${product.slug}`);
+  navigate(`/compare?phones=${product.slug}`, { 
+  state: { from: `/product/${product.slug}` } 
+});
 };
 //comparison end
 

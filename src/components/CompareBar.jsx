@@ -1,10 +1,12 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { clearCompare, removeFromCompare } from '../slices/compareSlice';
 
 const CompareBar = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const [showCompareBar, setShowCompareBar] = useState(true);
 
   const { products } = useSelector((state) => state.compare);
@@ -19,10 +21,16 @@ while (displayProducts.length < maxCompare) {
 
 const hasProducts = displayProducts.some(Boolean);
 
-const compareUrl = `/compare?phones=${products
-  .filter(Boolean)
-  .map((product) => product.slug)
-  .join(",")}`;
+const handleCompareClick = () => {
+  const compareUrl = `/compare?phones=${products
+    .filter(Boolean)
+    .map((product) => product.slug)
+    .join(",")}`;
+
+  navigate(compareUrl, { 
+    state: { from: `/` } // <-- because CompareBar is on Home
+  });
+};
   //console.log(products)
   if (products.length === 0) return null;
 
@@ -126,8 +134,8 @@ const compareUrl = `/compare?phones=${products
                   Clear
                 </button>
             {hasProducts && (
-                <Link
-                to={compareUrl}
+                <button
+                onClick={handleCompareClick}
                 className="
                   flex-1 lg:flex-none
                   py-2 px-4 lg:py-2
@@ -139,7 +147,7 @@ const compareUrl = `/compare?phones=${products
                 "
               >
                 Compare ({displayProducts.length})
-              </Link>
+              </button>
                 )}
 
               </div>

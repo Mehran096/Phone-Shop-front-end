@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import {
   replaceCompareProduct,
@@ -29,13 +29,19 @@ const CompareScreen = () => {
   const printRef = useRef(null);
   const timeoutRef = useRef(null);
   const exportMenuRef = useRef(null);
-  
+
   timeoutRef.current = setTimeout(() => setUpdating(false), 2000)
   useEffect(() => {
     return () => clearTimeout(timeoutRef.current);
   }, [])
 
 const dispatch = useDispatch();
+
+const location = useLocation();
+const navigate = useNavigate();
+
+const backPath = location.state?.from || '/'; // fallback to home
+const backLabel = backPath.includes('/product/') ? 'Go Back' : 'Go Back';
 
 //const [searchParams] = useSearchParams();
 const [searchParams, setSearchParams] = useSearchParams();
@@ -396,12 +402,12 @@ if (isLoading) return <Loader />;
       <div className="grid grid-cols-3 items-center mb-6 mt-5 px-4">
   {/* Left */}
   <div>
-    <Link
-      to="/"
+    <button
+       onClick={() => navigate(backPath)}
       className="text-blue-600 text-sm print:hidden"
     >
-      ← Go Back
-    </Link>
+      ← {backLabel}
+    </button>
   </div>
 
   {/* Center */}
