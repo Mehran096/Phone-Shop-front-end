@@ -70,6 +70,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   const [markReviewNotHelpful, { isLoading: loadingNotHelpfulReview },] = useMarkReviewNotHelpfulMutation();
   const [uploadReviewImage, { isLoading: loadingUpload }] = useUploadReviewImageMutation();
   const [deleteCloudinaryImage] = useDeleteCloudinaryImageMutation();
+  
   // Compare state
   const [compareSlug, setCompareSlug] = useState("");
 
@@ -85,6 +86,13 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   );
 
 
+ 
+//compare page route for comparison/ start
+const handleCompareThisPhone = () => {
+  // Navigate with query: /compare?phones=iphone-17-pro-max
+  navigate(`/compare?phones=${product.slug}`);
+};
+//comparison end
 
 
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0); // V9.26 KEY: Default first variant
@@ -754,6 +762,17 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
               {/* Main 360 Image */}
 
               <div className='lg:col-span-7 min-w-0'>
+                <div className='relative'>
+                 
+                <button
+                  onClick={handleCompareThisPhone}
+                  disabled={!product}
+                  className="absolute top-3 right-3 z-20 bg-white hover:bg-gray-100 text-gray-700 p-2.5 rounded-full shadow-lg border-gray-200 transition-all duration-200 hover:scale-110"
+                  title="Compare this phone"
+                >
+                  <FaBalanceScale className="text-lg" />
+                </button>
+
                 <Product360
                   images={selectedColor.images?.length > 0
                     ? selectedColor.images.map(img => img.url)
@@ -764,11 +783,10 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                   setIsImageFullscreen={setIsImageFullscreen}
                   stock={selectedColor.countInStock ?? 0}
                 />
+                </div>
               </div>
 
-
-
-
+ 
 
               {/* Right: Buy Box - Name, Brand, Price, Stock, Colors, Cart */}
               <div className='lg:col-span-5'>

@@ -28,6 +28,8 @@ const CompareScreen = () => {
   const compareRef = useRef(null);
   const printRef = useRef(null);
   const timeoutRef = useRef(null);
+  const exportMenuRef = useRef(null);
+  
   timeoutRef.current = setTimeout(() => setUpdating(false), 2000)
   useEffect(() => {
     return () => clearTimeout(timeoutRef.current);
@@ -197,6 +199,20 @@ useEffect(() => {
   phoneSlugs,
   products,
 ]);
+
+// Close export menu when clicking outside
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+      setShowExportMenu(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 
 //handler for Export start
 const handleExportPDF = async () => {
@@ -410,7 +426,7 @@ if (isLoading) return <Loader />;
 </button>
 
     {/* Export Button */}
-   <div className="relative">
+   <div className="relative" ref={exportMenuRef}>
   <button
     onClick={() => setShowExportMenu((prev) => !prev)}
     className="flex items-center gap-2 px-3 py-2 rounded-lg border hover:bg-gray-100 transition"
@@ -439,7 +455,7 @@ if (isLoading) return <Loader />;
 
       <button
       onClick={handlePrint}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition lg:hidden"
+        className="w-full hidden lg:flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition"
       >
         <FaPrint className="text-gray-700" />
         Print
