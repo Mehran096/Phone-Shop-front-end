@@ -7,7 +7,7 @@ import OfflineMessage from '../components/OfflineMessage'
 import StickyPurchaseBar from "../components/StickyPurchaseBar";
 
 import { useSelector, useDispatch } from 'react-redux'
-
+ 
 import {
   useGetProductDetailsQuery,
   useGetProductBySlugQuery,
@@ -45,6 +45,7 @@ import Product360 from '../components/Product360';
 import WishlistButton from '../components/WishlistButton'
 import CompareProducts from '../components/CompareProducts';
 import CompareSearch from '../components/CompareSearch';
+import { addToRecentlyViewed } from '../utils/recentlyViewed';
 
 
 
@@ -171,6 +172,28 @@ const handleCompareThisPhone = () => {
     setSelectedVariantIndex(variantIndex);
     setSelectedColorIndex(colorIndex);
   }, [product, dealStorage, dealColor]);
+
+  //recently viewed useEffect
+  
+ 
+useEffect(() => {
+  if (product && product.slug && selectedVariant && selectedColor) {
+    const productToSave = {
+      _id: product._id,
+      slug: product.slug,
+      name: `${product.name} - ${selectedVariant.storage} - ${selectedColor.name}`,
+       image: product.images?.[0]?.url
+           || selectedColor.images?.[0]?.url
+           || '/images/placeholder-phone.jpg',
+      price: selectedColor.price,
+      originalPrice: selectedColor.discount?.originalPrice || selectedColor.price,
+      bestDiscount: selectedColor.discount?.percent || 0,
+      endDate: selectedColor.discount?.endDate,
+      youSave: (selectedColor.discount?.originalPrice || 0) - selectedColor.price,
+    }
+    addToRecentlyViewed(productToSave)
+  }
+}, [product, selectedVariant, selectedColor]) // runs every time user changes color/storage
 
   // const startEdit = (review) => {
   //   setEditingReview(review);

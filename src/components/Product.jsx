@@ -22,40 +22,43 @@ const Product = ({ product, userInfo }) => {
   const isCompared = activeCompareProducts.some(
     (item) => item?._id === product._id
   );
-  // Find the variant/color to display
-  const selectedVariant =
-    product.defaultStorage
-      ? product.variants?.find(
-        (variant) => variant.storage === product.defaultStorage
-      )
-      : product.variants?.[0];
 
-  //console.log(selectedVariant)
 
-  const selectedColor =
-    product.defaultColor
-      ? selectedVariant?.colors?.find(
-        (color) => color.name === product.defaultColor
-      )
-      : selectedVariant?.colors?.[0];
+  // V10.4 KEY: Check if this is flat recentlyViewed data first
+const isFlat =!product.variants // recentlyViewed data doesn't have variants
+
+// Find the variant/color to display - ONLY for full products
+const selectedVariant = isFlat
+? null
+  : product.defaultStorage
+   ? product.variants?.find(v => v.storage === product.defaultStorage)
+    : product.variants?.[0];
+
+const selectedColor = isFlat
+? null
+  : product.defaultColor
+   ? selectedVariant?.colors?.find(c => c.name === product.defaultColor)
+    : selectedVariant?.colors?.[0];
   //  console.log(product.defaultStorage);
   // console.log(product.defaultColor);
   // Image
-  const mainImage =
-    selectedColor?.images?.[0]?.url ||
-    '/images/placeholder-phone.jpg';
 
-  // Price
-  // Price - Use deal price if exists, otherwise use selected color price
-const mainPrice = product.price || selectedColor?.price;
-const mainOriginalPrice = product.originalPrice;
-const discountPercent = product.bestDiscount;
+  const mainImage = isFlat
+   ? product.image // use the flat image we saved
+    : (product.defaultColor
+       ? product.variants?.[0]?.colors?.find(c => c.name === product.defaultColor)?.images?.[0]?.url
+        : product.variants?.[0]?.colors?.[0]?.images?.[0]?.url)
+      || '/images/placeholder-phone.jpg'
+
+  const mainPrice = isFlat? product.price : (product.price || product.variants?.[0]?.colors?.[0]?.price)
+  const mainOriginalPrice = isFlat? product.originalPrice : product.originalPrice
+  const discountPercent = isFlat? product.bestDiscount : product.bestDiscount
 
 const mainPriceFormatted = mainPrice? Number(mainPrice).toLocaleString('en-US') : null;
 const mainOriginalPriceFormatted = mainOriginalPrice? Number(mainOriginalPrice).toLocaleString('en-US') : null;
 
   // Colors
-  const firstVariantColors = selectedVariant?.colors || [];
+  const firstVariantColors = isFlat? [] : (selectedVariant?.colors || []);
   //console.log(firstVariantColors)
   const rating = product.rating || 0;
   const numReviews = product.numReviews || 0;

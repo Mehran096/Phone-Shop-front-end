@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
 import Product from '../components/Product'
 import { useSelector } from 'react-redux'
@@ -9,6 +10,8 @@ import Loader from '../components/Loader'
 import Message from '../components/Message'
 import OfflineMessage from '../components/OfflineMessage'
 import { FaShippingFast, FaShieldAlt, FaHeadset } from 'react-icons/fa'
+import RecentlyViewed from '../components/RecentlyViewed'
+import { getRecentlyViewed, clearRecentlyViewed } from '../utils/recentlyViewed'
 //import CountdownTimer from '../components/CountdownTimer'
  
 const HomeScreen = ({ isOnline }) => {
@@ -17,7 +20,13 @@ const HomeScreen = ({ isOnline }) => {
   const brand = searchParams.get('brand') || '' // Fix 1: Read brand
   const pageNumber = Number(searchParams.get('pageNumber')) || 1
 
+const [recentProducts, setRecentProducts] = useState([])
+
   const { userInfo } = useSelector((state) => state.auth)
+
+  useEffect(() => {
+  setRecentProducts(getRecentlyViewed())
+}, [])
 
   const { data, isLoading, error, refetch } = useGetProductsQuery({
     keyword,
@@ -285,6 +294,42 @@ const {
   </section>
 )}
 
+{/* 3. Recently Viewed Section - Same style as Deals */}
+{recentProducts.length > 0 && (
+  <section className='mt-12 md:mt-16 lg:mt-20 py-16 bg-gray-50'>
+    <div className='container mx-auto px-4'>
+      
+      <div className='text-center mb-10'>
+        <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900'>
+          👀 Recently Viewed
+        </h2>
+        <p className='mt-3 text-gray-500 text-sm sm:text-base max-w-2xl mx-auto'>
+          Pick up right where you left off
+        </p>
+        <div className='flex justify-center mt-2'>
+          <button
+            onClick={() => {
+              clearRecentlyViewed()
+              setRecentProducts([])
+            }}
+            className='text-blue-600 hover:text-blue-700 font-semibold text-sm'
+          >
+            Clear All
+          </button>
+        </div>
+      </div>
+
+      <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+        {recentProducts.map((product) => (
+          <div key={product.slug} className='relative'>
+            <Product product={product} userInfo={userInfo} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+)}
+
       {/* 4. Why Choose Us - Only on homepage */}
       {!keyword && !brand && ( // Fix 8: Hide when filtering by brand too
         <section className='py-16 bg-gray-50'>
@@ -316,6 +361,8 @@ const {
           </div>
         </section>
       )}
+
+     
     </>
   )
 }

@@ -42,7 +42,7 @@ const DealsScreen = () => {
         {/* Heading */}
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-            🔥 Deals & Discounts
+            💸 Deals & Discounts
           </h1>
           <p className="mt-3 text-gray-500 max-w-2xl mx-auto">
             Discover all smartphones currently available at discounted prices. Limited time offers!
