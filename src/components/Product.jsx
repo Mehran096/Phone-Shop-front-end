@@ -6,7 +6,8 @@ import {
   removeFromCompare,
 } from '../slices/compareSlice';
 import { toast } from 'react-toastify';
-
+import CountdownTimer from './CountdownTimer';
+ 
 const Product = ({ product, userInfo }) => {
   const dispatch = useDispatch();
 
@@ -45,10 +46,13 @@ const Product = ({ product, userInfo }) => {
     '/images/placeholder-phone.jpg';
 
   // Price
-  const mainPrice =
-    selectedColor?.price
-      ? Number(selectedColor.price).toLocaleString('en-US')
-      : null;
+  // Price - Use deal price if exists, otherwise use selected color price
+const mainPrice = product.price || selectedColor?.price;
+const mainOriginalPrice = product.originalPrice;
+const discountPercent = product.bestDiscount;
+
+const mainPriceFormatted = mainPrice? Number(mainPrice).toLocaleString('en-US') : null;
+const mainOriginalPriceFormatted = mainOriginalPrice? Number(mainOriginalPrice).toLocaleString('en-US') : null;
 
   // Colors
   const firstVariantColors = selectedVariant?.colors || [];
@@ -140,6 +144,12 @@ const Product = ({ product, userInfo }) => {
         {/* V9.80 KEY: h-40 mobile, h-48 desktop. Big enough to breathe */}
         <div className='h-32 sm:h-48 overflow-hidden bg-gray-50 flex items-center justify-center'>
           <img src={mainImage} alt={product.name} className='h-full w-full object-contain p-2 sm:p-3 group-hover:scale-105 transition-transform duration-300' loading="lazy" />
+          {/* Countdown Badge on Image */}
+  {product.bestDiscount > 0 && product.endDate && (
+    <div className="absolute top-28 left-2 lg:top-44 lg:left-2 z-20">
+      <CountdownTimer endDate={product.endDate} />
+    </div>
+  )}
         </div>
       </Link>
 
@@ -174,22 +184,44 @@ const Product = ({ product, userInfo }) => {
         )}
 
         <div className='mt-auto pt-1'>
-          {mainPrice ? (
-            <div className='flex items-baseline gap-1.5'>
-              {product.variants?.length > 1 || firstVariantColors.length > 1 ? (
-                <span className='text-[10px] uppercase tracking-wider text-gray-500 font-medium'>
-                  Starting at
-                </span>
-              ) : null}
-
-              <p className='text-xl sm:text-2xl font-bold text-gray-900 leading-none'>
-                ${mainPrice}
-              </p>
-            </div>
-          ) : (
-            <p className='text-sm text-gray-400 font-medium'>Contact</p>
+  {mainPrice? (
+    <div className='flex items-baseline gap-2 flex-wrap'>
+      {product.bestDiscount? (
+        // DEALS CARD - Show crossed price + badge
+        <>
+          <p className='text-xl sm:text-2xl font-bold text-gray-900 leading-none'>
+            ${mainPriceFormatted}
+          </p>
+          {mainOriginalPriceFormatted && mainOriginalPrice > mainPrice && (
+            <p className='text-sm line-through text-gray-500'>${mainOriginalPriceFormatted}</p>
           )}
-        </div>
+          <span className='text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-semibold'>
+            {discountPercent}% OFF
+          </span>
+          {/* ADD THIS */}
+        {mainOriginalPrice > mainPrice && (
+          <p className='text-xs text-green-600 mt-0.5 w-full'>
+            You save ${(mainOriginalPrice - mainPrice).toFixed(2)}
+          </p>)}
+        </>
+      ) : (
+        // NORMAL CARD - Show "Starting at"
+        <>
+          {(product.variants?.length > 1 || firstVariantColors.length > 1) && (
+            <span className='text-[10px] uppercase tracking-wider text-gray-500 font-medium'>
+              Starting at
+            </span>
+          )}
+          <p className='text-xl sm:text-2xl font-bold text-gray-900 leading-none'>
+            ${mainPriceFormatted}
+          </p>
+        </>
+      )}
+    </div>
+  ) : (
+    <p className='text-sm text-gray-400 font-medium'>Contact</p>
+  )}
+</div>
       </div>
     </div>
   );

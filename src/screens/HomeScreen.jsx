@@ -9,7 +9,7 @@ import Loader from '../components/Loader'
 import Message from '../components/Message'
 import OfflineMessage from '../components/OfflineMessage'
 import { FaShippingFast, FaShieldAlt, FaHeadset } from 'react-icons/fa'
-import CountdownTimer from '../components/CountdownTimer'
+//import CountdownTimer from '../components/CountdownTimer'
  
 const HomeScreen = ({ isOnline }) => {
   const [searchParams] = useSearchParams()
@@ -269,18 +269,7 @@ const {
   {deals.map((product) => (
     <div key={product._id} className="relative">
       {/* Discount Badge + Countdown */}
-      {product.bestDiscount > 0 && (
-        <div className="absolute top-3 left-3 z-20">
-  <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
-    {product.discountType === 'percentage'
-      ? `${product.bestDiscount}% OFF`
-      : `$${product.bestDiscount} OFF`}
-  </span>
-  {product.endDate && (
-    <CountdownTimer endDate={product.endDate} />
-  )}
-</div>
-      )}
+     
       
       <Product
         key={product._id}
