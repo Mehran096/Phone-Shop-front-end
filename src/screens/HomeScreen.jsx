@@ -9,7 +9,8 @@ import Loader from '../components/Loader'
 import Message from '../components/Message'
 import OfflineMessage from '../components/OfflineMessage'
 import { FaShippingFast, FaShieldAlt, FaHeadset } from 'react-icons/fa'
-
+import CountdownTimer from '../components/CountdownTimer'
+ 
 const HomeScreen = ({ isOnline }) => {
   const [searchParams] = useSearchParams()
   const keyword = searchParams.get('keyword') || ''
@@ -31,10 +32,12 @@ const HomeScreen = ({ isOnline }) => {
 } = useGetBestSellerProductsQuery()
 
 const {
-  data: deals,
+  data: dealsData, // <-- rename to avoid confusion
   isLoading: dealsLoading,
   error: dealsError,
-} = useGetDealsProductsQuery();
+} = useGetDealsProductsQuery({ limit: 8 }); // <-- pass limit for homepage
+
+const deals = dealsData?.deals || []; // <-- extract deals array
 
 const {
   data: newArrivals,
@@ -263,14 +266,30 @@ const {
         </Message>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {deals?.map((product) => (
-            <Product
-              key={product._id}
-              product={product}
-              userInfo={userInfo}
-            />
-          ))}
-        </div>
+  {deals.map((product) => (
+    <div key={product._id} className="relative">
+      {/* Discount Badge + Countdown */}
+      {product.bestDiscount > 0 && (
+        <div className="absolute top-3 left-3 z-20">
+  <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
+    {product.discountType === 'percentage'
+      ? `${product.bestDiscount}% OFF`
+      : `$${product.bestDiscount} OFF`}
+  </span>
+  {product.endDate && (
+    <CountdownTimer endDate={product.endDate} />
+  )}
+</div>
+      )}
+      
+      <Product
+        key={product._id}
+        product={product}
+        userInfo={userInfo}
+      />
+    </div>
+  ))}
+</div>
       )}
 
     </div>

@@ -56,7 +56,10 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       keepUnusedDataFor: 5,
     }),
     getDealsProducts: builder.query({
-      query: () => '/products/deals',
+      query: ({ limit = 12, minDiscount = 0 } = {}) => ({
+        url: '/products/deals',
+        params: { limit, minDiscount },
+      }),
       providesTags: ['Products'],
       keepUnusedDataFor: 5,
     }),
