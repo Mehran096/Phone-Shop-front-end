@@ -10,7 +10,7 @@ import Loader from '../components/Loader'
 import Message from '../components/Message'
 import OfflineMessage from '../components/OfflineMessage'
 import { FaShippingFast, FaShieldAlt, FaHeadset } from 'react-icons/fa'
-import RecentlyViewed from '../components/RecentlyViewed'
+//import RecentlyViewed from '../components/RecentlyViewed'
 import { getRecentlyViewed, clearRecentlyViewed } from '../utils/recentlyViewed'
 //import CountdownTimer from '../components/CountdownTimer'
  
@@ -321,8 +321,8 @@ const {
 
       <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
         {recentProducts.map((product) => (
-          <div key={product.slug} className='relative'>
-            <Product product={product} userInfo={userInfo} />
+          <div key={`${product._id}-${product.storage}-${product.color}`}  className='relative'>
+            <Product product={product} userInfo={userInfo} hideCompare={true} fromRecent={true}  />
           </div>
         ))}
       </div>

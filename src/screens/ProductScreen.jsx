@@ -7,7 +7,7 @@ import OfflineMessage from '../components/OfflineMessage'
 import StickyPurchaseBar from "../components/StickyPurchaseBar";
 
 import { useSelector, useDispatch } from 'react-redux'
- 
+
 import {
   useGetProductDetailsQuery,
   useGetProductBySlugQuery,
@@ -87,16 +87,16 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   );
 
 
- 
-//compare page route for comparison/ start
-const handleCompareThisPhone = () => {
-  // Navigate with query: /compare?phones=iphone-17-pro-max
-  //navigate(`/compare?phones=${product.slug}`);
-  navigate(`/compare?phones=${product.slug}`, { 
-  state: { from: `/product/${product.slug}` } 
-});
-};
-//comparison end
+
+  //compare page route for comparison/ start
+  const handleCompareThisPhone = () => {
+    // Navigate with query: /compare?phones=iphone-17-pro-max
+    //navigate(`/compare?phones=${product.slug}`);
+    navigate(`/compare?phones=${product.slug}`, {
+      state: { from: `/product/${product.slug}` }
+    });
+  };
+  //comparison end
 
 
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0); // V9.26 KEY: Default first variant
@@ -154,46 +154,71 @@ const handleCompareThisPhone = () => {
   const [editColor, setEditColor] = useState(null);
 
 
-  useEffect(() => {
-    if (!product || !dealStorage || !dealColor) return;
+const isMounted = useRef(false);
+useEffect(() => {
+  if (!product) return;
 
-    const variantIndex = product.variants.findIndex(
-      (variant) => variant.storage === dealStorage
-    );
+  const variantIndex = product.variants?.findIndex(v => v.storage === dealStorage);
+  const colorIndex = variantIndex >= 0 
+   ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === dealColor)
+    : -1;
 
-    if (variantIndex === -1) return;
+  setSelectedVariantIndex(variantIndex >= 0? variantIndex : 0);
+  setSelectedColorIndex(colorIndex >= 0? colorIndex : 0);
+  
+  // NEW: Mark as ready to save after URL/defaults are set
+  isMounted.current = true;
 
-    const colorIndex = product.variants[variantIndex].colors.findIndex(
-      (color) => color.name === dealColor
-    );
-
-    if (colorIndex === -1) return;
-
-    setSelectedVariantIndex(variantIndex);
-    setSelectedColorIndex(colorIndex);
-  }, [product, dealStorage, dealColor]);
+}, [product, dealStorage, dealColor]);
 
   //recently viewed useEffect
-  
- 
+
+
+ const lastSavedId = useRef('');
+const saveTimeout = useRef(null);
+
+// Recently Viewed
 useEffect(() => {
-  if (product && product.slug && selectedVariant && selectedColor) {
-    const productToSave = {
-      _id: product._id,
+  // GUARD: WAIT FOR DATA
+  if (!product ||!product.slug ||!selectedVariant ||!selectedColor) return;
+
+  clearTimeout(saveTimeout.current);
+
+  const { price: originalPrice = 0, discount, images, name: colorName } = selectedColor;
+  const { storage } = selectedVariant;
+  
+  const discountValue = discount?.isActive? discount.value : 0;
+  const discountAmount = (originalPrice * discountValue) / 100;
+  const finalPrice = Math.max(0, originalPrice - discountAmount);
+
+  const safeColor = (colorName || 'Default').toLowerCase().replace(/\s+/g, '-');
+  const safeStorage = (storage || 'Default').toLowerCase().replace(/\s+/g, '-');
+  const uniqueId = `${product._id}-${safeStorage}-${safeColor}`;
+
+  saveTimeout.current = setTimeout(() => {
+    if (lastSavedId.current === uniqueId) return;
+    lastSavedId.current = uniqueId;
+
+    console.log('SAVING TO RECENT:', uniqueId);
+    addToRecentlyViewed({
+      _id: uniqueId,
       slug: product.slug,
-      name: `${product.name} - ${selectedVariant.storage} - ${selectedColor.name}`,
-       image: product.images?.[0]?.url
-           || selectedColor.images?.[0]?.url
-           || '/images/placeholder-phone.jpg',
-      price: selectedColor.price,
-      originalPrice: selectedColor.discount?.originalPrice || selectedColor.price,
-      bestDiscount: selectedColor.discount?.percent || 0,
-      endDate: selectedColor.discount?.endDate,
-      youSave: (selectedColor.discount?.originalPrice || 0) - selectedColor.price,
-    }
-    addToRecentlyViewed(productToSave)
-  }
-}, [product, selectedVariant, selectedColor]) // runs every time user changes color/storage
+      name: product.name,
+      image: images?.[0]?.url || '/images/placeholder-phone.jpg',
+      price: Number(finalPrice.toFixed(2)),
+      originalPrice: Number(originalPrice.toFixed(2)),
+      bestDiscount: discountValue,
+      endDate: discount?.endDate,
+      youSave: Number(discountAmount.toFixed(2)),
+      isFlat: true,
+      color: colorName || 'Default', // ADD THIS AT ROOT
+      storage: storage || 'Default', // ADD THIS AT ROOT
+      attributes: { color: colorName || 'Default', storage: storage || 'Default' }
+    });
+  }, 0);
+
+  return () => clearTimeout(saveTimeout.current);
+}, [product, selectedColor, selectedVariant]);
 
   // const startEdit = (review) => {
   //   setEditingReview(review);
@@ -789,30 +814,30 @@ useEffect(() => {
 
               <div className='lg:col-span-7 min-w-0'>
                 <div className='relative'>
-                 
-                <button
-                  onClick={handleCompareThisPhone}
-                  disabled={!product}
-                  className="absolute top-3 right-3 z-20 bg-white hover:bg-gray-100 text-gray-700 p-2.5 rounded-full shadow-lg border-gray-200 transition-all duration-200 hover:scale-110"
-                  title="Compare this phone"
-                >
-                  <FaBalanceScale className="text-lg" />
-                </button>
 
-                <Product360
-                  images={selectedColor.images?.length > 0
-                    ? selectedColor.images.map(img => img.url)
-                    : [product.image]} // V11.1 KEY: .map(img => img.url)
-                  selectedIndex={selectedImageIndex}
-                  setSelectedIndex={setSelectedImageIndex}
-                  isImageFullscreen={isImageFullscreen}
-                  setIsImageFullscreen={setIsImageFullscreen}
-                  stock={selectedColor.countInStock ?? 0}
-                />
+                  <button
+                    onClick={handleCompareThisPhone}
+                    disabled={!product}
+                    className="absolute top-3 right-3 z-20 bg-white hover:bg-gray-100 text-gray-700 p-2.5 rounded-full shadow-lg border-gray-200 transition-all duration-200 hover:scale-110"
+                    title="Compare this phone"
+                  >
+                    <FaBalanceScale className="text-lg" />
+                  </button>
+
+                  <Product360
+                    images={selectedColor.images?.length > 0
+                      ? selectedColor.images.map(img => img.url)
+                      : [product.image]} // V11.1 KEY: .map(img => img.url)
+                    selectedIndex={selectedImageIndex}
+                    setSelectedIndex={setSelectedImageIndex}
+                    isImageFullscreen={isImageFullscreen}
+                    setIsImageFullscreen={setIsImageFullscreen}
+                    stock={selectedColor.countInStock ?? 0}
+                  />
                 </div>
               </div>
 
- 
+
 
               {/* Right: Buy Box - Name, Brand, Price, Stock, Colors, Cart */}
               <div className='lg:col-span-5'>
