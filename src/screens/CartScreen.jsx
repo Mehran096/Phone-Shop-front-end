@@ -41,58 +41,58 @@ function CartScreen() {
 
   const cartSubtotal = cartItems?.reduce((acc, item) => acc + item.qty * Number(item.price || 0), 0);
   const originalSubtotal = cartItems.reduce(
-  (acc, item) => acc + (Number(item.originalPrice || item.price) * item.qty),
-  0
-);
+    (acc, item) => acc + (Number(item.originalPrice || item.price) * item.qty),
+    0
+  );
 
-const totalSavings = cartItems.reduce(
-  (acc, item) => acc + (Number(item.discountAmount || 0) * item.qty),
-  0
-);
+  const totalSavings = cartItems.reduce(
+    (acc, item) => acc + (Number(item.discountAmount || 0) * item.qty),
+    0
+  );
   const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
 
   //drop down qty 
   // V34.37 KEY: Reusable Dropdown - Works Mobile + Desktop
-const CustomDropdown = ({ value, onChange, options }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const CustomDropdown = ({ value, onChange, options }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => ref.current &&!ref.current.contains(e.target) && setOpen(false);
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    useEffect(() => {
+      const handleClickOutside = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-  return (
-    <div ref={ref} className="relative w-20 "> 
-      <button
-        type="button"
-        disabled={options.length === 0}
-        onClick={() => setOpen(!open)}
-        className='flex items-center justify-between border rounded-lg gap-1 px-3 h-10 w-full border-gray-300 rounded-md bg-white shadow-sm font-medium text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed'
-      >
-        <span>{value}</span>
-        <FaChevronDown className={`text-gray-500 transition-transform text-xs ${open? 'rotate-180' : ''}`} />
-      </button>
+    return (
+      <div ref={ref} className="relative w-20 ">
+        <button
+          type="button"
+          disabled={options.length === 0}
+          onClick={() => setOpen(!open)}
+          className='flex items-center justify-between border rounded-lg gap-1 px-3 h-10 w-full border-gray-300 rounded-md bg-white shadow-sm font-medium text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed'
+        >
+          <span>{value}</span>
+          <FaChevronDown className={`text-gray-500 transition-transform text-xs ${open ? 'rotate-180' : ''}`} />
+        </button>
 
-      {open && (
-        <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto 
+        {open && (
+          <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto 
           [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => { onChange(opt); setOpen(false); }}
-              className={`w-full text-left px-3 py-2 text-sm font-medium text-gray-900 hover:bg-blue-50 ${Number(value) === Number(opt)? 'bg-blue-50 text-blue-600' : ''}`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { onChange(opt); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-sm font-medium text-gray-900 hover:bg-blue-50 ${Number(value) === Number(opt) ? 'bg-blue-50 text-blue-600' : ''}`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -131,15 +131,17 @@ const CustomDropdown = ({ value, onChange, options }) => {
                   {/* TOP: Image + Info Row */}
                   <div className="flex gap-4">
                     {/* V16.6 KEY: FIXED SMALL IMAGE ON MOBILE */}
-                    <img
-                      src={item.image || '/placeholder.png'}
-                      alt={item.name}
-                      className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0"
-                    />
+                    <Link to={`/product/${item.slug || item.product}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`}>
+  <img
+    src={item.image || '/placeholder.png'}
+    alt={item.name}
+    className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0"
+  />
+</Link>
 
                     {/* Info */}
                     <div className="flex-1 flex-col">
-                      <Link to={`/product/${item.slug || item.product}`} className="hover:underline">
+                      <Link to={`/product/${item.slug || item.product}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`} className="hover:underline">
                         <h2 className="font-bold text-gray-900 text-base leading-tight">
                           {item.name}{item.storage ? ` - ${item.storage}` : ''}
                         </h2>
@@ -147,22 +149,22 @@ const CustomDropdown = ({ value, onChange, options }) => {
                       <p className="text-xs text-gray-600 mt-1">Color: <span className="font-medium">{item.color || 'Default'}</span></p>
                       <p className="text-xs text-gray-600">Storage: <span className="font-medium">{item.storage || 'N/A'}</span></p>
                       <div className="mt-2">
-  <p className="text-lg font-bold text-red-600">
-    ${Number(item.price || 0).toFixed(2)}
-  </p>
+                        <p className="text-lg font-bold text-red-600">
+                          ${Number(item.price || 0).toFixed(2)}
+                        </p>
 
-  {item.originalPrice > item.price && (
-    <>
-      <p className="text-sm text-gray-500 line-through">
-        ${Number(item.originalPrice).toFixed(2)}
-      </p>
+                        {item.originalPrice > item.price && (
+                          <>
+                            <p className="text-sm text-gray-500 line-through">
+                              ${Number(item.originalPrice).toFixed(2)}
+                            </p>
 
-      <p className="text-sm text-green-600 font-medium">
-        You save ${Number(item.discountAmount || 0).toFixed(2)}
-      </p>
-    </>
-  )}
-</div>
+                            <p className="text-sm text-green-600 font-medium">
+                              You save ${Number(item.discountAmount || 0).toFixed(2)}
+                            </p>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -170,11 +172,11 @@ const CustomDropdown = ({ value, onChange, options }) => {
                   <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100"> {/* V16.6 KEY */}
                     <div className="flex items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">Qty</label>
-<CustomDropdown
-  value={item.qty}
-  onChange={(val) => updateQtyHandler(item, Number(val))}
-  options={Array.from({ length: Math.min(item.countInStock, 10) }, (_, i) => i + 1)}
-/>
+                      <CustomDropdown
+                        value={item.qty}
+                        onChange={(val) => updateQtyHandler(item, Number(val))}
+                        options={Array.from({ length: Math.min(item.countInStock, 10) }, (_, i) => i + 1)}
+                      />
                     </div>
                     <button
                       type="button"
@@ -196,26 +198,26 @@ const CustomDropdown = ({ value, onChange, options }) => {
                 </h2>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between text-gray-600">
-  <span>Subtotal ({cartItemsCount} items)</span>
+                    <span>Subtotal ({cartItemsCount} items)</span>
 
-  <div className="text-right">
-    <div className="font-semibold text-gray-900">
-      ${cartSubtotal.toFixed(2)}
-    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-gray-900">
+                        ${cartSubtotal.toFixed(2)}
+                      </div>
 
-    {totalSavings > 0 && (
-      <>
-        <div className="text-xs text-gray-500 line-through">
-          ${originalSubtotal.toFixed(2)}
-        </div>
+                      {totalSavings > 0 && (
+                        <>
+                          <div className="text-xs text-gray-500 line-through">
+                            ${originalSubtotal.toFixed(2)}
+                          </div>
 
-        <div className="text-xs text-green-600 font-medium">
-          You save ${totalSavings.toFixed(2)}
-        </div>
-      </>
-    )}
-  </div>
-</div>
+                          <div className="text-xs text-green-600 font-medium">
+                            You save ${totalSavings.toFixed(2)}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
                     <span className="text-green-600 font-semibold">Free</span>

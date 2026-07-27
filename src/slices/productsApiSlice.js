@@ -80,6 +80,11 @@ export const productsApiSlice = apiSlice.injectEndpoints({
   providesTags: ["Products"],
   keepUnusedDataFor: 5,
 }),
+getRecommendedProducts: builder.query({
+  query: (productId) => `/products/${productId}/recommendations`,
+  providesTags: ['Products'],
+  keepUnusedDataFor: 5,
+}),
     updateProductSpecs: builder.mutation({
       query: ({ productId, specs }) => ({
         url: `/products/${productId}/specs`,
@@ -264,6 +269,7 @@ export const {
   useGetDealsProductsQuery,
   useGetNewArrivalProductsQuery,
   useGetCompareProductsQuery,
+  useGetRecommendedProductsQuery,
   useDeleteReviewMutation,
   useMarkReviewHelpfulMutation,
   useMarkReviewNotHelpfulMutation,

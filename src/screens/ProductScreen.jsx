@@ -21,7 +21,8 @@ import {
   useEditAdminReplyMutation,
   useDeleteAdminReplyMutation,
   useUploadReviewImageMutation,
-  useDeleteCloudinaryImageMutation
+  useDeleteCloudinaryImageMutation,
+  useGetRecommendedProductsQuery
 } from '../slices/productsApiSlice'
 import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
@@ -46,7 +47,8 @@ import WishlistButton from '../components/WishlistButton'
 import CompareProducts from '../components/CompareProducts';
 import CompareSearch from '../components/CompareSearch';
 import { addToRecentlyViewed } from '../utils/recentlyViewed';
-
+import RecommendedProducts from '../components/RecommendedProducts';
+ 
 
 
 
@@ -71,6 +73,18 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   const [markReviewNotHelpful, { isLoading: loadingNotHelpfulReview },] = useMarkReviewNotHelpfulMutation();
   const [uploadReviewImage, { isLoading: loadingUpload }] = useUploadReviewImageMutation();
   const [deleteCloudinaryImage] = useDeleteCloudinaryImageMutation();
+
+  const { 
+  data, 
+  isLoading: loadingRecs, 
+  error: errorRecs 
+} = useGetRecommendedProductsQuery(product?._id, {
+  skip:!product?._id // don't run until product loads
+})
+
+// const recommendations = data?.recommendations || []
+// const recType = data?.type
+// const recBrand = data?.brand
 
   // Compare state
   const [compareSlug, setCompareSlug] = useState("");
@@ -158,18 +172,34 @@ const isMounted = useRef(false);
 useEffect(() => {
   if (!product) return;
 
+  // PRIORITY 1: Check if coming from Wishlist with URL params
+  const urlColor = searchParams.get('color');
+  const urlStorage = searchParams.get('storage');
+
+  if (urlColor && urlStorage) {
+    const variantIndex = product.variants?.findIndex(v => v.storage === urlStorage);
+    const colorIndex = variantIndex >= 0
+    ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === urlColor)
+      : -1;
+
+    setSelectedVariantIndex(variantIndex >= 0? variantIndex : 0);
+    setSelectedColorIndex(colorIndex >= 0? colorIndex : 0);
+    isMounted.current = true;
+    return; // Exit so wishlist params override deals
+  }
+
+  // PRIORITY 2: Your existing Deal logic
   const variantIndex = product.variants?.findIndex(v => v.storage === dealStorage);
-  const colorIndex = variantIndex >= 0 
-   ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === dealColor)
+  const colorIndex = variantIndex >= 0
+  ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === dealColor)
     : -1;
 
   setSelectedVariantIndex(variantIndex >= 0? variantIndex : 0);
   setSelectedColorIndex(colorIndex >= 0? colorIndex : 0);
-  
+
   // NEW: Mark as ready to save after URL/defaults are set
   isMounted.current = true;
-
-}, [product, dealStorage, dealColor]);
+}, [product, dealStorage, dealColor, searchParams]);
 
   //recently viewed useEffect
 
@@ -1178,6 +1208,15 @@ useEffect(() => {
             )}
           </div>
         </div>
+
+        {/* Customers also viewed section */}
+          <RecommendedProducts
+            data={data}
+            loading={loadingRecs}
+            error={errorRecs}
+            onAddToCart={addToCartHandler}
+            
+          />
 
 
         {/* Reviews Section */}

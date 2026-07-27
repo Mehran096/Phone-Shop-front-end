@@ -159,7 +159,7 @@ const WishlistScreen = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
               {wishlistItems.map((item) => (
                 <div key={item._id} className="border border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-4 hover:shadow-lg transition">
-                  <Link to={`/product/${item.slug}`}>
+                  <Link to={`/product/${item.slug}?color=${encodeURIComponent(item.color)}&storage=${encodeURIComponent(item.storage)}`}>
                     <div className="w-full aspect-square bg-gray-50 rounded-md sm:rounded-lg mb-2 sm:mb-4 flex items-center justify-center overflow-hidden">
                       <img
                         src={item.image}
@@ -169,7 +169,7 @@ const WishlistScreen = () => {
                     </div>
                   </Link>
 
-                  <Link to={`/product/${item.slug}`}>
+                  <Link to={`/product/${item.slug}?color=${encodeURIComponent(item.color)}&storage=${encodeURIComponent(item.storage)}`}>
                     <h3 className="font-semibold text-xs sm:text-base mb-1 sm:mb-2 hover:text-blue-600 line-clamp-2">
                       {item.name}
                     </h3>
@@ -182,25 +182,25 @@ const WishlistScreen = () => {
                     <span className="font-medium">Storage:</span> {item.storage}
                   </p>
 
-                 <div className="mb-2 sm:mb-4">
-  <div className="flex items-center gap-2 flex-wrap">
-    <span className="text-lg sm:text-2xl font-bold text-red-600">
-      ${Number(item.price).toFixed(2)}
-    </span>
+                  <div className="mb-2 sm:mb-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-lg sm:text-2xl font-bold text-red-600">
+                        ${Number(item.price).toFixed(2)}
+                      </span>
 
-    {item.originalPrice > item.price && (
-      <span className="text-sm sm:text-lg text-gray-500 line-through">
-        ${Number(item.originalPrice).toFixed(2)}
-      </span>
-    )}
-  </div>
+                      {item.originalPrice > item.price && (
+                        <span className="text-sm sm:text-lg text-gray-500 line-through">
+                          ${Number(item.originalPrice).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
 
-  {item.discountAmount > 0 && (
-    <p className="text-xs sm:text-sm text-green-600 font-medium mt-1">
-      You save ${Number(item.discountAmount).toFixed(2)}
-    </p>
-  )}
-</div>
+                    {item.discountAmount > 0 && (
+                      <p className="text-xs sm:text-sm text-green-600 font-medium mt-1">
+                        You save ${Number(item.discountAmount).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Add this qty selector */}
                   {/* QTY ROW - V34.39 KEY */}

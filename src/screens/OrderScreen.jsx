@@ -3,12 +3,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
-import { 
-  FaArrowLeft, 
-  FaCopy, 
-  FaHome, 
-  FaCreditCard, 
-  FaBox, 
+import {
+  FaArrowLeft,
+  FaCopy,
+  FaHome,
+  FaCreditCard,
+  FaBox,
   FaTruck,
   FaReceipt
 } from 'react-icons/fa';
@@ -34,16 +34,16 @@ const OrderScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
 
   const originalItemsPrice =
-  order?.orderItems?.reduce(
-    (acc, item) => acc + (item.originalPrice || item.price) * item.qty,
-    0
-  ) || 0;
+    order?.orderItems?.reduce(
+      (acc, item) => acc + (item.originalPrice || item.price) * item.qty,
+      0
+    ) || 0;
 
-const totalDiscount =
-  order?.orderItems?.reduce(
-    (acc, item) => acc + (item.discountAmount || 0) * item.qty,
-    0
-  ) || 0;
+  const totalDiscount =
+    order?.orderItems?.reduce(
+      (acc, item) => acc + (item.discountAmount || 0) * item.qty,
+      0
+    ) || 0;
 
   useEffect(() => {
     if (!userInfo) {
@@ -52,13 +52,13 @@ const totalDiscount =
     if (!order || order._id !== orderId) {
       dispatch(getOrderDetails(orderId));
     }
-    
+
     if (successShip) {
       toast.success('Order marked as shipped');
       dispatch(resetShip());
       dispatch(getOrderDetails(orderId));
     }
-    
+
     if (successDeliver) {
       toast.success('Order marked as delivered');
       dispatch(resetDeliver());
@@ -126,7 +126,7 @@ const totalDiscount =
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Order #{order._id.slice(-7).toUpperCase()}
             </h1>
-            <button 
+            <button
               onClick={copyOrderId}
               className="flex items-center gap-2 text-sm text-blue-600 hover:underline self-start sm:self-auto"
             >
@@ -137,10 +137,10 @@ const totalDiscount =
 
         {/* 2 Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Left Column - 2/3 */}
           <div className="lg:col-span-2 space-y-4">
-            
+
             {/* Shipping Card */}
             <div className="bg-white p-5 rounded-lg shadow-sm border-gray-200">
               <div className="flex items-center gap-2 mb-4">
@@ -176,7 +176,7 @@ const totalDiscount =
                 <h2 className="text-lg font-semibold">Payment Method</h2>
               </div>
               <p className="text-sm text-gray-700"><strong>{order.paymentMethod}</strong></p>
-              
+
               {order.isPaid ? (
                 <div className="mt-3 p-3 bg-green-50 text-green-700 rounded-md text-sm font-medium">
                   Paid on {formatDate(order.paidAt)}
@@ -202,19 +202,22 @@ const totalDiscount =
                   {order.orderItems.map((item, index) => (
                     <div key={index} className="flex gap-4 p-3 rounded-lg hover:bg-gray-50 transition">
                       {/* Image */}
-                      <div className="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0">
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          className="w-full h-full object-contain rounded-xl bg-gray-50 p-2 border-gray-100" 
+                      <Link
+                        to={`/product/${item.slug}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`}
+                        className="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0"
+                      >
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-contain rounded-xl bg-gray-50 p-2 border-gray-100"
                         />
-                      </div>
-                      
+                      </Link>
+
                       {/* Details + Price */}
                       <div className="flex-1 flex-col justify-between">
                         <div>
-                          <Link 
-                            to={`/product/${item.slug}`} 
+                          <Link
+                            to={`/product/${item.slug}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`}
                             className="text-blue-600 hover:underline font-semibold text-sm sm:text-base line-clamp-2"
                           >
                             {item.name}
@@ -229,7 +232,7 @@ const totalDiscount =
                             <span className="bg-gray-100 px-2 py-0.5 rounded">Qty: {item.qty}</span>
                           </div>
                         </div>
-                        
+
                         <div className="mt-2 space-y-1">
                           {item.discountAmount > 0 && (
                             <>
@@ -245,7 +248,7 @@ const totalDiscount =
 
                           <div className="flex items-end justify-between gap-2 sm:gap-3">
                             <span className="text-sm text-gray-600 whitespace-nowrap flex-shrink-0">
-                              {item.qty} × ${Number(item.price).toFixed(2)} 
+                              {item.qty} × ${Number(item.price).toFixed(2)}
                             </span>
 
                             <span className="sm:text-lg font-bold text-gray-900">
@@ -263,7 +266,7 @@ const totalDiscount =
 
           {/* Right Column - 1/3 Summary + Admin */}
           <div className="lg:col-span-1 space-y-4">
-            
+
             {/* Order Summary Card - NO MOBILE STICKY */}
             <div className="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-sm border-gray-200 lg:sticky lg:top-4">
               <div className="flex items-center gap-2 mb-4">
@@ -272,20 +275,20 @@ const totalDiscount =
               </div>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between text-gray-600">
-  <span>Original Price</span>
-  <span className="font-medium text-gray-900">
-    ${originalItemsPrice}
-  </span>
-</div>
+                  <span>Original Price</span>
+                  <span className="font-medium text-gray-900">
+                    ${originalItemsPrice}
+                  </span>
+                </div>
 
-{totalDiscount > 0 && (
-  <div className="flex justify-between text-green-600">
-    <span>Discount</span>
-    <span className="font-medium">
-      ${totalDiscount}
-    </span>
-  </div>
-)}
+                {totalDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span className="font-medium">
+                      ${totalDiscount}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-600">
                   <span>Items Subtotal</span>
                   <span className="font-medium text-gray-900">${order.itemsPrice?.toFixed(2)}</span>

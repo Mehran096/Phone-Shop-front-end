@@ -153,9 +153,9 @@ const taxPrice = addDecimals(
 
                   <div className='flex-1 min-w-0 flex-col justify-between'>
                     <Link
-                      to={`/product/${item.slug}`}
-                      className='text-blue-600 hover:text-blue-800 font-medium text-sm md:text-base line-clamp-2'
-                    >
+                        to={`/product/${item.slug}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`}
+                        className='text-blue-600 hover:text-blue-800 font-medium text-sm md:text-base line-clamp-2'
+                      >
                       {item.name}
                     </Link>
 

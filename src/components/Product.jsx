@@ -8,7 +8,7 @@ import {
 import { toast } from 'react-toastify';
 import CountdownTimer from './CountdownTimer';
 
-const Product = ({ product, userInfo, hideCompare = false, fromRecent = false }) => {
+const Product = ({ product, userInfo, hideCompare = false, fromRecent = false, showDiscountBadge = false}) => {
   const dispatch = useDispatch();
 
   const { products: compareProducts } = useSelector(
@@ -50,13 +50,17 @@ const Product = ({ product, userInfo, hideCompare = false, fromRecent = false })
       : product.variants?.[0]?.colors?.[0]?.images?.[0]?.url)
     || '/images/placeholder-phone.jpg'
 
-  const mainPrice = isFlat ? product.price : (product.price || product.variants?.[0]?.colors?.[0]?.price)
-  const mainOriginalPrice = isFlat ? product.originalPrice : product.originalPrice
-  const discountPercent = isFlat
-    ? (product.originalPrice && product.price
-      ? Math.round(((Number(product.originalPrice) - Number(product.price)) / Number(product.originalPrice)) * 100)
-      : 0)
-    : product.bestDiscount || 0
+  // const mainPrice = isFlat ? product.price : (product.price || product.variants?.[0]?.colors?.[0]?.price)
+  // const mainOriginalPrice = isFlat ? product.originalPrice : product.originalPrice
+  // const discountPercent = isFlat
+  //   ? (product.originalPrice && product.price
+  //     ? Math.round(((Number(product.originalPrice) - Number(product.price)) / Number(product.originalPrice)) * 100)
+  //     : 0)
+  //   : product.bestDiscount || 0
+// SUPPORT BOTH: New API + Old Flat API
+const mainPrice = product.minPrice?? product.price; // New API first, fallback to old
+const mainOriginalPrice = product.originalPrice?? product.originalPrice; // both use same name
+const discountPercent = product.discountPercent?? product.bestDiscount?? 0; // New API first, fallback to old
 
   const mainPriceFormatted = mainPrice ? Number(mainPrice).toLocaleString('en-US') : '0';
   const mainOriginalPriceFormatted = mainOriginalPrice ? Number(mainOriginalPrice).toLocaleString('en-US') : null;
@@ -226,7 +230,7 @@ const Product = ({ product, userInfo, hideCompare = false, fromRecent = false })
                   {mainOriginalPriceFormatted && mainOriginalPrice > mainPrice && (
                     <p className='text-sm line-through text-gray-500'>${mainOriginalPriceFormatted}</p>
                   )}
-                  {discountPercent > 0 && mainOriginalPrice > mainPrice && (
+                  {  discountPercent > 0 && mainOriginalPrice > mainPrice && (
                     <span className='text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-semibold'>
                       {discountPercent}% OFF
                     </span>
