@@ -284,7 +284,20 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
             )}
           </div>
 
-          <div className='md:hidden lg:hidden gap-3 flex pr-5'>
+          <div className='md:hidden lg:hidden gap-4 flex pr-5'>
+            {/* wishlist */}
+          {userInfo && (
+            <Link
+              to='/wishlist'
+              className="relative"
+              onClick={closeMobileMenu}
+            >
+              <FaHeart className="text-white text-2xl" />
+              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+               {wishlistItems.length > 0 && `${wishlistItems.length}`}
+               </span>
+            </Link>
+          )}
             {/* Cart */}
             <Link to="/cart" className="relative">
               <FaShoppingCart className="text-white text-2xl" />
