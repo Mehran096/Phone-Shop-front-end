@@ -303,6 +303,22 @@ useEffect(() => {
   }, [selectedColor]);
 
 
+  
+ // review modal open useEffect for background scroll stop
+useEffect(() => {
+  if (isEditModalOpen) {
+    document.body.style.overflow = 'hidden' // lock scroll
+  } else {
+    document.body.style.overflow = 'unset' // unlock scroll
+  }
+
+  // cleanup when component unmounts
+  return () => {
+    document.body.style.overflow = 'unset'
+  }
+}, [isEditModalOpen]) // <-- this dependency is perfect
+
+
   // }
 
   const addToCartHandler = (itemData = null) => {

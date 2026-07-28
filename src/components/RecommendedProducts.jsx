@@ -36,22 +36,22 @@ const RecommendedProducts = ({ data, loading, error, onAddToCart, quickViewProdu
   if (type === 'category') title = `Similar Products`
   if (type === 'popular') title = `Best Sellers`
 
-  const handleQuickAddToCart = (e, item) => {
-  e.preventDefault();
-  e.stopPropagation();
-  const firstVariant = item.variants?.[0]
-  const firstColor = firstVariant?.colors?.[0]
+//   const handleQuickAddToCart = (e, item) => {
+//   e.preventDefault();
+//   e.stopPropagation();
+//   const firstVariant = item.variants?.[0]
+//   const firstColor = firstVariant?.colors?.[0]
   
-  // Pass object matching new addToCartHandler signature
-  onAddToCart({
-    product: item,
-    variant: firstVariant,
-    color: firstColor,
-    qty: 1
-  });
+//   // Pass object matching new addToCartHandler signature
+//   onAddToCart({
+//     product: item,
+//     variant: firstVariant,
+//     color: firstColor,
+//     qty: 1
+//   });
   
-  toast.success(`${item.name} - ${firstColor?.name || ''} added to cart!`)
-}
+//   toast.success(`${item.name} - ${firstColor?.name || ''} added to cart!`)
+// }
 
   return (
     <>
@@ -77,7 +77,7 @@ const RecommendedProducts = ({ data, loading, error, onAddToCart, quickViewProdu
             return (
               <div key={item._id} className="group relative">
                 <Link to={`/product/${item.slug}`}>
-                  <div className="bg-white rounded-xl border-gray-200 p-3 hover:shadow-lg transition">
+                  <div className="bg-white rounded-xl border border-gray-200 p-3 hover:shadow-lg transition">
                     <div className="relative">
                       <img
                         src={firstImage}
@@ -94,12 +94,12 @@ const RecommendedProducts = ({ data, loading, error, onAddToCart, quickViewProdu
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition duration-300">
                         
                         {/* ADD TO CART BUTTON */}
-                        <button
+                        {/* <button
                           onClick={(e) => handleQuickAddToCart(e, item)}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-blue-700 transition"
                         >
                           <FaShoppingCart /> Add
-                        </button>
+                        </button> */}
 
                         {/* QUICK VIEW BUTTON */}
                         <button
@@ -109,7 +109,7 @@ const RecommendedProducts = ({ data, loading, error, onAddToCart, quickViewProdu
                           }}
                           className="bg-white text-black px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
                         >
-                          <FaEye /> View
+                          <FaEye /> Quick View
                         </button>
                       </div>
                     </div>

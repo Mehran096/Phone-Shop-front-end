@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { FaTimes, FaShoppingCart, FaChevronLeft, FaChevronRight, FaSpinner } from 'react-icons/fa' // <-- added arrows
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import WishlistButton from './WishlistButton'
 
 const COLOR_MAP = {
@@ -23,6 +23,17 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
   const [isZoomed, setIsZoomed] = useState(false)
 
   const selectedVariant = product.variants?.find(v => v.storage === selectedStorage) || firstVariant
+
+  const navigate = useNavigate()
+
+const handleViewFullDetails = () => {
+  const productSlug = product.slug || product._id
+  const color = selectedColor?.name || ''
+  const storage = selectedStorage || ''
+  
+  onClose() // close modal first
+  navigate(`/product/${productSlug}?color=${encodeURIComponent(color)}&storage=${encodeURIComponent(storage)}`)
+}
 
   // Keep same color when changing storage if available
   useEffect(() => {
@@ -129,11 +140,18 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
     return () => clearInterval(interval)
   }, [currentImageIndex, productImages.length, isPaused])
 
+  useEffect(() => {
+  document.body.style.overflow = 'hidden'
+  return () => {
+    document.body.style.overflow = 'unset'
+  }
+}, [])
+
 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-2xl font-bold">{product.name}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -152,9 +170,9 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
             onMouseDown={onTouchStart}
             onMouseMove={onTouchMove}
             onMouseUp={onTouchEnd}
-            onMouseLeave={onTouchEnd}
+            onMouseLeave={(e) => { onTouchEnd(); setIsPaused(false) }}
             onMouseEnter={() => setIsPaused(true)} // <-- PAUSE
-            onMouseLeave={() => setIsPaused(false)} // <-- RESUME
+            
           >
             {/* THIS IS WHERE WE SET THE STYLE of smoothly swipe*/}
             {/* Loading Skeleton + Spinner */}
@@ -190,7 +208,7 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
 
             {/* Arrows - Desktop */}
             {productImages.length > 1 && (
-              <>
+              <div className="hidden md:block">
                 <button
                   onClick={prevImage}
                   className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow z-10"
@@ -203,7 +221,7 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
                 >
                   <FaChevronRight />
                 </button>
-              </>
+              </div>
             )}
 
             {productImages.length > 1 && (
@@ -346,9 +364,12 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
               </div>
             </div>
 
-            <Link to={`/product/${product.slug}`} className="text-blue-600 hover:underline font-semibold">
-              View Full Details →
-            </Link>
+            <button 
+  onClick={handleViewFullDetails}
+  className="text-blue-600 hover:text-blue-800 underline text-sm mt-2 block"
+>
+  View Full Details →
+</button>
           </div>
           {/* Zoom Lightbox */}
           {/* Zoom Lightbox - FINAL FIX */}
@@ -356,6 +377,9 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
             <div
               className="fixed inset-0 bg-white z-[999] flex items-center justify-center" // <-- z-[999] to be on absolute top
               onClick={() => setIsZoomed(false)}
+              onTouchStart={onTouchStart} 
+              onTouchMove={onTouchMove} 
+              onTouchEnd={onTouchEnd} 
             >
               {/* X Button - FORCED VISIBLE */}
               <button
@@ -373,6 +397,9 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
                     alt={product.name}
                     className="max-w-[85%] max-h-full md:max-w-[90%] object-contain" // <-- 85% on mobile
                     onClick={(e) => e.stopPropagation()}
+                     onTouchStart={(e) => { e.stopPropagation(); onTouchStart(e) }} 
+                    onTouchMove={(e) => { e.stopPropagation(); onTouchMove(e) }} 
+                    onTouchEnd={(e) => { e.stopPropagation(); onTouchEnd() }} 
                   />
 
                   {/* Arrows - DESKTOP ONLY */}
