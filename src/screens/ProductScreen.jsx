@@ -301,34 +301,51 @@ useEffect(() => {
 
   // }
 
-  const addToCartHandler = () => {
-    if (selectedVariant?.colors?.length > 0 && !selectedColor?.name) {
-      toast.error('Please select a color')
-      return
-    }
-
-    const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
-
-    // V15.3 KEY: Grab.url from object
-    const imageUrl = selectedColor.images?.[0]?.url || product.image || '/placeholder.png';
-
-    dispatch(addToCart({
-      product: product._id,
-      name: product.name,
-      slug: product.slug,
-      image: imageUrl, // V15.3 KEY: Now https://res.cloudinary.com/...
-      price: isDiscountActive ? finalPrice : price,
-      originalPrice: price,
-      discountAmount,
-      discount: selectedColor?.discount,
-      color: selectedColor?.name || '',
-      countInStock: selectedColor?.countInStock ?? selectedVariant?.countInStock ?? 0,
-      storage: selectedVariant.storage || '',
-      qty,
-    }));
-    toast.success('Added to cart')
-    navigate('/cart')
+  const addToCartHandler = (itemData = null) => {
+  // If itemData is passed = from recommendations/quickview
+  // If null = from main product page
+  
+  const productToAdd = itemData?.product || product
+  const variantToAdd = itemData?.variant || selectedVariant
+  const colorToAdd = itemData?.color || selectedColor
+ const qtyToAdd = Number(itemData?.qty || qty || 1) 
+ 
+  if (variantToAdd?.colors?.length > 0 &&!colorToAdd?.name) {
+    toast.error('Please select a color')
+    return
   }
+
+  const price = Number(colorToAdd?.price || variantToAdd?.price || productToAdd?.price || 0);
+
+  const discount = colorToAdd?.discount
+  const isDiscountActive = discount?.isActive && discount?.value > 0
+  const finalPrice = isDiscountActive
+   ? discount.type === 'percentage' 
+     ? price - (price * discount.value / 100)
+      : price - discount.value
+    : price
+  
+  const discountAmount = price - finalPrice
+  const imageUrl = colorToAdd?.images?.[0]?.url || productToAdd?.image || '/placeholder.png';
+
+  dispatch(addToCart({
+    product: productToAdd._id,
+    name: productToAdd.name,
+    slug: productToAdd.slug,
+    image: imageUrl,
+    price: isDiscountActive? finalPrice : price,
+    originalPrice: price,
+    discountAmount,
+    discount: colorToAdd?.discount,
+    color: colorToAdd?.name || '',
+    countInStock: colorToAdd?.countInStock?? variantToAdd?.countInStock?? 0,
+    storage: variantToAdd?.storage || '',
+    qty: qtyToAdd,
+  }));
+  
+  toast.success(`${productToAdd.name} added to cart`)
+  navigate('/cart')
+}
   //Buy now handler
   const buyNowHandler = () => {
 

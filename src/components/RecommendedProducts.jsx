@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { FaEye } from 'react-icons/fa'
+import { FaEye, FaShoppingCart } from 'react-icons/fa' // <-- Added FaShoppingCart
 import QuickViewModal from './QuickViewModal'
+import { toast } from 'react-toastify' // <-- for quick feedback
 
 const RecommendedProducts = ({ data, loading, error, onAddToCart }) => {
   const [quickViewProduct, setQuickViewProduct] = useState(null)
@@ -35,6 +36,23 @@ const RecommendedProducts = ({ data, loading, error, onAddToCart }) => {
   if (type === 'category') title = `Similar Products`
   if (type === 'popular') title = `Best Sellers`
 
+  const handleQuickAddToCart = (e, item) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const firstVariant = item.variants?.[0]
+  const firstColor = firstVariant?.colors?.[0]
+  
+  // Pass object matching new addToCartHandler signature
+  onAddToCart({
+    product: item,
+    variant: firstVariant,
+    color: firstColor,
+    qty: 1
+  });
+  
+  toast.success(`${item.name} - ${firstColor?.name || ''} added to cart!`)
+}
+
   return (
     <>
       <div className="mt-12 border-t pt-8">
@@ -49,8 +67,8 @@ const RecommendedProducts = ({ data, loading, error, onAddToCart }) => {
             const isDiscountActive = discount?.isActive && discount?.value > 0
             
             const discountPrice = isDiscountActive
-              ? discount.type === 'percentage' 
-                ? firstPrice - (firstPrice * discount.value / 100)
+             ? discount.type === 'percentage' 
+               ? firstPrice - (firstPrice * discount.value / 100)
                 : firstPrice - discount.value
               : firstPrice
             
@@ -59,7 +77,7 @@ const RecommendedProducts = ({ data, loading, error, onAddToCart }) => {
             return (
               <div key={item._id} className="group relative">
                 <Link to={`/product/${item.slug}`}>
-                  <div className="bg-white rounded-xl border border-gray-200 p-3 hover:shadow-lg transition">
+                  <div className="bg-white rounded-xl border-gray-200 p-3 hover:shadow-lg transition">
                     <div className="relative">
                       <img
                         src={firstImage}
@@ -72,18 +90,28 @@ const RecommendedProducts = ({ data, loading, error, onAddToCart }) => {
                         </span>
                       )}
                       
-                      {/* QUICK VIEW BUTTON ON HOVER */}
-                      <button
-                        onClick={(e) => { 
-                          e.preventDefault(); 
-                          setQuickViewProduct(item) 
-                        }}
-                        className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300"
-                      >
-                        <span className="bg-white text-black px-4 py-2 rounded-lg font-semibold flex items-center gap-2">
-                          <FaEye /> Quick View
-                        </span>
-                      </button>
+                      {/* HOVER BUTTONS */}
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition duration-300">
+                        
+                        {/* ADD TO CART BUTTON */}
+                        <button
+                          onClick={(e) => handleQuickAddToCart(e, item)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-blue-700 transition"
+                        >
+                          <FaShoppingCart /> Add
+                        </button>
+
+                        {/* QUICK VIEW BUTTON */}
+                        <button
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            setQuickViewProduct(item) 
+                          }}
+                          className="bg-white text-black px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
+                        >
+                          <FaEye /> View
+                        </button>
+                      </div>
                     </div>
                     <h3 className="text-sm font-semibold line-clamp-2 group-hover:text-blue-600">
                       {item.name}
