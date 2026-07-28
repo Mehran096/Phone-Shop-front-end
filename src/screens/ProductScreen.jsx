@@ -89,6 +89,9 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   // Compare state
   const [compareSlug, setCompareSlug] = useState("");
 
+  //quick state for Modal view
+  const [quickViewProduct, setQuickViewProduct] = useState(null)
+
   // Compare query
   const {
     data: compareProducts,
@@ -115,6 +118,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
 
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0); // V9.26 KEY: Default first variant
   const [selectedColorIndex, setSelectedColorIndex] = useState(0); // V9.26 KEY: Default first color
+
 
 
   const selectedVariant = useMemo( // V27.1 KEY
@@ -1232,10 +1236,11 @@ useEffect(() => {
             loading={loadingRecs}
             error={errorRecs}
             onAddToCart={addToCartHandler}
-            
+            quickViewProduct={quickViewProduct}
+            setQuickViewProduct={setQuickViewProduct}
           />
 
-
+ 
         {/* Reviews Section */}
         <div className='mt-10'>
 
@@ -1912,7 +1917,7 @@ useEffect(() => {
           )}
         </div>
       </div>
-      {!isImageFullscreen && !isEditModalOpen && !isMobileMenuOpen && (
+      {!quickViewProduct && !isImageFullscreen && !isEditModalOpen && !isMobileMenuOpen && (
         <StickyPurchaseBar
           product={product}
           selectedColor={selectedColor}

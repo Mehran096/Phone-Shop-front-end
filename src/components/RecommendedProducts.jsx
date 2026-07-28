@@ -4,8 +4,8 @@ import { FaEye, FaShoppingCart } from 'react-icons/fa' // <-- Added FaShoppingCa
 import QuickViewModal from './QuickViewModal'
 import { toast } from 'react-toastify' // <-- for quick feedback
 
-const RecommendedProducts = ({ data, loading, error, onAddToCart }) => {
-  const [quickViewProduct, setQuickViewProduct] = useState(null)
+const RecommendedProducts = ({ data, loading, error, onAddToCart, quickViewProduct, setQuickViewProduct }) => {
+  
 
   if (loading) {
     return (
