@@ -1196,7 +1196,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
 
                   {/* COLLAPSIBLE CONTENT */}
                   <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isSpecsOpen? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
-                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 bg-gray-50 p-5 lg:p-6 rounded-lg'>
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 bg-gray-50 p-6 lg:p-6 rounded-lg'>
                       {Object.entries(specs).map(([key, value]) => (
                         <div key={key} className='flex flex-col'>
                           <span className='text-xs text-gray-500 uppercase tracking-wide font-semibold'>{key}</span>
