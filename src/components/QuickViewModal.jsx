@@ -358,7 +358,7 @@ const handleViewFullDetails = () => {
                   selectedPrice={discountPrice}
                   selectedImage={selectedImage}
                   countInStock={countInStock}
-                  className="w-12 h-12 flex items-center justify-center border-gray-300 rounded-xl bg-white hover:bg-gray-50 transition"
+                  className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-xl bg-white hover:bg-gray-50 transition"
                   showText={false}
                 />
               </div>
