@@ -35,6 +35,7 @@ import {
   FaShoppingCart,
   FaStar,
   FaChevronDown,
+  FaChevronUp,
   FaThumbsUp,
   FaThumbsDown,
   FaHeart,
@@ -48,7 +49,7 @@ import CompareProducts from '../components/CompareProducts';
 import CompareSearch from '../components/CompareSearch';
 import { addToRecentlyViewed } from '../utils/recentlyViewed';
 import RecommendedProducts from '../components/RecommendedProducts';
- 
+
 
 
 
@@ -74,23 +75,26 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   const [uploadReviewImage, { isLoading: loadingUpload }] = useUploadReviewImageMutation();
   const [deleteCloudinaryImage] = useDeleteCloudinaryImageMutation();
 
-  const { 
-  data, 
-  isLoading: loadingRecs, 
-  error: errorRecs 
-} = useGetRecommendedProductsQuery(product?._id, {
-  skip:!product?._id // don't run until product loads
-})
+  const {
+    data,
+    isLoading: loadingRecs,
+    error: errorRecs
+  } = useGetRecommendedProductsQuery(product?._id, {
+    skip: !product?._id // don't run until product loads
+  })
 
-// const recommendations = data?.recommendations || []
-// const recType = data?.type
-// const recBrand = data?.brand
+  // const recommendations = data?.recommendations || []
+  // const recType = data?.type
+  // const recBrand = data?.brand
 
   // Compare state
   const [compareSlug, setCompareSlug] = useState("");
 
   //quick state for Modal view
   const [quickViewProduct, setQuickViewProduct] = useState(null)
+
+  //state for specs hide and show
+  const [isSpecsOpen, setIsSpecsOpen] = useState(true)
 
   // Compare query
   const {
@@ -172,87 +176,87 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   const [editColor, setEditColor] = useState(null);
 
 
-const isMounted = useRef(false);
-useEffect(() => {
-  if (!product) return;
+  const isMounted = useRef(false);
+  useEffect(() => {
+    if (!product) return;
 
-  // PRIORITY 1: Check if coming from Wishlist with URL params
-  const urlColor = searchParams.get('color');
-  const urlStorage = searchParams.get('storage');
+    // PRIORITY 1: Check if coming from Wishlist with URL params
+    const urlColor = searchParams.get('color');
+    const urlStorage = searchParams.get('storage');
 
-  if (urlColor && urlStorage) {
-    const variantIndex = product.variants?.findIndex(v => v.storage === urlStorage);
+    if (urlColor && urlStorage) {
+      const variantIndex = product.variants?.findIndex(v => v.storage === urlStorage);
+      const colorIndex = variantIndex >= 0
+        ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === urlColor)
+        : -1;
+
+      setSelectedVariantIndex(variantIndex >= 0 ? variantIndex : 0);
+      setSelectedColorIndex(colorIndex >= 0 ? colorIndex : 0);
+      isMounted.current = true;
+      return; // Exit so wishlist params override deals
+    }
+
+    // PRIORITY 2: Your existing Deal logic
+    const variantIndex = product.variants?.findIndex(v => v.storage === dealStorage);
     const colorIndex = variantIndex >= 0
-    ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === urlColor)
+      ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === dealColor)
       : -1;
 
-    setSelectedVariantIndex(variantIndex >= 0? variantIndex : 0);
-    setSelectedColorIndex(colorIndex >= 0? colorIndex : 0);
+    setSelectedVariantIndex(variantIndex >= 0 ? variantIndex : 0);
+    setSelectedColorIndex(colorIndex >= 0 ? colorIndex : 0);
+
+    // NEW: Mark as ready to save after URL/defaults are set
     isMounted.current = true;
-    return; // Exit so wishlist params override deals
-  }
-
-  // PRIORITY 2: Your existing Deal logic
-  const variantIndex = product.variants?.findIndex(v => v.storage === dealStorage);
-  const colorIndex = variantIndex >= 0
-  ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === dealColor)
-    : -1;
-
-  setSelectedVariantIndex(variantIndex >= 0? variantIndex : 0);
-  setSelectedColorIndex(colorIndex >= 0? colorIndex : 0);
-
-  // NEW: Mark as ready to save after URL/defaults are set
-  isMounted.current = true;
-}, [product, dealStorage, dealColor, searchParams]);
+  }, [product, dealStorage, dealColor, searchParams]);
 
   //recently viewed useEffect
 
 
- const lastSavedId = useRef('');
-const saveTimeout = useRef(null);
+  const lastSavedId = useRef('');
+  const saveTimeout = useRef(null);
 
-// Recently Viewed
-useEffect(() => {
-  // GUARD: WAIT FOR DATA
-  if (!product ||!product.slug ||!selectedVariant ||!selectedColor) return;
+  // Recently Viewed
+  useEffect(() => {
+    // GUARD: WAIT FOR DATA
+    if (!product || !product.slug || !selectedVariant || !selectedColor) return;
 
-  clearTimeout(saveTimeout.current);
+    clearTimeout(saveTimeout.current);
 
-  const { price: originalPrice = 0, discount, images, name: colorName } = selectedColor;
-  const { storage } = selectedVariant;
-  
-  const discountValue = discount?.isActive? discount.value : 0;
-  const discountAmount = (originalPrice * discountValue) / 100;
-  const finalPrice = Math.max(0, originalPrice - discountAmount);
+    const { price: originalPrice = 0, discount, images, name: colorName } = selectedColor;
+    const { storage } = selectedVariant;
 
-  const safeColor = (colorName || 'Default').toLowerCase().replace(/\s+/g, '-');
-  const safeStorage = (storage || 'Default').toLowerCase().replace(/\s+/g, '-');
-  const uniqueId = `${product._id}-${safeStorage}-${safeColor}`;
+    const discountValue = discount?.isActive ? discount.value : 0;
+    const discountAmount = (originalPrice * discountValue) / 100;
+    const finalPrice = Math.max(0, originalPrice - discountAmount);
 
-  saveTimeout.current = setTimeout(() => {
-    if (lastSavedId.current === uniqueId) return;
-    lastSavedId.current = uniqueId;
+    const safeColor = (colorName || 'Default').toLowerCase().replace(/\s+/g, '-');
+    const safeStorage = (storage || 'Default').toLowerCase().replace(/\s+/g, '-');
+    const uniqueId = `${product._id}-${safeStorage}-${safeColor}`;
 
-    console.log('SAVING TO RECENT:', uniqueId);
-    addToRecentlyViewed({
-      _id: uniqueId,
-      slug: product.slug,
-      name: product.name,
-      image: images?.[0]?.url || '/images/placeholder-phone.jpg',
-      price: Number(finalPrice.toFixed(2)),
-      originalPrice: Number(originalPrice.toFixed(2)),
-      bestDiscount: discountValue,
-      endDate: discount?.endDate,
-      youSave: Number(discountAmount.toFixed(2)),
-      isFlat: true,
-      color: colorName || 'Default', // ADD THIS AT ROOT
-      storage: storage || 'Default', // ADD THIS AT ROOT
-      attributes: { color: colorName || 'Default', storage: storage || 'Default' }
-    });
-  }, 0);
+    saveTimeout.current = setTimeout(() => {
+      if (lastSavedId.current === uniqueId) return;
+      lastSavedId.current = uniqueId;
 
-  return () => clearTimeout(saveTimeout.current);
-}, [product, selectedColor, selectedVariant]);
+      console.log('SAVING TO RECENT:', uniqueId);
+      addToRecentlyViewed({
+        _id: uniqueId,
+        slug: product.slug,
+        name: product.name,
+        image: images?.[0]?.url || '/images/placeholder-phone.jpg',
+        price: Number(finalPrice.toFixed(2)),
+        originalPrice: Number(originalPrice.toFixed(2)),
+        bestDiscount: discountValue,
+        endDate: discount?.endDate,
+        youSave: Number(discountAmount.toFixed(2)),
+        isFlat: true,
+        color: colorName || 'Default', // ADD THIS AT ROOT
+        storage: storage || 'Default', // ADD THIS AT ROOT
+        attributes: { color: colorName || 'Default', storage: storage || 'Default' }
+      });
+    }, 0);
+
+    return () => clearTimeout(saveTimeout.current);
+  }, [product, selectedColor, selectedVariant]);
 
   // const startEdit = (review) => {
   //   setEditingReview(review);
@@ -303,69 +307,69 @@ useEffect(() => {
   }, [selectedColor]);
 
 
-  
- // review modal open useEffect for background scroll stop
-useEffect(() => {
-  if (isEditModalOpen) {
-    document.body.style.overflow = 'hidden' // lock scroll
-  } else {
-    document.body.style.overflow = 'unset' // unlock scroll
-  }
 
-  // cleanup when component unmounts
-  return () => {
-    document.body.style.overflow = 'unset'
-  }
-}, [isEditModalOpen]) // <-- this dependency is perfect
+  // review modal open useEffect for background scroll stop
+  useEffect(() => {
+    if (isEditModalOpen) {
+      document.body.style.overflow = 'hidden' // lock scroll
+    } else {
+      document.body.style.overflow = 'unset' // unlock scroll
+    }
+
+    // cleanup when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isEditModalOpen]) // <-- this dependency is perfect
 
 
   // }
 
   const addToCartHandler = (itemData = null) => {
-  // If itemData is passed = from recommendations/quickview
-  // If null = from main product page
-  
-  const productToAdd = itemData?.product || product
-  const variantToAdd = itemData?.variant || selectedVariant
-  const colorToAdd = itemData?.color || selectedColor
- const qtyToAdd = Number(itemData?.qty || qty || 1) 
- 
-  if (variantToAdd?.colors?.length > 0 &&!colorToAdd?.name) {
-    toast.error('Please select a color')
-    return
+    // If itemData is passed = from recommendations/quickview
+    // If null = from main product page
+
+    const productToAdd = itemData?.product || product
+    const variantToAdd = itemData?.variant || selectedVariant
+    const colorToAdd = itemData?.color || selectedColor
+    const qtyToAdd = Number(itemData?.qty || qty || 1)
+
+    if (variantToAdd?.colors?.length > 0 && !colorToAdd?.name) {
+      toast.error('Please select a color')
+      return
+    }
+
+    const price = Number(colorToAdd?.price || variantToAdd?.price || productToAdd?.price || 0);
+
+    const discount = colorToAdd?.discount
+    const isDiscountActive = discount?.isActive && discount?.value > 0
+    const finalPrice = isDiscountActive
+      ? discount.type === 'percentage'
+        ? price - (price * discount.value / 100)
+        : price - discount.value
+      : price
+
+    const discountAmount = price - finalPrice
+    const imageUrl = colorToAdd?.images?.[0]?.url || productToAdd?.image || '/placeholder.png';
+
+    dispatch(addToCart({
+      product: productToAdd._id,
+      name: productToAdd.name,
+      slug: productToAdd.slug,
+      image: imageUrl,
+      price: isDiscountActive ? finalPrice : price,
+      originalPrice: price,
+      discountAmount,
+      discount: colorToAdd?.discount,
+      color: colorToAdd?.name || '',
+      countInStock: colorToAdd?.countInStock ?? variantToAdd?.countInStock ?? 0,
+      storage: variantToAdd?.storage || '',
+      qty: qtyToAdd,
+    }));
+
+    toast.success(`${productToAdd.name} added to cart`)
+    navigate('/cart')
   }
-
-  const price = Number(colorToAdd?.price || variantToAdd?.price || productToAdd?.price || 0);
-
-  const discount = colorToAdd?.discount
-  const isDiscountActive = discount?.isActive && discount?.value > 0
-  const finalPrice = isDiscountActive
-   ? discount.type === 'percentage' 
-     ? price - (price * discount.value / 100)
-      : price - discount.value
-    : price
-  
-  const discountAmount = price - finalPrice
-  const imageUrl = colorToAdd?.images?.[0]?.url || productToAdd?.image || '/placeholder.png';
-
-  dispatch(addToCart({
-    product: productToAdd._id,
-    name: productToAdd.name,
-    slug: productToAdd.slug,
-    image: imageUrl,
-    price: isDiscountActive? finalPrice : price,
-    originalPrice: price,
-    discountAmount,
-    discount: colorToAdd?.discount,
-    color: colorToAdd?.name || '',
-    countInStock: colorToAdd?.countInStock?? variantToAdd?.countInStock?? 0,
-    storage: variantToAdd?.storage || '',
-    qty: qtyToAdd,
-  }));
-  
-  toast.success(`${productToAdd.name} added to cart`)
-  navigate('/cart')
-}
   //Buy now handler
   const buyNowHandler = () => {
 
@@ -1173,21 +1177,33 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Specifications Box - Full Width Below Grid V12.9 */}
+            {/* Specifications Box - Collapsible V13.0 */}
             {(() => {
               const specs = { ...product.specs, ...selectedVariant?.specs, ...selectedColor?.specs };
 
               return Object.keys(specs).length > 0 ? (
                 <div className='mt-6 pt-6 border-t border-gray-200'>
-                  <h3 className='text-xl font-bold mb-5'>Specifications - {selectedVariant?.storage || ''}</h3>
+                  {/* HEADER BUTTON */}
+                  <button
+                    onClick={() => setIsSpecsOpen(!isSpecsOpen)}
+                    className='w-full flex items-center justify-between text-left hover:bg-gray-50 p-2 rounded-lg'
+                  >
+                    <h3 className='text-xl font-bold'>
+                      Specifications - {selectedVariant?.storage || ''}
+                    </h3>
+                    {isSpecsOpen ? <FaChevronUp /> : <FaChevronDown />}
+                  </button>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 bg-gray-50 p-5 lg:p-6 rounded-lg'>
-                    {Object.entries(specs).map(([key, value]) => (
-                      <div key={key} className='flex flex-col'>
-                        <span className='text-xs text-gray-500 uppercase tracking-wide font-semibold'>{key}</span>
-                        <span className='text-[15px] leading-6 text-gray-900 font-medium mt-0.5'>{value}</span>
-                      </div>
-                    ))}
+                  {/* COLLAPSIBLE CONTENT */}
+                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isSpecsOpen? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 bg-gray-50 p-5 lg:p-6 rounded-lg'>
+                      {Object.entries(specs).map(([key, value]) => (
+                        <div key={key} className='flex flex-col'>
+                          <span className='text-xs text-gray-500 uppercase tracking-wide font-semibold'>{key}</span>
+                          <span className='text-[15px] leading-6 text-gray-900 font-medium mt-0.5'>{value}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : null;
@@ -1247,16 +1263,16 @@ useEffect(() => {
         </div>
 
         {/* Customers also viewed section */}
-          <RecommendedProducts
-            data={data}
-            loading={loadingRecs}
-            error={errorRecs}
-            onAddToCart={addToCartHandler}
-            quickViewProduct={quickViewProduct}
-            setQuickViewProduct={setQuickViewProduct}
-          />
+        <RecommendedProducts
+          data={data}
+          loading={loadingRecs}
+          error={errorRecs}
+          onAddToCart={addToCartHandler}
+          quickViewProduct={quickViewProduct}
+          setQuickViewProduct={setQuickViewProduct}
+        />
 
- 
+
         {/* Reviews Section */}
         <div className='mt-10'>
 
