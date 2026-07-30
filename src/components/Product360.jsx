@@ -1,21 +1,48 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { FaChevronLeft, FaChevronRight, FaTimes, FaBan } from 'react-icons/fa'
 
-const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen, setIsImageFullscreen, stock }) => {
+const Product360 = ({ 
+  images, 
+  selectedIndex, 
+  setSelectedIndex, 
+  isImageFullscreen, 
+  setIsImageFullscreen, 
+  stock, 
+  externalLoading,
+  slideDirection,
+  setSlideDirection, 
+  
+}) => {
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  //const [, setIsExternalLoading] = useState(false)  
+//const [slideDirection, setSlideDirection] = useState('center') 
   //const [isFullscreen, setIsFullscreen] = useState(false)
 
   const minSwipeDistance = 50
 
-  // Amazon: NO LOOPING - stops at ends
-  const nextImage = () => {
+ // Amazon: NO LOADING SPINNER - just fade + slide
+const nextImage = () => {
+  if (selectedIndex === images.length - 1) return;
+  setSlideDirection('right') // slide right
+  setIsAnimating(true)
+  setTimeout(() => {
     setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : prev))
-  }
+    setIsAnimating(false)
+  }, 150)
+}
 
-  const prevImage = () => {
+const prevImage = () => {
+  if (selectedIndex === 0) return;
+  setSlideDirection('left') // slide left
+  setIsAnimating(true)
+  setTimeout(() => {
     setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
-  }
+    setIsAnimating(false)
+  }, 150)
+}
 
   // Mobile swipe
   const onTouchStart = (e) => {
@@ -31,6 +58,14 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
     if (distance > minSwipeDistance) nextImage()
     if (distance < -minSwipeDistance) prevImage()
   }
+
+  // Reset slideDirection after animation so next swipe works
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setSlideDirection('center')
+  }, 300) // must match duration-300 in your className
+  return () => clearTimeout(timer)
+}, [selectedIndex])
 
   // Lock body scroll when fullscreen open
   useEffect(() => {
@@ -55,6 +90,17 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedIndex, isImageFullscreen])
 
+
+const thumbRef = useRef(null)
+
+useEffect(() => {
+  if (thumbRef.current) {
+    const activeThumb = thumbRef.current.children[selectedIndex]
+    activeThumb?.scrollIntoView({ behavior: 'smooth', inline: 'center' })
+  }
+}, [selectedIndex])
+
+
   return (
     <>
       <div className='w-full flex flex-col md:flex-row min-w-0 gap-4'>
@@ -65,13 +111,28 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             {images.map((img, idx) => (
               <button
                 key={idx}
-                onClick={() => setSelectedIndex(idx)}
-                className={`w-14 h-14 bg-white rounded-xl border-2 p-1 flex-shrink-0 transition-all duration-200 ${selectedIndex === idx
+                onClick={() => {
+  if (idx === selectedIndex) return;
+  setSlideDirection(idx > selectedIndex? 'right' : 'left')
+  setIsAnimating(true) // start animation
+  setTimeout(() => {
+    setSelectedIndex(idx)
+    setIsAnimating(false) // end animation
+  }, 150) // half of transition time
+}}
+                className={`w-14 h-14 bg-white rounded-xl border-2 p-1 flex-shrink-0 transition-all 
+                  duration-200 ${selectedIndex === idx
                   ? "border-blue-600 shadow-lg scale-105 ring-2 ring-blue-100"
                   : "border-gray-200 hover:border-gray-400 hover:shadow-md hover:scale-105"
                   }`}
               >
-                <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-contain rounded-lg" />
+                <img 
+                  src={img} 
+                  alt={`Thumb ${idx + 1}`} 
+                  className={`w-full h-full object-contain rounded-lg transition-opacity duration-300 ${
+                    externalLoading? 'opacity-30' : 'opacity-100'
+                  }`} 
+                />
               </button>
             ))}
           </div>
@@ -79,7 +140,8 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
 
         {/* Main Image - AMAZON MOBILE: FIXED ASPECT RATIO */}
         <div
-          className="flex-1 relative group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-w-0 w-full aspect-[4/5] md:aspect-auto md:h-[32rem] transition-all duration-300"
+          className="flex-1 relative group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-w-0 w-full 
+          aspect-[4/5] md:aspect-auto md:h-[32rem] transition-all duration-300"
         >
           {stock === 0 && (
             <div className="absolute top-3 left-3 sm:top-4 sm:left-4 lg:top-5 lg:left-5 z-30">
@@ -113,17 +175,30 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            <img
-              src={images[selectedIndex]}
-              alt='Product'
-              className={`h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer transition-all duration-300 ${stock === 0
-                ? "grayscale opacity-80"
-                : "group-hover:scale-105"
-                }`}
-              onClick={() => {
-                setIsImageFullscreen(true);
-              }}
-            />
+           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+            {/* ADD SPINNER HERE */}
+  {(externalLoading) && (
+    <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  )}
+          <img
+  key={selectedIndex}  
+  src={images[selectedIndex]}
+  alt='Product'
+  className={`h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer 
+    transition-all duration-300 ease-in-out
+    ${stock === 0? "grayscale opacity-80" : "group-hover:scale-105"}
+    ${externalLoading? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+    ${isAnimating 
+     ? slideDirection === 'right'? 'opacity-0 translate-x-8' : 'opacity-0 -translate-x-8'
+      : 'opacity-100 translate-x-0'
+    }`}
+  onClick={() => {
+    setIsImageFullscreen(true);
+  }}
+/>
+        </div>
 
             {/* Mobile Counter - TOP CENTER */}
             {images.length > 1 && (
@@ -138,10 +213,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
           {images.length > 1 && (
             <>
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  prevImage()
-                }}
+               onClick={(e) => { e.stopPropagation(); prevImage() }}
                 disabled={selectedIndex === 0}
                 className='hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 p-3 text-gray-700 hover:text-black 
                 disabled:opacity-20 disabled:cursor-not-allowed transition items-center justify-center'
@@ -150,10 +222,7 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                 <FaChevronLeft size={28} />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  nextImage()
-                }}
+             onClick={(e) => { e.stopPropagation(); nextImage() }}
                 disabled={selectedIndex === images.length - 1}
                 className='hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 p-3 text-gray-700 hover:text-black 
                 disabled:opacity-20 disabled:cursor-not-allowed transition items-center justify-center'
@@ -173,10 +242,13 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
               {images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setSelectedIndex(idx)
-                  }}
+                 onClick={(e) => {
+  e.stopPropagation()
+   
+  setSlideDirection(idx > selectedIndex ? 'right' : 'left')  
+  setSelectedIndex(idx)
+  
+}}
                   aria-label={`View image ${idx + 1}`}
                   className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-1 snap-start transition-all 
                     duration-200 ${selectedIndex === idx
@@ -203,9 +275,9 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
       {isImageFullscreen && (
         <div
           className='fixed inset-0 bg-white z-50 flex flex-col md:flex-row overflow-hidden'
-          onClick={() => {
-            setIsImageFullscreen(false);
-          }}
+          // onClick={() => {
+          //   setIsImageFullscreen(false);
+          // }}
         >
           {/* Close - CIRCLE - BLACK ICON */}
           <button
@@ -226,9 +298,15 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                 <button
                   key={idx}
                   onClick={(e) => {
-                    e.stopPropagation()
-                    setSelectedIndex(idx)
-                  }}
+    e.stopPropagation()
+    if (idx === selectedIndex) return; // prevent spam
+    setSlideDirection(idx > selectedIndex ? 'right' : 'left')
+    setIsAnimating(true)
+    setTimeout(() => {
+      setSelectedIndex(idx)
+      setIsAnimating(false)
+    }, 150)
+  }}
                   className={`w-16 h-16 bg-white rounded-lg border-2 p-0.5 flex-shrink-0 transition-all ${selectedIndex === idx
                     ? 'border-blue-500 ring-2 ring-blue-300 shadow-lg scale-105'
                     : 'border-gray-500 hover:border-white'
@@ -248,41 +326,39 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
             onTouchEnd={onTouchEnd}
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="
-      w-full
-      max-w-[520px]
-      h-[65vh]
-      md:h-[70vh]
-      flex
-      items-center
-      justify-center
-    "
-            >
-              <img
-                src={images[selectedIndex]}
-                alt='Product'
-                className='max-w-full max-h-full object-contain transition-all duration-300'
-              />
+           <div className="w-full max-w-[520px] h-[65vh] md:h-[70vh] flex items-center justify-center overflow-hidden">
+              {(externalLoading) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+           <img
+  key={`modal-${selectedIndex}`}
+  src={images[selectedIndex]}
+  alt='Product'
+  className={`max-w-full max-h-full object-contain transition-all duration-300 ease-in-out ${
+    externalLoading? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+  } ${
+    isAnimating
+    ? slideDirection === 'right'
+      ? 'opacity-0 -translate-x-16'
+      : 'opacity-0 translate-x-16'
+    : 'opacity-100 translate-x-0'
+  }`}
+/>
 
               {/* Desktop modal arrows - BLACK ICONS */}
               {images.length > 1 && (
                 <>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      prevImage()
-                    }}
+                  onClick={(e) => { e.stopPropagation(); prevImage() }}
                     disabled={selectedIndex === 0}
                     className='hidden md:flex absolute left-32 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
                   >
                     <FaChevronLeft size={24} />
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      nextImage()
-                    }}
+                  onClick={(e) => { e.stopPropagation(); nextImage() }}
                     disabled={selectedIndex === images.length - 1}
                     className='hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
                   >
@@ -318,10 +394,16 @@ const Product360 = ({ images, selectedIndex, setSelectedIndex, isImageFullscreen
                 {images.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={(e) => {
-                      e.stopPropagation()
+                   onClick={(e) => {
+                    e.stopPropagation()
+                    if (idx === selectedIndex) return;
+                    setSlideDirection(idx > selectedIndex ? 'right' : 'left')
+                    setIsAnimating(true)
+                    setTimeout(() => {
                       setSelectedIndex(idx)
-                    }}
+                      setIsAnimating(false)
+                    }, 150)
+                  }}
                     className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-0.5 snap-start 
                       ${selectedIndex === idx
                         ? 'border-blue-600 scale-105 shadow-md'

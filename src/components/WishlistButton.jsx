@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { FaHeart, FaRegHeart } from 'react-icons/fa'
@@ -18,10 +18,11 @@ const WishlistButton = ({
 }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-
+  const [isLoading, setIsLoading] = useState(false); 
+  
   const { userInfo } = useSelector((state) => state.auth)
   const { wishlistItems } = useSelector((state) => state.wishlist)
-
+  
   useEffect(() => {
     if (userInfo) {
       dispatch(getWishlist())
@@ -64,29 +65,35 @@ const originalPriceToSend = variantToSend?.colors?.find((c) => c.name === colorT
 const discountAmountToSend = variantToSend?.colors?.find((c) => c.name === colorToSend)?.discountAmount || 0;
 
 
-  const wishlistHandler = () => {
-  //  console.log('V32.32 DEBUG:', {colorToSend, storageToSend, priceToSend})
-    if (!userInfo) {
-      navigate('/login')
-      return
-    }
+  const wishlistHandler = async () => {  
+  // console.log('V32.32 DEBUG:', {colorToSend, storageToSend, priceToSend})
+  
+  if (!userInfo) {
+    navigate('/login')
+    return
+  }
 
-    // V25.3 KEY: Guard all 3 required fields
-    if (!colorToSend ||!storageToSend ||!priceToSend) {
-      toast.error('Please select color + storage first')
-      return
-    }
+  if (isLoading) return // prevent spam clicks
+  setIsLoading(true)
 
+  // V25.3 KEY: Guard all 3 required fields
+  if (!colorToSend || !storageToSend || !priceToSend) {
+    toast.error('Please select color + storage first')
+    setIsLoading(false)
+    return
+  }
+
+  try {
     if (isWishlisted) {
       // V25.3 KEY: Send storage too so backend deletes exact variant
-       if (wishlistItem?._id) {
-    dispatch(removeFromWishlist(wishlistItem._id))
-    toast.success('removed from Wishlist') 
-  } else {
-    toast.error('Wishlist item not found. Refresh page.')
-  }
+      if (wishlistItem?._id) {
+        await dispatch(removeFromWishlist(wishlistItem._id)).unwrap() // <-- ADD await + unwrap
+        toast.success('Removed from Wishlist')
+      } else {
+        toast.error('Wishlist item not found. Refresh page.')
+      }
     } else {
-      dispatch(addToWishlist({
+      await dispatch(addToWishlist({ // <-- ADD await + unwrap
         product: product._id,
         slug: product.slug,
         name: product.name,
@@ -98,32 +105,43 @@ const discountAmountToSend = variantToSend?.colors?.find((c) => c.name === color
         color: colorToSend, // "Black"
         countInStock: stockToSend,
         qty: 1,
-      }))
-      toast.success('Added to wishlist')
+      })).unwrap()
+      toast.success('Added to Wishlist')
     }
+  } catch (err) {
+    toast.error(err || 'Something went wrong')
+  } finally {
+    setIsLoading(false) // <-- ALWAYS STOP LOADING
   }
+}
 
  return (
   <button
     type='button'
     onClick={wishlistHandler}
-     className={
-    className ||
-    "w-full h-12 flex items-center justify-center gap-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50"
-  }
-    title={isWishlisted? 'Remove from Wishlist' : 'Add to Wishlist'}
+    disabled={isLoading}  
+    className={
+      className ||
+      `w-full h-12 flex items-center justify-center gap-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}` // <-- 2. OPACITY WHEN LOADING
+    }
+    title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
   >
-   {isWishlisted ? (
-  <>
-    <FaHeart className="text-red-500 text-xl" />
-    {showText && <span>Remove from Wishlist</span>}
-  </>
-) : (
-  <>
-    <FaRegHeart className="text-gray-700 text-xl" />
-    {showText && <span>Add to Wishlist</span>}
-  </>
-)}
+    {isLoading ? (  
+      <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    ) : isWishlisted ? (
+      <>
+        <FaHeart className="text-red-500 text-xl" />
+        {showText && <span>Remove from Wishlist</span>}
+      </>
+    ) : (
+      <>
+        <FaRegHeart className="text-gray-700 text-xl" />
+        {showText && <span>Add to Wishlist</span>}
+      </>
+    )}
   </button>
 )
 }

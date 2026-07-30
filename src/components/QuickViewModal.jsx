@@ -21,6 +21,7 @@ const QuickViewModal = ({ product, onClose, onAddToCart }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0) // <-- NEW: for slider
   const [imageLoading, setImageLoading] = useState(true)
   const [isZoomed, setIsZoomed] = useState(false)
+  const [prevImageUrls, setPrevImageUrls] = useState('');
 
   const selectedVariant = product.variants?.find(v => v.storage === selectedStorage) || firstVariant
 
@@ -48,16 +49,16 @@ const handleViewFullDetails = () => {
     setCurrentImageIndex(0)
   }, [selectedColor])
 
-  // Reset image index + loading when color changes
-  useEffect(() => {
-    setCurrentImageIndex(0)
-    setImageLoading(true) // <-- start loading
-  }, [selectedColor])
+  // // Reset image index + loading when color changes
+  // useEffect(() => {
+  //   setCurrentImageIndex(0)
+  //   setImageLoading(true) // <-- start loading
+  // }, [selectedColor])
 
-  // Also reset loading when storage changes images
-  useEffect(() => {
-    setImageLoading(true)
-  }, [selectedVariant])
+  // // Also reset loading when storage changes images
+  // useEffect(() => {
+  //   setImageLoading(true)
+  // }, [selectedVariant])
 
 
 
@@ -129,6 +130,24 @@ const handleViewFullDetails = () => {
     setDragOffset(0)
   }
 
+  useEffect(() => {
+  // Only compare the actual URLs, not array reference
+  const currentUrls = productImages.map(img => img.url).join(',')
+  const urlsChanged = currentUrls!== prevImageUrls
+  
+  if (urlsChanged && productImages.length > 0) {
+    setImageLoading(true);
+    setCurrentImageIndex(0);
+    setPrevImageUrls(currentUrls);
+    
+    // SAFETY NET: Force stop after 600ms even if onLoad doesn't fire
+    const timeout = setTimeout(() => setImageLoading(false), 600)
+    return () => clearTimeout(timeout)
+  } else {
+    setImageLoading(false) // Same images = stop loading immediately
+  }
+}, [productImages])
+
   // Autoplay
   useEffect(() => {
     if (productImages.length <= 1 || isPaused) return
@@ -163,7 +182,7 @@ const handleViewFullDetails = () => {
           {/* Image with Slider */}
           <div
             className="relative overflow-hidden select-none bg-gray-50 rounded-xl cursor-zoom-in" // <-- added bg + cursor
-            onClick={() => setIsZoomed(true)} // <-- OPEN ZOOM
+            
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -193,12 +212,15 @@ const handleViewFullDetails = () => {
                 opacity: imageLoading ? 0 : 1
               }}
             >
+            
               {productImages.map((img, idx) => (
                 <img
                   key={idx}
                   src={img.url}
                   alt={product.name}
-                  className="w-full h-80 object-contain rounded-xl flex-shrink-0"
+                  loading={idx === 0 ? "eager" : "lazy"} // first image loads fast, rest lazy
+                  onClick={() => setIsZoomed(true)} // <-- OPEN ZOOM
+                  className="w-full pt-2 h-80 object-contain rounded-xl flex-shrink-0"
                   draggable={false}
                   onLoad={() => setImageLoading(false)}
                   onError={() => setImageLoading(false)}
@@ -376,7 +398,7 @@ const handleViewFullDetails = () => {
           {isZoomed && (
             <div
               className="fixed inset-0 bg-white z-[999] flex items-center justify-center" // <-- z-[999] to be on absolute top
-              onClick={() => setIsZoomed(false)}
+              //onClick={() => setIsZoomed(false)}
               onTouchStart={onTouchStart} 
               onTouchMove={onTouchMove} 
               onTouchEnd={onTouchEnd} 
@@ -390,35 +412,65 @@ const handleViewFullDetails = () => {
               </button>
 
               {/* Image container - REDUCED SPACING */}
-              <div className="relative w-full h-full flex items-center justify-center p-1 md:p-4"> {/* <-- p-1 on mobile */}
-                <div className="relative max-w-3xl max-h-[65vh] md:max-h-[80vh] w-full h-full flex items-center justify-center"> {/* <-- smaller */}
-                  <img
-                    src={productImages[currentImageIndex]?.url}
-                    alt={product.name}
-                    className="max-w-[85%] max-h-full md:max-w-[90%] object-contain" // <-- 85% on mobile
-                    onClick={(e) => e.stopPropagation()}
-                     onTouchStart={(e) => { e.stopPropagation(); onTouchStart(e) }} 
-                    onTouchMove={(e) => { e.stopPropagation(); onTouchMove(e) }} 
-                    onTouchEnd={(e) => { e.stopPropagation(); onTouchEnd() }} 
-                  />
+              <div className="relative w-full h-full flex items-center justify-center p-1 md:p-4">
+                <div className="relative max-w-3xl max-h-[65vh] md:max-h-[80vh] w-full h-full flex items-center justify-center overflow-hidden"> {/* ✅ overflow-hidden is key */}
+                  
+                  {/* THE TRACK - COPY OF PRODUCT360 */}
+                  <div 
+                    className="flex w-full h-full"
+                    style={{
+                      transform: `translateX(calc(-${currentImageIndex * 100}% + ${dragOffset}px))`,
+                      transition: isDragging? 'none' : 'transform 300ms ease-out',
+                    }}
+                    onTouchStart={(e) => { e.stopPropagation(); onTouchStart(e) }}
+                    onTouchMove={(e) => { e.stopPropagation(); onTouchMove(e) }}
+                    onTouchEnd={(e) => { e.stopPropagation(); onTouchEnd() }}
+                    onMouseDown={(e) => { e.stopPropagation(); onMouseDown(e) }}
+                    onMouseMove={(e) => { e.stopPropagation(); onMouseMove(e) }}
+                    onMouseUp={(e) => { e.stopPropagation(); onMouseUp(e) }}
+                    onMouseLeave={(e) => { e.stopPropagation(); onMouseUp(e) }}
+                    onMouseLeave={(e) => { onTouchEnd(); setIsPaused(false) }}
+                    onMouseEnter={() => setIsPaused(true)} // <-- PAUSE
+                  >
+                    {productImages.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img.url}
+                        alt={product.name}
+                        className="w-full h-full object-contain flex-shrink-0"  
+                        draggable={false}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ))}
+                  </div>
+ 
 
-                  {/* Arrows - DESKTOP ONLY */}
-                  {productImages.length > 1 && (
-                    <>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); prevImage() }}
-                        className="hidden md:flex absolute -left-6 lg:-left-16 top-1/2 -translate-y-1/2 bg-white shadow-lg hover:shadow-xl text-gray-800 p-2.5 rounded-full items-center justify-center z-[100]"
-                      >
-                        <FaChevronLeft size={18} />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); nextImage() }}
-                        className="hidden md:flex absolute -right-6 lg:-right-16 top-1/2 -translate-y-1/2 bg-white shadow-lg hover:shadow-xl text-gray-800 p-2.5 rounded-full items-center justify-center z-[100]"
-                      >
-                        <FaChevronRight size={18} />
-                      </button>
-                    </>
-                  )}
+               {/* Arrows - DESKTOP ONLY */}
+      {/* Arrows - NOW OUTSIDE THE IMAGE BOX */}
+         {/* Arrows - OUTSIDE overflow-hidden */}
+{productImages.length > 1 && (
+  <>
+    <button
+      onClick={prevImage}
+      className="hidden md:flex fixed left-8 lg:left-16 top-1/2 -translate-y-1/2 z-[10000] 
+        bg-white hover:bg-gray-100 text-black p-4 rounded-full 
+        shadow-2xl border-gray-200 transition-all"
+      aria-label="Previous image"
+    >
+      <FaChevronLeft size={24} />
+    </button>
+    
+    <button
+      onClick={nextImage}
+      className="hidden md:flex fixed right-8 lg:right-16 top-1/2 -translate-y-1/2 z-[10000] 
+        bg-white hover:bg-gray-100 text-black p-4 rounded-full 
+        shadow-2xl border-gray-200 transition-all"
+      aria-label="Next image"
+    >
+      <FaChevronRight size={24} />
+    </button>
+  </>
+)}
                 </div>
 
                 {/* Counter */}

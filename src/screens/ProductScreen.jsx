@@ -163,6 +163,10 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
 
   //product360 open modal state and used for to hide the stickyPurchase.jsx in mobile screen 
   const [isImageFullscreen, setIsImageFullscreen] = useState(false);
+  //for loading and sliderthe main images
+  const [imageLoadingTrigger, setImageLoadingTrigger] = useState(false)
+  const [slideDirection, setSlideDirection] = useState('center')
+
   // Edit states
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -904,6 +908,10 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                     isImageFullscreen={isImageFullscreen}
                     setIsImageFullscreen={setIsImageFullscreen}
                     stock={selectedColor.countInStock ?? 0}
+                     externalLoading={imageLoadingTrigger}
+                     setExternalLoading={setImageLoadingTrigger}  
+                      slideDirection={slideDirection}
+                      setSlideDirection={setSlideDirection}
                   />
                 </div>
               </div>
@@ -956,7 +964,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                   {isDiscountActive ? (
                     <>
                       <div className="flex items-center gap-3">
-                        <span className="text-4xl sm:text-5xl font-extrabold text-red-600">
+                        <span className="text-3xl sm:text-5xl font-extrabold text-red-600">
                           ${finalPrice.toFixed(2)}
                         </span>
 
@@ -1022,11 +1030,68 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                   })()}
                 </div>
 
+
+                  {/* Color Selection V12.6 */}
+                {selectedVariant.colors?.length > 0 && (
+                  <div className='mb-6'>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Color:
+                      <span className="ml-2 text-blue-600 font-bold">
+                        {selectedColor.name}
+                      </span>
+                    </h3>
+                    <div className="flex flex-wrap gap-3 sm:gap-4">
+                      {selectedVariant.colors.map((color, cIdx) => (
+                        <button
+                          key={cIdx}
+                          type="button"
+                         onClick={() => {
+                            setImageLoadingTrigger(true)  
+                            setSlideDirection('left')  
+                            setSelectedColorIndex(cIdx)
+                            setSelectedImageIndex(0)  
+                            setTimeout(() => setImageLoadingTrigger(false), 400)  
+                          }}
+                          className={`
+                                  relative flex flex-col items-center justify-center gap-1
+                                  w-20 h-24
+                                  sm:w-28 sm:h-32  
+                                  lg:w-32 lg:h-36  
+                                  rounded-xl
+                                  border-2
+                                  bg-white
+                                  overflow-hidden
+                                  transition-all
+                                  duration-300
+                                  ${cIdx === selectedColorIndex
+                              ? "border-blue-600 ring-2 sm:ring-4 ring-blue-100 shadow-lg scale-105"
+                              : "border-gray-200 hover:border-blue-300 hover:shadow-md"
+                            }
+                                  `}
+                          title={color.name}
+                        >
+                          <img
+                            src={(color.images?.[0]?.url || selectedVariant.images?.[0]?.url || product.image || '/images/placeholder-phone.jpg').replace('/upload/', '/upload/w_400,h_400,c_pad,b_white,q_auto:best/')} // V12.7
+                            alt={color.name}
+                            className='w-full h-full max-h-14 sm:max-h-18 lg:max-h-24 object-contain p-0.5 transition-transform duration-200 hover:scale-105' // V12.7
+                            onError={(e) => e.target.src = '/images/placeholder-phone.jpg'}
+                          />
+                          <span className='text-xs font-medium text-gray-700 text-center leading-tight max-w-full truncate px-1'>
+                            {color.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* V9.40 KEY: VARIANT SELECTOR = STORAGE 128GB/256GB/512GB */}
                 {product.variants?.length > 0 && (
                   <div className='mb-4'>
                     <label className='font-semibold block mb-3 text-gray-900'>
-                      Storage: <span className='text-blue-600'>{selectedVariant.name || selectedVariant.storage}</span>
+                      Storage: <span className='text-blue-600 font-semibold'>
+                        {selectedVariant.storage || selectedVariant.name}
+                      </span>
                     </label>
                     <div className="flex flex-wrap gap-3 sm:gap-4">
                       {product.variants.map((variant, vIdx) => (
@@ -1034,6 +1099,8 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                           key={vIdx}
                           type="button"
                           onClick={() => {
+                             setImageLoadingTrigger(true) // START LOADING
+                              setSlideDirection('right') // slide direction for storage
                             // Remember the currently selected color
                             const currentColorName = selectedColor?.name;
 
@@ -1051,9 +1118,12 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                               // Color doesn't exist in this storage
                               setSelectedColorIndex(0);
                             }
+
+                            setSelectedImageIndex(0) // reset to first image
+                            setTimeout(() => setImageLoadingTrigger(false), 400) // STOP LOADING
                           }}
                           className={`
-                                min-w-[80px] md:min-w-[96px] lg:min-w-[90px]
+                                min-w-[70px] md:min-w-[96px] lg:min-w-[90px]
                                 h-12 md:h-14
                                 px-4 md:px-5
                                 rounded-xl
@@ -1061,7 +1131,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                                 font-semibold
                                 text-sm md:text-base
                                 transition-all
-                                duration-200
+                                duration-200 
                                 ${vIdx === selectedVariantIndex
                               ? "border-blue-600 bg-blue-50 text-blue-700 shadow-lg scale-[1.03]"
                               : "border-gray-200 bg-white text-gray-700 hover:border-blue-400 hover:shadow-sm"
@@ -1076,49 +1146,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                 )}
 
 
-                {/* Color Selection V12.6 */}
-                {selectedVariant.colors?.length > 0 && (
-                  <div className='mb-6'>
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-                      Color:
-                      <span className="ml-2 text-blue-600 font-bold">
-                        {selectedColor.name}
-                      </span>
-                    </h3>
-                    <div className="flex flex-wrap gap-3 sm:gap-4">
-                      {selectedVariant.colors.map((color, cIdx) => (
-                        <button
-                          key={cIdx}
-                          type="button"
-                          onClick={() => setSelectedColorIndex(cIdx)}
-                          className={`
-                                  relative
-                                  w-24 h-24
-                                  sm:w-28 sm:h-28
-                                  rounded-xl
-                                  border-2
-                                  bg-white
-                                  overflow-hidden
-                                  transition-all
-                                  duration-300
-                                  ${cIdx === selectedColorIndex
-                              ? "border-blue-600 ring-2 sm:ring-4 ring-blue-100 shadow-lg scale-105"
-                              : "border-gray-200 hover:border-blue-300 hover:shadow-md"
-                            }
-                                  `}
-                          title={color.name}
-                        >
-                          <img
-                            src={(color.images?.[0]?.url || selectedVariant.images?.[0]?.url || product.image || '/images/placeholder-phone.jpg').replace('/upload/', '/upload/w_400,h_400,c_pad,b_white,q_auto:best/')} // V12.7
-                            alt={color.name}
-                            className='w-full h-full object-contain p-2 sm:p-3' // V12.7
-                            onError={(e) => e.target.src = '/images/placeholder-phone.jpg'}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              
 
                 {/* Qty + Add to Cart - V12.8 KEY */}
 
