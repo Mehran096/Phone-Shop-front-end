@@ -361,8 +361,8 @@ useEffect(() => {
   } ${
     isAnimating
     ? slideDirection === 'right'
-      ? 'opacity-0 translate-x-16'
-      : 'opacity-0 -translate-x-16'
+      ? 'opacity-0 translate-x-8'
+      : 'opacity-0 -translate-x-8'
     : 'opacity-100 translate-x-0'
   }`}
 />
