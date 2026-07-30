@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { FaChevronLeft, FaChevronRight, FaTimes, FaBan } from 'react-icons/fa'
 
 const Product360 = ({ 
@@ -16,7 +16,8 @@ const Product360 = ({
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
   //const [isAnimating, setIsAnimating] = useState(false);
- 
+const desktopThumbRef = useRef(null)
+const mobileThumbRef = useRef(null)
 
   const minSwipeDistance = 50
 
@@ -107,14 +108,43 @@ useEffect(() => {
   }, [selectedIndex, isImageFullscreen])
 
 
-const thumbRef = useRef(null)
-
+ 
+// Auto scroll thumbnails when main image changes
+// Auto scroll thumbnails when main image changes - WITH SMOOTH
 useEffect(() => {
-  if (thumbRef.current) {
-    const activeThumb = thumbRef.current.children[selectedIndex]
-    activeThumb?.scrollIntoView({ behavior: 'smooth', inline: 'center' })
-  }
+  [desktopThumbRef.current, mobileThumbRef.current].forEach(container => {
+    if (!container) return
+    const activeThumb = container.children[selectedIndex]
+    if (activeThumb) {
+      const containerRect = container.getBoundingClientRect()
+      const thumbRect = activeThumb.getBoundingClientRect()
+      const offset = thumbRect.top - containerRect.top - (containerRect.height / 2) + (thumbRect.height / 2)
+
+      container.scrollTo({
+        top: container.scrollTop + offset,
+        behavior: 'smooth'
+      })
+    }
+  })
 }, [selectedIndex])
+
+// Force scroll on mount/remount after modal closes - NO SMOOTH
+useLayoutEffect(() => {
+  const timer = setTimeout(() => {
+    [desktopThumbRef.current, mobileThumbRef.current].forEach(container => {
+      if (!container) return
+      const activeThumb = container.children[selectedIndex]
+      if (activeThumb) {
+        const containerRect = container.getBoundingClientRect()
+        const thumbRect = activeThumb.getBoundingClientRect()
+        const offset = thumbRect.top - containerRect.top - (containerRect.height / 2) + (thumbRect.height / 2)
+
+        container.scrollTo({ top: container.scrollTop + offset }) // instant
+      }
+    })
+  }, 0)
+  return () => clearTimeout(timer)
+}, [])
 
 
   return (
@@ -122,7 +152,7 @@ useEffect(() => {
       <div className='w-full flex flex-col md:flex-row min-w-0 gap-4'>
         {/* Desktop Thumbnails - LEFT */}
         {images.length > 1 && (
-          <div className='hidden pt-2 pl-2 md:flex flex-col gap-2 w-20 overflow-y-auto overflow-x-hidden h-[28rem] flex-shrink-0 
+          <div  ref={desktopThumbRef} className='hidden pt-2 pl-2 md:flex flex-col gap-2 w-20 overflow-y-auto overflow-x-hidden h-[28rem] flex-shrink-0 
           [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
             {images.map((img, idx) => (
               <button
@@ -248,7 +278,7 @@ useEffect(() => {
 
         {/* Mobile Thumbnails - BOTTOM */}
         {images.length > 1 && (
-          <div className='md:hidden bg-gray-50 border-t border-gray-200 -mx-4 relative'>
+          <div ref={mobileThumbRef}  className='md:hidden bg-gray-50 border-t border-gray-200 -mx-4 relative'>
             <div className='flex gap-2 overflow-x-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] snap-x snap-mandatory 
             [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
               {images.map((img, idx) => (
@@ -303,7 +333,7 @@ useEffect(() => {
 
           {/* Desktop modal thumbs */}
           {images.length > 1 && (
-            <div className='hidden md:flex flex-col gap-2 w-26 p-4 overflow-y-auto overflow-x-hidden bg-gray-50 border-r 
+            <div ref={desktopThumbRef}  className='hidden md:flex flex-col gap-2 w-26 p-4 overflow-y-auto overflow-x-hidden bg-gray-50 border-r 
             border-gray-200 flex-shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
               {images.map((img, idx) => (
                 <button
@@ -397,7 +427,7 @@ onTransitionEnd={() => setSlideDirection('center')}
 
           {/* Mobile thumbs in modal */}
           {images.length > 1 && (
-            <div className='md:hidden bg-gray-50 border-t border-gray-200'>
+            <div ref={mobileThumbRef} className='md:hidden bg-gray-50 border-t border-gray-200'>
               <div className='flex gap-2 overflow-x-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] snap-x 
               [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
                 {images.map((img, idx) => (
