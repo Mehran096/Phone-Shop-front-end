@@ -15,7 +15,7 @@ const Product360 = ({
 }) => {
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
-  const [isAnimating, setIsAnimating] = useState(false);
+  //const [isAnimating, setIsAnimating] = useState(false);
  
 
   const minSwipeDistance = 50
@@ -24,42 +24,34 @@ const Product360 = ({
 const nextImage = () => {
   if (selectedIndex === images.length - 1) return;
   setSlideDirection('right') // slide right
-  setIsAnimating(true)
-  setTimeout(() => {
+   
     setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : prev))
-    setIsAnimating(false)
-  }, 200)
+    
 }
 
 const prevImage = () => {
   if (selectedIndex === 0) return;
   setSlideDirection('left') // slide left
-  setIsAnimating(true)
-  setTimeout(() => {
+  
     setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
-    setIsAnimating(false)
-  }, 200)
+    
 }
 
   // Mobile swipe
   const nextImageTouch = () => {  
   if (selectedIndex === images.length - 1) return;
   setSlideDirection('left') // slide left - KEEP THIS, touch works
-  setIsAnimating(true)
-  setTimeout(() => {
+  
     setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : prev))
-    setIsAnimating(false)
-  }, 200)
+    
 }
 
 const prevImageTouch = () => {  
   if (selectedIndex === 0) return;
   setSlideDirection('right') // slide right - KEEP THIS, touch works
-  setIsAnimating(true)
-  setTimeout(() => {
+  
     setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
-    setIsAnimating(false)
-  }, 200)
+    
 }
 
   const onTouchStart = (e) => {
@@ -76,13 +68,15 @@ const prevImageTouch = () => {
     if (distance < -minSwipeDistance) prevImageTouch()
   }
 
-  // Reset slideDirection after animation so next swipe works
+ // Reset slideDirection after animation so image returns to center
 useEffect(() => {
-  const timer = setTimeout(() => {
-    setSlideDirection('center')
-  }, 200) // must match duration-200 in your className
-  return () => clearTimeout(timer)
-}, [selectedIndex])
+  if (slideDirection!== 'center') {
+    const timer = setTimeout(() => {
+      setSlideDirection('center')
+    }, 220) // 20ms buffer over duration-200
+    return () => clearTimeout(timer)
+  }
+}, [slideDirection])
 
   // Lock body scroll when fullscreen open
   useEffect(() => {
@@ -128,14 +122,10 @@ useEffect(() => {
             {images.map((img, idx) => (
               <button
                 key={idx}
-                onClick={() => {
+               onClick={() => {
   if (idx === selectedIndex) return;
   setSlideDirection(idx > selectedIndex? 'right' : 'left')
-  setIsAnimating(true) // start animation
-  setTimeout(() => {
-    setSelectedIndex(idx)
-    setIsAnimating(false) // end animation
-  }, 150) // half of transition time
+  setSelectedIndex(idx)
 }}
                 className={`w-14 h-14 bg-white rounded-xl border-2 p-1 flex-shrink-0 transition-all 
                   duration-200 ${selectedIndex === idx
@@ -203,17 +193,21 @@ useEffect(() => {
   key={selectedIndex}  
   src={images[selectedIndex]}
   alt='Product'
-  className={`h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer 
-    transition-all duration-300 ease-in-out
-    ${stock === 0? "grayscale opacity-80" : "group-hover:scale-105"}
-    ${externalLoading? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
-    ${isAnimating 
-     ? slideDirection === 'right'? 'opacity-0 translate-x-8' : 'opacity-0 -translate-x-8'
-      : 'opacity-100 translate-x-0'
-    }`}
+  className={`h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer
+  transition-all duration-200 ease-out will-change-transform
+  ${stock === 0 ? "grayscale opacity-80" : "group-hover:scale-105"}
+  ${externalLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+  ${slideDirection === 'left' 
+    ? '-translate-x-8 opacity-0' 
+    : slideDirection === 'right' 
+    ? 'translate-x-8 opacity-0' 
+    : 'translate-x-0 opacity-100'
+  }
+`}
   onClick={() => {
     setIsImageFullscreen(true);
   }}
+  onTransitionEnd={() => setSlideDirection('center')}
 />
         </div>
 
@@ -259,16 +253,12 @@ useEffect(() => {
               {images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={(e) => {
-    e.stopPropagation()
-    if (idx === selectedIndex) return; // prevent spam
-    setSlideDirection(idx > selectedIndex ? 'right' : 'left')
-    setIsAnimating(true)
-    setTimeout(() => {
-      setSelectedIndex(idx)
-      setIsAnimating(false)
-    }, 150)
-  }}
+                 onClick={(e) => {
+  e.stopPropagation()
+  if (idx === selectedIndex) return; // prevent spam
+  setSlideDirection(idx > selectedIndex ? 'right' : 'left')
+  setSelectedIndex(idx)
+}}
                   aria-label={`View image ${idx + 1}`}
                   className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-1 snap-start transition-all 
                     duration-200 ${selectedIndex === idx
@@ -317,16 +307,12 @@ useEffect(() => {
               {images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={(e) => {
-    e.stopPropagation()
-    if (idx === selectedIndex) return; // prevent spam
-    setSlideDirection(idx > selectedIndex ? 'right' : 'left')
-    setIsAnimating(true)
-    setTimeout(() => {
-      setSelectedIndex(idx)
-      setIsAnimating(false)
-    }, 150)
-  }}
+                onClick={(e) => {
+  e.stopPropagation()
+  if (idx === selectedIndex) return;  
+  setSlideDirection(idx > selectedIndex ? 'right' : 'left')
+  setSelectedIndex(idx)
+}}
                   className={`w-16 h-16 bg-white rounded-lg border-2 p-0.5 flex-shrink-0 transition-all ${selectedIndex === idx
                     ? 'border-blue-500 ring-2 ring-blue-300 shadow-lg scale-105'
                     : 'border-gray-500 hover:border-white'
@@ -355,16 +341,18 @@ useEffect(() => {
            <img
   key={`modal-${selectedIndex}`}
   src={images[selectedIndex]}
+  
   alt='Product'
-  className={`max-w-full max-h-full object-contain transition-all duration-300 ease-in-out ${
-    externalLoading? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-  } ${
-    isAnimating
-    ? slideDirection === 'right'
-      ? 'opacity-0 translate-x-8'
-      : 'opacity-0 -translate-x-8'
-    : 'opacity-100 translate-x-0'
-  }`}
+  className={`max-w-full max-h-full object-contain transition-all duration-200 ease-out will-change-transform ${
+  externalLoading? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+} ${
+  slideDirection === 'right' 
+ ? 'opacity-0 translate-x-8' 
+  : slideDirection === 'left' 
+ ? 'opacity-0 -translate-x-8' 
+  : 'opacity-100 translate-x-0'
+}`}
+onTransitionEnd={() => setSlideDirection('center')}
 />
 
               {/* Desktop modal arrows - BLACK ICONS */}
@@ -414,16 +402,12 @@ useEffect(() => {
                 {images.map((img, idx) => (
                   <button
                     key={idx}
-                   onClick={(e) => {
-                    e.stopPropagation()
-                    if (idx === selectedIndex) return;
-                    setSlideDirection(idx > selectedIndex ? 'right' : 'left')
-                    setIsAnimating(true)
-                    setTimeout(() => {
-                      setSelectedIndex(idx)
-                      setIsAnimating(false)
-                    }, 150)
-                  }}
+                 onClick={(e) => {
+  e.stopPropagation()
+  if (idx === selectedIndex) return;  
+  setSlideDirection(idx > selectedIndex ? 'right' : 'left')
+  setSelectedIndex(idx)
+}}
                     className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-0.5 snap-start 
                       ${selectedIndex === idx
                         ? 'border-blue-600 scale-105 shadow-md'
