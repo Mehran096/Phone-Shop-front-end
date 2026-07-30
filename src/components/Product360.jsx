@@ -55,8 +55,8 @@ const prevImage = () => {
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return
     const distance = touchStart - touchEnd
-    if (distance > minSwipeDistance) nextImage()
-    if (distance < -minSwipeDistance) prevImage()
+    if (distance > -minSwipeDistance) nextImage()
+    if (distance < minSwipeDistance) prevImage()
   }
 
   // Reset slideDirection after animation so next swipe works
@@ -341,8 +341,8 @@ useEffect(() => {
   } ${
     isAnimating
     ? slideDirection === 'right'
-      ? 'opacity-0 -translate-x-16'
-      : 'opacity-0 translate-x-16'
+      ? 'opacity-0 translate-x-16'
+      : 'opacity-0 -translate-x-16'
     : 'opacity-100 translate-x-0'
   }`}
 />
