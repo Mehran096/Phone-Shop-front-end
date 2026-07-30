@@ -22,36 +22,39 @@ const Product360 = ({
 
  // NO LOADING SPINNER - just fade + slide for desktop arrows next & prev
 const nextImage = () => {
-  if (selectedIndex === images.length - 1) return;
-  setSlideDirection('right') // slide right
-   
-    setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : prev))
-    
+  setSlideDirection('right')
+  setSelectedIndex((prev) => (prev + 1) % images.length) // LOOP
 }
 
 const prevImage = () => {
-  if (selectedIndex === 0) return;
-  setSlideDirection('left') // slide left
-  
-    setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
-    
+  setSlideDirection('left')
+  setSelectedIndex((prev) => (prev - 1 + images.length) % images.length) // LOOP
 }
 
   // Mobile swipe
-  const nextImageTouch = () => {  
-  if (selectedIndex === images.length - 1) return;
-  setSlideDirection('left') // slide left - KEEP THIS, touch works
+//   const nextImageTouch = () => {  
+//   if (selectedIndex === images.length - 1) return;
+//   setSlideDirection('left') // slide left - KEEP THIS, touch works
   
-    setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : prev))
+//     setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : prev))
     
+// }
+// Mobile swipe - WITH LOOP
+const nextImageTouch = () => {
+  setSlideDirection('left') // slide left
+  setSelectedIndex((prev) => (prev + 1) % images.length) // LOOP
 }
 
-const prevImageTouch = () => {  
-  if (selectedIndex === 0) return;
-  setSlideDirection('right') // slide right - KEEP THIS, touch works
+// const prevImageTouch = () => {  
+//   if (selectedIndex === 0) return;
+//   setSlideDirection('right') // slide right - KEEP THIS, touch works
   
-    setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
+//     setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
     
+// }
+const prevImageTouch = () => {
+  setSlideDirection('right') // slide right
+  setSelectedIndex((prev) => (prev - 1 + images.length) % images.length) // LOOP
 }
 
   const onTouchStart = (e) => {
@@ -69,12 +72,14 @@ const prevImageTouch = () => {
   }
 
  // Reset slideDirection after animation so image returns to center
+// Reset slideDirection instantly after animation
 useEffect(() => {
   if (slideDirection!== 'center') {
-    const timer = setTimeout(() => {
+    // Use requestAnimationFrame instead of 220ms timeout
+    const id = requestAnimationFrame(() => {
       setSlideDirection('center')
-    }, 220) // 20ms buffer over duration-200
-    return () => clearTimeout(timer)
+    })
+    return () => cancelAnimationFrame(id)
   }
 }, [slideDirection])
 
@@ -123,10 +128,10 @@ useEffect(() => {
               <button
                 key={idx}
                onClick={() => {
-  if (idx === selectedIndex) return;
-  setSlideDirection(idx > selectedIndex? 'right' : 'left')
-  setSelectedIndex(idx)
-}}
+                      if (idx === selectedIndex) return;
+                      setSlideDirection(idx > selectedIndex? 'right' : 'left')
+                      setSelectedIndex(idx)
+                    }}
                 className={`w-14 h-14 bg-white rounded-xl border-2 p-1 flex-shrink-0 transition-all 
                   duration-200 ${selectedIndex === idx
                   ? "border-blue-600 shadow-lg scale-105 ring-2 ring-blue-100"
@@ -184,7 +189,7 @@ useEffect(() => {
           >
            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             {/* ADD SPINNER HERE */}
-  {(externalLoading) && (
+  {externalLoading && (
     <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
       <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
@@ -198,9 +203,9 @@ useEffect(() => {
   ${stock === 0 ? "grayscale opacity-80" : "group-hover:scale-105"}
   ${externalLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
   ${slideDirection === 'left' 
-    ? '-translate-x-8 opacity-0' 
-    : slideDirection === 'right' 
     ? 'translate-x-8 opacity-0' 
+    : slideDirection === 'right' 
+    ? '-translate-x-8 opacity-0' 
     : 'translate-x-0 opacity-100'
   }
 `}
@@ -224,23 +229,19 @@ useEffect(() => {
           {images.length > 1 && (
             <>
               <button
-               onClick={(e) => { e.stopPropagation(); prevImage() }}
-                disabled={selectedIndex === 0}
-                className='hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 p-3 text-gray-700 hover:text-black 
-                disabled:opacity-20 disabled:cursor-not-allowed transition items-center justify-center'
-                aria-label='Previous image'
-              >
-                <FaChevronLeft size={28} />
-              </button>
+  onClick={(e) => { e.stopPropagation(); prevImage() }}
+  className='hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 p-3 text-gray-700 hover:text-black transition items-center justify-center'
+  aria-label='Previous image'
+>
+  <FaChevronLeft size={28} />
+</button>
               <button
-             onClick={(e) => { e.stopPropagation(); nextImage() }}
-                disabled={selectedIndex === images.length - 1}
-                className='hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 p-3 text-gray-700 hover:text-black 
-                disabled:opacity-20 disabled:cursor-not-allowed transition items-center justify-center'
-                aria-label='Next image'
-              >
-                <FaChevronRight size={28} />
-              </button>
+  onClick={(e) => { e.stopPropagation(); nextImage() }}
+  className='hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 p-3 text-gray-700 hover:text-black transition items-center justify-center'
+  aria-label='Next image'
+>
+  <FaChevronRight size={28} />
+</button>
             </>
           )}
         </div>
@@ -347,9 +348,9 @@ useEffect(() => {
   externalLoading? 'opacity-0 scale-95' : 'opacity-100 scale-100'
 } ${
   slideDirection === 'right' 
- ? 'opacity-0 translate-x-8' 
-  : slideDirection === 'left' 
  ? 'opacity-0 -translate-x-8' 
+  : slideDirection === 'left' 
+ ? 'opacity-0 translate-x-8' 
   : 'opacity-100 translate-x-0'
 }`}
 onTransitionEnd={() => setSlideDirection('center')}
@@ -358,20 +359,20 @@ onTransitionEnd={() => setSlideDirection('center')}
               {/* Desktop modal arrows - BLACK ICONS */}
               {images.length > 1 && (
                 <>
-                  <button
-                  onClick={(e) => { e.stopPropagation(); prevImage() }}
-                    disabled={selectedIndex === 0}
-                    className='hidden md:flex absolute left-32 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
-                  >
-                    <FaChevronLeft size={24} />
-                  </button>
-                  <button
-                  onClick={(e) => { e.stopPropagation(); nextImage() }}
-                    disabled={selectedIndex === images.length - 1}
-                    className='hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/90 border border-gray-200 shadow-md text-gray-700 hover:bg-white hover:text-black hover:shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed'
-                  >
-                    <FaChevronRight size={24} />
-                  </button>
+                 <button
+  onClick={(e) => { e.stopPropagation(); prevImage() }}
+  className='hidden md:flex absolute left-32 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-lg text-black transition'
+  aria-label='Previous image'
+>
+  <FaChevronLeft size={24} />
+</button>
+                 <button
+  onClick={(e) => { e.stopPropagation(); nextImage() }}
+  className='hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-lg text-black transition'
+  aria-label='Next image'
+>
+  <FaChevronRight size={24} />
+</button>
                 </>
               )}
 
