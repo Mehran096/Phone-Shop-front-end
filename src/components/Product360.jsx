@@ -16,14 +16,11 @@ const Product360 = ({
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false);
-
-  //const [, setIsExternalLoading] = useState(false)  
-//const [slideDirection, setSlideDirection] = useState('center') 
-  //const [isFullscreen, setIsFullscreen] = useState(false)
+ 
 
   const minSwipeDistance = 50
 
- // Amazon: NO LOADING SPINNER - just fade + slide
+ // NO LOADING SPINNER - just fade + slide for desktop arrows next & prev
 const nextImage = () => {
   if (selectedIndex === images.length - 1) return;
   setSlideDirection('right') // slide right
@@ -31,7 +28,7 @@ const nextImage = () => {
   setTimeout(() => {
     setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : prev))
     setIsAnimating(false)
-  }, 150)
+  }, 200)
 }
 
 const prevImage = () => {
@@ -41,10 +38,30 @@ const prevImage = () => {
   setTimeout(() => {
     setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
     setIsAnimating(false)
-  }, 150)
+  }, 200)
 }
 
   // Mobile swipe
+  const nextImageTouch = () => {  
+  if (selectedIndex === images.length - 1) return;
+  setSlideDirection('left') // slide left - KEEP THIS, touch works
+  setIsAnimating(true)
+  setTimeout(() => {
+    setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : prev))
+    setIsAnimating(false)
+  }, 200)
+}
+
+const prevImageTouch = () => {  
+  if (selectedIndex === 0) return;
+  setSlideDirection('right') // slide right - KEEP THIS, touch works
+  setIsAnimating(true)
+  setTimeout(() => {
+    setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
+    setIsAnimating(false)
+  }, 200)
+}
+
   const onTouchStart = (e) => {
     setTouchEnd(null)
     setTouchStart(e.targetTouches[0].clientX)
@@ -55,15 +72,15 @@ const prevImage = () => {
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return
     const distance = touchStart - touchEnd
-    if (distance > -minSwipeDistance) nextImage()
-    if (distance < minSwipeDistance) prevImage()
+    if (distance > minSwipeDistance) nextImageTouch()
+    if (distance < -minSwipeDistance) prevImageTouch()
   }
 
   // Reset slideDirection after animation so next swipe works
 useEffect(() => {
   const timer = setTimeout(() => {
     setSlideDirection('center')
-  }, 300) // must match duration-300 in your className
+  }, 200) // must match duration-200 in your className
   return () => clearTimeout(timer)
 }, [selectedIndex])
 
@@ -242,13 +259,16 @@ useEffect(() => {
               {images.map((img, idx) => (
                 <button
                   key={idx}
-                 onClick={(e) => {
-  e.stopPropagation()
-   
-  setSlideDirection(idx > selectedIndex ? 'right' : 'left')  
-  setSelectedIndex(idx)
-  
-}}
+                  onClick={(e) => {
+    e.stopPropagation()
+    if (idx === selectedIndex) return; // prevent spam
+    setSlideDirection(idx > selectedIndex ? 'right' : 'left')
+    setIsAnimating(true)
+    setTimeout(() => {
+      setSelectedIndex(idx)
+      setIsAnimating(false)
+    }, 150)
+  }}
                   aria-label={`View image ${idx + 1}`}
                   className={`flex-shrink-0 w-14 h-14 bg-white rounded-lg border-2 p-1 snap-start transition-all 
                     duration-200 ${selectedIndex === idx
