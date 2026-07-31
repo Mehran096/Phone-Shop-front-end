@@ -164,8 +164,9 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   //product360 open modal state and used for to hide the stickyPurchase.jsx in mobile screen 
   const [isImageFullscreen, setIsImageFullscreen] = useState(false);
   //for loading and sliderthe main images
-  const [imageLoadingTrigger, setImageLoadingTrigger] = useState(false)
+  //const [imageLoadingTrigger, setImageLoadingTrigger] = useState(false)
   const [slideDirection, setSlideDirection] = useState('center')
+
 
   // Edit states
 
@@ -241,7 +242,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
       if (lastSavedId.current === uniqueId) return;
       lastSavedId.current = uniqueId;
 
-      console.log('SAVING TO RECENT:', uniqueId);
+      //console.log('SAVING TO RECENT:', uniqueId);
       addToRecentlyViewed({
         _id: uniqueId,
         slug: product.slug,
@@ -898,21 +899,36 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                   >
                     <FaBalanceScale className="text-lg" />
                   </button>
+                  {!product || !selectedColor ? (
+                    // SKELETON WHILE LOADING
+                    <div className="relative w-full h-[500px] flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
+                      <div className="w-full h-full animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200"></div>
 
-                  <Product360
-                    images={selectedColor.images?.length > 0
-                      ? selectedColor.images.map(img => img.url)
-                      : [product.image]} // V11.1 KEY: .map(img => img.url)
-                    selectedIndex={selectedImageIndex}
-                    setSelectedIndex={setSelectedImageIndex}
-                    isImageFullscreen={isImageFullscreen}
-                    setIsImageFullscreen={setIsImageFullscreen}
-                    stock={selectedColor.countInStock ?? 0}
-                     externalLoading={imageLoadingTrigger}
-                     setExternalLoading={setImageLoadingTrigger}  
+                      {/* Thumbnail skeleton strip */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                        {[1, 2, 3, 4].map(i => (
+                          <div key={i} className="w-16 h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <Product360
+                      images={selectedColor.images?.length > 0
+                        ? selectedColor.images.map(img => img.url)
+                        : [product.image]} // V11.1 KEY: .map(img => img.url)
+                      color={selectedColor.name || selectedColor.color}
+                      selectedIndex={selectedImageIndex}
+                      setSelectedIndex={setSelectedImageIndex}
+                      isImageFullscreen={isImageFullscreen}
+                      setIsImageFullscreen={setIsImageFullscreen}
+                      stock={selectedColor.countInStock ?? 0}
+                      //externalLoading={imageLoadingTrigger}
+                      //setExternalLoading={setImageLoadingTrigger}  
                       slideDirection={slideDirection}
                       setSlideDirection={setSlideDirection}
-                  />
+
+                    />
+                  )}
                 </div>
               </div>
 
@@ -930,7 +946,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                         mb-3
                         sm:mb-5'
                 >
-                  {product.name}{selectedVariant.storage ? ` ${selectedVariant.storage}` : ''} {/* V13.6 KEY */}
+                  {product.name}{selectedVariant?.storage ? ` ${selectedVariant.storage}` : ''}
                 </h1>
 
                 {/* <div className='text-sm text-gray-500 mb-2 font-medium'>{product.brand}</div> */}
@@ -1031,26 +1047,26 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                 </div>
 
 
-                  {/* Color Selection V12.6 */}
-                {selectedVariant.colors?.length > 0 && (
+                {/* Color Selection V12.6 */}
+                {selectedVariant?.colors?.length > 0 && (
                   <div className='mb-6'>
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
                       Color:
                       <span className="ml-2 text-blue-600 font-bold">
-                        {selectedColor.name}
+                        {selectedColor?.name}
                       </span>
                     </h3>
                     <div className="flex flex-wrap gap-3 sm:gap-4">
-                      {selectedVariant.colors.map((color, cIdx) => (
+                      {selectedVariant?.colors?.map((color, cIdx) => (
                         <button
                           key={cIdx}
                           type="button"
-                         onClick={() => {
-                            setImageLoadingTrigger(true)  
-                            setSlideDirection('left')  
+                          onClick={() => {
+                            //setImageLoadingTrigger(true)  
+                            setSlideDirection('left')
                             setSelectedColorIndex(cIdx)
-                            setSelectedImageIndex(0)  
-                            setTimeout(() => setImageLoadingTrigger(false), 400)  
+                            setSelectedImageIndex(0)
+                            //setTimeout(() => setImageLoadingTrigger(false), 400)  
                           }}
                           className={`
                                   relative flex flex-col items-center justify-center gap-1
@@ -1068,16 +1084,16 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                               : "border-gray-200 hover:border-blue-300 hover:shadow-md"
                             }
                                   `}
-                          title={color.name}
+                          title={color?.name}
                         >
                           <img
-                            src={(color.images?.[0]?.url || selectedVariant.images?.[0]?.url || product.image || '/images/placeholder-phone.jpg').replace('/upload/', '/upload/w_400,h_400,c_pad,b_white,q_auto:best/')} // V12.7
-                            alt={color.name}
+                            src={(color?.images?.[0]?.url || selectedVariant?.images?.[0]?.url || product?.image || '/images/placeholder-phone.jpg').replace('/upload/', '/upload/w_400,h_400,c_pad,b_white,q_auto:best/')} // V12.7
+                            alt={color?.name}
                             className='w-full h-full max-h-14 sm:max-h-18 lg:max-h-24 object-contain p-0.5 transition-transform duration-200 hover:scale-105' // V12.7
                             onError={(e) => e.target.src = '/images/placeholder-phone.jpg'}
                           />
                           <span className='text-xs font-medium text-gray-700 text-center leading-tight max-w-full truncate px-1'>
-                            {color.name}
+                            {color?.name}
                           </span>
                         </button>
                       ))}
@@ -1086,26 +1102,26 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                 )}
 
                 {/* V9.40 KEY: VARIANT SELECTOR = STORAGE 128GB/256GB/512GB */}
-                {product.variants?.length > 0 && (
+                {product?.variants?.length > 0 && (
                   <div className='mb-4'>
                     <label className='font-semibold block mb-3 text-gray-900'>
                       Storage: <span className='text-blue-600 font-semibold'>
-                        {selectedVariant.storage || selectedVariant.name}
+                        {selectedVariant?.storage || selectedVariant?.name}
                       </span>
                     </label>
                     <div className="flex flex-wrap gap-3 sm:gap-4">
-                      {product.variants.map((variant, vIdx) => (
+                      {product?.variants?.map((variant, vIdx) => (
                         <button
                           key={vIdx}
                           type="button"
                           onClick={() => {
-                             setImageLoadingTrigger(true) // START LOADING
-                              setSlideDirection('right') // slide direction for storage
+                            //setImageLoadingTrigger(true) // START LOADING
+                            setSlideDirection('right') // slide direction for storage
                             // Remember the currently selected color
                             const currentColorName = selectedColor?.name;
 
                             // Find the same color in the new storage
-                            const newColorIndex = product.variants[vIdx].colors.findIndex(
+                            const newColorIndex = product.variants[vIdx]?.colors?.findIndex(
                               (color) => color.name === currentColorName
                             );
 
@@ -1119,8 +1135,8 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                               setSelectedColorIndex(0);
                             }
 
-                            setSelectedImageIndex(0) // reset to first image
-                            setTimeout(() => setImageLoadingTrigger(false), 400) // STOP LOADING
+                            // setSelectedImageIndex(0) // reset to first image
+                            // setTimeout(() => setImageLoadingTrigger(false), 400) // STOP LOADING
                           }}
                           className={`
                                 min-w-[70px] md:min-w-[96px] lg:min-w-[90px]
@@ -1138,7 +1154,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                             }
                                 `}
                         >
-                          {variant.name || variant.storage || `${variant.size}GB`} {/* V9.40 KEY */}
+                          {variant?.name || variant?.storage || `${variant?.size}GB`} {/* V9.40 KEY */}
                         </button>
                       ))}
                     </div>
@@ -1146,7 +1162,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                 )}
 
 
-              
+
 
                 {/* Qty + Add to Cart - V12.8 KEY */}
 
@@ -1223,7 +1239,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                   </button>
 
                   {/* COLLAPSIBLE CONTENT */}
-                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isSpecsOpen? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isSpecsOpen ? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 bg-gray-50 p-3 lg:p-6 rounded-lg'>
                       {Object.entries(specs).map(([key, value]) => (
                         <div key={key} className='flex flex-col'>
@@ -1238,17 +1254,19 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
             })()}
 
             {/* Description - Full Width V13.4 */}
+            {(selectedVariant?.description || selectedColor?.description || product.description) && (
             <div className='border-t pt-8 mt-2'>
               <h2 className='text-2xl font-bold text-gray-900 mb-4'>
-                Description {selectedVariant.storage ? `- ${selectedVariant.storage}` : ''} {/* V13.4 KEY */}
+                Description {selectedVariant?.storage ? `- ${selectedVariant?.storage}` : ''} {/* V13.4 KEY */}
               </h2>
               <div className='max-w-5xl'>
                 <p className='text-gray-700 leading-8 text-[15px] whitespace-pre-line'>
-                  {selectedVariant.description || selectedColor?.description || product.description || 'No description available.'} {/* V13.4 */}
+                  {selectedVariant?.description || selectedColor?.description || product.description || 'No description available.'} {/* V13.4 */}
                 </p>
 
               </div>
             </div>
+            )}
 
           </div>
         </div>
@@ -1691,7 +1709,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
                   <div>
                     <p className='text-gray-600'>You are reviewing:</p>
                     <p className='font-medium text-gray-900'>
-                      {product.name} - {selectedColor.name} - {selectedVariant.storage}
+                      {product.name} - {selectedColor.name} - {selectedVariant?.storage}
                     </p>
                   </div>
                 </div>
