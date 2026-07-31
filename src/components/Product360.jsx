@@ -329,9 +329,9 @@ const Product360 = ({
                   fetchPriority={selectedIndex === 0? "high" : "auto"}  
                   className={`h-full w-auto max-h-[90%] max-w-[90%] object-contain cursor-pointer transition-all duration-200 ease-out will-change-transform ${stock === 0 ? 'grayscale opacity-80' : 'group-hover:scale-105'
                     } ${isImgLoading || imgError ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-                    } ${slideDirection === 'left'
+                    } ${slideDirection === 'right'
                       ? '-translate-x-8 opacity-0'
-                      : slideDirection === 'right'
+                      : slideDirection === 'left'
                         ? 'translate-x-8 opacity-0'
                         : 'translate-x-0 opacity-100'
                     }`}
