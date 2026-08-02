@@ -18,6 +18,12 @@ import AdminRoute from './components/AdminRoute'
 import OrderListScreen from './screens/admin/OrderListScreen';
 import ProductListScreen from './screens/admin/ProductListScreen';
 import ProductEditScreen from './screens/admin/ProductEditScreen';
+
+import AccessoryListScreen from './screens/admin/AccessoryListScreen';
+import AccessoryCreateScreen from './screens/admin/AccessoryCreateScreen';
+import AccessoryEditScreen from './screens/admin/AccessoryEditScreen';
+
+
 import UserListScreen from './screens/admin/UserListScreen';
 import UserEditScreen from './screens/admin/UserEditScreen';
 // import MyOrdersScreen from './screens/MyOrdersScree'
@@ -46,6 +52,7 @@ import { useEffect, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
+import AccessoryScreen from './screens/AccessoryScreen';
   
  
 
@@ -166,6 +173,7 @@ const dispatch = useDispatch()
             <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
             <Route path='/deals' element={<DealsScreen isOnline={isOnline}/>} />
             <Route path="/compare" element={<CompareScreen />} />
+            <Route path='/accessory/:slug' element={<AccessoryScreen />} />
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
@@ -194,6 +202,11 @@ const dispatch = useDispatch()
               <Route path="/admin/productlist" element={<ProductListScreen />} />
               <Route path="/admin/product/create" element={<ProductCreateScreen />} />
               <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />
+              {/* Accessories - NEW */}
+              <Route path='/admin/accessorylist' element={<AccessoryListScreen />} />
+              <Route path='/admin/accessory/create' element={<AccessoryCreateScreen />} />
+              <Route path='/admin/accessory/:id/edit' element={<AccessoryEditScreen />} />
+
               <Route path="/admin/orderlist" element={<OrderListScreen />} />
               <Route path="/admin/userlist" element={<UserListScreen />} />
               <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />

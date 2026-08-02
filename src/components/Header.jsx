@@ -274,6 +274,13 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
                   </Link>
 
                   <Link
+                    to='/admin/accessorylist'
+                    className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                  >
+                   Accessories
+                  </Link>
+
+                  <Link
                     to='/admin/orderlist'
                     className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600'
                   >

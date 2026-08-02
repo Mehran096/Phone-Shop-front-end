@@ -5,7 +5,7 @@ import { FaPlus } from 'react-icons/fa';
 import { useCreateProductMutation, useUploadProductImageMutation } from '../../slices/productsApiSlice';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { HiOutlineArrowsUpDown } from 'react-icons/hi2'; // V32.10 Drag handle icon
-import api from '../../utils/axios';
+ 
 
 const ProductCreateScreen = () => {
 
@@ -106,10 +106,7 @@ const ProductCreateScreen = () => {
     )
   );
 
-
-
-
-
+ 
 
   const uploadFileHandler = (vIndex, cIndex, e) => {
     const files = Array.from(e.target.files);
@@ -155,21 +152,7 @@ const ProductCreateScreen = () => {
     });
   };
 
-  // const uploadAllImages = async () => { // V37.00 KEY
-  //   const formData = new FormData();
-  //   variants.forEach(v => {
-  //     v.colors.forEach(c => {
-  //       c.files.forEach(file => formData.append('images', file)); // V37.00 KEY
-  //     })
-  //   });
-
-  //   if(!formData.has('images')) return []; // no new files
-
-  //   setUploading(true);
-  //   const data = await uploadProductImage(formData).unwrap(); // 1 API call for all
-  //   setUploading(false);
-  //   return Array.isArray(data)? data : [data];
-  // }
+   
 
   const submitHandler = async (e) => {
     e.preventDefault();

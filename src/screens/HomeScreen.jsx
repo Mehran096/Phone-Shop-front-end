@@ -12,6 +12,8 @@ import OfflineMessage from '../components/OfflineMessage'
 import { FaShippingFast, FaShieldAlt, FaHeadset } from 'react-icons/fa'
 //import RecentlyViewed from '../components/RecentlyViewed'
 import { getRecentlyViewed, clearRecentlyViewed } from '../utils/recentlyViewed'
+import AccessoryCard from '../components/AccessoryCard'
+import { useGetAccessoriesQuery } from '../slices/accessoriesApiSlice'
 //import CountdownTimer from '../components/CountdownTimer'
  
 const HomeScreen = ({ isOnline }) => {
@@ -53,6 +55,16 @@ const {
   isLoading: arrivalLoading,
   error: arrivalError,
 } = useGetNewArrivalProductsQuery();
+
+const { 
+  data: accessories, 
+  isLoading: accessoriesLoading, 
+  error: accessoriesError 
+} = useGetAccessoriesQuery({ 
+  keyword: '', 
+  pageNumber: 1,
+  type: '' 
+});
 
   const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'OPPO', 'ViVO']
 
@@ -293,6 +305,36 @@ const {
     </div>
   </section>
 )}
+
+{/* 5. ACCESSORIES SECTION */}
+<section className='py-16 bg-gray-50'>
+  <div className='container mx-auto px-4'>
+    <div className='text-center mb-10'>
+      <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900'>
+        Phone Accessories
+      </h2>
+      <p className='mt-3 text-gray-500 text-sm sm:text-base'>
+        Cases, Chargers, Screen Protectors & More
+      </p>
+    </div>
+
+    {accessoriesLoading ? (
+      <Loader />
+    ) : accessoriesError ? (
+      <Message variant='danger'>
+        {accessoriesError?.data?.message || accessoriesError?.error || 'Failed to load accessories'}
+      </Message>
+    ) : accessories?.length === 0 ? (
+      <Message>No accessories found</Message>
+    ) : (
+      <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6'>
+        {accessories?.accessories?.map((accessory) => (
+          <AccessoryCard key={accessory._id} accessory={accessory} />
+        ))}
+      </div>
+    )}
+  </div>
+</section>
 
 {/* 3. Recently Viewed Section - Same style as Deals */}
 {recentProducts.length > 0 && (

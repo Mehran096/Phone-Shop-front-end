@@ -1,634 +1,312 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaPlus } from 'react-icons/fa';
+import { FaTrash, FaPlus } from 'react-icons/fa';
+import Select from 'react-select';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { HiOutlineArrowsUpDown } from 'react-icons/hi2';
 import {
-  useUpdateProductMutation,
-  useGetProductDetailsQuery,
-  useUploadProductImageMutation,
-  //useDeleteCloudinaryImagesBatchMutation, 
-} from '../../slices/productsApiSlice';
-import api from '../../utils/axios';
+  useUpdateAccessoryMutation,
+  useGetAccessoryDetailsQuery,
+  useUploadAccessoryImageMutation,
+} from '../../slices/accessoriesApiSlice';
+import { useGetProductsForDropdownQuery } from '../../slices/productsApiSlice';
 
-const ProductEditScreen = () => {
-  //const { productId } = useParams();
-  const { id } = useParams(); // <-- V9.8 FIX: Changed from `id: productId` to just `id`
-  const productId = id; // <-- ADD THIS LINE
+const AccessoryEditScreen = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: product, isLoading, error, refetch } = useGetProductDetailsQuery(productId);
-  const [updateProduct, { isLoading: loadingUpdate }] = useUpdateProductMutation();
-  const [uploadProductImage, { isLoading: loadingUpload }] = useUploadProductImageMutation();
-  //const [deleteCloudinaryImagesBatch] = useDeleteCloudinaryImagesBatchMutation();
+  const { data: accessory, isLoading, error } = useGetAccessoryDetailsQuery(id);
+  const { data: productOptions, isLoading: loadingProducts } = useGetProductsForDropdownQuery('');
+  const [updateAccessory, { isLoading: loadingUpdate }] = useUpdateAccessoryMutation();
+  const [uploadAccessoryImage, { isLoading: loadingUpload }] = useUploadAccessoryImageMutation();
 
+  const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
+  const inputClass = 'w-full p-2 border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500';
+  const cardClass = 'bg-white p-6 rounded-xl shadow-sm border-gray-100';
+  const btnPrimary = 'w-full mt-6 py-2.5 px-4 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50';
+
+  // SAME STATE AS CREATE
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('');
-
+  const [type, setType] = useState('');
+  const [price, setPrice] = useState(0);
+  const [countInStock, setCountInStock] = useState(0);
+  const [description, setDescription] = useState('');
   const [keywords, setKeywords] = useState('');
-  const [accessories, setAccessories] = useState('');
-  const [variants, setVariants] = useState([{
-    storage: '',
-    specs: {},
-    specsJson: '',
-    colors: [{ 
-      name: '',
-       hexCode: '', 
-       images: [], 
-       price: '',
-       discount: {
-        type: "percentage",
-        value: "",
-        startDate: "",
-        endDate: "",
-        isActive: false,
-      },  
+  const [specsKey, setSpecsKey] = useState('');
+  const [specsValue, setSpecsValue] = useState('');
+  const [specs, setSpecs] = useState({});
+  const [selectedProducts, setSelectedProducts] = useState([]);
 
-       countInStock: '', 
-       sku: ''
-       }]
-  }]);
+  // IMAGE STATES - NEW: track by index not url
+  const [files, setFiles] = useState([]);
+  const [previews, setPreviews] = useState([]); // [{url, isNew, publicId}]
+  const [removedPublicIds, setRemovedPublicIds] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
-  const [uploadingMap, setUploadingMap] = useState({});
-  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const options = productOptions?.map(p => ({
+    value: p._id,
+    label: `${p.brand} ${p.name}`
+  })) || [];
 
-  // V9.69 KEY: Preload V9.47 nested data
+  // FIX 1: Load basic fields first
   useEffect(() => {
-    if (product) {
-      setName(product.name || '');
-      setBrand(product.brand || '');
-      setCategory(product.category || '');
-      setKeywords(product.keywords?.join(', ') || '');
-      setAccessories(product.accessories?.join(', ') || '');
-      setVariants(product.variants?.map(v => ({
-        storage: v.storage || '',
-        description: v.description || '',
-        specs: v.specs || {},
-        specsJson: JSON.stringify(v.specs || {}, null, 2),
-        colors: v.colors?.map(c => ({
-          name: c.name || '',
-          hexCode: c.hexCode || '',
-          images: (c.images || []).map(img =>
-            typeof img === 'string'
-              ? { url: img, imagePublicId: '' }
-              : img
-          ),
-          newFiles: [],
-          price: c.price || '',
-          discount: {
-    type: c.discount?.type || "percentage",
-    value: c.discount?.value || "",
-    startDate: c.discount?.startDate
-      ? c.discount.startDate.slice(0, 10)
-      : "",
-    endDate: c.discount?.endDate
-      ? c.discount.endDate.slice(0, 10)
-      : "",
-    isActive: c.discount?.isActive || false,
-  },
-          countInStock: c.countInStock || '',
-          sku: c.sku || '',
-        })) || [{ name: '', hexCode: '', images: [], price: '', discount: {type: "percentage", value: "", startDate: "", endDate: "", isActive: false,},  countInStock: '', sku: '' }]
-      })) || [{
-        storage: '',
-        description: '',
-        specs: {},
-        specsJson: '',
-        colors: [{ name: '', hexCode: '', images: [], price: '', discount: {type: "percentage", value: "", startDate: "", endDate: "", isActive: false,}, countInStock: '', sku: '' }]
-      }])
+    if (accessory) {
+      setName(accessory.name || '');
+      setBrand(accessory.brand || '');
+      setCategory(accessory.category || ''); // FIX 3: category
+      setType(accessory.type || '');
+      setPrice(accessory.price || 0);
+      setCountInStock(accessory.countInStock || 0);
+      setDescription(accessory.description || '');
+      setKeywords(accessory.keywords?.join(', ') || '');
+      setSpecs(accessory.specs || {});
+
+      // Load images with publicId
+      const loadedPreviews = (accessory.images || []).map(img => ({
+        url: img.url,
+        isNew: false,
+        publicId: img.imagePublicId
+      }));
+      setPreviews(loadedPreviews);
     }
-  }, [product]);
+  }, [accessory]);
 
-  const addVariantHandler = () => setVariants([...variants, {
-    storage: '',
-    description: '',
-    specs: {},
-    specsJson: '',
-    colors: [{ name: '', hexCode: '', images: [], newFiles: [], price: '', discount: {type: "percentage", value: "", startDate: "", endDate: "", isActive: false,}, countInStock: '', sku: '' }]
-  }]);
-  const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i !== vIndex));
-  const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
-    { ...item, [field]: value } : item));
-  // const updateVariantSpec = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex ?
-  //   { ...item, specs: { ...item.specs, [field]: value } } : item));
-  const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex ?
-    { ...item, colors: [...item.colors, { name: '', hexCode: '', images: [], newFiles: [], price: '', discount: {type: "percentage", value: "", startDate: "", endDate: "", isActive: false,}, countInStock: '', sku: '' }] } : item));
-  const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex ?
-    { ...item, colors: item.colors.filter((_, ci) => ci !== cIndex) } : item));
-  const updateColor = (vIndex, cIndex, field, value) =>
-                                        setVariants((v) =>
-                                          v.map((item, i) =>
-                                            i !== vIndex
-                                              ? item
-                                              : {
-                                                  ...item,
-                                                  colors: item.colors.map((c, ci) => {
-                                                    if (ci !== cIndex) return c;
-
-                                                    if (field.startsWith("discount.")) {
-                                                      const discountField = field.split(".")[1];
-
-                                                      return {
-                                                        ...c,
-                                                        discount: {
-                                                          ...c.discount,
-                                                          [discountField]: value,
-                                                        },
-                                                      };
-                                                    }
-
-                                                    return {
-                                                      ...c,
-                                                      [field]: value,
-                                                    };
-                                                  }),
-                                                }
-                                          )
-                                        );
-
-  // V38.37 KEY: DON'T UPLOAD YET, JUST SAVE FILES TO STATE
-  const uploadFileHandler = async (vIndex, cIndex, e) => {
-    const files = Array.from(e.target.files)
-    if (!files.length) return
-
-    const key = `v${vIndex}-c${cIndex}`
-    setUploadingMap(prev => ({ ...prev, [key]: true }))
-
-    try {
-      const newFiles = []
-      for (const file of files) {
-        const preview = URL.createObjectURL(file) // for instant show
-        newFiles.push({ id: Date.now() + Math.random(), file, preview })
-      }
-
-      setVariants(prev => prev.map((v, vi) => {
-        if (vi !== vIndex) return v
-        return {
-          ...v,
-          colors: v.colors.map((c, ci) => {
-            if (ci !== cIndex) return c
-            return {
-              ...c,
-              newFiles: [...c.newFiles, ...newFiles] // ONLY push to newFiles
-            }
-          })
-        }
-      }))
-
-    } catch (error) {
-      toast.error('Upload failed')
-    } finally {
-      setUploadingMap(prev => ({ ...prev, [key]: false }))
-      e.target.value = null // reset input
+  // FIX 2: Load compatibleWith after options load
+  useEffect(() => {
+    if (accessory && options.length > 0) {
+      const selected = options.filter(opt => accessory.compatibleWith?.includes(opt.value));
+      setSelectedProducts(selected);
     }
-  }
+  }, [accessory, options]);
 
-  const getPublicIdFromUrl = (url) => {
-    // https://res.cloudinary.com/little-success/image/upload/v1783163628/products/17831636175.jpg
-    const parts = url.split('/');
-    const folder = parts[parts.length - 2]; // products
-    const filename = parts[parts.length - 1].split('.')[0]; // 17831636175
-    return `${folder}/${filename}`; // products/17831636175
+  // FIX 3: SPECS - use timestamp as key so delete works
+  const addSpecHandler = () => {
+    if (specsKey.trim() && specsValue.trim()) {
+      setSpecs(prev => ({...prev, [specsKey.trim()]: specsValue.trim() }));
+      setSpecsKey('');
+      setSpecsValue('');
+    } else {
+      toast.error('Enter both key and value');
+    }
   };
 
-  //remove image handler
-  // V38.32 KEY: UI ONLY DELETE - SAME AS CREATE SCREEN
-  // V38.34 KEY: IMMUTABLE DELETE - NO MUTATION
-  const removeImageHandler = (vIndex, cIndex, imgIndex) => {
-    const img = variants[vIndex].colors[cIndex].images[imgIndex];
-
-    // V38.56 KEY: If no publicId, extract from URL for old images
-    const publicId = img.imagePublicId || getPublicIdFromUrl(img.url);
-
-    if (publicId) {
-      //console.log('QUEUED FOR DELETE:', publicId);
-      setImagesToDelete(prev => [...prev, publicId]);
-    }
-
-    setVariants(prev => prev.map((v, i) => i === vIndex ? {
-      ...v,
-      colors: v.colors.map((c, j) => j === cIndex ? {
-        ...c,
-        images: c.images.filter((_, k) => k !== imgIndex),
-        newFiles: c.newFiles?.filter((_, k) => k !== imgIndex)
-      } : c)
-    } : v));
-  };
-
-  // V9.74 KEY: ADD SAFETY || []
-  //Drag and drop image handler
-  // V9.75 KEY: ONLY USE images ARRAY
-  const onDragEnd = (result, vIndex, cIndex) => {
-    if (!result.destination) return;
-
-    setVariants(prev => {
-      const newVariants = structuredClone(prev);
-      const color = newVariants[vIndex].colors[cIndex];
-
-      // SAFETY: ensure images array exists
-      color.images = color.images || [];
-
-      const imgs = color.images;
-      const [reorderedImg] = imgs.splice(result.source.index, 1);
-      imgs.splice(result.destination.index, 0, reorderedImg);
-
-      return newVariants;
+  const removeSpecHandler = (key) => {
+    setSpecs(prev => {
+      const newSpecs = {...prev};
+      delete newSpecs[key];
+      return newSpecs;
     });
   };
 
-  //submit image handler 
-  // V38.38 KEY: UPLOAD TO CLOUDINARY ONLY ON UPDATE CLICK
-  // V38.40 KEY: USE RTK loadingUpdate, NO setLoadingUpdate
+  // DRAG N DROP
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    if (!selectedFiles.length) return;
+    setFiles((prev) => [...prev,...selectedFiles]);
+    const newPreviews = selectedFiles.map((file) => ({
+      url: URL.createObjectURL(file),
+      isNew: true,
+      publicId: null
+    }));
+    setPreviews((prev) => [...prev,...newPreviews]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (!droppedFiles.length) return;
+    setFiles((prev) => [...prev,...droppedFiles]);
+    const newPreviews = droppedFiles.map((file) => ({
+      url: URL.createObjectURL(file),
+      isNew: true,
+      publicId: null
+    }));
+    setPreviews((prev) => [...prev,...newPreviews]);
+  };
+
+  const handleDragOver = (e) => { e.preventDefault(); };
+
+  const removeImageHandler = (index) => {
+    const removed = previews[index];
+    if (!removed.isNew && removed.publicId) {
+      setRemovedPublicIds(prev => [...prev, removed.publicId]); // for cloudinary delete
+    }
+    URL.revokeObjectURL(removed.url);
+    setFiles(files.filter((_, i) => i!== index - (previews.filter((p, idx) => idx < index &&!p.isNew).length))); // messy, better way below
+    setPreviews(previews.filter((_, i) => i!== index));
+    toast.success("Image removed")
+  };
+
+  // BETTER: rebuild files from previews on submit
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const items = structuredClone(previews);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    setPreviews(items);
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
-    //console.log('V38.71 BUTTON CLICKED');
+    
+    if (!type) { toast.error('Please select accessory type'); return; }
+    if (previews.length === 0) { toast.error('Please upload at least 1 image'); return; }
+    if (selectedProducts.length === 0) { toast.error('Please select at least 1 compatible device'); return; }
 
-    try {
-      //console.log('V38.72 STEP 1: Start');
+    setUploading(true);
 
-      const variantsToUpload = variants.map(v => ({ ...v }));
-      //console.log('V38.72 STEP 2: Copied variants');
+    // FIX 4: Rebuild files array from previews order
+    const newFilesToUpload = [];
+    const finalImages = [];
 
-      // STEP 1: UPLOAD ALL NEW FILES FIRST
-      for (let vIndex = 0; vIndex < variants.length; vIndex++) {
-        for (let cIndex = 0; cIndex < variants[vIndex].colors.length; cIndex++) {
-          const color = variants[vIndex].colors[cIndex];
-          //console.log('V38.72 STEP 3: Checking color', cIndex);
+    for(let i = 0; i < previews.length; i++) {
+      const p = previews[i];
+      if(p.isNew) {
+        // find file by url - we need to map it
+        const fileIndex = previews.filter((x, idx) => idx <= i && x.isNew).length - 1;
+        newFilesToUpload.push(files[fileIndex]);
+        finalImages.push({ placeholder: true }); // temp
+      } else {
+        finalImages.push({ url: p.url, imagePublicId: p.publicId });
+      }
+    }
 
-          if (color.newFiles?.length > 0) {
-            //console.log('V38.72 STEP 4: Uploading files');
-            const formData = new FormData();
-            color.newFiles.forEach(f => formData.append('images', f.file));
-
-            const data = await uploadProductImage(formData).unwrap();
-            //console.log('V38.72 STEP 5: Upload success', data);
-
-            const uploaded = data.map(u => ({
-              url: u.url,
-              imagePublicId: u.public_id,
-              isLocal: false
-            }));
-
-            variantsToUpload[vIndex].colors[cIndex].images = [
-              ...variantsToUpload[vIndex].colors[cIndex].images.filter(img => !img.isLocal),
-              ...uploaded
-            ];
-            delete variantsToUpload[vIndex].colors[cIndex].newFiles;
-          }
+    // UPLOAD NEW IMAGES
+    if (newFilesToUpload.length > 0) {
+      const formData = new FormData();
+      newFilesToUpload.forEach((file) => formData.append('images', file));
+      const uploadedImages = await uploadAccessoryImage(formData).unwrap();
+      
+      // replace placeholders with real uploaded data
+      let uploadIdx = 0;
+      for(let i = 0; i < finalImages.length; i++) {
+        if(finalImages[i].placeholder) {
+          finalImages[i] = uploadedImages[uploadIdx];
+          uploadIdx++;
         }
       }
+    }
+    setUploading(false);
 
-      //console.log('V38.72 STEP 6: Before setVariants');
-      setVariants(variantsToUpload);
-
-      //console.log('V38.72 STEP 7: Before updateProduct');
-      const { data: updatedProduct } = await updateProduct({
-        _id: productId,
-        variants: variantsToUpload,
-        imagesToDelete,
+    try {
+      const payload = {
+        _id: id,
         name,
         brand,
         category,
-        //accessories,
-        keywords: typeof keywords === 'string' ? keywords.split(',').map(k => k.trim()).filter(Boolean) : keywords,
-        // metaTitle: metaTitle || '',
-        // metaDescription: metaDescription || ''
-      }).unwrap();
+        type,
+        price: Number(price),
+        countInStock: Number(countInStock),
+        description,
+        specs, // Object - now delete/add works
+        compatibleWith: selectedProducts.map(s => s.value),
+        keywords: keywords.split(',').map(k => k.trim()).filter(Boolean),
+        images: finalImages,
+        image: finalImages[0]?.url || '',
+        removedPublicIds,
+      };
 
-      //console.log('V38.72 STEP 8: Success');
-      toast.success('Product Updated');
-      refetch();
-      navigate('/admin/productlist');
-
+      await updateAccessory(payload).unwrap();
+      toast.success('Accessory Updated');
+      navigate('/admin/accessorylist');
     } catch (err) {
-      console.log('V38.72 CATCH ERROR:', err); // V38.72 KEY
-      toast.error(err?.data?.message || err.error || err.message);
+      toast.error(err?.data?.message || err.error);
+    } finally {
+      setUploading(false);
     }
   };
-
-  // accessories: accessories.split(',').map(a => a.trim()).filter(Boolean),
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
-  const inputClass = 'w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none';
-  const cardClass = 'bg-white p-6 rounded-xl shadow-sm border-gray-100';
-  const btnSecondary = 'px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 flex items-center gap-2';
-  const btnPrimary = 'w-full mt-6 py-2.5 px-4 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors';
 
   if (isLoading) return <div className='text-center py-4'>Loading...</div>;
   if (error) return <div className='text-red-500 p-5'>{error?.data?.message || error.error}</div>;
 
   return (
     <div className='max-w-5xl mx-auto p-5'>
-      <Link to='/admin/productlist' className='text-blue-600 hover:underline mb-3 inline-block text-sm'> Go Back</Link>
-      <h1 className='text-2xl font-bold mb-5 text-gray-800'>Edit Product V9.69</h1>
-      {loadingUpdate && <div className='text-center py-4'>Updating...</div>}
+      <Link to='/admin/accessorylist' className='text-blue-600 hover:underline mb-3 inline-block text-sm'>Go Back</Link>
+      <h1 className='text-2xl font-bold mb-5 text-gray-800'>Edit Accessory V21.22.7.29</h1>
+      {(loadingUpdate || uploading) && <div className='text-center py-4'>Processing...</div>}
+      {loadingProducts && <div className='text-center py-4'>Loading Products...</div>}
+
       <form onSubmit={submitHandler} className='space-y-5'>
+        
         <div className={cardClass}>
-          <h2 className='text-lg font-semibold mb-4 border-b pb-2 text-gray-800'>Basic Info</h2>
+          <h2 className='text-lg font-semibold mb-4 border-b pb-2'>Basic Info</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className={labelClass}>Name *</label><input type='text' value={name} onChange={e => setName(e.target.value)} className={inputClass} required /></div>
-            <div><label className={labelClass}>Brand *</label><input type='text' value={brand} onChange={e => setBrand(e.target.value)} className={inputClass} required /></div>
-            <div><label className={labelClass}>Category *</label><input type='text' value={category} onChange={e => setCategory(e.target.value)} className={inputClass} required /></div>
-            <div><label className={labelClass}>Keywords</label><input type='text' placeholder='comma, separated' value={keywords} onChange={e => setKeywords(e.target.value)} className={inputClass} /></div>
-            {/* <div className='md:col-span-2'><label className={labelClass}>Description</label><textarea value={description} onChange={e => setDescription(e.target.value)} className={inputClass} rows={3}/></div>
-            <div className='md:col-span-2'><label className={labelClass}>Accessories</label><input type='text' placeholder='Box, Charger' value={accessories} onChange={e => setAccessories(e.target.value)} className={inputClass} /></div> */}
+            <div><label className={labelClass}>Name *</label><input type="text" value={name} onChange={e => setName(e.target.value)} className={inputClass} required /></div>
+            <div><label className={labelClass}>Brand *</label><input type="text" value={brand} onChange={e => setBrand(e.target.value)} className={inputClass} required /></div>
+            <div><label className={labelClass}>Category *</label><input type="text" value={category} onChange={e => setCategory(e.target.value)} className={inputClass} /></div>
+            <div><label className={labelClass}>Type *</label><input type="text" value={type} onChange={e => setType(e.target.value)} className={inputClass} /></div>
+            <div><label className={labelClass}>Price *</label><input type="number" value={price} onChange={e => setPrice(e.target.value)} className={inputClass} /></div>
+            <div><label className={labelClass}>Count In Stock *</label><input type="number" value={countInStock} onChange={e => setCountInStock(e.target.value)} className={inputClass} /></div>
+            <div className='md:col-span-2'><label className={labelClass}>Keywords</label><input type="text" value={keywords} onChange={e => setKeywords(e.target.value)} placeholder="comma, separated" className={inputClass} /></div>
+            <div className='md:col-span-2'>
+              <label className={labelClass}>Compatible Products *</label>
+              <Select isMulti options={options} value={selectedProducts} onChange={setSelectedProducts} />
+            </div>
+            <div className='md:col-span-2'><label className={labelClass}>Description</label><textarea value={description} onChange={e => setDescription(e.target.value)} rows="3" className={inputClass}></textarea></div>
           </div>
         </div>
 
         <div className={cardClass}>
-          <h2 className='text-lg font-semibold mb-4 border-b pb-2 text-gray-800'>Variants V9.47</h2>
-          {variants.map((variant, vIndex) => (
-            <div key={vIndex} className='border border-gray-200 p-5 mb-4 rounded-lg bg-gray-50'>
-              <div className='flex justify-between items-center mb-3'>
-                <h3 className='font-semibold text-gray-800'>Variant {vIndex + 1}</h3>
-                {variants.length > 1 && <button type='button' onClick={() => removeVariantHandler(vIndex)} className='text-red-500 text-sm hover:underline'>Remove</button>}
-              </div>
-              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 mb-4'>
-                <div><label className={labelClass}>Storage *</label><input type='text' placeholder='256GB' value={variant.storage || ''} onChange={e => updateVariant(vIndex, 'storage', e.target.value)} className={inputClass} /></div>
-                <div className='md:col-span-2'><label className={labelClass}>Variant Description</label><input type='text' placeholder='256GB Variant text' value={variant.description || ''} onChange={e => updateVariant(vIndex, 'description', e.target.value)} className={inputClass} /></div>
-              </div>
-              <h4 className='font-semibold mt-2 mb-3 text-gray-700'>Specs for {variant.storage || 'Variant'}</h4>
-              <div className='mb-4'>
-                <label className={labelClass}>Specs JSON *</label>
-                <textarea
-                  rows={10}
-                  placeholder={`{\n  "Display": "6.88 inch HD+ 120Hz",\n  "RAM": "3GB",\n  "Storage": "64GB eMMC 5.1"\n}`}
-                  value={variant.specsJson}
-                  onChange={(e) => {
-                    const specsJson = e.target.value;
-                    let specs = {};
-                    try { specs = JSON.parse(specsJson) } catch { }
-                    updateVariant(vIndex, 'specsJson', specsJson);
-                    updateVariant(vIndex, 'specs', specs);
-                  }}
-                  className={inputClass + ' font-mono text-sm'}
-                />
-                <p className='text-xs text-gray-500 mt-1'>Edit JSON here. Unlimited specs. Auto saves</p>
-              </div>
-
-              <h4 className='font-semibold mt-4 mb-3 text-gray-700'>Colors / SKUs</h4>
-              {variant.colors.map((color, cIndex) => (
-                <div key={cIndex} className="border-l-4 border-blue-500 pl-4 mb-4 bg-white p-4 rounded-r-lg shadow-sm">
-
-                  {/* COLOR HEADER */}
-                  <div className='flex justify-between items-center mb-2'>
-                    <label className={labelClass}>Color {cIndex + 1}</label>
-                    {variant.colors.length > 1 &&
-                      <button
-                        type='button'
-                        onClick={() => removeColorHandler(vIndex, cIndex)}
-                        className='text-red-500 text-sm hover:underline'
-                      >
-                        Remove Color
-                      </button>
-                    }
-                  </div>
-
-                  {/* COLOR NAME + hexCode */}
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2'>
-                    <div>
-                      <label className={labelClass}>Color Name *</label>
-                      <input
-                        type='text'
-                        placeholder='Black Titanium'
-                        value={color.name}
-                        onChange={e => updateColor(vIndex, cIndex, 'name', e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Hex Code</label>
-                      <input
-                        type="text"
-                        placeholder="#C8E6C9"
-                        value={color.hexCode}
-                        onChange={(e) =>
-                          updateColor(vIndex, cIndex, 'hexCode', e.target.value)
-                        }
-                        className={inputClass}
-                      />
-                    </div>
-
-                     
-
-                  </div>
-
-                  {/* PRICE + STOCK */}
-                  <div className='grid grid-cols-2 gap-4 mb-3'>
-                    <div>
-                      <label className={labelClass}>Price *</label>
-                      <input
-                        type='number'
-                        value={color.price}
-                        onChange={e => updateColor(vIndex, cIndex, 'price', e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Stock *</label>
-                      <input
-                        type='number'
-                        value={color.countInStock}
-                        onChange={e => updateColor(vIndex, cIndex, 'countInStock', e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-                  </div>
-                  {/* discount-inputs */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-
-  <div>
-    <label className={labelClass}>Discount Type</label>
-    <select
-      value={color.discount.type}
-      onChange={(e) =>
-        updateColor(vIndex, cIndex, "discount.type", e.target.value)
-      }
-      className={inputClass}
-    >
-      <option value="percentage">Percentage (%)</option>
-      <option value="fixed">Fixed Amount</option>
-    </select>
-  </div>
-
-  <div>
-    <label className={labelClass}>
-      {color.discount.type === "percentage"
-        ? "Discount (%)"
-        : "Discount Amount"}
-    </label>
-
-    <input
-      type="number"
-      min="0"
-      placeholder="0"
-      value={color.discount.value}
-      onChange={(e) =>
-        updateColor(vIndex, cIndex, "discount.value", e.target.value)
-      }
-      className={inputClass}
-    />
-  </div>
-
-  <div>
-    <label className={labelClass}>Start Date</label>
-    <input
-      type="date"
-      value={color.discount.startDate?.slice(0, 10) || ""}
-      onChange={(e) =>
-        updateColor(vIndex, cIndex, "discount.startDate", e.target.value)
-      }
-      className={inputClass}
-    />
-  </div>
-
-  <div>
-    <label className={labelClass}>End Date</label>
-    <input
-      type="date"
-      value={color.discount.endDate?.slice(0, 10) || ""}
-      onChange={(e) =>
-        updateColor(vIndex, cIndex, "discount.endDate", e.target.value)
-      }
-      className={inputClass}
-    />
-  </div>
-
-  
-
-</div>
-                  {/* sku */}
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-2'>
-                    
-                    <div>
-                      <label className={labelClass}>SKU</label>
-                      <input
-                        type='text'
-                        placeholder='A17-256-BLK'
-                        value={color.sku}
-                        onChange={e => updateColor(vIndex, cIndex, 'sku', e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-                     
-                  </div>
-
-                  {/* IMAGES SECTION */}
-                  <label className={labelClass}>Images *</label>
-
-                  {/* UPLOAD BUTTON */}
-                  <div className='mb-3'>
-                    <label className='inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md border-2 border-dashed border-blue-300 cursor-pointer hover:bg-blue-100 transition-colors text-sm font-medium'>
-                      <FaPlus />
-                      <span>
-                        {uploadingMap[`v${vIndex}-c${cIndex}`] ? 'Uploading...' : 'Select Images'}
-                      </span>
-                      <input
-                        type='file'
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => uploadFileHandler(vIndex, cIndex, e)}
-                        className='hidden'
-                        disabled={uploadingMap[`v${vIndex}-c${cIndex}`]}
-                      />
-                    </label>
-                  </div>
-
-                  {uploadingMap[`v${vIndex}-c${cIndex}`] && <div className='text-blue-600 text-sm mb-2 animate-pulse'>Uploading...</div>}
-
-                  {/* SINGLE WRAPPER: DB + NEW TOGETHER */}
-                  <div>
-                    <p className="text-xs text-gray-500 mb-2">Drag to reorder. Green border = New</p>
-                    <div className='flex flex-wrap gap-3 p-3 bg-gray-50 rounded-lg min-h-24'>
-
-                      <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex)} key={`ddc-${vIndex}-${cIndex}`}>
-                        <Droppable droppableId={`dnd-edit-${vIndex}-${cIndex}`} direction="horizontal">
-                          {(provided) => (
-                            <div className="flex gap-3 flex-wrap w-full" {...provided.droppableProps} ref={provided.innerRef}>
-
-                              {/* 1. EXISTING DB IMAGES - DRAGGABLE */}
-                              {color.images?.map((img, imgIndex) => (
-                                <Draggable
-                                  key={`url-${img.imagePublicId || img}-${imgIndex}`}
-                                  draggableId={`url-${img.imagePublicId || img}-${imgIndex}`}
-                                  index={imgIndex}
-                                >
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      className={`relative w-20 h-20 lg:w-24 lg:h-24 group ${snapshot.isDragging ? 'ring-2 ring-blue-500' : ''}`}
-                                    >
-                                      <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
-                                        <HiOutlineArrowsUpDown className="text-white text-xs" />
-                                      </div>
-
-                                      <img
-                                        src={img.url || img}
-                                        alt={`img-${imgIndex}`}
-                                        className="w-full h-full object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0 border-2 border-blue-500"
-                                      />
-
-                                      <button
-                                        type="button"
-                                        onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)}
-                                        className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10'
-                                      >
-                                        X
-                                      </button>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-
-                              {/* 2. NEW UPLOADED IMAGES - NOT DRAGGABLE, INLINE */}
-                              {color.newFiles?.map((f) => (
-                                <div key={`file-${f.id}`} className="relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0">
-                                  <div className="absolute top-1 right-1 bg-green-500 text-white text-[10px] px-1 rounded z-10">NEW</div>
-                                  <img
-                                    src={f.preview}
-                                    alt="new"
-                                    className="w-full h-full object-contain rounded-lg bg-white border-gray-200 p-1 border-2 border-green-500"
-                                  />
-                                </div>
-                              ))}
-
-                            </div>
-                          )}
-                        </Droppable>
-                      </DragDropContext>
-
-                    </div>
-                  </div>
-                  <button type='button' onClick={() => addColorHandler(vIndex)} className={btnSecondary + ' mt-3'}>
-                    <FaPlus size={12} /> Add Color</button>
-                </div>
-              ))}
-
-
-              <button type='button' onClick={addVariantHandler} className={btnSecondary + ' mt-2'}><FaPlus size={12} /> Add Variant</button>
+          <h2 className='text-lg font-semibold mb-4 border-b pb-2'>Specifications</h2>
+          <div className="flex gap-2 mb-3">
+            <input placeholder="Key e.g Material" value={specsKey} onChange={e => setSpecsKey(e.target.value)} className={inputClass}/>
+            <input placeholder="Value e.g TPU" value={specsValue} onChange={e => setSpecsValue(e.target.value)} className={inputClass}/>
+            <button type="button" onClick={addSpecHandler} className='px-4 bg-indigo-600 text-white rounded-md'><FaPlus/></button>
+          </div>
+          {Object.entries(specs).map(([key, value]) => ( // FIX: use entries
+            <div key={key} className='flex justify-between bg-gray-100 p-2 rounded-md mb-1'>
+              <span><b>{key}</b>: {value}</span>
+              <button type="button" onClick={() => removeSpecHandler(key)}><FaTrash size={12}/></button>
             </div>
           ))}
         </div>
-        <button
-          type='submit'
-          disabled={loadingUpdate || loadingUpload} // V38.74 KEY: disable on both
-          className={` ${btnPrimary} w-full flex items-center justify-center gap-2 ${loadingUpdate || loadingUpload ? 'opacity-60 cursor-not-allowed' : ''} `} // V38.74 KEY
-        >
-          {loadingUpdate || loadingUpload ? ( // V38.74 KEY
-            <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Uploading & Updating...
-            </>
-          ) : 'Update Product'}
+
+        <div className={cardClass}>
+          <h2 className='text-lg font-semibold mb-4 border-b pb-2'>Images</h2>
+          <div 
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            className='border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 mb-4'
+          >
+            <p className='text-gray-500'>Drag & drop images here, or</p>
+            <input type='file' multiple onChange={handleFileChange} className='mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-indigo-50 file:text-indigo-700' disabled={loadingUpload}/>
+            {loadingUpload && <div className='text-sm mt-2'>Uploading...</div>}
+          </div>
+
+          {previews.length > 0 && (
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="edit-accessory-images" direction="horizontal">
+                {(provided) => (
+                  <div {...provided.droppableProps} ref={provided.innerRef} className='grid grid-cols-3 md:grid-cols-6 gap-3'>
+                    {previews.map((p, index) => (
+                      <Draggable key={p.url + index} draggableId={`img-${index}`} index={index}>
+                        {(provided) => (
+                          <div ref={provided.innerRef} {...provided.draggableProps} className='relative group'>
+                            <img src={p.url} alt='preview' className='w-full h-24 object-cover rounded-md border' />
+                            {p.isNew && <span className='absolute top-1 right-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded'>NEW</span>}
+                            <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-white p-1 rounded cursor-grab shadow'><HiOutlineArrowsUpDown size={14} /></div>
+                            <button type='button' onClick={() => removeImageHandler(index)} className='absolute bottom-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100'><FaTrash size={10} /></button>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          )}
+        </div>
+
+        <button type='submit' className={btnPrimary} disabled={loadingUpdate || uploading}>
+          {loadingUpdate || uploading? 'Updating...' : 'Update'}
         </button>
       </form>
     </div>
   );
 };
-export default ProductEditScreen;
+
+export default AccessoryEditScreen;

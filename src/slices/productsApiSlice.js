@@ -21,6 +21,15 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       }),
       keepUnusedDataFor: 5,
     }),
+
+ getProductsForDropdown: builder.query({
+      query: (keyword = '') => ({
+        url: '/products/dropdown',
+        params: { keyword },
+      }),
+      keepUnusedDataFor: 5,
+    }),
+
     getProductDetails: builder.query({
       query: (id) => `/products/${id}`,
       keepUnusedDataFor: 5,
@@ -256,6 +265,7 @@ getRecommendedProducts: builder.query({
 export const {
   useGetProductsQuery,
   useGetSearchSuggestionsQuery,
+  useGetProductsForDropdownQuery,
   useGetProductDetailsQuery,
   useGetProductBySlugQuery,
   useCreateProductMutation,
