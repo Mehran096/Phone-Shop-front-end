@@ -1,86 +1,89 @@
 import { Link } from 'react-router-dom';
+import { FaShoppingCart } from 'react-icons/fa';
 
-const AccessoryCard = ({ accessory }) => {
-  const discountPercent = accessory.discount?.percentage || 0;
-  const finalPrice = discountPercent > 0 
-   ? accessory.price * (1 - discountPercent / 100) 
-    : accessory.price;
+const AccessoryCard = ({ accessory, onAddToCart }) => {
+  // Get first variant's first option as default
+  const defaultVariant = accessory.variants?.[0];
+  const defaultOption = defaultVariant?.options?.[0];
 
-  const thumbnail = accessory.images?.[0]?.url || '/placeholder.jpg'; // <- FIX HERE
+  const price = defaultOption?.price || 0;
+  const discountValue = defaultOption?.discount?.isActive? defaultOption.discount.value : 0;
+  const finalPrice = discountValue > 0 
+   ? price * (1 - discountValue / 100) 
+    : price;
+  const countInStock = defaultOption?.countInStock || 0;
+  const thumbnail = defaultOption?.images?.[0]?.url || '/placeholder.jpg';
 
   return (
-    <div className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100">
-      
+    <div className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border-gray-100 flex-col h-full">
       {/* IMAGE */}
-      <Link to={`/accessory/${accessory.slug}`}>
-        <div className="relative overflow-hidden">
-          <img
-            src={thumbnail}
-            alt={accessory.name}
-            loading="lazy"
-            className="w-full h-52 object-cover group-hover:scale-110 transition-transform duration-300"
-          />
-          {discountPercent > 0 && (
-            <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-              -{discountPercent}%
-            </span>
-          )}
-          {accessory.countInStock === 0 && (
-            <span className="absolute top-2 right-2 bg-gray-900/70 text-white text-xs px-2 py-1 rounded">
-              Out of Stock
-            </span>
-          )}
-          {/* Image count badge */}
-          {accessory.images?.length > 1 && (
-            <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
-              {accessory.images.length} imgs
-            </span>
-          )}
-        </div>
+      <Link to={`/accessory/${accessory.slug}`} className="relative overflow-hidden block">
+        <img
+          src={thumbnail}
+          alt={accessory.name}
+          loading="lazy"
+          className="w-full h-40 sm:h-48 md:h-52 object-cover group-hover:scale-110 transition-transform duration-300"
+        />
+        {discountValue > 0 && (
+          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+            -{discountValue}%
+          </span>
+        )}
+        {countInStock === 0 && (
+          <span className="absolute top-2 right-2 bg-gray-900/70 text-white text-xs px-2 py-1 rounded">
+            Out of Stock
+          </span>
+        )}
+        {defaultOption?.images?.length > 1 && (
+          <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
+            {defaultOption.images.length} imgs
+          </span>
+        )}
       </Link>
 
       {/* CONTENT */}
-      <div className="p-4">
-        <p className="text-xs text-gray-500 mb-1 truncate">{accessory.brand}</p>
-        
+      <div className="p-3 sm:p-4 flex flex-col flex-1">
         <Link to={`/accessory/${accessory.slug}`}>
-          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 h-10 hover:text-blue-600">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2 mb-1 group-hover:text-green-600">
             {accessory.name}
           </h3>
         </Link>
-
-        {/* COMPATIBLE TAGS - will be real names after populate */}
-        <div className="flex flex-wrap gap-1 mb-3 min-h-[24px]">
-          {accessory.compatibleWith?.slice(0, 2).map((item, i) => (
-            <span key={i} className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-              {item.name || 'Compatible'} {/* shows name if populated, else fallback */}
-            </span>
-          ))}
-          {accessory.compatibleWith?.length > 2 && (
-            <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-              +{accessory.compatibleWith.length - 2}
+        <p className="text-xs text-gray-500 mb-1">{defaultVariant?.value}</p>
+        
+        {/* RATING */}
+        <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+          <span>⭐ {accessory.rating || 0}</span>
+          <span>({accessory.numReviews || 0})</span>
+        </div>
+        
+        {/* PRICE - USING $ NOW */}
+        <div className="flex items-center gap-2 mt-auto mb-3">
+          <span className="text-lg sm:text-xl font-bold text-green-600">
+            ${finalPrice.toFixed(2)}
+          </span>
+          {discountValue > 0 && (
+            <span className="text-sm text-gray-400 line-through">
+              ${price.toFixed(2)}
             </span>
           )}
         </div>
 
-        {/* PRICE */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg font-bold text-gray-900">Rs {finalPrice.toFixed(0)}</span>
-          {discountPercent > 0 && (
-            <span className="text-sm text-gray-400 line-through">Rs {accessory.price}</span>
-          )}
-        </div>
-
-        {/* BUTTON */}
+        {/* BUTTONS */}
         <button 
-          disabled={accessory.countInStock === 0}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg transition"
+          onClick={() => onAddToCart(accessory, defaultVariant, defaultOption)}
+          disabled={countInStock === 0}
+          className={`w-full py-2 px-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition
+            ${countInStock === 0 
+             ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
+              : 'bg-green-600 hover:bg-green-700 text-white'
+            }`}
         >
-          {accessory.countInStock > 0? 'Add To Cart' : 'Sold Out'}
+          <FaShoppingCart /> 
+          {countInStock === 0? 'Out of Stock' : 'Add to Cart'}
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AccessoryCard
+export default AccessoryCard;
