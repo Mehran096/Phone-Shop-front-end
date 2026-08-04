@@ -4,10 +4,9 @@ import { useDispatch } from 'react-redux';
 import { useGetAccessoryBySlugQuery } from '../slices/accessoriesApiSlice';
 import { addToCart } from '../slices/cartSlice';
 import { toast } from 'react-toastify';
-import { FaShoppingCart, FaCheck, FaArrowLeft } from 'react-icons/fa';
+import { FaShoppingCart, FaCheck, FaArrowLeft, FaStar } from 'react-icons/fa';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
-import ProductImageGallery from '../components/ProductImageGallery';
 
 const AccessoryScreen = () => {
   const { slug } = useParams();
@@ -20,50 +19,66 @@ const AccessoryScreen = () => {
 
   const { data: accessory, isLoading, error } = useGetAccessoryBySlugQuery(slug);
 
-  // BOL.COM LOGIC
-  const models = accessory?.compatibleWith || [];
-  const selectedModel = searchParams.get('model') || models[0] || '';
+  // 1. DEDUPE MODELS BY modelName
+  const uniqueModels = useMemo(() => {
+    if (!accessory?.variants) return [];
+    const map = new Map();
+    accessory.variants.forEach(v => {
+      if (!map.has(v.modelName)) map.set(v.modelName, v); // keep first one only
+    });
+    return Array.from(map.values());
+  }, [accessory]);
+
+  // Get selected model and color from URL
+  const selectedModelName = searchParams.get('model') || uniqueModels[0]?.modelName || '';
   const selectedColorName = searchParams.get('color') || '';
 
-  const filteredOptions = useMemo(() => {
-    if (!accessory?.variants?.[0]) return [];
-    return accessory.variants[0].options.filter(opt => {
-      // if empty array [] = works for all models
-      if (!opt.compatibleModel || opt.compatibleModel.length === 0) return true;
-      return opt.compatibleModel.includes(selectedModel)
+  // 2. Find selected model object
+  const selectedModel = useMemo(() => {
+    return uniqueModels.find(m => m.modelName === selectedModelName) || uniqueModels[0] || null;
+  }, [uniqueModels, selectedModelName]);
+
+  // 3. DEDUPE COLORS BY sku - THIS IS THE KEY FIX
+  const availableColors = useMemo(() => {
+    if (!selectedModel?.colorVariants) return [];
+    const map = new Map();
+    selectedModel.colorVariants.forEach(cv => {
+      if (!map.has(cv.sku)) map.set(cv.sku, cv); // dedupe by SKU
     });
-  }, [accessory, selectedModel]);
+    return Array.from(map.values());
+  }, [selectedModel]);
 
-  const selectedOption = useMemo(() => {
-    if (!accessory?.variants?.[0]?.options?.length) return null;
-    // Check in ALL options, not just filtered. So color stays if it exists
-    return accessory.variants[0].options.find(opt => opt.name === selectedColorName) || accessory.variants[0].options[0];
-  }, [accessory, selectedColorName]);
+  // 4. Find selected color object
+  const selectedColor = useMemo(() => {
+    if (!availableColors.length) return null;
+    return availableColors.find(cv => cv.color === selectedColorName) || availableColors[0];
+  }, [availableColors, selectedColorName]);
 
+  // Display data comes from selected color
+  const displayPrice = Number(selectedColor?.price || 0);
+  const displayStock = Number(selectedColor?.countInStock || 0);
+  const displaySKU = selectedColor?.sku || '';
+  const discount = selectedColor?.discount;
 
-  // Get all options for current model to check availability
-  const availableOptionsForModel = useMemo(() => {
-    if (!accessory?.variants?.[0]?.options?.length) return [];
-    return accessory.variants[0].options.filter(opt => {
-      if (!opt.compatibleModel || opt.compatibleModel.length === 0) return true;
-      return opt.compatibleModel.includes(selectedModel)
-    });
-  }, [accessory, selectedModel]);
+  const finalPrice = useMemo(() => {
+    if (!discount?.isActive ||!discount?.value) return displayPrice;
+    if (discount.type === 'percentage') return displayPrice * (1 - discount.value / 100);
+    if (discount.type === 'fixed') return Math.max(0, displayPrice - discount.value);
+    return displayPrice;
+  }, [displayPrice, discount]);
 
-  const handleModelChange = (model) => {
-    const params = new URLSearchParams();
-    params.set('model', model);
-
-    // Keep the current color exactly as it is. Don't check, don't change.
-    const currentColor = searchParams.get('color');
-    if (currentColor) {
-      params.set('color', currentColor);
-    }
-
-    navigate(`?${params.toString()}`);
+  const getImageUrls = (images) => {
+    if (!images ||!Array.isArray(images)) return [];
+    return images.map(img => typeof img === 'string'? img : img?.url || '').filter(Boolean);
   };
 
+  const displayImages = getImageUrls(selectedColor?.images || []);
+  const modelDescription = selectedModel?.description || '';
+  const modelSpecs = selectedModel?.specs || [];
 
+  const handleModelChange = (modelName) => {
+    setSearchParams({ model: modelName }); // reset color
+  };
 
   const handleColorChange = (colorName) => {
     const params = new URLSearchParams(searchParams);
@@ -71,56 +86,30 @@ const AccessoryScreen = () => {
     setSearchParams(params);
   };
 
-  const displayTitle = `${accessory?.name || ''} for ${selectedModel} ${selectedOption ? `(${selectedOption.name})` : ''}`;
-  const displayPrice = selectedOption?.price || accessory?.price || 0;
+  const displayTitle = `${accessory?.name || ''} for ${selectedModelName} ${selectedColor? `(${selectedColor.color})` : ''}`;
 
-  // FIX: Get image URLs from objects - works for both string and object
-  const getImageUrls = (images) => {
-    if (!images || !Array.isArray(images)) return [];
-    return images.map(img => {
-      if (typeof img === 'string') return img;
-      return img?.url || '';
-    }).filter(Boolean);
-  };
-
-  // Get images for selected option, fallback to accessory images
-  const optionImages = selectedOption?.images || [];
-  const accessoryImages = accessory?.images || [];
-  const displayImages = getImageUrls(optionImages.length > 0 ? optionImages : accessoryImages);
-  const displayStock = selectedOption?.countInStock || 0;
-  const variantDescription = accessory?.variants?.[0]?.description || accessory?.description || '';
-
-  // FORCE IMAGE TO CHANGE WHEN OPTION CHANGES
   useEffect(() => {
-    console.log('Selected Option:', selectedOption?.name); // DEBUG
-    console.log('Display Images:', displayImages); // DEBUG
-    if (displayImages?.[0]) {
-      setMainImage(displayImages[0]);
-    } else {
-      setMainImage('');
-    }
+    setMainImage(displayImages[0] || '');
     setQty(1);
-  }, [selectedOption?.name, selectedModel]); // Depend on name + model so it fires every time
+  }, [selectedColor?.sku, selectedModelName]);
 
   const addToCartHandler = () => {
-    if (!selectedOption) {
-      toast.error('Please select a color');
-      return;
-    }
+    if (!selectedColor) return toast.error('Please select a color');
     dispatch(addToCart({
-      ...accessory,
+    ...accessory,
       qty,
-      option: selectedOption,
-      model: selectedModel,
-      price: displayPrice
+      model: selectedModelName,
+      color: selectedColor.color,
+      colorHex: selectedColor.colorHex,
+      sku: displaySKU,
+      price: finalPrice,
+      originalPrice: displayPrice,
+      image: mainImage,
+      discount: discount,
     }));
     toast.success('Added to cart');
     navigate('/cart');
   };
-
-
-
-  const isSelectedColorAvailable = availableOptionsForModel.some(opt => opt.name === selectedOption?.name);
 
   if (isLoading) return <Loader />;
   if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>;
@@ -135,175 +124,120 @@ const AccessoryScreen = () => {
         {/* LEFT: IMAGES */}
         <div>
           <div className='border rounded-xl p-4 mb-4 bg-white shadow-sm'>
-            {mainImage ? (
-              <div className={`relative w-full h-96 bg-white rounded-lg p-4 ${!isSelectedColorAvailable ? 'opacity-30' : ''}`}>
-                <img src={mainImage} className='w-full h-full object-contain' alt={selectedOption?.name || 'Accessory'} />
-              </div>
+            {mainImage? (
+              <img src={mainImage} className='w-full h-80 sm:h-96 object-contain bg-white rounded-lg p-4' alt={selectedColor?.color} />
             ) : (
-              <div className='w-full h-[350px] md:h-[450px] bg-gray-100 rounded flex items-center justify-center text-gray-400'>No Image</div>
+              <div className='w-full h-[350px] bg-gray-100 rounded flex items-center justify-center text-gray-400'>No Image</div>
             )}
           </div>
 
-
-          {/* Thumbnails */}
-          {isSelectedColorAvailable && ( // <-- ADD THIS WRAPPER
-            <div className='grid grid-cols-4 sm:grid-cols-5 gap-3'>
+          {displayImages.length > 0 && (
+            <div className='grid grid-cols-4 sm:grid-cols-5 gap-2'>
               {displayImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setMainImage(img)}
-                  className={`border-2 rounded-lg p-1 bg-white hover:border-blue-400 transition ${mainImage === img ? 'border-blue-600' : 'border-gray-200'}`}
-                >
-                  <img src={img} className='w-full h-20 object-contain' alt='thumb' />
+                <button key={img + idx} onClick={() => setMainImage(img)}
+                  className={`border-2 rounded-lg p-1 ${mainImage === img? 'border-blue-600' : 'border-gray-200'}`}>
+                  <img src={img} className='w-full h-16 object-contain' alt='thumb' />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* RIGHT: DETAILS CARD */}
-        <div className='bg-white p-6 rounded-xl shadow-sm'>
-          <p className='text-sm text-gray-500 mb-1'>{accessory.brand} / Case</p>
-
-          <h1 className='text-2xl md:text-3xl font-bold mb-3 text-gray-800'>{displayTitle}</h1>
+        {/* RIGHT: DETAILS */}
+        <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
+          <p className='text-sm text-gray-500 mb-1'>{accessory?.brand} / {accessory?.category}</p>
+          <h1 className='text-2xl font-bold mb-3'>{displayTitle}</h1>
 
           <div className='flex items-center gap-2 mb-4'>
-            <span className='text-yellow-400'>★★★★★</span>
-            <span className='text-sm text-gray-500'>(0 Reviews)</span>
+            <div className='flex text-yellow-400'><FaStar /><FaStar /><FaStar /><FaStar /><FaStar /></div>
+            <span className='text-sm'>({accessory?.numReviews || 0})</span>
           </div>
 
-          <h2 className='text-4xl text-green-600 font-bold mb-4'>${displayPrice}</h2>
+          <div className='flex items-center gap-3 mb-1'>
+            <h2 className='text-3xl text-green-600 font-bold'>${finalPrice.toFixed(2)}</h2>
+            {discount?.isActive && <span className='text-sm bg-red-100 text-red-600 px-2 rounded'>-{discount.value}{discount.type === 'percentage'? '%' : '$'}</span>}
+          </div>
+          <p className='text-xs text-gray-400 mb-3'>SKU: {displaySKU}</p>
 
           <div className='mb-5'>
-            {displayStock > 0 ?
-              <span className='text-green-600 font-medium flex items-center gap-1'><FaCheck /> In Stock ({displayStock})</span> :
-              <span className='text-red-600 font-medium'>Out Of Stock</span>
-            }
+            {displayStock > 0? <span className='text-green-600'><FaCheck /> In Stock ({displayStock})</span> : <span className='text-red-600'>Out Of Stock</span>}
           </div>
 
-          {/* MODEL SELECTOR */}
-          {models.length > 0 && (
-            <div className='mb-5'>
-              <p className='font-semibold mb-3 text-gray-700'>Compatible With:</p>
-              <div className='flex flex-wrap gap-2'>
-                {[...models]
-                  .sort((a, b) => {
-                    const aCompatible = !selectedOption?.compatibleModel ||
-                      selectedOption.compatibleModel.length === 0 ||
-                      selectedOption.compatibleModel.includes(a);
-                    const bCompatible = !selectedOption?.compatibleModel ||
-                      selectedOption.compatibleModel.length === 0 ||
-                      selectedOption.compatibleModel.includes(b);
-
-                    if (aCompatible && !bCompatible) return -1;
-                    if (!aCompatible && bCompatible) return 1;
-                    return 0;
-                  })
-                  .map((model) => {
-                    const isSelectedModel = selectedModel === model;
-                    const isCompatible = !selectedOption?.compatibleModel ||
-                      selectedOption.compatibleModel.length === 0 ||
-                      selectedOption.compatibleModel.includes(model);
-
-                    return (
-                      <button
-                        key={model}
-                        onClick={() => handleModelChange(model)} // <-- SIMPLE: only change model
-                        className={`px-4 py-2 border-2 rounded-lg text-sm font-medium transition ${isSelectedModel
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                          } ${!isCompatible ? 'opacity-40' : '' // dim but clickable
-                          }`}
-                      >
-                        {model}
-                      </button>
-                    )
-                  })}
-              </div>
+          {/* MODEL SELECTOR - USE INDEX + modelName AS KEY */}
+          <div className='mb-5'>
+            <p className='font-semibold mb-3'>Select Model:</p>
+            <div className='flex flex-wrap gap-2'>
+              {uniqueModels.map((model, idx) => (
+                <button key={model.modelName + idx}
+                  onClick={() => handleModelChange(model.modelName)}
+                  className={`px-4 py-2 border-2 rounded-lg text-sm ${selectedModelName === model.modelName? 'bg-blue-600 text-white' : 'bg-white'}`}>
+                  {model.modelName}
+                </button>
+              ))}
             </div>
-          )}
-          {/* color section */}
+            <p className='text-xs text-gray-500 mt-2'>{modelDescription}</p>
+          </div>
+
+          {/* COLOR SECTION - USE SKU AS KEY */}
           <div className='mb-4'>
             <label className='block text-sm font-medium mb-2'>Choose your color</label>
-            <div className='grid grid-cols-4 sm:grid-cols-5 gap-3'>
-              {accessory?.variants?.[0]?.options?.map((opt) => {
-                const isAvailable = !opt.compatibleModel || opt.compatibleModel.length === 0 || opt.compatibleModel.includes(selectedModel);
-                const isSelected = opt.name === selectedOption?.name;
-                const colorImage = opt.images?.[0].url || accessory?.image;
-
-                return (
-                  <button
-                    key={opt.name}
-                    onClick={() => handleColorChange(opt.name)}
-                    className={`border-2 rounded-lg p-2 bg-white transition ${isSelected ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'
-                      } ${!isAvailable ? 'opacity-40' : 'hover:border-blue-400'
-                      }`}
-                  >
-                    <div className='relative'>
-                      <img
-                        src={colorImage}
-                        className={`w-full h-16 object-contain mb-1 ${!isAvailable ? 'opacity-50' : ''}`}
-                        alt={opt.name}
-                      />
-                      {!isAvailable && (
-                        <div className='absolute inset-0 flex items-center justify-center'>
-                          <span className='text-red-500 text-lg'>🚫</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <p className={`text-center text-xs font-medium ${!isAvailable ? 'text-gray-400' : 'text-gray-700'}`}>
-                      {opt.name}
-                    </p>
-                    {!isAvailable && (
-                      <p className='text-center text-xs text-red-500'>Not compatible</p>
-                    )}
-                  </button>
-                )
-              })}
+            <div className='grid grid-cols-3 sm:grid-cols-5 gap-3'>
+              {availableColors.map((cv) => (
+                <button key={cv.sku} // KEY FIX: use SKU not index
+                  onClick={() => handleColorChange(cv.color)}
+                  className={`border-2 rounded-lg p-2 ${selectedColor?.sku === cv.sku? 'border-blue-600' : 'border-gray-200'}`}>
+                  <img src={cv.images?.[0]?.url || '/placeholder.jpg'} className='w-full h-16 object-contain mb-1' alt={cv.color} />
+                  <div className='w-4 h-4 rounded-full mx-auto' style={{ backgroundColor: cv.colorHex }} />
+                  <p className='text-center text-xs mt-1'>{cv.color}</p>
+                  <p className='text-center text-[10px]'>${Number(cv.price).toFixed(2)}</p>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* QTY */}
+          {/* QTY + ADD TO CART */}
           {displayStock > 0 && (
-            <div className='mb-5'>
-              <label className='font-semibold mr-3 text-gray-700'>Qty:</label>
-              <select value={qty} onChange={(e) => setQty(Number(e.target.value))} className='border-2 rounded-lg p-2'>
-                {[...Array(Math.min(displayStock, 10)).keys()].map(x => (
-                  <option key={x + 1} value={x + 1}>{x + 1}</option>
-                ))}
-              </select>
-            </div>
+            <select value={qty} onChange={(e) => setQty(Number(e.target.value))} className='border-2 rounded-lg p-2 mb-4'>
+              {[...Array(Math.min(displayStock, 10)).keys()].map(x => <option key={x+1} value={x+1}>{x+1}</option>)}
+            </select>
           )}
-
-          {/* ADD TO CART */}
-          <button
-            onClick={addToCartHandler}
-            disabled={displayStock === 0}
-            className='w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 text-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition'
-          >
+          <button onClick={addToCartHandler} disabled={displayStock === 0}
+            className='w-full bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 disabled:bg-gray-400'>
             <FaShoppingCart /> Add To Cart
           </button>
         </div>
       </div>
 
-      {/* SPECS + DESCRIPTION IN 1 ROW FLEX */}
-      <div className='mt-8 flex flex-col lg:flex-row gap-8'>
-        <div className='bg-white p-6 rounded-xl shadow-sm lg:w-1/2'>
-          <h3 className='font-bold text-xl mb-4'>Specifications</h3>
-          {accessory.variants?.[0]?.specs?.map((s, i) => (
-            <div key={i} className='flex justify-between border-b py-3 text-sm'>
-              <span className='text-gray-600'>{s.key}</span>
-              <span className='font-medium'>{s.value}</span>
-            </div>
-          ))}
-        </div>
+       
+     {/* SPECS + DESCRIPTION */}
+<div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6'>
+  
+  {/* LEFT: DESCRIPTION */}
+  <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
+    <h3 className='font-bold text-lg sm:text-xl mb-4'>Description</h3>
+    <p className='text-gray-700 leading-relaxed whitespace-pre-line'>
+      {modelDescription || 'No description added for this model.'}
+    </p>
+  </div>
 
-        <div className='bg-white p-6 rounded-xl shadow-sm lg:w-1/2'>
-          <h3 className='font-bold text-xl mb-4'>Description</h3>
-          <p className='text-gray-700 leading-relaxed'>{variantDescription}</p>
-        </div>
+  {/* RIGHT: SPECIFICATIONS */}
+  <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
+    <h3 className='font-bold text-lg sm:text-xl mb-4'>Specifications</h3>
+    {modelSpecs.length > 0 ? (
+      <div className='divide-y divide-gray-200'>
+        {modelSpecs.map((s, i) => (
+          <div key={s.key + i} className='flex justify-between items-center py-3 text-sm'>
+            <span className='text-gray-600 font-medium'>{s.key}</span>
+            <span className='text-gray-900 text-right max-w-[60%]'>{s.value}</span>
+          </div>
+        ))}
       </div>
+    ) : (
+      <p className="text-gray-400 text-sm">No specifications added</p>
+    )}
+  </div>
+
+</div>
     </div>
   );
 };

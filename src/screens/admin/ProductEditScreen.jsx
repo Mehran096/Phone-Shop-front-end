@@ -1,312 +1,306 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaTrash, FaPlus } from 'react-icons/fa';
-import Select from 'react-select';
+import { FaPlus, FaTimes } from 'react-icons/fa';
+import { useGetProductDetailsQuery, useUpdateProductMutation, useUploadProductImageMutation } from '../../slices/productsApiSlice';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { HiOutlineArrowsUpDown } from 'react-icons/hi2';
-import {
-  useUpdateAccessoryMutation,
-  useGetAccessoryDetailsQuery,
-  useUploadAccessoryImageMutation,
-} from '../../slices/accessoriesApiSlice';
-import { useGetProductsForDropdownQuery } from '../../slices/productsApiSlice';
+import Loader from '../../components/Loader';
+import Message from '../../components/Message';
 
-const AccessoryEditScreen = () => {
-  const { id } = useParams();
+const ProductEditScreen = () => {
+  const { id: productId } = useParams();
   const navigate = useNavigate();
 
-  const { data: accessory, isLoading, error } = useGetAccessoryDetailsQuery(id);
-  const { data: productOptions, isLoading: loadingProducts } = useGetProductsForDropdownQuery('');
-  const [updateAccessory, { isLoading: loadingUpdate }] = useUpdateAccessoryMutation();
-  const [uploadAccessoryImage, { isLoading: loadingUpload }] = useUploadAccessoryImageMutation();
-
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
-  const inputClass = 'w-full p-2 border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500';
-  const cardClass = 'bg-white p-6 rounded-xl shadow-sm border-gray-100';
-  const btnPrimary = 'w-full mt-6 py-2.5 px-4 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50';
-
-  // SAME STATE AS CREATE
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('');
-  const [type, setType] = useState('');
-  const [price, setPrice] = useState(0);
-  const [countInStock, setCountInStock] = useState(0);
-  const [description, setDescription] = useState('');
   const [keywords, setKeywords] = useState('');
-  const [specsKey, setSpecsKey] = useState('');
-  const [specsValue, setSpecsValue] = useState('');
-  const [specs, setSpecs] = useState({});
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [variants, setVariants] = useState([]);
 
-  // IMAGE STATES - NEW: track by index not url
-  const [files, setFiles] = useState([]);
-  const [previews, setPreviews] = useState([]); // [{url, isNew, publicId}]
-  const [removedPublicIds, setRemovedPublicIds] = useState([]);
   const [uploading, setUploading] = useState(false);
 
-  const options = productOptions?.map(p => ({
-    value: p._id,
-    label: `${p.brand} ${p.name}`
-  })) || [];
+  const { data: product, isLoading, error } = useGetProductDetailsQuery(productId);
+  const [updateProduct, { isLoading: loadingUpdate }] = useUpdateProductMutation();
+  const [uploadProductImage] = useUploadProductImageMutation();
 
-  // FIX 1: Load basic fields first
   useEffect(() => {
-    if (accessory) {
-      setName(accessory.name || '');
-      setBrand(accessory.brand || '');
-      setCategory(accessory.category || ''); // FIX 3: category
-      setType(accessory.type || '');
-      setPrice(accessory.price || 0);
-      setCountInStock(accessory.countInStock || 0);
-      setDescription(accessory.description || '');
-      setKeywords(accessory.keywords?.join(', ') || '');
-      setSpecs(accessory.specs || {});
-
-      // Load images with publicId
-      const loadedPreviews = (accessory.images || []).map(img => ({
-        url: img.url,
-        isNew: false,
-        publicId: img.imagePublicId
-      }));
-      setPreviews(loadedPreviews);
+    if (product) {
+      setName(product.name);
+      setBrand(product.brand);
+      setCategory(product.category);
+      setKeywords(product.keywords?.join(', ') || '');
+      setVariants(product.variants.map(v => ({
+       ...v,
+        specsJson: JSON.stringify(v.specs, null, 2),
+        colors: v.colors.map(c => ({
+         ...c,
+          files: [], // new uploads
+          images: (c.images || []).map(img => ({...img, isNew: false })) // mark old as not new
+        }))
+      })));
     }
-  }, [accessory]);
+  }, [product]);
 
-  // FIX 2: Load compatibleWith after options load
-  useEffect(() => {
-    if (accessory && options.length > 0) {
-      const selected = options.filter(opt => accessory.compatibleWith?.includes(opt.value));
-      setSelectedProducts(selected);
-    }
-  }, [accessory, options]);
+  const addVariantHandler = () => setVariants([...variants, {
+    storage: '', description: '', specs: {}, specsJson: '',
+    colors: [{ name: '', hexCode: '#000', files: [], images: [], price: '', discount: { type: "percentage", value: "", startDate: "", endDate: "", isActive: false }, countInStock: '', sku: '' }]
+  }]);
+  const removeVariantHandler = (vIndex) => setVariants(variants.filter((_, i) => i!== vIndex));
+  const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, [field]: value } : item));
 
-  // FIX 3: SPECS - use timestamp as key so delete works
-  const addSpecHandler = () => {
-    if (specsKey.trim() && specsValue.trim()) {
-      setSpecs(prev => ({...prev, [specsKey.trim()]: specsValue.trim() }));
-      setSpecsKey('');
-      setSpecsValue('');
-    } else {
-      toast.error('Enter both key and value');
-    }
+  const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex? {
+  ...item,
+    colors: [...item.colors, { name: '', hexCode: '#000', files: [], images: [], price: '', discount: { type: "percentage", value: "", startDate: "", endDate: "", isActive: false }, countInStock: '', sku: '' }]
+  } : item));
+  const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: item.colors.filter((_, ci) => ci!== cIndex) } : item));
+
+  const updateColor = (vIndex, cIndex, field, value) => setVariants((v) => v.map((item, i) => i === vIndex? {
+  ...item,
+    colors: item.colors.map((c, ci) => {
+      if (ci!== cIndex) return c;
+      if (field.startsWith("discount.")) {
+        const discountField = field.split(".")[1];
+        return {...c, discount: {...c.discount, [discountField]: value } };
+      }
+      return {...c, [field]: value };
+    }),
+  } : item));
+
+  const uploadFileHandler = (vIndex, cIndex, e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setVariants(prev => prev.map((v, i) => i === vIndex? {
+    ...v, colors: v.colors.map((c, j) => j === cIndex? {...c, files: [...(c.files || []),...files] } : c)
+    } : v));
+    e.target.value = '';
   };
 
-  const removeSpecHandler = (key) => {
-    setSpecs(prev => {
-      const newSpecs = {...prev};
-      delete newSpecs[key];
-      return newSpecs;
-    });
-  };
-
-  // DRAG N DROP
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    if (!selectedFiles.length) return;
-    setFiles((prev) => [...prev,...selectedFiles]);
-    const newPreviews = selectedFiles.map((file) => ({
-      url: URL.createObjectURL(file),
-      isNew: true,
-      publicId: null
-    }));
-    setPreviews((prev) => [...prev,...newPreviews]);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    if (!droppedFiles.length) return;
-    setFiles((prev) => [...prev,...droppedFiles]);
-    const newPreviews = droppedFiles.map((file) => ({
-      url: URL.createObjectURL(file),
-      isNew: true,
-      publicId: null
-    }));
-    setPreviews((prev) => [...prev,...newPreviews]);
-  };
-
-  const handleDragOver = (e) => { e.preventDefault(); };
-
-  const removeImageHandler = (index) => {
-    const removed = previews[index];
-    if (!removed.isNew && removed.publicId) {
-      setRemovedPublicIds(prev => [...prev, removed.publicId]); // for cloudinary delete
-    }
-    URL.revokeObjectURL(removed.url);
-    setFiles(files.filter((_, i) => i!== index - (previews.filter((p, idx) => idx < index &&!p.isNew).length))); // messy, better way below
-    setPreviews(previews.filter((_, i) => i!== index));
+  const removeImageHandler = (vIndex, cIndex, imgIndex) => {
+    setVariants(prev => prev.map((v, i) => i === vIndex? {
+    ...v, colors: v.colors.map((c, j) => j === cIndex? {
+      ...c,
+        images: c.images.filter((_, idx) => idx!== imgIndex),
+      } : c)
+    } : v));
     toast.success("Image removed")
   };
 
-  // BETTER: rebuild files from previews on submit
-  const onDragEnd = (result) => {
+  const onDragEnd = (result, vIndex, cIndex) => {
     if (!result.destination) return;
-    const items = structuredClone(previews);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    setPreviews(items);
+    setVariants(prev => {
+      const newVariants = structuredClone(prev);
+      const arr = [...newVariants[vIndex].colors[cIndex].images];
+      const [reordered] = arr.splice(result.source.index, 1);
+      arr.splice(result.destination.index, 0, reordered);
+      newVariants[vIndex].colors[cIndex].images = arr;
+      return newVariants;
+    });
   };
 
   const submitHandler = async (e) => {
     e.preventDefault();
-    
-    if (!type) { toast.error('Please select accessory type'); return; }
-    if (previews.length === 0) { toast.error('Please upload at least 1 image'); return; }
-    if (selectedProducts.length === 0) { toast.error('Please select at least 1 compatible device'); return; }
-
-    setUploading(true);
-
-    // FIX 4: Rebuild files array from previews order
-    const newFilesToUpload = [];
-    const finalImages = [];
-
-    for(let i = 0; i < previews.length; i++) {
-      const p = previews[i];
-      if(p.isNew) {
-        // find file by url - we need to map it
-        const fileIndex = previews.filter((x, idx) => idx <= i && x.isNew).length - 1;
-        newFilesToUpload.push(files[fileIndex]);
-        finalImages.push({ placeholder: true }); // temp
-      } else {
-        finalImages.push({ url: p.url, imagePublicId: p.publicId });
-      }
-    }
-
-    // UPLOAD NEW IMAGES
-    if (newFilesToUpload.length > 0) {
-      const formData = new FormData();
-      newFilesToUpload.forEach((file) => formData.append('images', file));
-      const uploadedImages = await uploadAccessoryImage(formData).unwrap();
-      
-      // replace placeholders with real uploaded data
-      let uploadIdx = 0;
-      for(let i = 0; i < finalImages.length; i++) {
-        if(finalImages[i].placeholder) {
-          finalImages[i] = uploadedImages[uploadIdx];
-          uploadIdx++;
-        }
-      }
-    }
-    setUploading(false);
-
     try {
+      setUploading(true);
+      const formData = new FormData();
+      variants.forEach(v => {
+        v.colors.forEach(c => { c.files?.forEach(file => formData.append('images', file)); })
+      });
+
+      let uploaded = [];
+      if (formData.has('images')) {
+        const data = await uploadProductImage(formData).unwrap();
+        uploaded = Array.isArray(data)? data : [data];
+      }
+      setUploading(false);
+
+      let uploadIndex = 0;
+      const finalVariants = variants
+      .filter(v => v.storage && v.colors.some(c => c.name && c.price))
+      .map(v => ({
+          storage: v.storage,
+          description: v.description,
+          specs: v.specs,
+          colors: v.colors.filter(c => c.name && c.price).map(c => {
+            const newImages = (c.files || []).map(() => {
+              const img = uploaded[uploadIndex]; uploadIndex++; return {...img, isNew: true };
+            }) || [];
+            const oldImages = c.images.filter(i => i.url &&!i.url.startsWith('blob:')).map(i => ({...i, isNew: false }));
+            return {
+              name: c.name, hexCode: c.hexCode || '',
+              images: [...oldImages,...newImages],
+              price: Number(c.price),
+              discount: { type: c.discount?.type || "percentage", value: Number(c.discount?.value) || 0, startDate: c.discount?.startDate || null, endDate: c.discount?.endDate || null, isActive: c.discount?.isActive?? false },
+              countInStock: Number(c.countInStock), sku: c.sku
+            }
+          })
+        }));
+
       const payload = {
-        _id: id,
-        name,
-        brand,
-        category,
-        type,
-        price: Number(price),
-        countInStock: Number(countInStock),
-        description,
-        specs, // Object - now delete/add works
-        compatibleWith: selectedProducts.map(s => s.value),
+        _id: productId,
+        name, brand, category,
         keywords: keywords.split(',').map(k => k.trim()).filter(Boolean),
-        images: finalImages,
-        image: finalImages[0]?.url || '',
-        removedPublicIds,
+        variants: finalVariants,
       };
 
-      await updateAccessory(payload).unwrap();
-      toast.success('Accessory Updated');
-      navigate('/admin/accessorylist');
+      await updateProduct(payload).unwrap();
+      toast.success('Product Updated');
+      navigate('/admin/productlist');
     } catch (err) {
-      toast.error(err?.data?.message || err.error);
-    } finally {
       setUploading(false);
+      toast.error(err?.data?.message || err.error);
     }
   };
 
-  if (isLoading) return <div className='text-center py-4'>Loading...</div>;
-  if (error) return <div className='text-red-500 p-5'>{error?.data?.message || error.error}</div>;
+  const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
+  const inputClass = 'w-full p-2.5 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 text-sm';
+  const cardClass = 'bg-white p-3 sm:p-6 rounded-xl shadow-sm border';
+
+  if (isLoading) return <Loader />;
+  if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>;
 
   return (
-    <div className='max-w-5xl mx-auto p-5'>
-      <Link to='/admin/accessorylist' className='text-blue-600 hover:underline mb-3 inline-block text-sm'>Go Back</Link>
-      <h1 className='text-2xl font-bold mb-5 text-gray-800'>Edit Accessory V21.22.7.29</h1>
-      {(loadingUpdate || uploading) && <div className='text-center py-4'>Processing...</div>}
-      {loadingProducts && <div className='text-center py-4'>Loading Products...</div>}
+    <div className='max-w-5xl mx-auto p-3 sm:p-5'>
+      <Link to='/admin/productlist' className='text-blue-600 hover:underline mb-3 inline-block text-sm'>← Go Back</Link>
+      <h1 className='text-xl sm:text-2xl font-bold mb-4 sm:mb-5'>Edit Product: {name}</h1>
+      {loadingUpdate && <Loader />}
 
-      <form onSubmit={submitHandler} className='space-y-5'>
-        
+      <form onSubmit={submitHandler} className='space-y-4'>
         <div className={cardClass}>
-          <h2 className='text-lg font-semibold mb-4 border-b pb-2'>Basic Info</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className={labelClass}>Name *</label><input type="text" value={name} onChange={e => setName(e.target.value)} className={inputClass} required /></div>
-            <div><label className={labelClass}>Brand *</label><input type="text" value={brand} onChange={e => setBrand(e.target.value)} className={inputClass} required /></div>
-            <div><label className={labelClass}>Category *</label><input type="text" value={category} onChange={e => setCategory(e.target.value)} className={inputClass} /></div>
-            <div><label className={labelClass}>Type *</label><input type="text" value={type} onChange={e => setType(e.target.value)} className={inputClass} /></div>
-            <div><label className={labelClass}>Price *</label><input type="number" value={price} onChange={e => setPrice(e.target.value)} className={inputClass} /></div>
-            <div><label className={labelClass}>Count In Stock *</label><input type="number" value={countInStock} onChange={e => setCountInStock(e.target.value)} className={inputClass} /></div>
-            <div className='md:col-span-2'><label className={labelClass}>Keywords</label><input type="text" value={keywords} onChange={e => setKeywords(e.target.value)} placeholder="comma, separated" className={inputClass} /></div>
-            <div className='md:col-span-2'>
-              <label className={labelClass}>Compatible Products *</label>
-              <Select isMulti options={options} value={selectedProducts} onChange={setSelectedProducts} />
-            </div>
-            <div className='md:col-span-2'><label className={labelClass}>Description</label><textarea value={description} onChange={e => setDescription(e.target.value)} rows="3" className={inputClass}></textarea></div>
+          <h2 className='text-base sm:text-lg font-semibold mb-3 border-b pb-2'>Basic Info</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div><label className={labelClass}>Name *</label><input type='text' value={name} onChange={e => setName(e.target.value)} className={inputClass} required /></div>
+            <div><label className={labelClass}>Brand *</label><input type='text' value={brand} onChange={e => setBrand(e.target.value)} className={inputClass} required /></div>
+            <div><label className={labelClass}>Category *</label><input type='text' value={category} onChange={e => setCategory(e.target.value)} className={inputClass} required /></div>
+            <div><label className={labelClass}>Keywords</label><input type='text' placeholder='comma, separated' value={keywords} onChange={e => setKeywords(e.target.value)} className={inputClass} /></div>
           </div>
         </div>
 
         <div className={cardClass}>
-          <h2 className='text-lg font-semibold mb-4 border-b pb-2'>Specifications</h2>
-          <div className="flex gap-2 mb-3">
-            <input placeholder="Key e.g Material" value={specsKey} onChange={e => setSpecsKey(e.target.value)} className={inputClass}/>
-            <input placeholder="Value e.g TPU" value={specsValue} onChange={e => setSpecsValue(e.target.value)} className={inputClass}/>
-            <button type="button" onClick={addSpecHandler} className='px-4 bg-indigo-600 text-white rounded-md'><FaPlus/></button>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className='text-base sm:text-lg font-semibold'>Variants</h2>
+            <button type='button' onClick={addVariantHandler} className='px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg flex items-center gap-2'><FaPlus size={12} /> Add Variant</button>
           </div>
-          {Object.entries(specs).map(([key, value]) => ( // FIX: use entries
-            <div key={key} className='flex justify-between bg-gray-100 p-2 rounded-md mb-1'>
-              <span><b>{key}</b>: {value}</span>
-              <button type="button" onClick={() => removeSpecHandler(key)}><FaTrash size={12}/></button>
+
+          {variants.map((variant, vIndex) => (
+            <div key={vIndex} className='border p-3 sm:p-4 mb-4 rounded-lg bg-gray-50'>
+              <div className='flex justify-between items-center mb-3'>
+                <h3 className='font-semibold text-sm sm:text-base'>Variant {vIndex + 1}</h3>
+                {variants.length > 1 && <button type='button' onClick={() => removeVariantHandler(vIndex)} className='text-red-500 text-xs sm:text-sm'>Remove</button>}
+              </div>
+
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3'>
+                <div><label className={labelClass}>Storage *</label><input type='text' value={variant.storage} onChange={e => updateVariant(vIndex, 'storage', e.target.value)} className={inputClass} /></div>
+                <div><label className={labelClass}>Description</label><input type='text' value={variant.description} onChange={e => updateVariant(vIndex, 'description', e.target.value)} className={inputClass} /></div>
+              </div>
+
+              <div className='mb-3'>
+                <label className={labelClass}>Specs JSON *</label>
+                <textarea rows={8} value={variant.specsJson} onChange={(e) => {
+                  const specsJson = e.target.value; let specs = {};
+                  try { specs = JSON.parse(specsJson) } catch { }
+                  updateVariant(vIndex, 'specsJson', specsJson); updateVariant(vIndex, 'specs', specs);
+                }} className={inputClass + ' font-mono text-xs'} />
+              </div>
+
+              <h4 className='font-semibold mt-3 mb-2 text-sm'>Colors / SKUs</h4>
+              {variant.colors.map((color, cIndex) => {
+                // COMBINE OLD + NEW FILES INTO 1 ARRAY FOR DRAG
+                const allImages = [
+                 ...(color.images || []),
+                 ...(color.files || []).map(f => ({ url: URL.createObjectURL(f), isNew: true, file: f }))
+                ];
+
+                return (
+                  <div key={cIndex} className="border-l-4 border-blue-500 pl-3 mb-4 bg-white p-3 rounded-r-lg">
+                    <div className='flex justify-between items-center mb-2'>
+                      <label className={labelClass}>Color {cIndex + 1}</label>
+                      {variant.colors.length > 1 && <button type='button' onClick={() => removeColorHandler(vIndex, cIndex)} className='text-red-500 text-xs'>Remove</button>}
+                    </div>
+
+                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2'>
+                      <input placeholder="Color Name *" value={color.name} onChange={e => updateColor(vIndex, cIndex, 'name', e.target.value)} className={inputClass} />
+                      <div className="flex gap-2 items-center">
+                        <input type="color" value={color.hexCode} onChange={e => updateColor(vIndex, cIndex, 'hexCode', e.target.value)} className="w-12 h-10 border rounded" />
+                        <span className="text-xs">{color.hexCode}</span>
+                      </div>
+                      <input type='number' placeholder="Price *" value={color.price} onChange={e => updateColor(vIndex, cIndex, 'price', e.target.value)} className={inputClass} />
+                      <input type='number' placeholder="Stock *" value={color.countInStock} onChange={e => updateColor(vIndex, cIndex, 'countInStock', e.target.value)} className={inputClass} />
+                      <input placeholder="SKU" value={color.sku} onChange={e => updateColor(vIndex, cIndex, 'sku', e.target.value)} className={inputClass} />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2 p-2 bg-yellow-50 rounded">
+                      <select value={color.discount?.type} onChange={e => updateColor(vIndex, cIndex, "discount.type", e.target.value)} className={inputClass}>
+                        <option value="percentage">Percentage</option><option value="fixed">Fixed</option>
+                      </select>
+                      <input type="number" placeholder="Discount Value" value={color.discount?.value} onChange={e => updateColor(vIndex, cIndex, "discount.value", e.target.value)} className={inputClass} />
+                      <input type="date" value={color.discount?.startDate || ""} onChange={e => updateColor(vIndex, cIndex, "discount.startDate", e.target.value)} className={inputClass} />
+                      <input type="date" value={color.discount?.endDate || ""} onChange={e => updateColor(vIndex, cIndex, "discount.endDate", e.target.value)} className={inputClass} />
+                      <label className="flex items-center gap-2 text-sm col-span-1 sm:col-span-2 lg:col-span-4"><input type="checkbox" checked={color.discount?.isActive} onChange={e => updateColor(vIndex, cIndex, "discount.isActive", e.target.checked)} /> Active</label>
+                    </div>
+
+                    {/* IMAGES: SINGLE DRAGGABLE LIST */}
+                    <label className='inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer text-sm w-full justify-center sm:w-auto mb-2'>
+                      <FaPlus /> Add More Images
+                      <input type='file' multiple accept="image/*" onChange={(e) => uploadFileHandler(vIndex, cIndex, e)} className='hidden' />
+                    </label>
+
+                    {allImages.length > 0 && (
+                      <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex)}>
+                        <Droppable droppableId={`images-${vIndex}-${cIndex}`} direction="horizontal">
+                          {(provided) => (
+                            <div className="flex gap-3 overflow-x-auto pb-4 pt-2" {...provided.droppableProps} ref={provided.innerRef}>
+                              {allImages.map((img, imgIndex) => (
+                                <Draggable key={img.url + imgIndex} draggableId={img.url + imgIndex} index={imgIndex}>
+                                  {(provided, snapshot) => (
+                                    <div 
+                                      ref={provided.innerRef} 
+                                      {...provided.draggableProps}
+                                      className={`relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 ${snapshot.isDragging? 'ring-2 ring-blue-500' : ''}`}
+                                    >
+                                      {/* DRAG HANDLE */}
+                                      <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
+                                        <HiOutlineArrowsUpDown className="text-white text-[10px]" />
+                                      </div>
+
+                                      <img src={img.url} className="w-full h-full object-contain rounded-lg border bg-white p-1" />
+                                      
+                                      {/* NEW BADGE */}
+                                      {img.isNew && (
+                                        <span className='absolute top-1 right-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold'>NEW</span>
+                                      )}
+
+                                      {/* CROSS BUTTON - FIXED POSITION */}
+                                      <button 
+                                        type="button" 
+                                        onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)} 
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20"
+                                      >
+                                        <FaTimes size={10} />
+                                      </button>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      </DragDropContext>
+                    )}
+                    <button type='button' onClick={() => addColorHandler(vIndex)} className='mt-2 px-3 py-1.5 text-sm bg-green-50 text-green-600 rounded-lg border-2 border-dashed w-full'><FaPlus size={12} /> Add Color</button>
+                  </div>
+                )
+              })}
             </div>
           ))}
         </div>
 
-        <div className={cardClass}>
-          <h2 className='text-lg font-semibold mb-4 border-b pb-2'>Images</h2>
-          <div 
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            className='border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 mb-4'
-          >
-            <p className='text-gray-500'>Drag & drop images here, or</p>
-            <input type='file' multiple onChange={handleFileChange} className='mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-indigo-50 file:text-indigo-700' disabled={loadingUpload}/>
-            {loadingUpload && <div className='text-sm mt-2'>Uploading...</div>}
-          </div>
-
-          {previews.length > 0 && (
-            <DragDropContext onDragEnd={onDragEnd}>
-              <Droppable droppableId="edit-accessory-images" direction="horizontal">
-                {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef} className='grid grid-cols-3 md:grid-cols-6 gap-3'>
-                    {previews.map((p, index) => (
-                      <Draggable key={p.url + index} draggableId={`img-${index}`} index={index}>
-                        {(provided) => (
-                          <div ref={provided.innerRef} {...provided.draggableProps} className='relative group'>
-                            <img src={p.url} alt='preview' className='w-full h-24 object-cover rounded-md border' />
-                            {p.isNew && <span className='absolute top-1 right-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded'>NEW</span>}
-                            <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-white p-1 rounded cursor-grab shadow'><HiOutlineArrowsUpDown size={14} /></div>
-                            <button type='button' onClick={() => removeImageHandler(index)} className='absolute bottom-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100'><FaTrash size={10} /></button>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          )}
-        </div>
-
-        <button type='submit' className={btnPrimary} disabled={loadingUpdate || uploading}>
-          {loadingUpdate || uploading? 'Updating...' : 'Update'}
+        <button type='submit' disabled={loadingUpdate || uploading} className={`w-full py-3 rounded-xl font-bold text-white ${loadingUpdate || uploading? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}>
+          {loadingUpdate || uploading? 'Updating...' : 'Update Product'}
         </button>
       </form>
     </div>
   );
 };
-
-export default AccessoryEditScreen;
+export default ProductEditScreen;
