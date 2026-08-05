@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { FaShoppingCart, FaCheck, FaArrowLeft, FaStar } from 'react-icons/fa';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
+import ProductImageGallery from '../components/ProductImageGallery'; // <-- NEW
 
 const AccessoryScreen = () => {
   const { slug } = useParams();
@@ -24,7 +25,7 @@ const AccessoryScreen = () => {
     if (!accessory?.variants) return [];
     const map = new Map();
     accessory.variants.forEach(v => {
-      if (!map.has(v.modelName)) map.set(v.modelName, v); // keep first one only
+      if (!map.has(v.modelName)) map.set(v.modelName, v);
     });
     return Array.from(map.values());
   }, [accessory]);
@@ -38,12 +39,12 @@ const AccessoryScreen = () => {
     return uniqueModels.find(m => m.modelName === selectedModelName) || uniqueModels[0] || null;
   }, [uniqueModels, selectedModelName]);
 
-  // 3. DEDUPE COLORS BY sku - THIS IS THE KEY FIX
+  // 3. DEDUPE COLORS BY sku
   const availableColors = useMemo(() => {
     if (!selectedModel?.colorVariants) return [];
     const map = new Map();
     selectedModel.colorVariants.forEach(cv => {
-      if (!map.has(cv.sku)) map.set(cv.sku, cv); // dedupe by SKU
+      if (!map.has(cv.sku)) map.set(cv.sku, cv);
     });
     return Array.from(map.values());
   }, [selectedModel]);
@@ -59,6 +60,7 @@ const AccessoryScreen = () => {
   const displayStock = Number(selectedColor?.countInStock || 0);
   const displaySKU = selectedColor?.sku || '';
   const discount = selectedColor?.discount;
+  const isOutOfStock = displayStock <= 0;
 
   const finalPrice = useMemo(() => {
     if (!discount?.isActive ||!discount?.value) return displayPrice;
@@ -77,7 +79,18 @@ const AccessoryScreen = () => {
   const modelSpecs = selectedModel?.specs || [];
 
   const handleModelChange = (modelName) => {
-    setSearchParams({ model: modelName }); // reset color
+    const newModel = uniqueModels.find(m => m.modelName === modelName);
+    if (!newModel) return;
+
+    const sameColorExists = newModel.colorVariants?.find(c => c.color === selectedColorName);
+    const firstAvailable = newModel.colorVariants?.find(c => Number(c.countInStock) > 0) 
+      || newModel.colorVariants?.[0];
+    const colorToSet = sameColorExists?.color || firstAvailable?.color || '';
+
+    setSearchParams({ 
+      model: modelName, 
+      color: colorToSet 
+    });
   };
 
   const handleColorChange = (colorName) => {
@@ -88,6 +101,23 @@ const AccessoryScreen = () => {
 
   const displayTitle = `${accessory?.name || ''} for ${selectedModelName} ${selectedColor? `(${selectedColor.color})` : ''}`;
 
+  // AUTO FIX: When model changes and color doesn't exist, switch to valid color
+  useEffect(() => {
+    if (!selectedModel?.colorVariants?.length) return;
+    const colorExistsInModel = selectedModel.colorVariants.some(c => c.color === selectedColorName);
+    if (!colorExistsInModel) {
+      const firstAvailable = selectedModel.colorVariants.find(c => Number(c.countInStock) > 0) 
+        || selectedModel.colorVariants[0];
+      if (firstAvailable) {
+        setSearchParams(prev => {
+          prev.set('model', selectedModel.modelName);
+          prev.set('color', firstAvailable.color);
+          return prev;
+        });
+      }
+    }
+  }, [selectedModel, selectedColorName, setSearchParams]);
+
   useEffect(() => {
     setMainImage(displayImages[0] || '');
     setQty(1);
@@ -96,7 +126,7 @@ const AccessoryScreen = () => {
   const addToCartHandler = () => {
     if (!selectedColor) return toast.error('Please select a color');
     dispatch(addToCart({
-    ...accessory,
+     ...accessory,
       qty,
       model: selectedModelName,
       color: selectedColor.color,
@@ -122,25 +152,23 @@ const AccessoryScreen = () => {
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
         {/* LEFT: IMAGES */}
-        <div>
-          <div className='border rounded-xl p-4 mb-4 bg-white shadow-sm'>
-            {mainImage? (
-              <img src={mainImage} className='w-full h-80 sm:h-96 object-contain bg-white rounded-lg p-4' alt={selectedColor?.color} />
-            ) : (
-              <div className='w-full h-[350px] bg-gray-100 rounded flex items-center justify-center text-gray-400'>No Image</div>
+        <div className='lg:col-span-1'>
+          <div className='border rounded-xl p-4 bg-white shadow-sm relative'>
+            {/* SOLD OUT Badge */}
+            {isOutOfStock && (
+              <div className='absolute top-3 right-3 z-20'>
+                <span className='px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-md shadow-sm tracking-wide border border-gray-300 animate-pulse'>
+                  SOLD OUT
+                </span>
+              </div>
             )}
-          </div>
 
-          {displayImages.length > 0 && (
-            <div className='grid grid-cols-4 sm:grid-cols-5 gap-2'>
-              {displayImages.map((img, idx) => (
-                <button key={img + idx} onClick={() => setMainImage(img)}
-                  className={`border-2 rounded-lg p-1 ${mainImage === img? 'border-blue-600' : 'border-gray-200'}`}>
-                  <img src={img} className='w-full h-16 object-contain' alt='thumb' />
-                </button>
-              ))}
-            </div>
-          )}
+            <ProductImageGallery 
+              images={displayImages}
+              selectedImage={mainImage}
+              onSelectImage={setMainImage}
+            />
+          </div>
         </div>
 
         {/* RIGHT: DETAILS */}
@@ -160,44 +188,70 @@ const AccessoryScreen = () => {
           <p className='text-xs text-gray-400 mb-3'>SKU: {displaySKU}</p>
 
           <div className='mb-5'>
-            {displayStock > 0? <span className='text-green-600'><FaCheck /> In Stock ({displayStock})</span> : <span className='text-red-600'>Out Of Stock</span>}
+            {displayStock > 0? <span className='text-green-600 flex items-center gap-1'><FaCheck /> In Stock ({displayStock})</span> : <span className='text-red-600'>Out Of Stock</span>}
           </div>
 
-          {/* MODEL SELECTOR - USE INDEX + modelName AS KEY */}
+          {/* MODEL SELECTOR */}
           <div className='mb-5'>
             <p className='font-semibold mb-3'>Select Model:</p>
             <div className='flex flex-wrap gap-2'>
-              {uniqueModels.map((model, idx) => (
-                <button key={model.modelName + idx}
-                  onClick={() => handleModelChange(model.modelName)}
-                  className={`px-4 py-2 border-2 rounded-lg text-sm ${selectedModelName === model.modelName? 'bg-blue-600 text-white' : 'bg-white'}`}>
-                  {model.modelName}
-                </button>
-              ))}
+              {uniqueModels.map((model, idx) => {
+                const hasAnyStock = model.colorVariants?.some(c => Number(c.countInStock) > 0)
+                const isSelectedModel = selectedModelName === model.modelName
+                const selectedColorIsOut = isSelectedModel && isOutOfStock
+                const shouldDim =!hasAnyStock || selectedColorIsOut
+                
+                return (
+                  <button 
+                    key={model.modelName + idx}
+                    onClick={() => handleModelChange(model.modelName)}
+                    className={`px-4 py-2 border-2 rounded-lg text-sm transition ${
+                      isSelectedModel? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                    } ${shouldDim? 'opacity-50 grayscale' : ''}`}
+                  >
+                    {model.modelName}
+                    {!hasAnyStock && <span className='ml-1 text-[10px] text-gray-500'>(Out)</span>}
+                    {selectedColorIsOut && <span className='ml-1 text-[10px] text-red-500'>(Color Out)</span>}
+                  </button>
+                )
+              })}
             </div>
             <p className='text-xs text-gray-500 mt-2'>{modelDescription}</p>
           </div>
 
-          {/* COLOR SECTION - USE SKU AS KEY */}
+          {/* COLOR SECTION */}
           <div className='mb-4'>
             <label className='block text-sm font-medium mb-2'>Choose your color</label>
             <div className='grid grid-cols-3 sm:grid-cols-5 gap-3'>
-              {availableColors.map((cv) => (
-                <button key={cv.sku} // KEY FIX: use SKU not index
-                  onClick={() => handleColorChange(cv.color)}
-                  className={`border-2 rounded-lg p-2 ${selectedColor?.sku === cv.sku? 'border-blue-600' : 'border-gray-200'}`}>
-                  <img src={cv.images?.[0]?.url || '/placeholder.jpg'} className='w-full h-16 object-contain mb-1' alt={cv.color} />
-                  <div className='w-4 h-4 rounded-full mx-auto' style={{ backgroundColor: cv.colorHex }} />
-                  <p className='text-center text-xs mt-1'>{cv.color}</p>
-                  <p className='text-center text-[10px]'>${Number(cv.price).toFixed(2)}</p>
-                </button>
-              ))}
+              {availableColors.map((cv) => {
+                const isColorOut = Number(cv.countInStock) <= 0;
+                return (
+                  <button 
+                    key={cv.sku}
+                    onClick={() => handleColorChange(cv.color)}
+                    className={`border-2 rounded-lg p-2 transition relative ${
+                      selectedColor?.sku === cv.sku? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'
+                    } ${isColorOut? 'opacity-50 grayscale hover:border-red-300' : 'hover:border-gray-400'}`}
+                  >
+                    {isColorOut && (
+                      <span className='absolute -top-1 -right-1 bg-gray-200 text-gray-700 text-[9px] px-1.5 py-0.5 rounded-full font-semibold border border-gray-300 animate-pulse'>
+                        OUT
+                      </span>
+                    )}
+                    <img src={cv.images?.[0]?.url || '/placeholder.jpg'} className='w-full h-16 object-contain mb-1' alt={cv.color} />
+                    <div className='w-4 h-4 rounded-full mx-auto' style={{ backgroundColor: cv.colorHex }} />
+                    <p className='text-center text-xs mt-1'>{cv.color}</p>
+                    <p className='text-center text-[10px]'>${Number(cv.price).toFixed(2)}</p>
+                    {isColorOut && <p className='text-center text-[9px] text-red-500 font-bold'>0 Stock</p>}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           {/* QTY + ADD TO CART */}
           {displayStock > 0 && (
-            <select value={qty} onChange={(e) => setQty(Number(e.target.value))} className='border-2 rounded-lg p-2 mb-4'>
+            <select value={qty} onChange={(e) => setQty(Number(e.target.value))} className='border-2 rounded-lg p-2 mb-4 w-full'>
               {[...Array(Math.min(displayStock, 10)).keys()].map(x => <option key={x+1} value={x+1}>{x+1}</option>)}
             </select>
           )}
@@ -208,36 +262,30 @@ const AccessoryScreen = () => {
         </div>
       </div>
 
-       
-     {/* SPECS + DESCRIPTION */}
-<div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6'>
-  
-  {/* LEFT: DESCRIPTION */}
-  <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
-    <h3 className='font-bold text-lg sm:text-xl mb-4'>Description</h3>
-    <p className='text-gray-700 leading-relaxed whitespace-pre-line'>
-      {modelDescription || 'No description added for this model.'}
-    </p>
-  </div>
-
-  {/* RIGHT: SPECIFICATIONS */}
-  <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
-    <h3 className='font-bold text-lg sm:text-xl mb-4'>Specifications</h3>
-    {modelSpecs.length > 0 ? (
-      <div className='divide-y divide-gray-200'>
-        {modelSpecs.map((s, i) => (
-          <div key={s.key + i} className='flex justify-between items-center py-3 text-sm'>
-            <span className='text-gray-600 font-medium'>{s.key}</span>
-            <span className='text-gray-900 text-right max-w-[60%]'>{s.value}</span>
-          </div>
-        ))}
+      {/* SPECS + DESCRIPTION */}
+      <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6'>
+        <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
+          <h3 className='font-bold text-lg sm:text-xl mb-4'>Description</h3>
+          <p className='text-gray-700 leading-relaxed whitespace-pre-line'>
+            {modelDescription || 'No description added for this model.'}
+          </p>
+        </div>
+        <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
+          <h3 className='font-bold text-lg sm:text-xl mb-4'>Specifications</h3>
+          {modelSpecs.length > 0? (
+            <div className='divide-y divide-gray-200'>
+              {modelSpecs.map((s, i) => (
+                <div key={s.key + i} className='flex justify-between items-center py-3 text-sm'>
+                  <span className='text-gray-600 font-medium'>{s.key}</span>
+                  <span className='text-gray-900 text-right max-w-[60%]'>{s.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">No specifications added</p>
+          )}
+        </div>
       </div>
-    ) : (
-      <p className="text-gray-400 text-sm">No specifications added</p>
-    )}
-  </div>
-
-</div>
     </div>
   );
 };

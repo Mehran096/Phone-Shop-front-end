@@ -98,3 +98,9 @@ html, body, #root {
     height: auto !important;
   }
 }
+
+ /* FIX FOR ZOOM COMPONENT */
+.zoom-container * {
+  user-select: none;
+  -webkit-user-drag: none;
+}

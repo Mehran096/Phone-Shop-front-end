@@ -17,6 +17,7 @@ const ProductEditScreen = () => {
   const [category, setCategory] = useState('');
   const [keywords, setKeywords] = useState('');
   const [variants, setVariants] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
 
   const [uploading, setUploading] = useState(false);
 
@@ -31,12 +32,12 @@ const ProductEditScreen = () => {
       setCategory(product.category);
       setKeywords(product.keywords?.join(', ') || '');
       setVariants(product.variants.map(v => ({
-       ...v,
+     ...v,
         specsJson: JSON.stringify(v.specs, null, 2),
         colors: v.colors.map(c => ({
-         ...c,
+      ...c,
           files: [], // new uploads
-          images: (c.images || []).map(img => ({...img, isNew: false })) // mark old as not new
+          images: c.images || [] // existing from DB
         }))
       })));
     }
@@ -50,13 +51,13 @@ const ProductEditScreen = () => {
   const updateVariant = (vIndex, field, value) => setVariants(v => v.map((item, i) => i === vIndex? {...item, [field]: value } : item));
 
   const addColorHandler = (vIndex) => setVariants(v => v.map((item, i) => i === vIndex? {
-  ...item,
+...item,
     colors: [...item.colors, { name: '', hexCode: '#000', files: [], images: [], price: '', discount: { type: "percentage", value: "", startDate: "", endDate: "", isActive: false }, countInStock: '', sku: '' }]
   } : item));
   const removeColorHandler = (vIndex, cIndex) => setVariants(v => v.map((item, i) => i === vIndex? {...item, colors: item.colors.filter((_, ci) => ci!== cIndex) } : item));
 
   const updateColor = (vIndex, cIndex, field, value) => setVariants((v) => v.map((item, i) => i === vIndex? {
-  ...item,
+...item,
     colors: item.colors.map((c, ci) => {
       if (ci!== cIndex) return c;
       if (field.startsWith("discount.")) {
@@ -71,29 +72,36 @@ const ProductEditScreen = () => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
     setVariants(prev => prev.map((v, i) => i === vIndex? {
-    ...v, colors: v.colors.map((c, j) => j === cIndex? {...c, files: [...(c.files || []),...files] } : c)
+ ...v, colors: v.colors.map((c, j) => j === cIndex? {...c, files: [...(c.files || []),...files] } : c)
     } : v));
     e.target.value = '';
   };
 
-  const removeImageHandler = (vIndex, cIndex, imgIndex) => {
+  const removeImageHandler = (vIndex, cIndex, imgIndex, type) => {
+    const item = variants[vIndex].colors[cIndex][type][imgIndex];
+    
+    // If deleting old image, add to delete queue
+    if (type === 'images' && item?.imagePublicId) {
+      setImagesToDelete(prev => [...prev, item.imagePublicId]);
+    }
+
     setVariants(prev => prev.map((v, i) => i === vIndex? {
-    ...v, colors: v.colors.map((c, j) => j === cIndex? {
-      ...c,
-        images: c.images.filter((_, idx) => idx!== imgIndex),
+ ...v, colors: v.colors.map((c, j) => j === cIndex? {
+   ...c,
+        [type]: c[type].filter((_, idx) => idx!== imgIndex),
       } : c)
     } : v));
     toast.success("Image removed")
   };
 
-  const onDragEnd = (result, vIndex, cIndex) => {
+  const onDragEnd = (result, vIndex, cIndex, type) => {
     if (!result.destination) return;
     setVariants(prev => {
       const newVariants = structuredClone(prev);
-      const arr = [...newVariants[vIndex].colors[cIndex].images];
+      const arr = [...newVariants[vIndex].colors[cIndex][type]];
       const [reordered] = arr.splice(result.source.index, 1);
       arr.splice(result.destination.index, 0, reordered);
-      newVariants[vIndex].colors[cIndex].images = arr;
+      newVariants[vIndex].colors[cIndex][type] = arr;
       return newVariants;
     });
   };
@@ -103,6 +111,7 @@ const ProductEditScreen = () => {
     try {
       setUploading(true);
       const formData = new FormData();
+      
       variants.forEach(v => {
         v.colors.forEach(c => { c.files?.forEach(file => formData.append('images', file)); })
       });
@@ -116,22 +125,24 @@ const ProductEditScreen = () => {
 
       let uploadIndex = 0;
       const finalVariants = variants
-      .filter(v => v.storage && v.colors.some(c => c.name && c.price))
-      .map(v => ({
+   .filter(v => v.storage && v.colors.some(c => c.name && c.price))
+   .map(v => ({
           storage: v.storage,
           description: v.description,
           specs: v.specs,
           colors: v.colors.filter(c => c.name && c.price).map(c => {
             const newImages = (c.files || []).map(() => {
-              const img = uploaded[uploadIndex]; uploadIndex++; return {...img, isNew: true };
+              const img = uploaded[uploadIndex]; uploadIndex++; return img;
             }) || [];
-            const oldImages = c.images.filter(i => i.url &&!i.url.startsWith('blob:')).map(i => ({...i, isNew: false }));
+            const oldImages = c.images.filter(i => i.url &&!i.url.startsWith('blob:'));
             return {
-              name: c.name, hexCode: c.hexCode || '',
+              name: c.name, 
+              hexCode: c.hexCode || '',
               images: [...oldImages,...newImages],
               price: Number(c.price),
               discount: { type: c.discount?.type || "percentage", value: Number(c.discount?.value) || 0, startDate: c.discount?.startDate || null, endDate: c.discount?.endDate || null, isActive: c.discount?.isActive?? false },
-              countInStock: Number(c.countInStock), sku: c.sku
+              countInStock: Number(c.countInStock), 
+              sku: c.sku
             }
           })
         }));
@@ -141,6 +152,7 @@ const ProductEditScreen = () => {
         name, brand, category,
         keywords: keywords.split(',').map(k => k.trim()).filter(Boolean),
         variants: finalVariants,
+        imagesToDelete
       };
 
       await updateProduct(payload).unwrap();
@@ -204,14 +216,7 @@ const ProductEditScreen = () => {
               </div>
 
               <h4 className='font-semibold mt-3 mb-2 text-sm'>Colors / SKUs</h4>
-              {variant.colors.map((color, cIndex) => {
-                // COMBINE OLD + NEW FILES INTO 1 ARRAY FOR DRAG
-                const allImages = [
-                 ...(color.images || []),
-                 ...(color.files || []).map(f => ({ url: URL.createObjectURL(f), isNew: true, file: f }))
-                ];
-
-                return (
+              {variant.colors.map((color, cIndex) => (
                   <div key={cIndex} className="border-l-4 border-blue-500 pl-3 mb-4 bg-white p-3 rounded-r-lg">
                     <div className='flex justify-between items-center mb-2'>
                       <label className={labelClass}>Color {cIndex + 1}</label>
@@ -239,59 +244,100 @@ const ProductEditScreen = () => {
                       <label className="flex items-center gap-2 text-sm col-span-1 sm:col-span-2 lg:col-span-4"><input type="checkbox" checked={color.discount?.isActive} onChange={e => updateColor(vIndex, cIndex, "discount.isActive", e.target.checked)} /> Active</label>
                     </div>
 
-                    {/* IMAGES: SINGLE DRAGGABLE LIST */}
                     <label className='inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer text-sm w-full justify-center sm:w-auto mb-2'>
                       <FaPlus /> Add More Images
                       <input type='file' multiple accept="image/*" onChange={(e) => uploadFileHandler(vIndex, cIndex, e)} className='hidden' />
                     </label>
 
-                    {allImages.length > 0 && (
-                      <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex)}>
-                        <Droppable droppableId={`images-${vIndex}-${cIndex}`} direction="horizontal">
-                          {(provided) => (
-                            <div className="flex gap-3 overflow-x-auto pb-4 pt-2" {...provided.droppableProps} ref={provided.innerRef}>
-                              {allImages.map((img, imgIndex) => (
-                                <Draggable key={img.url + imgIndex} draggableId={img.url + imgIndex} index={imgIndex}>
-                                  {(provided, snapshot) => (
-                                    <div 
-                                      ref={provided.innerRef} 
-                                      {...provided.draggableProps}
-                                      className={`relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 ${snapshot.isDragging? 'ring-2 ring-blue-500' : ''}`}
-                                    >
-                                      {/* DRAG HANDLE */}
-                                      <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
-                                        <HiOutlineArrowsUpDown className="text-white text-[10px]" />
-                                      </div>
-
-                                      <img src={img.url} className="w-full h-full object-contain rounded-lg border bg-white p-1" />
-                                      
-                                      {/* NEW BADGE */}
-                                      {img.isNew && (
-                                        <span className='absolute top-1 right-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold'>NEW</span>
-                                      )}
-
-                                      {/* CROSS BUTTON - FIXED POSITION */}
-                                      <button 
-                                        type="button" 
-                                        onClick={() => removeImageHandler(vIndex, cIndex, imgIndex)} 
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20"
+                    {/* ROW 1: EXISTING IMAGES */}
+                    {color.images?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-gray-600 mb-2">Existing Images</p>
+                        <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex, 'images')}>
+                          <Droppable droppableId={`old-${vIndex}-${cIndex}`} direction="horizontal">
+                            {(provided) => (
+                              <div className="flex gap-3 overflow-x-auto pb-4 pt-2" {...provided.droppableProps} ref={provided.innerRef}>
+                                {color.images.map((img, imgIndex) => (
+                                  <Draggable key={img.imagePublicId + imgIndex} draggableId={img.imagePublicId + imgIndex} index={imgIndex}>
+                                    {(provided, snapshot) => (
+                                      <div 
+                                        ref={provided.innerRef} 
+                                        {...provided.draggableProps}
+                                        className={`relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 ${snapshot.isDragging? 'ring-2 ring-blue-500' : ''}`}
                                       >
-                                        <FaTimes size={10} />
-                                      </button>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </DragDropContext>
+                                        <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
+                                          <HiOutlineArrowsUpDown className="text-white text-[10px]" />
+                                        </div>
+                                        <img src={img.url} className="w-full h-full object-contain rounded-lg border bg-white p-1" />
+                                        <button 
+                                          type="button" 
+                                          onClick={() => removeImageHandler(vIndex, cIndex, imgIndex, 'images')} 
+                                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20"
+                                        >
+                                          <FaTimes size={10} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
+                      </div>
                     )}
-                    <button type='button' onClick={() => addColorHandler(vIndex)} className='mt-2 px-3 py-1.5 text-sm bg-green-50 text-green-600 rounded-lg border-2 border-dashed w-full'><FaPlus size={12} /> Add Color</button>
+
+                    {/* ROW 2: NEW IMAGES */}
+                    {color.files?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-green-600 mb-2">New Images</p>
+                        <DragDropContext onDragEnd={(result) => onDragEnd(result, vIndex, cIndex, 'files')}>
+                          <Droppable droppableId={`new-${vIndex}-${cIndex}`} direction="horizontal">
+                            {(provided) => (
+                              <div className="flex gap-3 overflow-x-auto pb-4 pt-2" {...provided.droppableProps} ref={provided.innerRef}>
+                                {color.files.map((file, imgIndex) => (
+                                  <Draggable key={file.name + imgIndex} draggableId={file.name + imgIndex} index={imgIndex}>
+                                    {(provided, snapshot) => (
+                                      <div 
+                                        ref={provided.innerRef} 
+                                        {...provided.draggableProps}
+                                        className={`relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 ${snapshot.isDragging? 'ring-2 ring-green-500' : ''}`}
+                                      >
+                                        <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
+                                          <HiOutlineArrowsUpDown className="text-white text-[10px]" />
+                                        </div>
+                                        <img src={URL.createObjectURL(file)} className="w-full h-full object-contain rounded-lg border bg-white p-1" />
+                                        <span className='absolute top-1 right-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold'>NEW</span>
+                                        <button 
+                                          type="button" 
+                                          onClick={() => removeImageHandler(vIndex, cIndex, imgIndex, 'files')} 
+                                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20"
+                                        >
+                                          <FaTimes size={10} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
+                      </div>
+                    )}
+
+                    <button 
+                    type='button' 
+                    onClick={() => addColorHandler(vIndex)} 
+                    className='mt-3 px-4 py-2.5 text-sm bg-green-50 text-green-600 rounded-lg border-2 border-dashed border-green-200 w-full flex items-center justify-center gap-2 hover:bg-green-100 transition-colors font-medium'
+                  >
+                    <FaPlus size={12} /> Add Color
+                  </button>
                   </div>
                 )
-              })}
+              )}
             </div>
           ))}
         </div>

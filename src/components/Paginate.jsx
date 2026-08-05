@@ -1,16 +1,19 @@
 import { Link } from 'react-router-dom'
 
 const Paginate = ({
-  pages,
-  page,
+  pages = 1, // default to 1
+  page = 1,  // default to 1
   isAdmin = false,
   onPageChange,
   keyword = '',
-  brand = '', // <-- Added this
+  brand = '',
   pathname = '/',
   searchParamName = 'keyword',
 }) => {
-  if (pages <= 1) return null
+  const currentPage = Number(page) || 1 // FIX 1: fallback to 1
+  const totalPages = Number(pages) || 1 // FIX 2: fallback to 1
+
+  if (totalPages <= 1) return null // don't render if only 1 page
 
   const baseBtn = 'px-3 py-2 text-sm font-medium border rounded-md transition'
   const activeBtn = 'bg-blue-600 text-white border-blue-600'
@@ -18,59 +21,35 @@ const Paginate = ({
 
   const baseUrl = pathname
   const urlKeyword = keyword ? `&${searchParamName}=${keyword}` : ''
-  const urlBrand = brand ? `&brand=${brand}` : '' // <-- Added this
-  const urlParams = `${urlKeyword}${urlBrand}` // <-- Combined
+  const urlBrand = brand ? `&brand=${brand}` : ''
+  const urlParams = `${urlKeyword}${urlBrand}`
 
   const getPageNumbers = () => {
     const delta = 2
     const range = []
-    for (let i = Math.max(2, page - delta); i <= Math.min(pages - 1, page + delta); i++) {
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
       range.push(i)
     }
-    if (page - delta > 2) range.unshift('...')
-    if (page + delta < pages - 1) range.push('...')
+    if (currentPage - delta > 2) range.unshift('...')
+    if (currentPage + delta < totalPages - 1) range.push('...')
     range.unshift(1)
-    if (pages !== 1) range.push(pages)
+    if (totalPages !== 1) range.push(totalPages)
     return range
-  }
-
-  const PageButton = ({ pageNum, isActive }) => {
-    const classes = `${baseBtn} ${isActive ? activeBtn : inactiveBtn}`
-
-    if (isAdmin && onPageChange) {
-      return (
-        <button
-          onClick={() => onPageChange(pageNum)}
-          className={classes}
-        >
-          {pageNum}
-        </button>
-      )
-    }
-
-    return (
-      <Link
-        to={`${baseUrl}?pageNumber=${pageNum}${urlParams}`}
-        className={classes}
-      >
-        {pageNum}
-      </Link>
-    )
   }
 
   return (
     <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-6'>
       <div className='text-sm text-gray-700'>
         <div>
-          Page <span className='font-medium'>{page}</span> of{' '}
-          <span className='font-medium'>{pages}</span>
+          Page <span className='font-medium'>{currentPage}</span> of{' '}
+          <span className='font-medium'>{totalPages}</span>
         </div>
       </div>
 
       <div className='flex flex-wrap items-center gap-2'>
-        {page > 1 && (
+        {currentPage > 1 && (
           <Link
-            to={`${baseUrl}?pageNumber=${page - 1}${urlParams}`}
+            to={`${baseUrl}?pageNumber=${currentPage - 1}${urlParams}`}
             className={`${baseBtn} ${inactiveBtn}`}
           >
             Prev
@@ -81,13 +60,21 @@ const Paginate = ({
           pageNum === '...' ? (
             <span key={`dots-${idx}`} className='px-3 py-2'>...</span>
           ) : (
-            <PageButton key={pageNum} pageNum={pageNum} isActive={pageNum === page} />
+            // FIX 3: KEY MUST BE HERE ON THE COMPONENT ITSELF
+            <Link
+              key={pageNum}
+              to={`${baseUrl}?pageNumber=${pageNum}${urlParams}`}
+              onClick={() => isAdmin && onPageChange && onPageChange(pageNum)}
+              className={`${baseBtn} ${pageNum === currentPage ? activeBtn : inactiveBtn}`}
+            >
+              {pageNum}
+            </Link>
           )
         )}
 
-        {page < pages && (
+        {currentPage < totalPages && (
           <Link
-            to={`${baseUrl}?pageNumber=${page + 1}${urlParams}`}
+            to={`${baseUrl}?pageNumber=${currentPage + 1}${urlParams}`}
             className={`${baseBtn} ${inactiveBtn}`}
           >
             Next
