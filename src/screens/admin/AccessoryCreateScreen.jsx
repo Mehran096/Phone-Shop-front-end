@@ -6,23 +6,36 @@ import Loader from '../../components/Loader';
 import { FaPlus, FaTrash, FaGripVertical, FaTimes } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
+const ACCESSORY_TYPES = [
+  { value: "case", label: "Case" },
+  { value: "charger", label: "Charger" },
+  { value: "cable", label: "Cable" },
+  { value: "glass", label: "Screen Protector" },
+  { value: "audio", label: "Audio" },
+  { value: "holder", label: "Holder / Stand" },
+];
+
 const AccessoryCreateScreen = () => {
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
-  const [category, setCategory] = useState('Case');
+  const [accessoryType, setAccessoryType] = useState('case');
   const [keywords, setKeywords] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
 
-  const [variants, setVariants] = useState([
+  const [models, setModels] = useState([
     {
-      modelName: '',
+      modelName: 'Universal',
       description: '',
       specs: [{ key: '', value: '' }],
-      colorVariants: [
+      variants: [
         {
-          sku: '', color: '', colorHex: '#000000', price: 0, countInStock: 0,
+          sku: '', name: '', color: '', colorHex: '#000', price: 0, countInStock: 0,
+          wattage: '', cableType: '', cableLength: '',
+          hardness: '', thickness: '', glassType: '',
+          connectorType: '', audioBits: '',
           files: [], images: [],
+          bulkPricing: [{ qty: 1, price: 0 }],
           discount: { type: '', value: 0, startDate: '', endDate: '', isActive: false }
         }
       ]
@@ -34,29 +47,29 @@ const AccessoryCreateScreen = () => {
   const [createAccessory, { isLoading }] = useCreateAccessoryMutation();
   const navigate = useNavigate();
 
-  const uploadImageHandler = (e, vIdx, cIdx) => {
+  const uploadImageHandler = (e, mIdx, vIdx) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    const updated = [...variants];
-    updated[vIdx].colorVariants[cIdx].files = [...(updated[vIdx].colorVariants[cIdx].files || []),...files];
-    setVariants(updated);
+    const updated = [...models];
+    updated[mIdx].variants[vIdx].files = [...(updated[mIdx].variants[vIdx].files || []),...files];
+    setModels(updated);
     e.target.value = '';
   };
 
-  const removeImageHandler = (vIdx, cIdx, imgIndex) => {
-    const updated = [...variants];
-    updated[vIdx].colorVariants[cIdx].files = updated[vIdx].colorVariants[cIdx].files.filter((_, idx) => idx!== imgIndex);
-    setVariants(updated);
+  const removeImageHandler = (mIdx, vIdx, imgIndex) => {
+    const updated = [...models];
+    updated[mIdx].variants[vIdx].files = updated[mIdx].variants[vIdx].files.filter((_, idx) => idx!== imgIndex);
+    setModels(updated);
   };
 
-  const onDragEnd = (result, vIdx, cIdx) => {
+  const onDragEnd = (result, mIdx, vIdx) => {
     if (!result.destination) return;
-    const updated = [...variants];
-    const files = [...updated[vIdx].colorVariants[cIdx].files];
+    const updated = [...models];
+    const files = [...updated[mIdx].variants[vIdx].files];
     const [reordered] = files.splice(result.source.index, 1);
     files.splice(result.destination.index, 0, reordered);
-    updated[vIdx].colorVariants[cIdx].files = files;
-    setVariants(updated);
+    updated[mIdx].variants[vIdx].files = files;
+    setModels(updated);
   };
 
   const submitHandler = async (e) => {
@@ -64,9 +77,9 @@ const AccessoryCreateScreen = () => {
     try {
       setUploading(true);
       const formData = new FormData();
-      variants.forEach(v => {
-        v.colorVariants.forEach(cv => {
-          (cv.files || []).forEach(file => formData.append('images', file));
+      models.forEach(m => {
+        m.variants.forEach(v => {
+          (v.files || []).forEach(file => formData.append('images', file));
         })
       });
 
@@ -78,46 +91,54 @@ const AccessoryCreateScreen = () => {
       setUploading(false);
 
       let uploadIndex = 0;
-      const deduped = Array.from(new Map(variants.map(v => [v.modelName, v])).values()).map(v => ({
-       ...v,
-        colorVariants: Array.from(new Map(v.colorVariants.map(cv => [cv.color, cv])).values())
-      }));
-
-      const finalVariants = deduped
-      .filter(v => v.modelName)
-      .map(v => ({
-          modelName: v.modelName,
-          description: v.description,
-          specs: (v.specs || []).filter(s => s.key && s.value),
-          colorVariants: (v.colorVariants || []).filter(cv => cv.color && cv.sku).map(cv => {
-            const colorImages = (cv.files || []).map(() => {
+      const finalModels = models
+      .filter(m => m.modelName)
+      .map(m => ({
+        ...m,
+          specs: (m.specs || []).filter(s => s.key && s.value),
+          variants: (m.variants || []).filter(v => v.sku && v.name).map(v => {
+            const variantImages = (v.files || []).map(() => {
               const img = uploaded[uploadIndex];
               uploadIndex++;
               return img;
             });
             return {
-              sku: cv.sku,
-              color: cv.color,
-              colorHex: cv.colorHex || '#000',
-              price: Number(cv.price),
-              countInStock: Number(cv.countInStock),
-              images: colorImages,
+              sku: v.sku,
+              name: v.name,
+              color: v.color,
+              colorHex: v.colorHex || '#000',
+              price: Number(v.price),
+              countInStock: Number(v.countInStock),
+              wattage: v.wattage || '',
+              cableType: v.cableType || '',
+              cableLength: v.cableLength || '',
+              hardness: v.hardness || '',
+              thickness: v.thickness || '',
+              glassType: v.glassType || '',
+              connectorType: v.connectorType || '',
+              audioBits: v.audioBits || '',
+              images: variantImages,
+              bulkPricing: (v.bulkPricing || []).filter(b => b.qty > 0),
               discount: {
-                type: cv.discount.type || null,
-                value: Number(cv.discount.value) || 0,
-                startDate: cv.discount.startDate || null,
-                endDate: cv.discount.endDate || null,
-                isActive: cv.discount.isActive || false,
+                type: v.discount.type || null,
+                value: Number(v.discount.value) || 0,
+                startDate: v.discount.startDate || null,
+                endDate: v.discount.endDate || null,
+                isActive: v.discount.isActive || false,
               }
             }
           })
-        })).filter(v => v.colorVariants.length > 0);
+        })).filter(m => m.variants.length > 0);
 
       const accessoryData = {
-        name, brand, category,
+        name,
+        brand,
+        accessoryType,
+        category: accessoryType,
         keywords: keywords.split(',').map(k => k.trim()).filter(k => k),
-        metaTitle, metaDescription,
-        variants: finalVariants,
+        metaTitle,
+        metaDescription,
+        models: finalModels,
       };
 
       await createAccessory(accessoryData).unwrap();
@@ -131,35 +152,51 @@ const AccessoryCreateScreen = () => {
     }
   };
 
-  const addModel = () => setVariants([...variants, { modelName: '', description: '', specs: [{key:'',value:''}], colorVariants: [{sku:'',color:'',colorHex:'#000000',price:0,countInStock:0,files:[],discount:{type:'',value:0,isActive:false}}] }]);
-  const removeModel = (vIdx) => setVariants(variants.filter((_, i) => i!== vIdx));
-  const handleModelChange = (vIdx, field, value) => { const updated = [...variants]; updated[vIdx][field] = value; setVariants(updated); };
+  const addModel = () => setModels([...models, { modelName: '', description: '', specs: [{ key: '', value: '' }], variants: [{ sku: '', name: '', price: 0, countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0 }], discount: { type: '', value: 0, isActive: false } }] }]);
+  const removeModel = (mIdx) => setModels(models.filter((_, i) => i!== mIdx));
+  const handleModelChange = (mIdx, field, value) => { const updated = [...models]; updated[mIdx][field] = value; setModels(updated); };
 
-  const addSpec = (vIdx) => { const updated = [...variants]; updated[vIdx].specs.push({key:'',value:''}); setVariants(updated); };
-  const removeSpec = (vIdx, sIdx) => { const updated = [...variants]; updated[vIdx].specs = updated[vIdx].specs.filter((_, i) => i!== sIdx); setVariants(updated); };
-  const handleSpecChange = (vIdx, sIdx, field, value) => { const updated = [...variants]; updated[vIdx].specs[sIdx][field] = value; setVariants(updated); };
+  const addSpec = (mIdx) => { const updated = [...models]; updated[mIdx].specs.push({ key: '', value: '' }); setModels(updated); };
+  const removeSpec = (mIdx, sIdx) => { const updated = [...models]; updated[mIdx].specs = updated[mIdx].specs.filter((_, i) => i!== sIdx); setModels(updated); };
+  const handleSpecChange = (mIdx, sIdx, field, value) => { const updated = [...models]; updated[mIdx].specs[sIdx][field] = value; setModels(updated); };
 
-  const addColor = (vIdx) => { const updated = [...variants]; updated[vIdx].colorVariants.push({sku:'',color:'',colorHex:'#000000',price:0,countInStock:0,files:[],discount:{type:'',value:0,isActive:false}}); setVariants(updated); };
-  const removeColor = (vIdx, cIdx) => { const updated = [...variants]; updated[vIdx].colorVariants = updated[vIdx].colorVariants.filter((_, i) => i!== cIdx); setVariants(updated); };
-  const updateColor = (vIdx, cIdx, field, value) => { const updated = [...variants]; updated[vIdx].colorVariants[cIdx][field] = value; setVariants(updated); };
-  const updateDiscount = (vIdx, cIdx, field, value) => { const updated = [...variants]; updated[vIdx].colorVariants[cIdx].discount[field] = value; setVariants(updated); };
+  const addVariant = (mIdx) => {
+    const updated = [...models];
+    updated[mIdx].variants.push({ sku: '', name: '', price: 0, countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0 }], discount: { type: '', value: 0, isActive: false } });
+    setModels(updated);
+  };
+  const removeVariant = (mIdx, vIdx) => { const updated = [...models]; updated[mIdx].variants = updated[mIdx].variants.filter((_, i) => i!== vIdx); setModels(updated); };
+  const updateVariant = (mIdx, vIdx, field, value) => { const updated = [...models]; updated[mIdx].variants[vIdx][field] = value; setModels(updated); };
+  const updateDiscount = (mIdx, vIdx, field, value) => { const updated = [...models]; updated[mIdx].variants[vIdx].discount[field] = value; setModels(updated); };
+
+  const addBulk = (mIdx, vIdx) => { const updated = [...models]; updated[mIdx].variants[vIdx].bulkPricing.push({ qty: 2, price: 0 }); setModels(updated); };
+  const removeBulk = (mIdx, vIdx, bIdx) => {
+    const updated = [...models];
+    updated[mIdx].variants[vIdx].bulkPricing = updated[mIdx].variants[vIdx].bulkPricing.filter((_, i) => i!== bIdx);
+    setModels(updated);
+  };
+  const updateBulk = (mIdx, vIdx, bIdx, field, value) => {
+    const updated = [...models];
+    updated[mIdx].variants[vIdx].bulkPricing[bIdx][field] = field === 'qty'? Number(value) : Number(value);
+    setModels(updated);
+  };
 
   return (
     <div className="max-w-5xl mx-auto p-3 sm:p-6">
       <Link to='/admin/accessorylist' className='inline-block mb-4 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm'>← Go Back</Link>
-      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Create Accessory V6</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Create Accessory</h1>
       {isLoading && <Loader />}
 
       <form onSubmit={submitHandler} className="space-y-4">
-        {/* BASIC INFO - STACK ON MOBILE */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        {/* BASIC INFO */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <select className="p-2.5 border rounded-lg text-sm" value={accessoryType} onChange={(e) => setAccessoryType(e.target.value)}>
+            {ACCESSORY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
           <input className="p-2.5 border rounded-lg text-sm" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
           <input className="p-2.5 border rounded-lg text-sm" placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} required />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <input className="p-2.5 border rounded-lg text-sm" placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)} />
-          <input className="p-2.5 border rounded-lg text-sm" placeholder="Keywords, comma separated" value={keywords} onChange={(e) => setKeywords(e.target.value)} />
-        </div>
+        <input className="w-full p-2.5 border rounded-lg text-sm" placeholder="Keywords, comma separated" value={keywords} onChange={(e) => setKeywords(e.target.value)} />
         <input className="w-full p-2.5 border rounded-lg text-sm" placeholder="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} />
         <textarea className="w-full p-2.5 border rounded-lg text-sm" rows="2" placeholder="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
 
@@ -172,102 +209,162 @@ const AccessoryCreateScreen = () => {
             </button>
           </div>
 
-          {variants.map((v, vIdx) => (
-            <div key={vIdx} className="mb-4 p-3 sm:p-4 border rounded-lg bg-gray-50">
+          {models.map((m, mIdx) => (
+            <div key={mIdx} className="mb-4 p-3 sm:p-4 border rounded-lg bg-gray-50">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold text-sm sm:text-base">Model {vIdx + 1}</h3>
-                <button type="button" onClick={() => removeModel(vIdx)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm">
-                  <FaTrash size={12}/> <span className="hidden sm:inline">Remove</span>
+                <h3 className="font-semibold text-sm sm:text-base">Model {mIdx + 1}</h3>
+                <button type="button" onClick={() => removeModel(mIdx)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm">
+                  <FaTrash size={12} /> <span className="hidden sm:inline">Remove</span>
                 </button>
               </div>
 
-              <input className="w-full p-2.5 border rounded-lg mb-3 text-sm" placeholder="Model Name: iPhone 17 Pro Max" value={v.modelName} onChange={(e) => handleModelChange(vIdx, 'modelName', e.target.value)} required/>
-              <textarea className="w-full p-2.5 border rounded-lg mb-3 text-sm" rows="2" placeholder="Model Description" value={v.description} onChange={(e) => handleModelChange(vIdx, 'description', e.target.value)} />
+              <input className="w-full p-2.5 border rounded-lg mb-3 text-sm" placeholder="Model Name: iPhone 17 Pro Max or Universal" value={m.modelName} onChange={(e) => handleModelChange(mIdx, 'modelName', e.target.value)} required />
+              <textarea className="w-full p-2.5 border rounded-lg mb-3 text-sm" rows="2" placeholder="Model Description" value={m.description} onChange={(e) => handleModelChange(mIdx, 'description', e.target.value)} />
 
-              {/* SPECS - STACK ON MOBILE */}
+              {/* SPECS */}
               <div className="mb-4 p-3 bg-white rounded-lg border">
                 <h4 className="font-semibold mb-2 text-sm">Specs</h4>
-                {v.specs.map((s, sIdx) => (
+                {m.specs.map((s, sIdx) => (
                   <div key={sIdx} className="flex flex-col sm:flex-row gap-2 mb-2">
-                    <input className="p-2 border rounded flex-1 text-sm" placeholder="Key: Material" value={s.key} onChange={(e) => handleSpecChange(vIdx, sIdx, 'key', e.target.value)} />
+                    <input className="p-2 border rounded flex-1 text-sm" placeholder="Key: Material" value={s.key} onChange={(e) => handleSpecChange(mIdx, sIdx, 'key', e.target.value)} />
                     <div className="flex gap-2">
-                      <input className="p-2 border rounded flex-1 text-sm" placeholder="Value: Silicone" value={s.value} onChange={(e) => handleSpecChange(vIdx, sIdx, 'value', e.target.value)} />
-                      <button type="button" onClick={() => removeSpec(vIdx, sIdx)} className="px-3 bg-red-50 text-red-600 rounded"><FaTrash size={12}/></button>
+                      <input className="p-2 border rounded flex-1 text-sm" placeholder="Value: Silicone" value={s.value} onChange={(e) => handleSpecChange(mIdx, sIdx, 'value', e.target.value)} />
+                      <button type="button" onClick={() => removeSpec(mIdx, sIdx)} className="px-3 bg-red-50 text-red-600 rounded"><FaTrash size={12} /></button>
                     </div>
                   </div>
                 ))}
-                <button type="button" onClick={() => addSpec(vIdx)} className="text-sm text-blue-600"><FaPlus size={12}/> Add Spec</button>
+                <button type="button" onClick={() => addSpec(mIdx)} className="text-sm text-blue-600"><FaPlus size={12} /> Add Spec</button>
               </div>
 
-              {/* COLORS */}
+              {/* VARIANTS */}
               <div className="space-y-3">
-                <h3 className="font-semibold text-sm">Colors</h3>
-                {v.colorVariants.map((cv, cIdx) => (
-                  <div key={cIdx} className="border p-3 rounded-lg bg-white">
+                <h3 className="font-semibold text-sm">Variants</h3>
+                {m.variants.map((v, vIdx) => (
+                  <div key={vIdx} className="border p-3 rounded-lg bg-white">
                     <div className="flex justify-between items-center mb-3">
-                      <h5 className="font-medium text-sm text-blue-600">Color {cIdx + 1}</h5>
-                      <button type="button" onClick={() => removeColor(vIdx,cIdx)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm"><FaTrash size={12}/> <span className="hidden sm:inline">Remove</span></button>
+                      <h5 className="font-medium text-sm text-blue-600">Variant {vIdx + 1}</h5>
+                      <button type="button" onClick={() => removeVariant(mIdx, vIdx)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm"><FaTrash size={12} /> <span className="hidden sm:inline">Remove</span></button>
                     </div>
 
-                    {/* INPUTS - 1 COL ON MOBILE, 4 COL ON DESKTOP */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-                      <input className="p-2 border rounded text-sm" placeholder="SKU" value={cv.sku} onChange={(e)=>updateColor(vIdx,cIdx, 'sku',e.target.value)} required/>
-                      <input className="p-2 border rounded text-sm" placeholder="Color Name" value={cv.color} onChange={(e)=>updateColor(vIdx,cIdx, 'color',e.target.value)} required/>
-                      <div className="flex gap-2 items-center">
-                        <label className="text-xs">Hex</label>
-                        <input type="color" className="p-1 border rounded h-10 w-full" value={cv.colorHex} onChange={(e)=>updateColor(vIdx,cIdx, 'colorHex',e.target.value)}/>
-                      </div>
-                      <input type="number" className="p-2 border rounded text-sm" placeholder="Price" value={cv.price} onChange={(e)=>updateColor(vIdx,cIdx, 'price',e.target.value)}/>
-                      <input type="number" className="p-2 border rounded text-sm sm:col-span-2 lg:col-span-1" placeholder="Stock" value={cv.countInStock} onChange={(e)=>updateColor(vIdx,cIdx, 'countInStock',e.target.value)}/>
+                      <input className="p-2 border rounded text-sm" placeholder="SKU" value={v.sku} onChange={(e) => updateVariant(mIdx, vIdx, 'sku', e.target.value)} required />
+                      <input className="p-2 border rounded text-sm" placeholder="Variant Name" value={v.name} onChange={(e) => updateVariant(mIdx, vIdx, 'name', e.target.value)} required />
+                      <input className="p-2 border rounded text-sm" placeholder="Color" value={v.color} onChange={(e) => updateVariant(mIdx, vIdx, 'color', e.target.value)} />
+                      <input type="color" className="p-1 border rounded h-10 w-full" value={v.colorHex} onChange={(e) => updateVariant(mIdx, vIdx, 'colorHex', e.target.value)} />
+                      <input type="number" className="p-2 border rounded text-sm" placeholder="Price" value={v.price} onChange={(e) => updateVariant(mIdx, vIdx, 'price', e.target.value)} />
+                      <input type="number" className="p-2 border rounded text-sm" placeholder="Stock" value={v.countInStock} onChange={(e) => updateVariant(mIdx, vIdx, 'countInStock', e.target.value)} />
                     </div>
 
-                    {/* DISCOUNT - STACK ON MOBILE */}
-                    <div className="p-3 bg-yellow-50 rounded mb-3">
-                      <h6 className="font-semibold text-xs mb-2">Discount</h6>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                        <select className="p-2 border rounded text-sm" value={cv.discount.type} onChange={(e)=>updateDiscount(vIdx,cIdx,'type',e.target.value)}>
-                          <option value="">No Discount</option>
-                          <option value="percentage">Percentage</option>
-                          <option value="fixed">Fixed</option>
-                        </select>
-                        <input type="number" className="p-2 border rounded text-sm" placeholder="Value" value={cv.discount.value} onChange={(e)=>updateDiscount(vIdx,cIdx,'value',e.target.value)}/>
-                        <input type="date" className="p-2 border rounded text-sm" value={cv.discount.startDate} onChange={(e)=>updateDiscount(vIdx,cIdx,'startDate',e.target.value)}/>
-                        <input type="date" className="p-2 border rounded text-sm" value={cv.discount.endDate} onChange={(e)=>updateDiscount(vIdx,cIdx,'endDate',e.target.value)}/>
-                      </div>
-                      <label className="flex items-center gap-2 mt-2 text-sm"><input type="checkbox" checked={cv.discount.isActive} onChange={(e)=>updateDiscount(vIdx,cIdx,'isActive',e.target.checked)}/> Active</label>
-                    </div>
+                    {/* DYNAMIC FIELDS */}
+                    {/* DYNAMIC FIELDS */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+  {(accessoryType === 'charger' || accessoryType === 'cable') && (
+    <>
+      <input className="p-2 border rounded text-sm" placeholder="Wattage: 20W" value={v.wattage || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'wattage', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Cable Type: USB-C" value={v.cableType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'cableType', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Cable Length: 1m" value={v.cableLength || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'cableLength', e.target.value)} />
+    </>
+  )}
 
-                    {/* IMAGES - HORIZONTAL SCROLL ON MOBILE */}
-                    <label className='inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer text-sm w-full justify-center sm:w-auto'>
-                      <FaPlus /> Upload Color Images
-                      <input type='file' multiple accept="image/*" onChange={(e) => uploadImageHandler(e, vIdx, cIdx)} className='hidden' />
-                    </label>
-                    {cv.files?.length > 0 && (
-                      <DragDropContext onDragEnd={(result) => onDragEnd(result, vIdx, cIdx)}>
-                        <Droppable droppableId={`dnd-${vIdx}-${cIdx}`} direction="horizontal">
-                          {(provided) => (
-                            <div className="flex gap-3 overflow-x-auto mt-2 pb-2" {...provided.droppableProps} ref={provided.innerRef}>
-                              {cv.files.map((img, imgIndex) => (
-                                <Draggable key={img.name + imgIndex} draggableId={img.name + imgIndex} index={imgIndex}>
-                                  {(provided) => (
-                                    <div ref={provided.innerRef} {...provided.draggableProps} className="relative w-20 h-20 flex-shrink-0">
-                                      <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab'><FaGripVertical className="text-white text-[10px]" /></div>
-                                      <img src={URL.createObjectURL(img)} className="w-full h-full object-cover rounded border"/>
-                                      <button type="button" onClick={() => removeImageHandler(vIdx, cIdx, imgIndex)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"><FaTimes size={10} /></button>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </div>
+  {accessoryType === 'glass' && (
+    <>
+      <input className="p-2 border rounded text-sm" placeholder="Hardness: 9H" value={v.hardness || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'hardness', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Thickness: 0.3mm" value={v.thickness || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'thickness', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Glass Type: Tempered Glass" value={v.glassType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'glassType', e.target.value)} />
+    </>
+  )}
+
+  {accessoryType === 'audio' && (
+    <>
+      <input className="p-2 border rounded text-sm" placeholder="Audio Bits: 32-Bit" value={v.audioBits || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'audioBits', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Connector Type: USB-C" value={v.connectorType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'connectorType', e.target.value)} />
+    </>
+  )}
+</div>
+
+                    {/* BULK PRICING - BOL STYLE */}
+                    <div className="p-3 bg-purple-50 rounded mb-3">
+                      <h6 className="font-semibold text-xs mb-2">Bulk Pricing - Like Bol</h6>
+                      {v.bulkPricing.map((b, bIdx) => (
+                        <div key={bIdx} className="flex gap-2 mb-2 items-center">
+                          <input type="number" className="p-2 border rounded text-sm w-24" placeholder="Qty" value={b.qty} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'qty', e.target.value)} />
+                          <input type="number" className="p-2 border rounded text-sm flex-1" placeholder="Price" value={b.price} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'price', e.target.value)} />
+                          {v.bulkPricing.length > 1 && (
+                            <button type="button" onClick={() => removeBulk(mIdx, vIdx, bIdx)} className="px-2 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200">
+                              <FaTrash size={12} />
+                            </button>
                           )}
-                        </Droppable>
-                      </DragDropContext>
-                    )}
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => addBulk(mIdx, vIdx)} className="text-sm text-purple-600 font-medium"><FaPlus size={12} /> Add Tier</button>
+                    </div>
+
+                    {/* IMAGES - FIXED STYLING */}
+                    <div className="mt-3">
+                      <label className='inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer text-sm font-medium w-full justify-center sm:w-auto transition'>
+                        <FaPlus /> Upload Variant Images
+                        <input type='file' multiple accept="image/*" onChange={(e) => uploadImageHandler(e, mIdx, vIdx)} className='hidden' />
+                      </label>
+
+                      {v.files?.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs font-semibold text-gray-600 mb-2">Uploaded Images <span className="text-blue-500">({v.files.length})</span></p>
+                          <DragDropContext onDragEnd={(result) => onDragEnd(result, mIdx, vIdx)}>
+                            <Droppable droppableId={`dnd-${mIdx}-${vIdx}`} direction="horizontal">
+                              {(provided) => (
+                                <div 
+                                  className="flex gap-3 overflow-x-auto pb-2 pt-1" 
+                                  {...provided.droppableProps} 
+                                  ref={provided.innerRef}
+                                >
+                                  {v.files.map((img, imgIndex) => (
+                                    <Draggable key={img.name + imgIndex} draggableId={img.name + imgIndex} index={imgIndex}>
+                                      {(provided, snapshot) => (
+                                        <div 
+                                          ref={provided.innerRef} 
+                                          {...provided.draggableProps} 
+                                          className={`relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 group ${snapshot.isDragging? 'opacity-50' : ''}`}
+                                        >
+                                          <div 
+                                            {...provided.dragHandleProps} 
+                                            className='absolute top-1 left-1 bg-black/70 p-1.5 rounded-md cursor-grab z-10 hover:bg-black/90'
+                                          >
+                                            <FaGripVertical className="text-white text-xs" />
+                                          </div>
+
+                                          <img 
+                                            src={URL.createObjectURL(img)} 
+                                            className="w-full h-full object-contain rounded-lg border bg-white p-1"  
+                                            alt={`preview ${imgIndex}`}
+                                          />
+
+                                          <span className="absolute -top-2 -left-2 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
+                                            NEW
+                                          </span>
+
+                                          <button 
+                                            type="button" 
+                                            onClick={() => removeImageHandler(mIdx, vIdx, imgIndex)} 
+                                            className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-10"
+                                          >
+                                            <FaTimes size={12} />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  ))}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          </DragDropContext>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
-                <button type="button" onClick={() => addColor(vIdx)} className="flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg border-2 border-dashed w-full text-sm">
-                  <FaPlus /> Add Color
+                <button type="button" onClick={() => addVariant(mIdx)} className="flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg border-2 border-dashed w-full text-sm font-medium hover:bg-green-100">
+                  <FaPlus /> Add Variant
                 </button>
               </div>
             </div>

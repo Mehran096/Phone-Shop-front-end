@@ -11,17 +11,26 @@ import Message from '../../components/Message';
 import { toast } from 'react-toastify';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
+const ACCESSORY_TYPES = [
+  { value: "case", label: "Case" },
+  { value: "charger", label: "Charger" },
+  { value: "cable", label: "Cable" },
+  { value: "glass", label: "Screen Protector" },
+  { value: "audio", label: "Audio" },
+  { value: "holder", label: "Holder / Stand" },
+];
+
 const AccessoryEditScreen = () => {
   const { id: accessoryId } = useParams();
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
-  const [category, setCategory] = useState('');
+  const [accessoryType, setAccessoryType] = useState('case');
   const [keywords, setKeywords] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
-  const [variants, setVariants] = useState([]);
+  const [models, setModels] = useState([]);
   const [removedPublicIds, setRemovedPublicIds] = useState([]);
   const [uploading, setUploading] = useState(false);
 
@@ -33,91 +42,104 @@ const AccessoryEditScreen = () => {
     if (accessory) {
       setName(accessory.name);
       setBrand(accessory.brand);
-      setCategory(accessory.category);
+      setAccessoryType(accessory.accessoryType || accessory.category);
       setKeywords(accessory.keywords?.join(', ') || '');
       setMetaTitle(accessory.metaTitle || '');
       setMetaDescription(accessory.metaDescription || '');
-      
-      const normalizedVariants = (accessory.variants?.length > 0? accessory.variants : []).map(v => ({
-     ...v,
-        specs: Array.isArray(v.specs)? v.specs : [],
-        colorVariants: Array.isArray(v.colorVariants)? v.colorVariants.map(cv => ({
-       ...cv,
-          files: []
+
+      const normalizedModels = (accessory.models?.length > 0? accessory.models : []).map(m => ({
+      ...m,
+        specs: Array.isArray(m.specs)? m.specs : [],
+        variants: Array.isArray(m.variants)? m.variants.map(v => ({
+        ...v,
+          files: [],
+          bulkPricing: v.bulkPricing?.length > 0? v.bulkPricing : [{ qty: 1, price: v.price }]
         })) : []
       }));
-      setVariants(normalizedVariants.length > 0? normalizedVariants : [{ modelName: '', description: '', specs: [], colorVariants: [] }]);
+
+      // Fallback for old DB
+      const oldVariants = (accessory.variants?.length > 0? accessory.variants : []).map(v => ({
+      ...v,
+        specs: Array.isArray(v.specs)? v.specs : [],
+        variants: Array.isArray(v.colorVariants)? v.colorVariants.map(cv => ({
+        ...cv, name: cv.color, files: [], bulkPricing: [{ qty: 1, price: cv.price }]
+        })) : []
+      }));
+
+      setModels(normalizedModels.length > 0? normalizedModels : oldVariants.length > 0? oldVariants : [{ modelName: 'Universal', description: '', specs: [], variants: [] }]);
     }
   }, [accessory]);
 
-  const uploadImageHandler = (e, vIdx, cIdx) => {
+  const uploadImageHandler = (e, mIdx, vIdx) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    const updated = [...variants];
-    updated[vIdx].colorVariants[cIdx].files = [...(updated[vIdx].colorVariants[cIdx].files || []),...files];
-    setVariants(updated);
+    const updated = [...models];
+    updated[mIdx].variants[vIdx].files = [...(updated[mIdx].variants[vIdx].files || []),...files];
+    setModels(updated);
     e.target.value = '';
   };
 
-  const removeNewFileHandler = (vIdx, cIdx, idx) => {
-    const updated = [...variants];
-    updated[vIdx].colorVariants[cIdx].files = updated[vIdx].colorVariants[cIdx].files.filter((_, k) => k!== idx);
-    setVariants(updated);
+  const removeNewFileHandler = (mIdx, vIdx, idx) => {
+    const updated = [...models];
+    updated[mIdx].variants[vIdx].files = updated[mIdx].variants[vIdx].files.filter((_, k) => k!== idx);
+    setModels(updated);
   };
 
-  const removeImageHandler = (vIdx, cIdx, idx) => {
-    const img = variants[vIdx].colorVariants[cIdx].images[idx];
+  const removeImageHandler = (mIdx, vIdx, idx) => {
+    const img = models[mIdx].variants[vIdx].images[idx];
     if (img.imagePublicId) setRemovedPublicIds(prev => [...prev, img.imagePublicId]);
-    const updated = [...variants];
-    updated[vIdx].colorVariants[cIdx].images = updated[vIdx].colorVariants[cIdx].images.filter((_, k) => k!== idx);
-    setVariants(updated);
+    const updated = [...models];
+    updated[mIdx].variants[vIdx].images = updated[mIdx].variants[vIdx].images.filter((_, k) => k!== idx);
+    setModels(updated);
   };
 
-  // SEPARATE DRAG FOR EXISTING
-  const onExistingDragEnd = (result, vIdx, cIdx) => {
+  const onExistingDragEnd = (result, mIdx, vIdx) => {
     if (!result.destination) return;
-    const updated = [...variants];
-    const images = [...updated[vIdx].colorVariants[cIdx].images];
+    const updated = [...models];
+    const images = [...updated[mIdx].variants[vIdx].images];
     const [reordered] = images.splice(result.source.index, 1);
     images.splice(result.destination.index, 0, reordered);
-    updated[vIdx].colorVariants[cIdx].images = images;
-    setVariants(updated);
+    updated[mIdx].variants[vIdx].images = images;
+    setModels(updated);
   };
 
-  // SEPARATE DRAG FOR NEW
-  const onNewDragEnd = (result, vIdx, cIdx) => {
+  const onNewDragEnd = (result, mIdx, vIdx) => {
     if (!result.destination) return;
-    const updated = [...variants];
-    const files = [...updated[vIdx].colorVariants[cIdx].files];
+    const updated = [...models];
+    const files = [...updated[mIdx].variants[vIdx].files];
     const [reordered] = files.splice(result.source.index, 1);
     files.splice(result.destination.index, 0, reordered);
-    updated[vIdx].colorVariants[cIdx].files = files;
-    setVariants(updated);
+    updated[mIdx].variants[vIdx].files = files;
+    setModels(updated);
   };
 
-  const addModel = () => setVariants([...variants, { modelName: '', description: '', specs: [], colorVariants: [] }]);
-  const updateModel = (idx, field, value) => setVariants(prev => prev.map((v, i) => i === idx? {...v, [field]: value } : v));
-  const removeModel = (idx) => setVariants(prev => prev.filter((_, i) => i!== idx));
-  
-  const addSpec = (vIdx) => setVariants(prev => prev.map((v, i) => i === vIdx? {...v, specs: [...(v.specs || []), { key: '', value: '' }] } : v));
-  const updateSpec = (vIdx, sIdx, field, value) => setVariants(prev => prev.map((v, i) => i === vIdx? {...v, specs: v.specs.map((s, j) => j === sIdx? {...s, [field]: value } : s) } : v));
-  const removeSpec = (vIdx, sIdx) => setVariants(prev => prev.map((v, i) => i === vIdx? {...v, specs: v.specs.filter((_, j) => j!== sIdx) } : v));
+  const addModel = () => setModels([...models, { modelName: '', description: '', specs: [], variants: [] }]);
+  const updateModel = (idx, field, value) => setModels(prev => prev.map((m, i) => i === idx? {...m, [field]: value } : m));
+  const removeModel = (idx) => setModels(prev => prev.filter((_, i) => i!== idx));
 
-  const addColor = (vIdx) => setVariants(prev => prev.map((v, i) => i === vIdx? { 
- ...v, 
-    colorVariants: [...(v.colorVariants || []), { sku: '', color: '', colorHex: '#000', price: 0, countInStock: 0, images: [], files: [], discount: { type: null, value: 0, isActive: false } }] 
-  } : v));
-  const updateColor = (vIdx, cIdx, field, value) => setVariants(prev => prev.map((v, i) => i === vIdx? {...v, colorVariants: v.colorVariants.map((cv, j) => j === cIdx? {...cv, [field]: value } : cv) } : v));
-  const removeColor = (vIdx, cIdx) => setVariants(prev => prev.map((v, i) => i === vIdx? {...v, colorVariants: v.colorVariants.filter((_, j) => j!== cIdx) } : v));
-  const updateDiscount = (vIdx, cIdx, field, value) => setVariants(prev => prev.map((v, i) => i === vIdx? {...v, colorVariants: v.colorVariants.map((cv, j) => j === cIdx? {...cv, discount: {...cv.discount, [field]: value }} : cv) } : v));
+  const addSpec = (mIdx) => setModels(prev => prev.map((m, i) => i === mIdx? {...m, specs: [...(m.specs || []), { key: '', value: '' }] } : m));
+  const updateSpec = (mIdx, sIdx, field, value) => setModels(prev => prev.map((m, i) => i === mIdx? {...m, specs: m.specs.map((s, j) => j === sIdx? {...s, [field]: value } : s) } : m));
+  const removeSpec = (mIdx, sIdx) => setModels(prev => prev.map((m, i) => i === mIdx? {...m, specs: m.specs.filter((_, j) => j!== sIdx) } : m));
+
+  const addVariant = (mIdx) => setModels(prev => prev.map((m, i) => i === mIdx? {
+  ...m,
+    variants: [...(m.variants || []), { sku: '', name: '', price: 0, countInStock: 0, images: [], files: [], bulkPricing: [{ qty: 1, price: 0 }], discount: { type: null, value: 0, isActive: false } }]
+  } : m));
+  const updateVariant = (mIdx, vIdx, field, value) => setModels(prev => prev.map((m, i) => i === mIdx? {...m, variants: m.variants.map((v, j) => j === vIdx? {...v, [field]: value } : v) } : m));
+  const removeVariant = (mIdx, vIdx) => setModels(prev => prev.map((m, i) => i === mIdx? {...m, variants: m.variants.filter((_, j) => j!== vIdx) } : m));
+  const updateDiscount = (mIdx, vIdx, field, value) => setModels(prev => prev.map((m, i) => i === mIdx? {...m, variants: m.variants.map((v, j) => j === vIdx? {...v, discount: {...v.discount, [field]: value }} : v) } : m));
+
+  const addBulk = (mIdx, vIdx) => { const updated = [...models]; updated[mIdx].variants[vIdx].bulkPricing.push({ qty: 2, price: 0 }); setModels(updated); };
+  const updateBulk = (mIdx, vIdx, bIdx, field, value) => { const updated = [...models]; updated[mIdx].variants[vIdx].bulkPricing[bIdx][field] = field === 'qty'? Number(value) : Number(value); setModels(updated); };
+  const removeBulk = (mIdx, vIdx, bIdx) => { const updated = [...models]; updated[mIdx].variants[vIdx].bulkPricing = updated[mIdx].variants[vIdx].bulkPricing.filter((_, i) => i!== bIdx); setModels(updated); };
 
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
       setUploading(true);
       const formData = new FormData();
-      variants.forEach((v) => v.colorVariants.forEach((cv) => {
-        (cv.files || []).forEach((file) => formData.append('images', file));
+      models.forEach((m) => m.variants.forEach((v) => {
+        (v.files || []).forEach((file) => formData.append('images', file));
       }));
 
       let uploaded = [];
@@ -128,35 +150,40 @@ const AccessoryEditScreen = () => {
       setUploading(false);
 
       let uploadIndex = 0;
-      const finalVariants = variants.filter(v => v.modelName).map(v => ({
-        modelName: v.modelName,
-        description: v.description,
-        specs: v.specs.filter(s => s.key && s.value),
-        colorVariants: v.colorVariants.filter(cv => cv.color && cv.sku).map(cv => {
-          const newImages = (cv.files || []).map(() => uploaded[uploadIndex++]);
+      const finalModels = models.filter(m => m.modelName).map(m => ({
+        modelName: m.modelName,
+        description: m.description,
+        specs: m.specs.filter(s => s.key && s.value),
+        variants: m.variants.filter(v => v.sku && v.name).map(v => {
+          const newImages = (v.files || []).map(() => uploaded[uploadIndex++]);
           return {
-            sku: cv.sku,
-            color: cv.color,
-            colorHex: cv.colorHex,
-            price: Number(cv.price),
-            countInStock: Number(cv.countInStock),
-            images: [...(cv.images || []),...newImages],
+            sku: v.sku,
+            name: v.name,
+            color: v.color,
+            colorHex: v.colorHex,
+            price: Number(v.price),
+            countInStock: Number(v.countInStock),
+            wattage: v.wattage || '', cableType: v.cableType || '', cableLength: v.cableLength || '',
+            hardness: v.hardness || '', thickness: v.thickness || '', glassType: v.glassType || '',
+            connectorType: v.connectorType || '', audioBits: v.audioBits || '',
+            images: [...(v.images || []),...newImages],
+            bulkPricing: (v.bulkPricing || []).filter(b => b.qty > 0),
             discount: {
-              type: cv.discount.type || null,
-              value: Number(cv.discount.value) || 0,
-              startDate: cv.discount.startDate || null,
-              endDate: cv.discount.endDate || null,
-              isActive: cv.discount.isActive || false,
+              type: v.discount.type || null,
+              value: Number(v.discount.value) || 0,
+              startDate: v.discount.startDate || null,
+              endDate: v.discount.endDate || null,
+              isActive: v.discount.isActive || false,
             }
           };
         })
-      })).filter(v => v.colorVariants.length > 0);
+      })).filter(m => m.variants.length > 0);
 
       await updateAccessory({
-        _id: accessoryId, name, brand, category,
+        _id: accessoryId, name, brand, accessoryType, category: accessoryType,
         keywords: keywords.split(',').map(k => k.trim()).filter(k => k),
         metaTitle, metaDescription,
-        variants: finalVariants,
+        models: finalModels,
         removedPublicIds,
       }).unwrap();
       toast.success('Accessory Updated');
@@ -173,19 +200,21 @@ const AccessoryEditScreen = () => {
   return (
     <div className="max-w-7xl mx-auto p-3 sm:p-6">
       <Link to='/admin/accessorylist' className='inline-block mb-4 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm'>← Go Back</Link>
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Edit Accessory V6.2</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Edit Accessory</h1>
       <form onSubmit={submitHandler} className="space-y-6">
-        
+
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow">
           <h2 className="text-lg sm:text-xl font-semibold mb-4">Basic Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select value={accessoryType} onChange={(e) => setAccessoryType(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm">
+              {ACCESSORY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
             <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm" required />
             <input placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm" required />
-            <input placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm" />
-            <input placeholder="Keywords: comma separated" value={keywords} onChange={(e) => setKeywords(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm" />
-            <input placeholder="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm" />
-            <input placeholder="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm" />
           </div>
+          <input placeholder="Keywords: comma separated" value={keywords} onChange={(e) => setKeywords(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm mt-4" />
+          <input placeholder="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm mt-4" />
+          <input placeholder="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm mt-4" />
         </div>
 
         {/* MODELS */}
@@ -197,161 +226,203 @@ const AccessoryEditScreen = () => {
             </button>
           </div>
 
-          {variants.map((v, vIdx) => (
-            <div key={vIdx} className="border border-gray-200 p-3 sm:p-4 rounded-lg mb-4 bg-gray-50">
+          {models.map((m, mIdx) => (
+            <div key={mIdx} className="border border-gray-200 p-3 sm:p-4 rounded-lg mb-4 bg-gray-50">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-sm sm:text-base">Model {vIdx + 1}</h3>
-                <button type="button" onClick={() => removeModel(vIdx)} className="text-red-500 hover:bg-red-50 p-2 rounded"><FaTrash /></button>
+                <h3 className="font-semibold text-sm sm:text-base">Model {mIdx + 1}</h3>
+                <button type="button" onClick={() => removeModel(mIdx)} className="text-red-500 hover:bg-red-50 p-2 rounded"><FaTrash /></button>
               </div>
 
-              <input placeholder="Model Name: iPhone 17 Pro Max" value={v.modelName} onChange={(e) => updateModel(vIdx, 'modelName', e.target.value)} className="w-full p-2.5 border rounded-lg text-sm mb-3" required/>
-              <textarea placeholder="Model Description" value={v.description} onChange={(e) => updateModel(vIdx, 'description', e.target.value)} className="w-full p-2.5 border rounded-lg text-sm mb-3" rows="2"/>
+              <input placeholder="Model Name: iPhone 17 Pro Max or Universal" value={m.modelName} onChange={(e) => updateModel(mIdx, 'modelName', e.target.value)} className="w-full p-2.5 border rounded-lg text-sm mb-3" required/>
+              <textarea placeholder="Model Description" value={m.description} onChange={(e) => updateModel(mIdx, 'description', e.target.value)} className="w-full p-2.5 border rounded-lg text-sm mb-3" rows="2"/>
 
-              {/* SPECS */}
-              <div className="mb-4 p-3 bg-white rounded-lg border">
-                <h4 className="font-semibold mb-2 text-sm">Specs</h4>
-                {v.specs.map((s, sIdx) => (
-                  <div key={sIdx} className="flex flex-col sm:flex-row gap-2 mb-2">
-                    <input placeholder="Key: Material" value={s.key} onChange={(e) => updateSpec(vIdx, sIdx, 'key', e.target.value)} className="p-2 border rounded flex-1 text-sm"/>
-                    <input placeholder="Value: Silicone" value={s.value} onChange={(e) => updateSpec(vIdx, sIdx, 'value', e.target.value)} className="p-2 border rounded flex-1 text-sm"/>
-                    <button type="button" onClick={() => removeSpec(vIdx, sIdx)} className="px-3 py-2 bg-red-50 text-red-600 rounded flex items-center justify-center"><FaTrash size={12}/></button>
-                  </div>
-                ))}
-                <button type="button" onClick={() => addSpec(vIdx)} className="text-sm text-blue-600"><FaPlus size={12}/> Add Spec</button>
-              </div>
-
-              {/* COLORS */}
+              {/* VARIANTS */}
               <div className="space-y-3">
-                <h3 className="font-semibold text-sm">Colors</h3>
-                {v.colorVariants.map((cv, cIdx) => (
-                  <div key={cIdx} className="border p-3 rounded-lg bg-white">
+                <h3 className="font-semibold text-sm">Variants</h3>
+                {m.variants.map((v, vIdx) => (
+                  <div key={vIdx} className="border p-3 rounded-lg bg-white">
                     <div className="flex justify-between items-center mb-3">
-                      <h5 className="font-medium text-sm text-blue-600">Color {cIdx + 1}</h5>
-                      <button type="button" onClick={() => removeColor(vIdx, cIdx)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm">Remove</button>
+                      <h5 className="font-medium text-sm text-blue-600">Variant {vIdx + 1}</h5>
+                      <button type="button" onClick={() => removeVariant(mIdx, vIdx)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm">Remove</button>
                     </div>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+  <input placeholder="SKU" value={v.sku} onChange={(e) => updateVariant(mIdx, vIdx, 'sku', e.target.value)} className="p-2.5 border rounded-lg text-sm" required/>
+  <input placeholder="Variant Name" value={v.name} onChange={(e) => updateVariant(mIdx, vIdx, 'name', e.target.value)} className="p-2.5 border rounded-lg text-sm" required/>
+  <input type="number" placeholder="Price" value={v.price} onChange={(e) => updateVariant(mIdx, vIdx, 'price', e.target.value)} className="p-2.5 border rounded-lg text-sm"/>
+  <input type="number" placeholder="Stock" value={v.countInStock} onChange={(e) => updateVariant(mIdx, vIdx, 'countInStock', e.target.value)} className="p-2.5 border rounded-lg text-sm"/>
+</div>
+
+{/* DYNAMIC FIELDS BASED ON TYPE */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+  {(accessoryType === 'charger' || accessoryType === 'cable') && (
+    <>
+      <input className="p-2 border rounded text-sm" placeholder="Wattage: 20W" value={v.wattage || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'wattage', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Cable Type: USB-C" value={v.cableType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'cableType', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Cable Length: 1m" value={v.cableLength || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'cableLength', e.target.value)} />
+    </>
+  )}
+
+  {accessoryType === 'glass' && (
+    <>
+      <input className="p-2 border rounded text-sm" placeholder="Hardness: 9H" value={v.hardness || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'hardness', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Thickness: 0.3mm" value={v.thickness || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'thickness', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Glass Type: Tempered Glass" value={v.glassType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'glassType', e.target.value)} />
+    </>
+  )}
+
+  {accessoryType === 'audio' && (
+    <>
+      <input className="p-2 border rounded text-sm" placeholder="Audio Bits: 32-Bit" value={v.audioBits || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'audioBits', e.target.value)} />
+      <input className="p-2 border rounded text-sm" placeholder="Connector Type: USB-C" value={v.connectorType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'connectorType', e.target.value)} />
+    </>
+  )}
+</div>
+
+ 
+
+                    {/* BULK PRICING */}
+                    <div className="p-3 bg-purple-50 rounded mb-3">
+                      <h6 className="font-semibold text-xs mb-2">Bulk Pricing - Like Bol</h6>
+                      {v.bulkPricing.map((b, bIdx) => (
+                        <div key={bIdx} className="flex gap-2 mb-2 items-center">
+                          <input type="number" className="p-2 border rounded text-sm w-24" placeholder="Qty" value={b.qty} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'qty', e.target.value)} />
+                          <input type="number" className="p-2 border rounded text-sm flex-1" placeholder="Price" value={b.price} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'price', e.target.value)} />
+                          {v.bulkPricing.length > 1 && (
+                            <button type="button" onClick={() => removeBulk(mIdx, vIdx, bIdx)} className="px-2 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200"><FaTrash size={12} /></button>
+                          )}
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => addBulk(mIdx, vIdx)} className="text-sm text-purple-600"><FaPlus size={12} /> Add Tier</button>
+                    </div>
+
                     
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
-                      <input placeholder="SKU" value={cv.sku} onChange={(e) => updateColor(vIdx, cIdx, 'sku', e.target.value)} className="p-2.5 border rounded-lg text-sm" required/>
-                      <input placeholder="Color Name" value={cv.color} onChange={(e) => updateColor(vIdx, cIdx, 'color', e.target.value)} className="p-2.5 border rounded-lg text-sm" required/>
-                      <input type="color" value={cv.colorHex} onChange={(e) => updateColor(vIdx, cIdx, 'colorHex', e.target.value)} className="p-1 border rounded h-10"/>
-                      <input type="number" placeholder="Price" value={cv.price} onChange={(e) => updateColor(vIdx, cIdx, 'price', e.target.value)} className="p-2.5 border rounded-lg text-sm"/>
-                      <input type="number" placeholder="Stock" value={cv.countInStock} onChange={(e) => updateColor(vIdx, cIdx, 'countInStock', e.target.value)} className="p-2.5 border rounded-lg text-sm"/>
+                    {/* IMAGES - EXISTING + NEW */}
+<div className="mt-3">
+  {/* EXISTING IMAGES */}
+  {v.images?.length > 0 && (
+    <div className="mb-4">
+      <label className="block font-semibold text-xs mb-2 text-gray-600">Existing Images</label>
+      <DragDropContext onDragEnd={(result) => onExistingDragEnd(result, mIdx, vIdx)}>
+        <Droppable droppableId={`existing-${mIdx}-${vIdx}`} direction="horizontal">
+          {(provided) => (
+            <div 
+              className="flex gap-3 overflow-x-auto pb-3 pt-1" 
+              {...provided.droppableProps} 
+              ref={provided.innerRef}
+            >
+              {v.images.map((img, idx) => (
+                <Draggable key={`existing-${img.url}-${idx}`} draggableId={`existing-${img.url}-${idx}`} index={idx}>
+                  {(provided, snapshot) => (
+                    <div 
+                      ref={provided.innerRef} 
+                      {...provided.draggableProps} 
+                      className={`relative w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 group ${snapshot.isDragging? 'opacity-50 scale-105' : ''}`}
+                    >
+                      {/* DRAG HANDLE */}
+                      <div 
+                        {...provided.dragHandleProps} 
+                        className='absolute top-1.5 left-1.5 bg-black/70 p-1.5 rounded-md cursor-grab z-10 hover:bg-black/90 transition'
+                      >
+                        <FaGripVertical className="text-white text-xs" />
+                      </div>
+
+                      <img 
+                        src={img.url} 
+                        className="w-full h-full object-contain rounded-lg border bg-white p-1" 
+                        alt="existing"
+                      />
+                      {/* <img src={img.url} className="w-full h-full object-contain rounded-lg border bg-white p-1" /> */}
+
+                      {/* DELETE BUTTON */}
+                      <button 
+                        type="button" 
+                        onClick={() => removeImageHandler(mIdx, vIdx, idx)} 
+                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-10 transition transform hover:scale-110"
+                      >
+                        <FaTimes size={12} />
+                      </button>
                     </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    </div>
+  )}
 
-                    {/* DISCOUNT */}
-                    <div className="p-3 bg-yellow-50 rounded mb-3">
-                      <h6 className="font-semibold text-xs mb-2">Discount</h6>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                        <select className="p-2 border rounded text-sm" value={cv.discount.type || ''} onChange={(e)=>updateDiscount(vIdx,cIdx,'type',e.target.value)}>
-                          <option value="">No Discount</option>
-                          <option value="percentage">Percentage</option>
-                          <option value="fixed">Fixed</option>
-                        </select>
-                        <input type="number" placeholder="Value" value={cv.discount.value} onChange={(e)=>updateDiscount(vIdx,cIdx,'value',e.target.value)} className="p-2 border rounded text-sm"/>
-                        <input type="date" value={cv.discount.startDate || ''} onChange={(e)=>updateDiscount(vIdx,cIdx,'startDate',e.target.value)} className="p-2 border rounded text-sm"/>
-                        <input type="date" value={cv.discount.endDate || ''} onChange={(e)=>updateDiscount(vIdx,cIdx,'endDate',e.target.value)} className="p-2 border rounded text-sm"/>
+  {/* NEW UPLOAD BUTTON */}
+  <label className='inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer text-sm font-medium w-full justify-center sm:w-auto transition'>
+    <FaPlus /> Upload New Images
+    <input type='file' multiple accept="image/*" onChange={(e) => uploadImageHandler(e, mIdx, vIdx)} className='hidden' />
+  </label>
+  
+  {/* NEW UPLOADS PREVIEW */}
+  {v.files?.length > 0 && (
+    <div className="mt-3">
+      <p className="text-xs font-semibold text-gray-600 mb-2">New Uploads <span className="text-blue-500">({v.files.length})</span></p>
+      <DragDropContext onDragEnd={(result) => onNewDragEnd(result, mIdx, vIdx)}>
+        <Droppable droppableId={`new-${mIdx}-${vIdx}`} direction="horizontal">
+          {(provided) => (
+            <div 
+              className="flex gap-3 overflow-x-auto pb-3 pt-1" 
+              {...provided.droppableProps} 
+              ref={provided.innerRef}
+            >
+              {v.files.map((file, idx) => (
+                <Draggable key={`new-${file.name}-${idx}`} draggableId={`new-${file.name}-${idx}`} index={idx}>
+                  {(provided, snapshot) => (
+                    <div 
+                      ref={provided.innerRef} 
+                      {...provided.draggableProps} 
+                      className={`relative w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 group ${snapshot.isDragging? 'opacity-50 scale-105' : ''}`}
+                    >
+                      {/* DRAG HANDLE */}
+                      <div 
+                        {...provided.dragHandleProps} 
+                        className='absolute top-1.5 left-1.5 bg-black/70 p-1.5 rounded-md cursor-grab z-10 hover:bg-black/90 transition'
+                      >
+                        <FaGripVertical className="text-white text-xs" />
                       </div>
-                      <label className="flex items-center gap-2 mt-2 text-sm"><input type="checkbox" checked={cv.discount.isActive} onChange={(e)=>updateDiscount(vIdx,cIdx,'isActive',e.target.checked)}/> Active</label>
+
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        className="w-full h-full object-contain rounded-lg border bg-white p-1"  
+                        alt="new upload"
+                      />
+
+                      {/* NEW BADGE */}
+                      <span className="absolute -top-2 -left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                        NEW
+                      </span>
+
+                      {/* DELETE BUTTON */}
+                      <button 
+                        type="button" 
+                        onClick={() => removeNewFileHandler(mIdx, vIdx, idx)} 
+                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-10 transition transform hover:scale-110"
+                      >
+                        <FaTimes size={12} />
+                      </button>
                     </div>
-
-                    {/* EXISTING IMAGES - SEPARATE */}
-                    {cv.images?.length > 0 && (
-                      <div className="mb-4">
-                        <label className="block font-semibold text-sm mb-2">Existing Images</label>
-                        <DragDropContext onDragEnd={(result) => onExistingDragEnd(result, vIdx, cIdx)}>
-                          <Droppable droppableId={`existing-${vIdx}-${cIdx}`} direction="horizontal">
-                            {(provided) => (
-                              <div 
-                                className="flex gap-2 sm:gap-3 flex-wrap p-3 bg-gray-50 rounded-lg"
-                                {...provided.droppableProps} 
-                                ref={provided.innerRef}
-                              >
-                                {cv.images.map((img, idx) => (
-                                  <Draggable key={`existing-${img.url}-${idx}`} draggableId={`existing-${img.url}-${idx}`} index={idx}>
-                                    {(provided) => (
-                                      <div 
-                                        ref={provided.innerRef} 
-                                        {...provided.draggableProps} 
-                                        className="relative w-16 h-16 sm:w-20 sm:h-20 group"
-                                      >
-                                        <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
-                                          <FaGripVertical className="text-white text-[10px]" />
-                                        </div>
-                                        <img src={img.url} className="w-full h-full object-cover rounded-lg border-2 border-gray-200" />
-                                        <button 
-                                          type="button" 
-                                          onClick={() => removeImageHandler(vIdx, cIdx, idx)} 
-                                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg"
-                                        >
-                                          <FaTimes className="text-[10px]" />
-                                        </button>
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </DragDropContext>
-                      </div>
-                    )}
-
-                    {/* NEW IMAGES - SEPARATE */}
-                    <label className='inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg border-2 border-dashed cursor-pointer text-sm font-medium w-full sm:w-auto justify-center'>
-                      <FaPlus /> Upload New Color Images
-                      <input type='file' multiple accept="image/*" onChange={(e) => uploadImageHandler(e, vIdx, cIdx)} className='hidden' />
-                    </label>
-                    
-                    {cv.files?.length > 0 && (
-                      <div className="mt-3">
-                        <label className="block font-semibold text-sm mb-2">New Uploads <span className="text-blue-500">({cv.files.length})</span></label>
-                        <DragDropContext onDragEnd={(result) => onNewDragEnd(result, vIdx, cIdx)}>
-                          <Droppable droppableId={`new-${vIdx}-${cIdx}`} direction="horizontal">
-                            {(provided) => (
-                              <div 
-                                className="flex gap-2 sm:gap-3 flex-wrap p-3 bg-blue-50 rounded-lg"
-                                {...provided.droppableProps} 
-                                ref={provided.innerRef}
-                              >
-                                {cv.files.map((file, idx) => (
-                                  <Draggable key={`new-${file.name}-${idx}`} draggableId={`new-${file.name}-${idx}`} index={idx}>
-                                    {(provided) => (
-                                      <div 
-                                        ref={provided.innerRef} 
-                                        {...provided.draggableProps} 
-                                        className="relative w-16 h-16 sm:w-20 sm:h-20 group"
-                                      >
-                                        <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded cursor-grab z-10'>
-                                          <FaGripVertical className="text-white text-[10px]" />
-                                        </div>
-                                        <img src={URL.createObjectURL(file)} className="w-full h-full object-cover rounded-lg border-2 border-blue-400" />
-                                        <span className="absolute -top-2 -left-2 bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow">
-                                          NEW
-                                        </span>
-                                        <button 
-                                          type="button" 
-                                          onClick={() => removeNewFileHandler(vIdx, cIdx, idx)} 
-                                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg"
-                                        >
-                                          <FaTimes className="text-[10px]" />
-                                        </button>
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </DragDropContext>
-                      </div>
-                    )}
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    </div>
+  )}
+</div>
                   </div>
                 ))}
-                
-                <button type="button" onClick={() => addColor(vIdx)} className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 border-dashed border-green-300 text-sm font-medium w-full justify-center">
-                  <FaPlus /> Add Color
+                <button type="button" onClick={() => addVariant(mIdx)} className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 border-dashed border-green-300 text-sm font-medium w-full justify-center">
+                  <FaPlus /> Add Variant
                 </button>
               </div>
             </div>
