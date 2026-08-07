@@ -460,6 +460,8 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
               <Link to='/admin/userlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Users</Link>
               <Link to='/admin/productlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Products</Link>
               <Link to='/admin/orderlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Orders</Link>
+              <Link to='/admin/accessorylist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Accessories</Link>
+              
             </div>
           )}
         </div>
