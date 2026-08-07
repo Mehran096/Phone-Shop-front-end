@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCreateAccessoryMutation, useUploadAccessoryImageMutation } from '../../slices/accessoriesApiSlice';
 import { toast } from 'react-toastify';
 import Loader from '../../components/Loader';
-import { FaPlus, FaTrash, FaGripVertical, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaGripVertical, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const ACCESSORY_TYPES = [
@@ -30,13 +30,14 @@ const AccessoryCreateScreen = () => {
       specs: [{ key: '', value: '' }],
       variants: [
         {
-          sku: '', name: '', color: '', colorHex: '#000', price: 0, countInStock: 0,
+          sku: '', name: '', color: '', colorHex: '#000', 
+          originalPrice: 0, price: 0, countInStock: 0, // NEW: originalPrice
           wattage: '', cableType: '', cableLength: '',
           hardness: '', thickness: '', glassType: '',
           connectorType: '', audioBits: '',
           files: [], images: [],
-          bulkPricing: [{ qty: 1, price: 0 }],
-          discount: { type: '', value: 0, startDate: '', endDate: '', isActive: false }
+          bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }],
+          discount: { type: 'percentage', value: 0, startDate: '', endDate: '', isActive: false }
         }
       ]
     }
@@ -92,9 +93,9 @@ const AccessoryCreateScreen = () => {
 
       let uploadIndex = 0;
       const finalModels = models
-      .filter(m => m.modelName)
-      .map(m => ({
-        ...m,
+   .filter(m => m.modelName)
+   .map(m => ({
+     ...m,
           specs: (m.specs || []).filter(s => s.key && s.value),
           variants: (m.variants || []).filter(v => v.sku && v.name).map(v => {
             const variantImages = (v.files || []).map(() => {
@@ -107,7 +108,8 @@ const AccessoryCreateScreen = () => {
               name: v.name,
               color: v.color,
               colorHex: v.colorHex || '#000',
-              price: Number(v.price),
+              originalPrice: Number(v.originalPrice), // NEW
+              price: Number(v.price), // After single discount
               countInStock: Number(v.countInStock),
               wattage: v.wattage || '',
               cableType: v.cableType || '',
@@ -118,7 +120,11 @@ const AccessoryCreateScreen = () => {
               connectorType: v.connectorType || '',
               audioBits: v.audioBits || '',
               images: variantImages,
-              bulkPricing: (v.bulkPricing || []).filter(b => b.qty > 0),
+              bulkPricing: (v.bulkPricing || []).filter(b => b.qty > 0).map(b => ({
+                qty: Number(b.qty),
+                price: Number(b.price),
+                discountLabel: b.discountLabel || ''
+              })),
               discount: {
                 type: v.discount.type || null,
                 value: Number(v.discount.value) || 0,
@@ -152,7 +158,7 @@ const AccessoryCreateScreen = () => {
     }
   };
 
-  const addModel = () => setModels([...models, { modelName: '', description: '', specs: [{ key: '', value: '' }], variants: [{ sku: '', name: '', price: 0, countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0 }], discount: { type: '', value: 0, isActive: false } }] }]);
+  const addModel = () => setModels([...models, { modelName: '', description: '', specs: [{ key: '', value: '' }], variants: [{ sku: '', name: '', originalPrice: 0, price: 0, countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }], discount: { type: 'percentage', value: 0, isActive: false } }] }]);
   const removeModel = (mIdx) => setModels(models.filter((_, i) => i!== mIdx));
   const handleModelChange = (mIdx, field, value) => { const updated = [...models]; updated[mIdx][field] = value; setModels(updated); };
 
@@ -162,14 +168,14 @@ const AccessoryCreateScreen = () => {
 
   const addVariant = (mIdx) => {
     const updated = [...models];
-    updated[mIdx].variants.push({ sku: '', name: '', price: 0, countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0 }], discount: { type: '', value: 0, isActive: false } });
+    updated[mIdx].variants.push({ sku: '', name: '', originalPrice: 0, price: 0, countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }], discount: { type: 'percentage', value: 0, isActive: false } });
     setModels(updated);
   };
   const removeVariant = (mIdx, vIdx) => { const updated = [...models]; updated[mIdx].variants = updated[mIdx].variants.filter((_, i) => i!== vIdx); setModels(updated); };
   const updateVariant = (mIdx, vIdx, field, value) => { const updated = [...models]; updated[mIdx].variants[vIdx][field] = value; setModels(updated); };
-  const updateDiscount = (mIdx, vIdx, field, value) => { const updated = [...models]; updated[mIdx].variants[vIdx].discount[field] = value; setModels(updated); };
+  const updateDiscount = (mIdx, vIdx, field, value) => { const updated = [...models]; updated[mIdx].variants[vIdx].discount[field] = field === 'value'? Number(value) : value; setModels(updated); };
 
-  const addBulk = (mIdx, vIdx) => { const updated = [...models]; updated[mIdx].variants[vIdx].bulkPricing.push({ qty: 2, price: 0 }); setModels(updated); };
+  const addBulk = (mIdx, vIdx) => { const updated = [...models]; updated[mIdx].variants[vIdx].bulkPricing.push({ qty: 2, price: 0, discountLabel: '' }); setModels(updated); };
   const removeBulk = (mIdx, vIdx, bIdx) => {
     const updated = [...models];
     updated[mIdx].variants[vIdx].bulkPricing = updated[mIdx].variants[vIdx].bulkPricing.filter((_, i) => i!== bIdx);
@@ -177,7 +183,7 @@ const AccessoryCreateScreen = () => {
   };
   const updateBulk = (mIdx, vIdx, bIdx, field, value) => {
     const updated = [...models];
-    updated[mIdx].variants[vIdx].bulkPricing[bIdx][field] = field === 'qty'? Number(value) : Number(value);
+    updated[mIdx].variants[vIdx].bulkPricing[bIdx][field] = field === 'qty'? Number(value) : field === 'price'? Number(value) : value;
     setModels(updated);
   };
 
@@ -188,19 +194,17 @@ const AccessoryCreateScreen = () => {
       {isLoading && <Loader />}
 
       <form onSubmit={submitHandler} className="space-y-4">
-        {/* BASIC INFO */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <select className="p-2.5 border rounded-lg text-sm" value={accessoryType} onChange={(e) => setAccessoryType(e.target.value)}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <select className="p-3 border rounded-lg text-sm" value={accessoryType} onChange={(e) => setAccessoryType(e.target.value)}>
             {ACCESSORY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-          <input className="p-2.5 border rounded-lg text-sm" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-          <input className="p-2.5 border rounded-lg text-sm" placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} required />
+          <input className="p-3 border rounded-lg text-sm" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input className="p-3 border rounded-lg text-sm" placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} required />
         </div>
-        <input className="w-full p-2.5 border rounded-lg text-sm" placeholder="Keywords, comma separated" value={keywords} onChange={(e) => setKeywords(e.target.value)} />
-        <input className="w-full p-2.5 border rounded-lg text-sm" placeholder="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} />
-        <textarea className="w-full p-2.5 border rounded-lg text-sm" rows="2" placeholder="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
+        <input className="w-full p-3 border rounded-lg text-sm" placeholder="Keywords, comma separated" value={keywords} onChange={(e) => setKeywords(e.target.value)} />
+        <input className="w-full p-3 border rounded-lg text-sm" placeholder="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} />
+        <textarea className="w-full p-3 border rounded-lg text-sm" rows="2" placeholder="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
 
-        {/* MODELS */}
         <div className="bg-white p-3 sm:p-4 rounded-xl shadow border">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-base sm:text-lg">Models</h2>
@@ -213,22 +217,21 @@ const AccessoryCreateScreen = () => {
             <div key={mIdx} className="mb-4 p-3 sm:p-4 border rounded-lg bg-gray-50">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold text-sm sm:text-base">Model {mIdx + 1}</h3>
-                <button type="button" onClick={() => removeModel(mIdx)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm">
+                <button type="button" onClick={() => removeModel(mIdx)} className="flex items-center gap-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm">
                   <FaTrash size={12} /> <span className="hidden sm:inline">Remove</span>
                 </button>
               </div>
 
-              <input className="w-full p-2.5 border rounded-lg mb-3 text-sm" placeholder="Model Name: iPhone 17 Pro Max or Universal" value={m.modelName} onChange={(e) => handleModelChange(mIdx, 'modelName', e.target.value)} required />
-              <textarea className="w-full p-2.5 border rounded-lg mb-3 text-sm" rows="2" placeholder="Model Description" value={m.description} onChange={(e) => handleModelChange(mIdx, 'description', e.target.value)} />
+              <input className="w-full p-3 border rounded-lg mb-3 text-sm" placeholder="Model Name: iPhone 17 Pro Max or Universal" value={m.modelName} onChange={(e) => handleModelChange(mIdx, 'modelName', e.target.value)} required />
+              <textarea className="w-full p-3 border rounded-lg mb-3 text-sm" rows="2" placeholder="Model Description" value={m.description} onChange={(e) => handleModelChange(mIdx, 'description', e.target.value)} />
 
-              {/* SPECS */}
               <div className="mb-4 p-3 bg-white rounded-lg border">
                 <h4 className="font-semibold mb-2 text-sm">Specs</h4>
                 {m.specs.map((s, sIdx) => (
                   <div key={sIdx} className="flex flex-col sm:flex-row gap-2 mb-2">
-                    <input className="p-2 border rounded flex-1 text-sm" placeholder="Key: Material" value={s.key} onChange={(e) => handleSpecChange(mIdx, sIdx, 'key', e.target.value)} />
+                    <input className="p-2.5 border rounded flex-1 text-sm" placeholder="Key: Material" value={s.key} onChange={(e) => handleSpecChange(mIdx, sIdx, 'key', e.target.value)} />
                     <div className="flex gap-2">
-                      <input className="p-2 border rounded flex-1 text-sm" placeholder="Value: Silicone" value={s.value} onChange={(e) => handleSpecChange(mIdx, sIdx, 'value', e.target.value)} />
+                      <input className="p-2.5 border rounded flex-1 text-sm" placeholder="Value: Silicone" value={s.value} onChange={(e) => handleSpecChange(mIdx, sIdx, 'value', e.target.value)} />
                       <button type="button" onClick={() => removeSpec(mIdx, sIdx)} className="px-3 bg-red-50 text-red-600 rounded"><FaTrash size={12} /></button>
                     </div>
                   </div>
@@ -236,62 +239,84 @@ const AccessoryCreateScreen = () => {
                 <button type="button" onClick={() => addSpec(mIdx)} className="text-sm text-blue-600"><FaPlus size={12} /> Add Spec</button>
               </div>
 
-              {/* VARIANTS */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-sm">Variants</h3>
                 {m.variants.map((v, vIdx) => (
                   <div key={vIdx} className="border p-3 rounded-lg bg-white">
                     <div className="flex justify-between items-center mb-3">
                       <h5 className="font-medium text-sm text-blue-600">Variant {vIdx + 1}</h5>
-                      <button type="button" onClick={() => removeVariant(mIdx, vIdx)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm"><FaTrash size={12} /> <span className="hidden sm:inline">Remove</span></button>
+                      <button type="button" onClick={() => removeVariant(mIdx, vIdx)} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm"><FaTrash size={12} /> <span className="hidden sm:inline">Remove</span></button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-                      <input className="p-2 border rounded text-sm" placeholder="SKU" value={v.sku} onChange={(e) => updateVariant(mIdx, vIdx, 'sku', e.target.value)} required />
-                      <input className="p-2 border rounded text-sm" placeholder="Variant Name" value={v.name} onChange={(e) => updateVariant(mIdx, vIdx, 'name', e.target.value)} required />
-                      <input className="p-2 border rounded text-sm" placeholder="Color" value={v.color} onChange={(e) => updateVariant(mIdx, vIdx, 'color', e.target.value)} />
-                      <input type="color" className="p-1 border rounded h-10 w-full" value={v.colorHex} onChange={(e) => updateVariant(mIdx, vIdx, 'colorHex', e.target.value)} />
-                      <input type="number" className="p-2 border rounded text-sm" placeholder="Price" value={v.price} onChange={(e) => updateVariant(mIdx, vIdx, 'price', e.target.value)} />
-                      <input type="number" className="p-2 border rounded text-sm" placeholder="Stock" value={v.countInStock} onChange={(e) => updateVariant(mIdx, vIdx, 'countInStock', e.target.value)} />
+                      <input className="p-2.5 border rounded text-sm" placeholder="SKU" value={v.sku} onChange={(e) => updateVariant(mIdx, vIdx, 'sku', e.target.value)} required />
+                      <input className="p-2.5 border rounded text-sm" placeholder="Variant Name" value={v.name} onChange={(e) => updateVariant(mIdx, vIdx, 'name', e.target.value)} required />
+                      <input className="p-2.5 border rounded text-sm" placeholder="Color" value={v.color} onChange={(e) => updateVariant(mIdx, vIdx, 'color', e.target.value)} />
+                      <input type="color" className="p-1 border rounded h-10 w-16" value={v.colorHex} onChange={(e) => updateVariant(mIdx, vIdx, 'colorHex', e.target.value)} />
+                      
+                      {/* NEW: ORIGINAL PRICE + PRICE */}
+                      <div className="sm:col-span-2 lg:col-span-2">
+                        <label className="text-[11px] text-gray-500 flex items-center gap-1 mb-1"><FaInfoCircle /> Original Price = Before any discount</label>
+                        <input type="number" step="0.01" className="p-2.5 border rounded text-sm w-full" placeholder="Original Price: 19.99" value={v.originalPrice} onChange={(e) => updateVariant(mIdx, vIdx, 'originalPrice', e.target.value)} required />
+                      </div>
+                      <div className="sm:col-span-2 lg:col-span-1">
+                        <label className="text-[11px] text-gray-500 flex items-center gap-1 mb-1"><FaInfoCircle /> Selling Price = After discount</label>
+                        <input type="number" step="0.01" className="p-2.5 border rounded text-sm w-full" placeholder="Price: 9.99" value={v.price} onChange={(e) => updateVariant(mIdx, vIdx, 'price', e.target.value)} required />
+                      </div>
+                      <input type="number" className="p-2.5 border rounded text-sm sm:col-span-2 lg:col-span-1" placeholder="Stock" value={v.countInStock} onChange={(e) => updateVariant(mIdx, vIdx, 'countInStock', e.target.value)} />
                     </div>
 
-                    {/* DYNAMIC FIELDS */}
-                    {/* DYNAMIC FIELDS */}
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-  {(accessoryType === 'charger' || accessoryType === 'cable') && (
-    <>
-      <input className="p-2 border rounded text-sm" placeholder="Wattage: 20W" value={v.wattage || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'wattage', e.target.value)} />
-      <input className="p-2 border rounded text-sm" placeholder="Cable Type: USB-C" value={v.cableType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'cableType', e.target.value)} />
-      <input className="p-2 border rounded text-sm" placeholder="Cable Length: 1m" value={v.cableLength || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'cableLength', e.target.value)} />
-    </>
-  )}
+                    <div className="p-3 bg-yellow-50 rounded mb-3 border-yellow-200">
+                      <h6 className="font-semibold text-xs mb-2 text-yellow-800">Single Discount - Percentage / Fixed</h6>
+                      <div className="flex items-center gap-2 mb-2">
+                        <input type="checkbox" className="w-4 h-4" checked={v.discount.isActive} onChange={(e) => updateDiscount(mIdx, vIdx, 'isActive', e.target.checked)} />
+                        <label className="text-xs font-medium">Enable Discount</label>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        <select className="p-2.5 border rounded text-sm" value={v.discount.type} onChange={(e) => updateDiscount(mIdx, vIdx, 'type', e.target.value)}>
+                          <option value="percentage">Percentage %</option>
+                          <option value="fixed">Fixed $</option>
+                        </select>
+                        <input type="number" step="0.01" className="p-2.5 border rounded text-sm" placeholder="Value: 10" value={v.discount.value} onChange={(e) => updateDiscount(mIdx, vIdx, 'value', e.target.value)} />
+                        <input type="date" className="p-2.5 border rounded text-sm" value={v.discount.startDate} onChange={(e) => updateDiscount(mIdx, vIdx, 'startDate', e.target.value)} />
+                        <input type="date" className="p-2.5 border rounded text-sm" value={v.discount.endDate} onChange={(e) => updateDiscount(mIdx, vIdx, 'endDate', e.target.value)} />
+                      </div>
+                    </div>
 
-  {accessoryType === 'glass' && (
-    <>
-      <input className="p-2 border rounded text-sm" placeholder="Hardness: 9H" value={v.hardness || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'hardness', e.target.value)} />
-      <input className="p-2 border rounded text-sm" placeholder="Thickness: 0.3mm" value={v.thickness || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'thickness', e.target.value)} />
-      <input className="p-2 border rounded text-sm" placeholder="Glass Type: Tempered Glass" value={v.glassType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'glassType', e.target.value)} />
-    </>
-  )}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+                      {(accessoryType === 'charger' || accessoryType === 'cable') && (
+                        <>
+                          <input className="p-2.5 border rounded text-sm" placeholder="Wattage: 20W" value={v.wattage || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'wattage', e.target.value)} />
+                          <input className="p-2.5 border rounded text-sm" placeholder="Cable Type: USB-C" value={v.cableType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'cableType', e.target.value)} />
+                          <input className="p-2.5 border rounded text-sm" placeholder="Cable Length: 1m" value={v.cableLength || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'cableLength', e.target.value)} />
+                        </>
+                      )}
+                      {accessoryType === 'glass' && (
+                        <>
+                          <input className="p-2.5 border rounded text-sm" placeholder="Hardness: 9H" value={v.hardness || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'hardness', e.target.value)} />
+                          <input className="p-2.5 border rounded text-sm" placeholder="Thickness: 0.3mm" value={v.thickness || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'thickness', e.target.value)} />
+                          <input className="p-2.5 border rounded text-sm" placeholder="Glass Type: Tempered Glass" value={v.glassType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'glassType', e.target.value)} />
+                        </>
+                      )}
+                      {accessoryType === 'audio' && (
+                        <>
+                          <input className="p-2.5 border rounded text-sm" placeholder="Audio Bits: 32-Bit" value={v.audioBits || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'audioBits', e.target.value)} />
+                          <input className="p-2.5 border rounded text-sm" placeholder="Connector Type: USB-C" value={v.connectorType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'connectorType', e.target.value)} />
+                        </>
+                      )}
+                    </div>
 
-  {accessoryType === 'audio' && (
-    <>
-      <input className="p-2 border rounded text-sm" placeholder="Audio Bits: 32-Bit" value={v.audioBits || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'audioBits', e.target.value)} />
-      <input className="p-2 border rounded text-sm" placeholder="Connector Type: USB-C" value={v.connectorType || ''} onChange={(e) => updateVariant(mIdx, vIdx, 'connectorType', e.target.value)} />
-    </>
-  )}
-</div>
-
-                    {/* BULK PRICING - BOL STYLE */}
                     <div className="p-3 bg-purple-50 rounded mb-3">
-                      <h6 className="font-semibold text-xs mb-2">Bulk Pricing - Like Bol</h6>
+                      <h6 className="font-semibold text-xs mb-2">Bulk Pricing - Like Bol.com</h6>
+                      <p className="text-[11px] text-gray-500 mb-2">Price = price per item. Qty 3 should be cheaper than Qty 1</p>
                       {v.bulkPricing.map((b, bIdx) => (
-                        <div key={bIdx} className="flex gap-2 mb-2 items-center">
-                          <input type="number" className="p-2 border rounded text-sm w-24" placeholder="Qty" value={b.qty} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'qty', e.target.value)} />
-                          <input type="number" className="p-2 border rounded text-sm flex-1" placeholder="Price" value={b.price} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'price', e.target.value)} />
+                        <div key={bIdx} className="flex flex-col sm:flex-row gap-2 mb-2 items-stretch">
+                          <input type="number" className="p-2.5 border rounded text-sm sm:w-20" placeholder="Qty" value={b.qty} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'qty', e.target.value)} />
+                          <input type="number" step="0.01" className="p-2.5 border rounded text-sm sm:w-28" placeholder="Price" value={b.price} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'price', e.target.value)} />
+                          <input type="text" className="p-2.5 border rounded text-sm flex-1" placeholder="Label: 10% OFF" value={b.discountLabel} onChange={(e) => updateBulk(mIdx, vIdx, bIdx, 'discountLabel', e.target.value)} />
                           {v.bulkPricing.length > 1 && (
-                            <button type="button" onClick={() => removeBulk(mIdx, vIdx, bIdx)} className="px-2 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200">
-                              <FaTrash size={12} />
+                            <button type="button" onClick={() => removeBulk(mIdx, vIdx, bIdx)} className="px-3 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200">
+                              <FaTrash size={14} />
                             </button>
                           )}
                         </div>
@@ -299,56 +324,26 @@ const AccessoryCreateScreen = () => {
                       <button type="button" onClick={() => addBulk(mIdx, vIdx)} className="text-sm text-purple-600 font-medium"><FaPlus size={12} /> Add Tier</button>
                     </div>
 
-                    {/* IMAGES - FIXED STYLING */}
                     <div className="mt-3">
-                      <label className='inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer text-sm font-medium w-full justify-center sm:w-auto transition'>
+                      <label className='inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer text-sm font-medium w-full justify-center transition'>
                         <FaPlus /> Upload Variant Images
                         <input type='file' multiple accept="image/*" onChange={(e) => uploadImageHandler(e, mIdx, vIdx)} className='hidden' />
                       </label>
-
                       {v.files?.length > 0 && (
                         <div className="mt-3">
                           <p className="text-xs font-semibold text-gray-600 mb-2">Uploaded Images <span className="text-blue-500">({v.files.length})</span></p>
                           <DragDropContext onDragEnd={(result) => onDragEnd(result, mIdx, vIdx)}>
                             <Droppable droppableId={`dnd-${mIdx}-${vIdx}`} direction="horizontal">
                               {(provided) => (
-                                <div 
-                                  className="flex gap-3 overflow-x-auto pb-2 pt-1" 
-                                  {...provided.droppableProps} 
-                                  ref={provided.innerRef}
-                                >
+                                <div className="flex gap-3 overflow-x-auto pb-2 pt-1" {...provided.droppableProps} ref={provided.innerRef}>
                                   {v.files.map((img, imgIndex) => (
                                     <Draggable key={img.name + imgIndex} draggableId={img.name + imgIndex} index={imgIndex}>
                                       {(provided, snapshot) => (
-                                        <div 
-                                          ref={provided.innerRef} 
-                                          {...provided.draggableProps} 
-                                          className={`relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 group ${snapshot.isDragging? 'opacity-50' : ''}`}
-                                        >
-                                          <div 
-                                            {...provided.dragHandleProps} 
-                                            className='absolute top-1 left-1 bg-black/70 p-1.5 rounded-md cursor-grab z-10 hover:bg-black/90'
-                                          >
-                                            <FaGripVertical className="text-white text-xs" />
-                                          </div>
-
-                                          <img 
-                                            src={URL.createObjectURL(img)} 
-                                            className="w-full h-full object-contain rounded-lg border bg-white p-1"  
-                                            alt={`preview ${imgIndex}`}
-                                          />
-
-                                          <span className="absolute -top-2 -left-2 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
-                                            NEW
-                                          </span>
-
-                                          <button 
-                                            type="button" 
-                                            onClick={() => removeImageHandler(mIdx, vIdx, imgIndex)} 
-                                            className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-10"
-                                          >
-                                            <FaTimes size={12} />
-                                          </button>
+                                        <div ref={provided.innerRef} {...provided.draggableProps} className={`relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 group ${snapshot.isDragging? 'opacity-50' : ''}`}>
+                                          <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/70 p-1.5 rounded-md cursor-grab z-10 hover:bg-black/90'><FaGripVertical className="text-white text-xs" /></div>
+                                          <img src={URL.createObjectURL(img)} className="w-full h-full object-contain rounded-lg border bg-white p-1" alt={`preview ${imgIndex}`} />
+                                          <span className="absolute -top-2 -left-2 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">NEW</span>
+                                          <button type="button" onClick={() => removeImageHandler(mIdx, vIdx, imgIndex)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-10"><FaTimes size={12} /></button>
                                         </div>
                                       )}
                                     </Draggable>
@@ -363,7 +358,7 @@ const AccessoryCreateScreen = () => {
                     </div>
                   </div>
                 ))}
-                <button type="button" onClick={() => addVariant(mIdx)} className="flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg border-2 border-dashed w-full text-sm font-medium hover:bg-green-100">
+                <button type="button" onClick={() => addVariant(mIdx)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 text-green-600 rounded-lg border-2 border-dashed w-full text-sm font-medium hover:bg-green-100">
                   <FaPlus /> Add Variant
                 </button>
               </div>
@@ -371,7 +366,7 @@ const AccessoryCreateScreen = () => {
           ))}
         </div>
 
-        <button type="submit" disabled={isLoading || uploading} className={`w-full py-3 rounded-xl font-bold text-white ${isLoading || uploading? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}>
+        <button type="submit" disabled={isLoading || uploading} className={`w-full py-3 rounded-xl font-bold text-white text-sm sm:text-base ${isLoading || uploading? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}>
           {isLoading || uploading? 'Creating...' : 'Create Accessory'}
         </button>
       </form>

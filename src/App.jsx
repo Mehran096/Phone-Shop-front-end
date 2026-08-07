@@ -22,6 +22,7 @@ import ProductEditScreen from './screens/admin/ProductEditScreen';
 import AccessoryListScreen from './screens/admin/AccessoryListScreen';
 import AccessoryCreateScreen from './screens/admin/AccessoryCreateScreen';
 import AccessoryEditScreen from './screens/admin/AccessoryEditScreen';
+import AccessoryDetailScreen from './screens/admin/AccessoryDetailScreen';
 
 
 import UserListScreen from './screens/admin/UserListScreen';
@@ -206,6 +207,7 @@ const dispatch = useDispatch()
               <Route path='/admin/accessorylist' element={<AccessoryListScreen />} />
               <Route path='/admin/accessory/create' element={<AccessoryCreateScreen />} />
               <Route path='/admin/accessory/:id/edit' element={<AccessoryEditScreen />} />
+              <Route path='/admin/accessory/:id' element={<AccessoryDetailScreen />} />
 
               <Route path="/admin/orderlist" element={<OrderListScreen />} />
               <Route path="/admin/userlist" element={<UserListScreen />} />
