@@ -3,13 +3,15 @@ import { toast } from 'react-toastify'
 import api from '../utils/axios'
 
  
-// 1. CREATE ORDER - COD ONLY
+// 1. CREATE ORDER - COD + STRIPE
 export const createOrder = createAsyncThunk(
   'order/createOrder',
   async (orderData, { rejectWithValue }) => {
     try {
       const orderItems = orderData.orderItems.map(item => ({
+        // REFERENCE ID: same field for both, backend decides product vs accessory
         product: item.product, 
+        
         name: item.name,
         image: item.image,
         slug: item.slug,
@@ -18,14 +20,20 @@ export const createOrder = createAsyncThunk(
         discountAmount: Number(item.discountAmount || 0),  
         qty: item.qty,
         color: item.color,
-        storage: item.storage,
+        storage: item.storage, // only for products
+
+        // === NEW: SMART LINK FIELDS FOR ACCESSORIES ===
+        variantType: item.variantType || 'product', // 'product' or 'accessory'
+        variantName: item.variantName, // 'storage' or 'glass' or 'cable'
+        variantSubName: item.variantSubName, // '256GB' or 'White-2-Pack'
+        model: item.model, // 'iPhone 17 Pro Max' or 'Universal'
+        sku: item.sku,
       }))
 
       const payload = {
         orderItems,
         shippingAddress: orderData.shippingAddress,
-        paymentMethod: 'COD',
-         
+        paymentMethod: orderData.paymentMethod || 'COD', // use dynamic paymentMethod
       }
 
       const { data } = await api.post('/orders', payload)

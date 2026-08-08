@@ -66,7 +66,7 @@ const taxPrice = addDecimals(
     try {
       const orderData = {
         orderItems: cart.cartItems.map((item) => ({
-          product: item.product,
+          product: item.product, // same field for product + accessory. Backend will split it
           name: item.name,
           image: item.image,
           slug: item.slug,
@@ -75,8 +75,14 @@ const taxPrice = addDecimals(
           discountAmount: Number(item.discountAmount || 0),
           qty: item.qty,
           color: item.color,
-          storage: item.storage,
-          //variant: item.variant,
+          storage: item.storage, // will be undefined for accessories, that's fine
+
+          // === NEW: SEND VARIANT DATA FOR SMART LINKS ===
+          variantType: item.variantType || 'product', // 'product' or 'accessory'
+          variantName: item.variantName, // 'storage' or 'glass' or 'cable'
+          variantSubName: item.variantSubName, // '256GB' or 'White-2-Pack'
+          model: item.model, // 'iPhone 17 Pro Max' or 'Universal'
+          sku: item.sku,
         })),
         shippingAddress: cart.shippingAddress,
         paymentMethod: cart.paymentMethod,
@@ -87,10 +93,7 @@ const taxPrice = addDecimals(
       }
 
       if (cart.paymentMethod === 'COD') {
-        //console.log('Sending to backend:', orderData.orderItems)
         const newOrder = await dispatch(createOrder(orderData)).unwrap() // CAPTURE THE RESPONSE
-        //console.log('Order created:', newOrder) // This will show the _id
-
         navigate(`/order/${newOrder._id}`) // NAVIGATE USING THE RESPONSE
         dispatch(clearCartItems())         // CLEAR AFTER NAVIGATE
         dispatch(resetOrder())             // RESET ORDER STATE
