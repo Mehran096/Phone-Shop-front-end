@@ -60,8 +60,8 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   const dispatch = useDispatch()
   const [searchParams] = useSearchParams();
 
-  const dealStorage = searchParams.get('storage');
-  const dealColor = searchParams.get('color');
+  // const dealStorage = searchParams.get('storage');
+  // const dealColor = searchParams.get('color');
 
   const { userInfo } = useSelector((state) => state.auth)
   const { data: product, isLoading, error, refetch } = useGetProductBySlugQuery(slug)
@@ -182,37 +182,34 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
 
 
   const isMounted = useRef(false);
+  
   useEffect(() => {
-    if (!product) return;
+  if (!product) return;
 
-    // PRIORITY 1: Check if coming from Wishlist with URL params
-    const urlColor = searchParams.get('color');
-    const urlStorage = searchParams.get('storage');
+  // Auto-select from URL - Works for Cart, Wishlist, Deals
+  const urlColor = searchParams.get('color');
+  const urlStorage = searchParams.get('storage');
 
-    if (urlColor && urlStorage) {
-      const variantIndex = product.variants?.findIndex(v => v.storage === urlStorage);
-      const colorIndex = variantIndex >= 0
-        ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === urlColor)
-        : -1;
-
-      setSelectedVariantIndex(variantIndex >= 0 ? variantIndex : 0);
-      setSelectedColorIndex(colorIndex >= 0 ? colorIndex : 0);
-      isMounted.current = true;
-      return; // Exit so wishlist params override deals
-    }
-
-    // PRIORITY 2: Your existing Deal logic
-    const variantIndex = product.variants?.findIndex(v => v.storage === dealStorage);
-    const colorIndex = variantIndex >= 0
-      ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === dealColor)
+  if (urlColor && urlStorage) {
+    const variantIndex = product.variants?.findIndex(v => v.storage === urlStorage);
+    const colorIndex = variantIndex >= 0 
+     ? product.variants[variantIndex]?.colors?.findIndex(c => c.name === urlColor)
       : -1;
 
-    setSelectedVariantIndex(variantIndex >= 0 ? variantIndex : 0);
-    setSelectedColorIndex(colorIndex >= 0 ? colorIndex : 0);
-
-    // NEW: Mark as ready to save after URL/defaults are set
+    setSelectedVariantIndex(variantIndex >= 0? variantIndex : 0);
+    setSelectedColorIndex(colorIndex >= 0? colorIndex : 0);
     isMounted.current = true;
-  }, [product, dealStorage, dealColor, searchParams]);
+    return; // Exit so it doesn't reset
+  }
+
+  // Default if no params in URL
+  if (!isMounted.current) {
+    setSelectedVariantIndex(0);
+    setSelectedColorIndex(0);
+  }
+  isMounted.current = true;
+
+}, [product, searchParams]);
 
   //recently viewed useEffect
 
@@ -330,9 +327,7 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
 
   // }
 
-  const addToCartHandler = (itemData = null) => {
-    // If itemData is passed = from recommendations/quickview
-    // If null = from main product page
+  const addToCartHandler = (itemData = null) => { 
 
     const productToAdd = itemData?.product || product
     const variantToAdd = itemData?.variant || selectedVariant
@@ -362,13 +357,19 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
       name: productToAdd.name,
       slug: productToAdd.slug,
       image: imageUrl,
+
       price: isDiscountActive ? finalPrice : price,
       originalPrice: price,
-      discountAmount,
+      discountAmount: discountAmount,
       discount: colorToAdd?.discount,
+
+      // ADD THESE 2 LINES - THIS FIXES IT
+      variantType: 'phone',
+      variantName: variantToAdd?.storage || colorToAdd?.name || 'Default',
+
       color: colorToAdd?.name || '',
-      countInStock: colorToAdd?.countInStock ?? variantToAdd?.countInStock ?? 0,
       storage: variantToAdd?.storage || '',
+      countInStock: colorToAdd?.countInStock ?? variantToAdd?.countInStock ?? 0,
       qty: qtyToAdd,
     }));
 

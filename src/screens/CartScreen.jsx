@@ -3,9 +3,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Helmet } from 'react-helmet-async';
 import { removeFromCart, updateCartQty } from '../slices/cartSlice';
 import { Link } from 'react-router-dom';
-import { FaShoppingCart, FaChevronDown, FaTrash } from 'react-icons/fa';
+import { FaShoppingCart, FaChevronDown, FaTrash, FaTag } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+
+const ACCESSORY_TYPE_LABELS = {
+  case: 'Case', charger: 'Charger', cable: 'Cable', 
+  glass: 'Glass', audio: 'Audio', holder: 'Holder', other: 'Other'
+}
 
 function CartScreen() {
   const { cartItems } = useSelector((state) => state.cart);
@@ -22,19 +27,29 @@ function CartScreen() {
     }
   };
 
+  // FIX 1: Pass ALL fields so we delete correct variant + model
   const removeFromCartHandler = (item) => {
     dispatch(removeFromCart({
       product: item.product,
+      model: item.model, // NEW
       color: item.color,
       storage: item.storage,
+      variantType: item.variantType,
+      variantName: item.variantName,
+      variantSubName: item.variantSubName, // NEW
     }));
   };
 
+  // FIX 2: Pass ALL fields so we update correct variant + model
   const updateQtyHandler = (item, qty) => {
     dispatch(updateCartQty({
       product: item.product,
+      model: item.model, // NEW
       color: item.color,
       storage: item.storage,
+      variantType: item.variantType,
+      variantName: item.variantName,
+      variantSubName: item.variantSubName, // NEW
       qty: Number(qty),
     }));
   };
@@ -51,8 +66,24 @@ function CartScreen() {
   );
   const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
 
+  const getProductLink = (item) => {
+  const base = item.variantType === 'accessory'
+    ? `/accessory/${item.slug || item.product}`
+    : `/product/${item.slug || item.product}`;
+
+  // Build query string with all selected options
+  const params = new URLSearchParams();
+  if(item.color) params.append('color', item.color);
+  if(item.storage) params.append('storage', item.storage);
+  if(item.model) params.append('model', item.model);
+  if(item.variantName) params.append('variant', item.variantName);
+  if(item.variantSubName) params.append('variantSub', item.variantSubName);
+  if(item.qty && item.qty > 1) params.append('qty', item.qty); // <-- ADD THIS LINE
+
+  return `${base}?${params.toString()}`;
+}
+
   //drop down qty 
-  // V34.37 KEY: Reusable Dropdown - Works Mobile + Desktop
   const CustomDropdown = ({ value, onChange, options }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
@@ -121,33 +152,52 @@ function CartScreen() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4"> {/* V16.6 KEY: 1 col mobile, 3 col desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
             {/* Left: Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <div key={`${item.product}-${item.color}-${item.storage}`} className="flex flex-col p-3 lg:p-4 border-gray-200 rounded-xl bg-white shadow-sm">
+                // FIX 3: Key now includes model + variantSubName so nothing clashes
+                <div key={`${item.product}-${item.model}-${item.variantName}-${item.variantSubName}-${item.color}`} className="flex flex-col p-3 lg:p-4 border-gray-200 rounded-xl bg-white shadow-sm">
 
                   {/* TOP: Image + Info Row */}
                   <div className="flex gap-4">
-                    {/* V16.6 KEY: FIXED SMALL IMAGE ON MOBILE */}
-                    <Link to={`/product/${item.slug || item.product}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`}>
-  <img
-    src={item.image || '/placeholder.png'}
-    alt={item.name}
-    className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0"
-  />
-</Link>
+                    <Link to={getProductLink(item)}>
+                      <img
+                        src={item.image || '/placeholder.png'}
+                        alt={item.name}
+                        className="w-20 h-20 lg:w-24 lg:h-24 object-contain rounded-lg bg-white border-gray-200 p-1 flex-shrink-0"
+                      />
+                    </Link>
 
                     {/* Info */}
                     <div className="flex-1 flex-col">
-                      <Link to={`/product/${item.slug || item.product}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`} className="hover:underline">
+                     <Link to={getProductLink(item)} className="hover:underline">
                         <h2 className="font-bold text-gray-900 text-base leading-tight">
-                          {item.name}{item.storage ? ` - ${item.storage}` : ''}
+                          {item.name}
                         </h2>
                       </Link>
-                      <p className="text-xs text-gray-600 mt-1">Color: <span className="font-medium">{item.color || 'Default'}</span></p>
-                      <p className="text-xs text-gray-600">Storage: <span className="font-medium">{item.storage || 'N/A'}</span></p>
+
+                      {/* FIX 4: CONDITIONAL VARIANT DISPLAY FOR PHONE vs ACCESSORY */}
+                      <div className="text-xs text-gray-600 mt-1 space-y-0.5">
+                      {(item.variantType === 'phone' || item.storage)? ( // Phone
+                        <>
+                          <p>Color: <span className="font-medium">{item.color || 'Default'}</span></p>
+                          {item.storage && <p>Storage: <span className="font-medium">{item.storage}</span></p>}
+                        </>
+                      ) : ( // Accessory
+                        <>
+                          {item.model && item.model !== 'Universal' && <p>Model: <span className="font-medium">{item.model}</span></p>}
+                          <p>Type: <span className="font-medium capitalize">{ACCESSORY_TYPE_LABELS[item.variantName] || item.variantName}</span></p>
+                          {item.variantSubName && <p>Variant: <span className="font-medium">{item.variantSubName}</span></p>}
+                          <p>Color: <span className="font-medium">{item.color || 'Default'}</span></p>
+                          <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] font-semibold mt-1">
+                            <FaTag className="text-[10px]" /> Accessory
+                          </span>
+                        </>
+                      )}
+                    </div>
+
                       <div className="mt-2">
                         <p className="text-lg font-bold text-red-600">
                           ${Number(item.price || 0).toFixed(2)}
@@ -158,9 +208,8 @@ function CartScreen() {
                             <p className="text-sm text-gray-500 line-through">
                               ${Number(item.originalPrice).toFixed(2)}
                             </p>
-
                             <p className="text-sm text-green-600 font-medium">
-                              You save ${Number(item.discountAmount || 0).toFixed(2)}
+                              You save ${Number(item.discountAmount || 0).toFixed(2)} each
                             </p>
                           </>
                         )}
@@ -169,13 +218,13 @@ function CartScreen() {
                   </div>
 
                   {/* BOTTOM: Qty + Remove FULL WIDTH ROW */}
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100"> {/* V16.6 KEY */}
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-2">
                       <label className="text-sm font-medium text-gray-700">Qty</label>
                       <CustomDropdown
                         value={item.qty}
                         onChange={(val) => updateQtyHandler(item, Number(val))}
-                        options={Array.from({ length: Math.min(item.countInStock, 10) }, (_, i) => i + 1)}
+                        options={Array.from({ length: Math.min(item.countInStock || 10, 10) }, (_, i) => i + 1)}
                       />
                     </div>
                     <button
@@ -199,18 +248,15 @@ function CartScreen() {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal ({cartItemsCount} items)</span>
-
                     <div className="text-right">
                       <div className="font-semibold text-gray-900">
                         ${cartSubtotal.toFixed(2)}
                       </div>
-
                       {totalSavings > 0 && (
                         <>
                           <div className="text-xs text-gray-500 line-through">
                             ${originalSubtotal.toFixed(2)}
                           </div>
-
                           <div className="text-xs text-green-600 font-medium">
                             You save ${totalSavings.toFixed(2)}
                           </div>
@@ -220,7 +266,7 @@ function CartScreen() {
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
-                    <span className="text-green-600 font-semibold">Free</span>
+                    <span className="text-green-600 font-semibold">Calculated at checkout</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-3">
                     <span>Total</span>
@@ -246,4 +292,4 @@ function CartScreen() {
   );
 }
 
-export default CartScreen;
+export default CartScreen; 

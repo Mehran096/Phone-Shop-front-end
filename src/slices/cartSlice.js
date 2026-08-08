@@ -1,6 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-// Read from separate localStorage keys - NOT 'cart'
 const cartItemsFromStorage = localStorage.getItem('cartItems')
   ? JSON.parse(localStorage.getItem('cartItems'))
   : []
@@ -13,35 +12,28 @@ const paymentMethodFromStorage = localStorage.getItem('paymentMethod')
   ? localStorage.getItem('paymentMethod')
   : 'Stripe'
 
+const itemsPriceFromStorage = localStorage.getItem('itemsPrice')
+  ? localStorage.getItem('itemsPrice')
+  : 0
+
 const initialState = {
   cartItems: cartItemsFromStorage,
   shippingAddress: shippingAddressFromStorage,
   paymentMethod: paymentMethodFromStorage,
-  itemsPrice: 0,
-  shippingPrice: 0,
-  taxPrice: 0,
-  totalPrice: 0,
+  itemsPrice: itemsPriceFromStorage,
 }
 
-const updateCartPrices = (state) => {
+const updateCart = (state) => {
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2)
   }
 
   state.itemsPrice = addDecimals(
-    state.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
-  )
-
-  state.shippingPrice = addDecimals(state.itemsPrice > 100 ? 0 : 10)
-   
-
-  state.totalPrice = addDecimals(
-    Number(state.itemsPrice) +
-    Number(state.shippingPrice) +
-    Number(state.taxPrice)
+    state.cartItems.reduce((acc, item) => acc + Number(item.price) * item.qty, 0)
   )
 
   localStorage.setItem('cartItems', JSON.stringify(state.cartItems))
+  localStorage.setItem('itemsPrice', state.itemsPrice)
 }
 
 const cartSlice = createSlice({
@@ -51,42 +43,63 @@ const cartSlice = createSlice({
     addToCart: (state, action) => {
       const item = action.payload
 
+      // FIX: Key now includes model + variantSubName
       const existItem = state.cartItems.find(
-        (x) => x.product === item.product && x.color === item.color && x.storage === item.storage
+        (x) => 
+          x.product === item.product && 
+          x.model === item.model && // NEW
+          x.color === item.color && 
+          x.storage === item.storage &&
+          x.variantType === item.variantType &&
+          x.variantName === item.variantName &&
+          x.variantSubName === item.variantSubName // NEW
       )
 
       if (existItem) {
-        state.cartItems = state.cartItems.map((x) =>
-          x.product === existItem.product && x.color === existItem.color && x.storage === existItem.storage ? item : x
-        )
+        // If same item exists, just update qty and price
+        existItem.qty = item.qty
+        existItem.price = item.price
+        existItem.discountAmount = item.discountAmount
       } else {
-        state.cartItems = [
-          ...state.cartItems,
-          { ...item },
-           
-        ]
+        // New item
+        state.cartItems = [...state.cartItems, { ...item }]
       }
 
-      updateCartPrices(state)
+      updateCart(state)
     },
 
     removeFromCart: (state, action) => {
-      const { product, color, storage } = action.payload
+      const { product, model, color, storage, variantType, variantName, variantSubName } = action.payload
       state.cartItems = state.cartItems.filter(
-        (x) => !(x.product === product && x.color === color && x.storage === storage)
+        (x) => !(
+          x.product === product && 
+          x.model === model && // NEW
+          x.color === color && 
+          x.storage === storage &&
+          x.variantType === variantType &&
+          x.variantName === variantName &&
+          x.variantSubName === variantSubName // NEW
+        )
       )
-      updateCartPrices(state)
+      updateCart(state)
     },
 
     updateCartQty: (state, action) => {
-      const { product, color, storage, qty } = action.payload
+      const { product, model, color, storage, variantType, variantName, variantSubName, qty } = action.payload
       const existItem = state.cartItems.find(
-        (x) => x.product === product && x.color === color && x.storage === storage
+        (x) => 
+          x.product === product && 
+          x.model === model && // NEW
+          x.color === color && 
+          x.storage === storage &&
+          x.variantType === variantType &&
+          x.variantName === variantName &&
+          x.variantSubName === variantSubName // NEW
       )
       if (existItem) {
         existItem.qty = qty
       }
-      updateCartPrices(state)
+      updateCart(state)
     },
 
     saveShippingAddress: (state, action) => {
@@ -101,16 +114,14 @@ const cartSlice = createSlice({
 
     setCartItems: (state, action) => {
       state.cartItems = action.payload
-      updateCartPrices(state)
+      updateCart(state)
     },
 
     clearCartItems: (state) => {
       state.cartItems = []
       state.itemsPrice = 0
-      state.shippingPrice = 0
-      state.taxPrice = 0
-      state.totalPrice = 0
       localStorage.removeItem('cartItems')
+      localStorage.removeItem('itemsPrice')
     },
 
     resetCart: (state) => {
@@ -118,12 +129,10 @@ const cartSlice = createSlice({
       state.shippingAddress = {}
       state.paymentMethod = ''
       state.itemsPrice = 0
-      state.shippingPrice = 0
-      state.taxPrice = 0
-      state.totalPrice = 0
       localStorage.removeItem('cartItems')
       localStorage.removeItem('shippingAddress')
       localStorage.removeItem('paymentMethod')
+      localStorage.removeItem('itemsPrice')
     },
   },
 })

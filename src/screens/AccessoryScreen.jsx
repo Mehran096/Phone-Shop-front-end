@@ -31,7 +31,6 @@ const AccessoryScreen = () => {
 
   const [qty, setQty] = useState(1);
   const [mainImage, setMainImage] = useState('');
-  const [isSettingDefaults, setIsSettingDefaults] = useState(false);
 
   const { data: accessory, isLoading, error } = useGetAccessoryBySlugQuery(slug);
 
@@ -46,12 +45,77 @@ const AccessoryScreen = () => {
     return Array.from(map.values());
   }, [accessory, hasModels]);
 
-  const selectedModelName = searchParams.get('model') || '';
-  const selectedVariantName = searchParams.get('variant') || '';
+  // === GLOBAL SMART LINK: Works for Cart, Wishlist, Deals ===
+  const urlModel = searchParams.get('model');
+  const urlVariant = searchParams.get('variant');
+  const urlVariantSub = searchParams.get('variantSub');
+  const urlColor = searchParams.get('color');
+  const urlQty = Number(searchParams.get('qty')) || 1;
+
+  // useEffect(() => {
+  //   if (!accessory) return;
+
+  //   let modelToSet = urlModel;
+  //   let variantToSet = urlVariant;
+
+  //   // If no params in URL, set defaults
+  //   if (!modelToSet &&!variantToSet) {
+  //     if (hasModels && uniqueModels.length > 0) {
+  //       modelToSet = uniqueModels[0].modelName;
+  //       variantToSet = uniqueModels[0].variants?.[0]?.name || '';
+  //     } else if (accessory.variants?.length > 0) {
+  //       modelToSet = 'Universal';
+  //       variantToSet = accessory.variants[0].name;
+  //     }
+  //   }
+
+  //   // Only update URL if it's different to prevent loops
+  //   if (modelToSet && modelToSet!== urlModel) {
+  //     setSearchParams({ model: modelToSet, variant: variantToSet || '' });
+  //   }
+    
+  // }, [accessory, hasModels, uniqueModels, urlModel, urlVariant, setSearchParams]);
+
+  useEffect(() => {
+  if (!accessory) return;
+
+  let modelToSet = urlModel;
+  let variantToSet = urlVariant;
+  let qtyToSet = urlQty;
+
+  // If no params in URL, set defaults
+  if (!modelToSet &&!variantToSet) {
+    if (hasModels && uniqueModels.length > 0) {
+      modelToSet = uniqueModels[0].modelName;
+      variantToSet = uniqueModels[0].variants?.[0]?.name || '';
+    } else if (accessory.variants?.length > 0) {
+      modelToSet = 'Universal';
+      variantToSet = accessory.variants[0].name;
+    }
+  }
+
+  // Set qty from URL if bulk link
+  if (urlQty > 1) {
+    setQty(qtyToSet);
+  }
+
+  // Only update URL if it's different to prevent loops
+  if (modelToSet && modelToSet!== urlModel) {
+    const params = new URLSearchParams();
+    params.set('model', modelToSet);
+    params.set('variant', variantToSet || '');
+    if(urlQty > 1) params.set('qty', urlQty);
+    setSearchParams(params);
+  }
+  
+}, [accessory, hasModels, uniqueModels, urlModel, urlVariant, urlQty, setSearchParams]);
+
+  const selectedModelName = urlModel || '';
+  const selectedVariantName = urlVariant || '';
 
   const selectedModel = useMemo(() => {
     if (!hasModels) return null;
-    return uniqueModels.find(m => m.modelName === selectedModelName) || null;
+    return uniqueModels.find(m => m.modelName === selectedModelName) || uniqueModels[0] || null;
   }, [uniqueModels, selectedModelName, hasModels]);
 
   const availableVariants = useMemo(() => {
@@ -62,34 +126,34 @@ const AccessoryScreen = () => {
     }
   }, [selectedModel, accessory, hasModels]);
 
-  const selectedVariant = useMemo(() => {
-    if (!availableVariants.length) return null;
-    return availableVariants.find(v => v.name === selectedVariantName) || availableVariants[0] || null;
-  }, [availableVariants, selectedVariantName]);
+ const selectedVariant = useMemo(() => {
+  if (!availableVariants.length) return null;
 
-  useEffect(() => {
-    if (!accessory || isSettingDefaults) return;
-    const currentModel = searchParams.get('model');
-    const currentVariant = searchParams.get('variant');
+  let foundVariant = null;
 
-    if (!currentModel && !currentVariant) {
-      setIsSettingDefaults(true);
-      if (hasModels && uniqueModels.length > 0) {
-        const firstModel = uniqueModels[0];
-        const firstVariant = firstModel.variants?.[0];
-        setSearchParams({
-          model: firstModel.modelName,
-          variant: firstVariant?.name || ''
-        });
-      } else if (accessory.variants?.length > 0) {
-        setSearchParams({
-          model: 'Universal',
-          variant: accessory.variants[0].name
-        });
-      }
-      setTimeout(() => setIsSettingDefaults(false), 100);
-    }
-  }, [accessory, hasModels, uniqueModels, searchParams, setSearchParams, isSettingDefaults]);
+  // PRIORITY 1: Match by color from URL
+  if (urlColor) {
+    foundVariant = availableVariants.find(v => 
+      v.color?.toLowerCase() === urlColor.toLowerCase() || 
+      v.name?.toLowerCase() === urlColor.toLowerCase()
+    );
+  }
+
+  // PRIORITY 2: Match by variantSub from URL
+  if (!foundVariant && urlVariantSub) {
+    foundVariant = availableVariants.find(v => 
+      v.name?.toLowerCase() === urlVariantSub.toLowerCase()
+    );
+  }
+
+  // PRIORITY 3: Match by variant name from URL
+  if (!foundVariant && selectedVariantName) {
+    foundVariant = availableVariants.find(v => v.name === selectedVariantName);
+  }
+
+  // PRIORITY 4: Default
+  return foundVariant || availableVariants[0] || null;
+}, [availableVariants, selectedVariantName, urlColor, urlVariantSub]);
 
   // === USE DATA DIRECTLY FROM BACKEND ===
   const originalPrice = Number(selectedVariant?.originalPrice || 0);
@@ -98,17 +162,14 @@ const AccessoryScreen = () => {
   const displaySKU = selectedVariant?.sku || '';
   const discount = selectedVariant?.discount;
   const isOutOfStock = displayStock <= 0;
+  
   // === FIX: GET CORRECT PRICE BASED ON QUANTITY ===
   const getPriceForQuantity = (quantity) => {
     const bulkPricing = selectedVariant?.bulkPricing || [];
-
-    // Find the highest tier that matches the quantity
     const applicableTier = bulkPricing
-      .filter(tier => quantity >= tier.qty)
-      .sort((a, b) => b.qty - a.qty)[0];
-
-    // If we found a bulk tier, use it. Otherwise use base price
-    return applicableTier ? Number(applicableTier.price) : basePrice;
+     .filter(tier => quantity >= tier.qty)
+     .sort((a, b) => b.qty - a.qty)[0];
+    return applicableTier? Number(applicableTier.price) : basePrice;
   }
 
   const finalPrice = getPriceForQuantity(qty);
@@ -117,14 +178,14 @@ const AccessoryScreen = () => {
   // Calculate savings - TOTAL for all quantity
   const originalTotal = (originalPrice * qty).toFixed(2);
   const totalSavings = (originalTotal - totalPrice).toFixed(2);
-  const savingsPercent = originalPrice > 0 ? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
+  const savingsPercent = originalPrice > 0? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
+  const discountAmountPerItem = originalPrice - finalPrice; // for cart
 
-  // For bulk tier UI - these are just for display. Real price updates on cart
   const bulkPricing = selectedVariant?.bulkPricing || [];
 
   const getImageUrls = (images) => {
-    if (!images || !Array.isArray(images)) return [];
-    return images.map(img => typeof img === 'string' ? img : img?.url || '').filter(Boolean);
+    if (!images ||!Array.isArray(images)) return [];
+    return images.map(img => typeof img === 'string'? img : img?.url || '').filter(Boolean);
   };
 
   const displayImages = getImageUrls(selectedVariant?.images || []);
@@ -132,45 +193,72 @@ const AccessoryScreen = () => {
   const modelSpecs = selectedModel?.specs || [];
 
   const handleModelChange = (modelName) => {
-    const newModel = uniqueModels.find(m => m.modelName === modelName);
-    if (!newModel) return;
-    const firstVariant = newModel.variants?.[0];
-    setSearchParams({
-      model: modelName,
-      variant: firstVariant?.name || ''
-    });
-  };
+  const newModel = uniqueModels.find(m => m.modelName === modelName);
+  if (!newModel) return;
+  const firstVariant = newModel.variants?.[0];
+  const params = new URLSearchParams(searchParams);
+  params.set('model', modelName);
+  params.set('variant', firstVariant?.name || '');
+  params.set('variantSub', firstVariant?.name || '');
+  params.set('color', firstVariant?.color || firstVariant?.name || '');
+  params.set('qty', 1);
+  setSearchParams(params);
+  setQty(1);
+};
 
-  const handleVariantChange = (variantName) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('variant', variantName);
-    setSearchParams(params);
+ const handleVariantChange = (variantName) => {
+  const selectedV = availableVariants.find(v => v.name === variantName);
+  const params = new URLSearchParams(searchParams);
+  params.set('variant', variantName);
+  params.set('variantSub', variantName);
+  if (selectedV?.color) params.set('color', selectedV.color);
+  else params.set('color', variantName);
+  params.set('qty', 1); // reset qty when variant changes
+  setSearchParams(params);
+  setQty(1);
+};
+
+  const displayTitle = `${accessory?.name || ''} ${hasModels && selectedModelName? `for ${selectedModelName}` : ''} ${selectedVariant? `(${selectedVariant.name})` : ''}`;
+
+ useEffect(() => {
+  setMainImage(displayImages[0] || '');
+  // Don't reset qty if it came from URL
+  if(urlQty <= 1) {
     setQty(1);
-  };
+  }
+}, [selectedVariant?.sku, urlQty]);
 
-  const displayTitle = `${accessory?.name || ''} ${hasModels && selectedModelName ? `for ${selectedModelName}` : ''} ${selectedVariant ? `(${selectedVariant.name})` : ''}`;
-
-  useEffect(() => {
-    setMainImage(displayImages[0] || '');
-    setQty(1);
-  }, [selectedVariant?.sku]);
-
+  // === FINAL FIXED ADD TO CART ===
   const addToCartHandler = () => {
     if (!selectedVariant) return toast.error('Please select an option');
+    
+    // Split "Clear 9H" into Color and Variant
+    const variantParts = selectedVariant.name.split(' ');
+    const variantColor = selectedVariant.color || variantParts[0] || 'Default'; // 'Clear'
+    const variantSubType = selectedVariant.name; // 'Clear 9H' - full name
+    
+    const discountAmountPerItem = originalPrice - finalPrice;
+    const currentModel = hasModels? selectedModelName : 'Universal'; // 'iPhone 17 Pro Max'
+
     dispatch(addToCart({
-      ...accessory,
-      qty,
-      model: hasModels ? selectedModelName : 'Universal',
-      variant: selectedVariant.name,
-      colorHex: selectedVariant.colorHex,
-      sku: displaySKU,
-      price: finalPrice, // final price per item from backend for qty=1
-      originalPrice: originalPrice,
+      product: accessory._id,
+      name: accessory.name,
+      slug: accessory.slug || accessory._id,
       image: mainImage,
-      discount: discount,
-      bulkPricing: bulkPricing,
-      appliedTierQty: qty,
+      price: finalPrice, // bulk price for current qty
+      originalPrice: originalPrice, // for "you save"
+      discountAmount: discountAmountPerItem, // per item saving
+      variantType: 'accessory', // tell cart this is accessory
+      variantName: accessory.accessoryType, // 'glass' 'cable' 'case' <-- THIS IS TYPE
+      variantSubName: variantSubType, // 'Clear 9H' '3M' <-- THIS IS SUB TYPE
+      color: variantColor, // 'Clear' 'Black'
+      storage: '', // empty for accessories
+      model: currentModel, // 'iPhone 17 Pro Max' to prevent overwrite
+      qty: qty,
+      sku: displaySKU,
+      countInStock: displayStock,
     }));
+    
     toast.success('Added to cart');
     navigate('/cart');
   };
@@ -231,11 +319,10 @@ const AccessoryScreen = () => {
               )}
               {discount?.isActive && discount?.value > 0 && (
                 <span className='px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded flex items-center gap-1'>
-                  <FaTag />-{discount.value}{discount.type === 'percentage' ? '%' : '$'}
+                  <FaTag />-{discount.value}{discount.type === 'percentage'? '%' : '$'}
                 </span>
               )}
             </div>
-
 
             <p className="text-lg font-bold text-green-600">
               Estimated Total: ${totalPrice}
@@ -247,13 +334,12 @@ const AccessoryScreen = () => {
               </p>
             )}
 
-
             <p className='text-xs text-gray-500 mt-1'>per item for qty {qty}</p>
             <p className='text-xs text-gray-400 mt-1'>SKU: {displaySKU}</p>
           </div>
 
           <div className='mb-5'>
-            {displayStock > 0 ? <span className='text-green-600 flex items-center gap-1 text-sm'><FaCheck /> In Stock ({displayStock})</span> : <span className='text-red-600 text-sm'>Out Of Stock</span>}
+            {displayStock > 0? <span className='text-green-600 flex items-center gap-1 text-sm'><FaCheck /> In Stock ({displayStock})</span> : <span className='text-red-600 text-sm'>Out Of Stock</span>}
           </div>
 
           {/* MODEL SELECTOR */}
@@ -265,7 +351,7 @@ const AccessoryScreen = () => {
                   <button
                     key={model.modelName}
                     onClick={() => handleModelChange(model.modelName)}
-                    className={`px-3 py-2 border-2 rounded-lg text-xs sm:text-sm transition ${selectedModelName === model.modelName ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                    className={`px-3 py-2 border-2 rounded-lg text-xs sm:text-sm transition ${selectedModelName === model.modelName? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
                       }`}
                   >
                     {model.modelName}
@@ -275,9 +361,9 @@ const AccessoryScreen = () => {
             </div>
           )}
 
-          {/* VARIANT SECTION - SHOWS CUT PRICE */}
+          {/* VARIANT SECTION */}
           <div className='mb-4'>
-            <label className='block text-sm font-medium mb-2'>{hasModels ? 'Choose Color' : 'Choose Option'}</label>
+            <label className='block text-sm font-medium mb-2'>{hasModels? 'Choose Color' : 'Choose Option'}</label>
             <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3'>
               {availableVariants.map((v) => {
                 const isVariantOut = Number(v.countInStock) <= 0;
@@ -286,11 +372,12 @@ const AccessoryScreen = () => {
                 const hasDiscount = vOriginalPrice > vFinalPrice;
 
                 return (
-                  <button
+                 <button
                     key={v.sku}
                     onClick={() => handleVariantChange(v.name)}
-                    className={`border-2 rounded-lg p-2 transition relative ${selectedVariant?.sku === v.sku ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'
-                      } ${isVariantOut ? 'opacity-50 grayscale' : 'hover:border-gray-400'}`}
+                    className={`border-2 rounded-lg p-2 transition relative 
+                      ${selectedVariant?.sku === v.sku || selectedVariant?.name === v.name? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'}
+                      ${isVariantOut? 'opacity-50 grayscale' : 'hover:border-gray-400'}`}
                   >
                     {isVariantOut && <span className='absolute -top-1 -right-1 bg-red-500 text-white text-[9px] px-1 py-0.5 rounded-full font-semibold'>OUT</span>}
                     <img src={v.images?.[0]?.url || '/placeholder.jpg'} className='w-full h-12 sm:h-16 object-contain mb-1' alt={v.name} />
@@ -307,7 +394,7 @@ const AccessoryScreen = () => {
             </div>
           </div>
 
-          {/* BULK PRICING TIERS - INFO ONLY */}
+          {/* BULK PRICING TIERS */}
           {displayStock > 0 && bulkPricing.length > 1 && (
             <div className='mb-4 p-3 bg-purple-50 rounded-lg'>
               <p className='text-sm font-semibold mb-2 text-purple-800'>Bulk Pricing - Save more:</p>
@@ -315,12 +402,16 @@ const AccessoryScreen = () => {
                 {[...bulkPricing].sort((a, b) => a.qty - b.qty).map((tier) => {
                   const isActive = qty >= tier.qty && qty < ([...bulkPricing].sort((a, b) => a.qty - b.qty).find(t => t.qty > tier.qty)?.qty || 999);
                   const tierTotal = (tier.price * tier.qty).toFixed(2);
-
                   return (
                     <button
                       key={tier.qty}
-                      onClick={() => setQty(tier.qty)}
-                      className={`border-2 rounded-lg p-2 text-center transition ${isActive ? 'border-purple-600 bg-white shadow-sm' : 'border-purple-200 hover:border-purple-400'
+                      onClick={() => {
+                        setQty(tier.qty);
+                        const params = new URLSearchParams(searchParams);
+                        params.set('qty', tier.qty); // Save bulk qty to URL
+                        setSearchParams(params);
+                      }}
+                      className={`border-2 rounded-lg p-2 text-center transition ${isActive? 'border-purple-600 bg-white shadow-sm' : 'border-purple-200 hover:border-purple-400'
                         }`}
                     >
                       <p className='text-xs font-semibold'>Buy {tier.qty}+</p>
@@ -365,7 +456,7 @@ const AccessoryScreen = () => {
         </div>
         <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
           <h3 className='font-bold text-base sm:text-lg mb-4'>Specifications</h3>
-          {modelSpecs.length > 0 ? (
+          {modelSpecs.length > 0? (
             <div className='divide-y divide-gray-200'>
               {modelSpecs.map((s, i) => (
                 <div key={s.key + i} className='flex flex-col sm:flex-row sm:justify-between py-2 sm:py-3 text-sm gap-1'>
