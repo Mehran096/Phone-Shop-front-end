@@ -72,7 +72,7 @@ const AccessoryScreen = () => {
     const currentModel = searchParams.get('model');
     const currentVariant = searchParams.get('variant');
 
-    if (!currentModel &&!currentVariant) {
+    if (!currentModel && !currentVariant) {
       setIsSettingDefaults(true);
       if (hasModels && uniqueModels.length > 0) {
         const firstModel = uniqueModels[0];
@@ -93,37 +93,38 @@ const AccessoryScreen = () => {
 
   // === USE DATA DIRECTLY FROM BACKEND ===
   const originalPrice = Number(selectedVariant?.originalPrice || 0);
-  const basePrice = Number(selectedVariant?.price || 0);  
+  const basePrice = Number(selectedVariant?.price || 0);
   const displayStock = Number(selectedVariant?.countInStock || 0);
   const displaySKU = selectedVariant?.sku || '';
   const discount = selectedVariant?.discount;
   const isOutOfStock = displayStock <= 0;
   // === FIX: GET CORRECT PRICE BASED ON QUANTITY ===
-const getPriceForQuantity = (quantity) => {
-  const bulkPricing = selectedVariant?.bulkPricing || [];
-  
-  // Find the highest tier that matches the quantity
-  const applicableTier = bulkPricing
-    .filter(tier => quantity >= tier.qty)
-    .sort((a, b) => b.qty - a.qty)[0];
-  
-  // If we found a bulk tier, use it. Otherwise use base price
-  return applicableTier ? Number(applicableTier.price) : basePrice;
-}
+  const getPriceForQuantity = (quantity) => {
+    const bulkPricing = selectedVariant?.bulkPricing || [];
 
-const finalPrice = getPriceForQuantity(qty);
-const totalPrice = (finalPrice * qty).toFixed(2);
+    // Find the highest tier that matches the quantity
+    const applicableTier = bulkPricing
+      .filter(tier => quantity >= tier.qty)
+      .sort((a, b) => b.qty - a.qty)[0];
 
-  // Calculate savings
-  const savings = (originalPrice - finalPrice).toFixed(2);
-  const savingsPercent = originalPrice > 0? Math.round((savings / originalPrice) * 100) : 0;
+    // If we found a bulk tier, use it. Otherwise use base price
+    return applicableTier ? Number(applicableTier.price) : basePrice;
+  }
+
+  const finalPrice = getPriceForQuantity(qty);
+  const totalPrice = (finalPrice * qty).toFixed(2);
+
+  // Calculate savings - TOTAL for all quantity
+  const originalTotal = (originalPrice * qty).toFixed(2);
+  const totalSavings = (originalTotal - totalPrice).toFixed(2);
+  const savingsPercent = originalPrice > 0 ? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
 
   // For bulk tier UI - these are just for display. Real price updates on cart
   const bulkPricing = selectedVariant?.bulkPricing || [];
 
   const getImageUrls = (images) => {
-    if (!images ||!Array.isArray(images)) return [];
-    return images.map(img => typeof img === 'string'? img : img?.url || '').filter(Boolean);
+    if (!images || !Array.isArray(images)) return [];
+    return images.map(img => typeof img === 'string' ? img : img?.url || '').filter(Boolean);
   };
 
   const displayImages = getImageUrls(selectedVariant?.images || []);
@@ -147,7 +148,7 @@ const totalPrice = (finalPrice * qty).toFixed(2);
     setQty(1);
   };
 
-  const displayTitle = `${accessory?.name || ''} ${hasModels && selectedModelName? `for ${selectedModelName}` : ''} ${selectedVariant? `(${selectedVariant.name})` : ''}`;
+  const displayTitle = `${accessory?.name || ''} ${hasModels && selectedModelName ? `for ${selectedModelName}` : ''} ${selectedVariant ? `(${selectedVariant.name})` : ''}`;
 
   useEffect(() => {
     setMainImage(displayImages[0] || '');
@@ -157,9 +158,9 @@ const totalPrice = (finalPrice * qty).toFixed(2);
   const addToCartHandler = () => {
     if (!selectedVariant) return toast.error('Please select an option');
     dispatch(addToCart({
-    ...accessory,
+      ...accessory,
       qty,
-      model: hasModels? selectedModelName : 'Universal',
+      model: hasModels ? selectedModelName : 'Universal',
       variant: selectedVariant.name,
       colorHex: selectedVariant.colorHex,
       sku: displaySKU,
@@ -230,23 +231,29 @@ const totalPrice = (finalPrice * qty).toFixed(2);
               )}
               {discount?.isActive && discount?.value > 0 && (
                 <span className='px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded flex items-center gap-1'>
-                  <FaTag />-{discount.value}{discount.type === 'percentage'? '%' : '$'}
+                  <FaTag />-{discount.value}{discount.type === 'percentage' ? '%' : '$'}
                 </span>
               )}
             </div>
-            
-            {originalPrice > finalPrice && (
-              <p className='text-xs text-red-500 font-semibold'>
-                You save ${savings} ({savingsPercent}%)
+
+
+            <p className="text-lg font-bold text-green-600">
+              Estimated Total: ${totalPrice}
+            </p>
+
+            {totalSavings > 0 && (
+              <p className="text-xs text-red-500 font-semibold">
+                You save ${totalSavings} ({savingsPercent}%) off ${originalTotal}
               </p>
             )}
+
 
             <p className='text-xs text-gray-500 mt-1'>per item for qty {qty}</p>
             <p className='text-xs text-gray-400 mt-1'>SKU: {displaySKU}</p>
           </div>
 
           <div className='mb-5'>
-            {displayStock > 0? <span className='text-green-600 flex items-center gap-1 text-sm'><FaCheck /> In Stock ({displayStock})</span> : <span className='text-red-600 text-sm'>Out Of Stock</span>}
+            {displayStock > 0 ? <span className='text-green-600 flex items-center gap-1 text-sm'><FaCheck /> In Stock ({displayStock})</span> : <span className='text-red-600 text-sm'>Out Of Stock</span>}
           </div>
 
           {/* MODEL SELECTOR */}
@@ -258,9 +265,8 @@ const totalPrice = (finalPrice * qty).toFixed(2);
                   <button
                     key={model.modelName}
                     onClick={() => handleModelChange(model.modelName)}
-                    className={`px-3 py-2 border-2 rounded-lg text-xs sm:text-sm transition ${
-                      selectedModelName === model.modelName? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
-                    }`}
+                    className={`px-3 py-2 border-2 rounded-lg text-xs sm:text-sm transition ${selectedModelName === model.modelName ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                      }`}
                   >
                     {model.modelName}
                   </button>
@@ -271,7 +277,7 @@ const totalPrice = (finalPrice * qty).toFixed(2);
 
           {/* VARIANT SECTION - SHOWS CUT PRICE */}
           <div className='mb-4'>
-            <label className='block text-sm font-medium mb-2'>{hasModels? 'Choose Color' : 'Choose Option'}</label>
+            <label className='block text-sm font-medium mb-2'>{hasModels ? 'Choose Color' : 'Choose Option'}</label>
             <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3'>
               {availableVariants.map((v) => {
                 const isVariantOut = Number(v.countInStock) <= 0;
@@ -283,9 +289,8 @@ const totalPrice = (finalPrice * qty).toFixed(2);
                   <button
                     key={v.sku}
                     onClick={() => handleVariantChange(v.name)}
-                    className={`border-2 rounded-lg p-2 transition relative ${
-                      selectedVariant?.sku === v.sku? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'
-                    } ${isVariantOut? 'opacity-50 grayscale' : 'hover:border-gray-400'}`}
+                    className={`border-2 rounded-lg p-2 transition relative ${selectedVariant?.sku === v.sku ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'
+                      } ${isVariantOut ? 'opacity-50 grayscale' : 'hover:border-gray-400'}`}
                   >
                     {isVariantOut && <span className='absolute -top-1 -right-1 bg-red-500 text-white text-[9px] px-1 py-0.5 rounded-full font-semibold'>OUT</span>}
                     <img src={v.images?.[0]?.url || '/placeholder.jpg'} className='w-full h-12 sm:h-16 object-contain mb-1' alt={v.name} />
@@ -307,17 +312,16 @@ const totalPrice = (finalPrice * qty).toFixed(2);
             <div className='mb-4 p-3 bg-purple-50 rounded-lg'>
               <p className='text-sm font-semibold mb-2 text-purple-800'>Bulk Pricing - Save more:</p>
               <div className='grid grid-cols-2 sm:grid-cols-4 gap-2'>
-                {[...bulkPricing].sort((a,b) => a.qty - b.qty).map((tier) => {
-                  const isActive = qty >= tier.qty && qty < ([...bulkPricing].sort((a,b) => a.qty - b.qty).find(t => t.qty > tier.qty)?.qty || 999);
+                {[...bulkPricing].sort((a, b) => a.qty - b.qty).map((tier) => {
+                  const isActive = qty >= tier.qty && qty < ([...bulkPricing].sort((a, b) => a.qty - b.qty).find(t => t.qty > tier.qty)?.qty || 999);
                   const tierTotal = (tier.price * tier.qty).toFixed(2);
 
                   return (
                     <button
                       key={tier.qty}
                       onClick={() => setQty(tier.qty)}
-                      className={`border-2 rounded-lg p-2 text-center transition ${
-                        isActive? 'border-purple-600 bg-white shadow-sm' : 'border-purple-200 hover:border-purple-400'
-                      }`}
+                      className={`border-2 rounded-lg p-2 text-center transition ${isActive ? 'border-purple-600 bg-white shadow-sm' : 'border-purple-200 hover:border-purple-400'
+                        }`}
                     >
                       <p className='text-xs font-semibold'>Buy {tier.qty}+</p>
                       <p className='text-[11px] font-bold text-purple-700'>${tier.price.toFixed(2)} each</p>
@@ -340,7 +344,7 @@ const totalPrice = (finalPrice * qty).toFixed(2);
                 onChange={(e) => setQty(Number(e.target.value))}
                 className='border-2 rounded-lg p-2 w-full text-sm'
               >
-                {[...Array(Math.min(displayStock, 20)).keys()].map(x => <option key={x+1} value={x+1}>{x+1}</option>)}
+                {[...Array(Math.min(displayStock, 20)).keys()].map(x => <option key={x + 1} value={x + 1}>{x + 1}</option>)}
               </select>
               <p className='text-sm font-bold text-green-600 mt-2'>Estimated Total: ${totalPrice}</p>
             </div>
@@ -361,7 +365,7 @@ const totalPrice = (finalPrice * qty).toFixed(2);
         </div>
         <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
           <h3 className='font-bold text-base sm:text-lg mb-4'>Specifications</h3>
-          {modelSpecs.length > 0? (
+          {modelSpecs.length > 0 ? (
             <div className='divide-y divide-gray-200'>
               {modelSpecs.map((s, i) => (
                 <div key={s.key + i} className='flex flex-col sm:flex-row sm:justify-between py-2 sm:py-3 text-sm gap-1'>
