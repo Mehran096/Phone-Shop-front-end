@@ -93,12 +93,26 @@ const AccessoryScreen = () => {
 
   // === USE DATA DIRECTLY FROM BACKEND ===
   const originalPrice = Number(selectedVariant?.originalPrice || 0);
-  const finalPrice = Number(selectedVariant?.price || 0); // backend already did discount + bulk for qty=1
+  const basePrice = Number(selectedVariant?.price || 0);  
   const displayStock = Number(selectedVariant?.countInStock || 0);
   const displaySKU = selectedVariant?.sku || '';
   const discount = selectedVariant?.discount;
   const isOutOfStock = displayStock <= 0;
-  const totalPrice = (finalPrice * qty).toFixed(2);
+  // === FIX: GET CORRECT PRICE BASED ON QUANTITY ===
+const getPriceForQuantity = (quantity) => {
+  const bulkPricing = selectedVariant?.bulkPricing || [];
+  
+  // Find the highest tier that matches the quantity
+  const applicableTier = bulkPricing
+    .filter(tier => quantity >= tier.qty)
+    .sort((a, b) => b.qty - a.qty)[0];
+  
+  // If we found a bulk tier, use it. Otherwise use base price
+  return applicableTier ? Number(applicableTier.price) : basePrice;
+}
+
+const finalPrice = getPriceForQuantity(qty);
+const totalPrice = (finalPrice * qty).toFixed(2);
 
   // Calculate savings
   const savings = (originalPrice - finalPrice).toFixed(2);
