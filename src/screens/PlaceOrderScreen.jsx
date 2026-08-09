@@ -17,8 +17,8 @@ const PlaceOrderScreen = () => {
   const { order, success, error, loading } = useSelector((state) => state.order)
 
   const addDecimals = (num) => {
-    return (Math.round(num * 100) / 100).toFixed(2)
-  }
+  return Number((Math.round(num * 100) / 100).toFixed(2)) // FIX: Return Number
+}
 
   // Calculate prices
   const originalItemsPrice = addDecimals(
@@ -39,7 +39,11 @@ const PlaceOrderScreen = () => {
     Number(originalItemsPrice) - Number(itemsPrice)
   )
 
-  const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
+  //this code for shippingPrice
+  //const shippingPrice = addDecimals(itemsPrice > 100 ? 0 : 10)
+
+  //this code for shippingRice 0 for both payment methods
+  const shippingPrice = 0;
 
   const TAX_RATE = 5 / 100;
 
@@ -52,6 +56,24 @@ const taxPrice = addDecimals(
   const totalPrice = addDecimals(
     Number(itemsPrice) + Number(shippingPrice) + Number(taxPrice)
   )
+
+  const getProductLink = (item) => {
+  const base =
+    item.variantType === 'accessory'
+      ? `/accessory/${item.slug || item.product}`
+      : `/product/${item.slug || item.product}`
+
+  // Build query string with all selected options
+  const params = new URLSearchParams()
+  if (item.color) params.append('color', item.color)
+  if (item.storage) params.append('storage', item.storage)
+  if (item.model) params.append('model', item.model)
+  if (item.variantName) params.append('variant', item.variantName)
+  if (item.variantSubName) params.append('variantSub', item.variantSubName)
+  if (item.qty && item.qty > 1) params.append('qty', item.qty) // optional
+
+  return `${base}?${params.toString()}`
+}
 
   useEffect(() => {
     if (!cart.paymentMethod) {
@@ -156,15 +178,35 @@ const taxPrice = addDecimals(
 
                   <div className='flex-1 min-w-0 flex-col justify-between'>
                     <Link
-                        to={`/product/${item.slug}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`}
-                        className='text-blue-600 hover:text-blue-800 font-medium text-sm md:text-base line-clamp-2'
-                      >
+                      to={getProductLink(item)}
+                      className='text-blue-600 hover:text-blue-800 font-medium text-sm md:text-base line-clamp-2'
+                    >
                       {item.name}
+                      {item.variantType === 'accessory' && (
+                        <span className="ml-2 bg-purple-100 text-purple-700 text-xs font-medium px-2 py-0.5 rounded">
+                          Accessory
+                        </span>
+                      )}
                     </Link>
 
                     <div className='text-sm text-gray-500 space-y-1'>
-                      {item.color && <p>Color: {item.color}</p>}
+                      {/* Show variant for accessories, color/storage for products */}
+                      {item.variantType === 'accessory' && item.variantSubName && (
+                        <p className="capitalize">
+                          {item.variantName}: {item.variantSubName}
+                        </p>
+                      )}
+
+                      {item.variantType !== 'accessory' && item.color && (
+                        <p>Color: {item.color}</p>
+                      )}
+
                       {item.storage && <p>Storage: {item.storage}</p>}
+
+                      {/* Optional: show model for accessories */}
+                      {item.variantType === 'accessory' && item.model && (
+                        <p>For: {item.model}</p>
+                      )}
                     </div>
 
                     <div className="mt-2 text-sm space-y-1">
@@ -237,7 +279,9 @@ const taxPrice = addDecimals(
 
                 <div className="flex justify-between pb-3 border-b border-gray-200">
                   <span className="text-gray-600">Shipping</span>
-                  <span className="font-semibold">${shippingPrice}</span>
+                  <span className="font-semibold text-green-600">
+                    {Number(shippingPrice) === 0 ? 'Free' : `$${shippingPrice}`}
+                  </span>
                 </div>
 
                 <div className="flex justify-between pb-3 border-b border-gray-200">

@@ -53,7 +53,7 @@ export const createCheckoutSession = createAsyncThunk(
   async (orderData, { rejectWithValue }) => {
     try {
       const orderItems = orderData.orderItems.map(item => ({
-        product: item.product, 
+        product: item.product, // same field for both product + accessory
         name: item.name,
         image: item.image,
         slug: item.slug,
@@ -63,20 +63,23 @@ export const createCheckoutSession = createAsyncThunk(
         qty: item.qty,
         color: item.color,
         storage: item.storage,
+
+        // === NEW: SEND VARIANT DATA FOR ACCESSORIES ===
+        variantType: item.variantType || 'product', // 'product' or 'accessory'
+        variantName: item.variantName, // 'storage' or 'glass' or 'cable'
+        variantSubName: item.variantSubName, // '256GB' or 'White-2-Pack'
+        model: item.model, // 'iPhone 17 Pro Max' or 'Universal'
+        sku: item.sku,
       }))
 
       const payload = {
         orderItems,
         shippingAddress: orderData.shippingAddress,
-         paymentMethod: orderData.paymentMethod,
-        // itemsPrice: orderData.itemsPrice,
-        // shippingPrice: orderData.shippingPrice,
-        // taxPrice: orderData.taxPrice,
-        // totalPrice: orderData.totalPrice,
+        paymentMethod: orderData.paymentMethod, // 'Stripe'
       }
 
       const { data } = await api.post('/orders/create-checkout-session', payload)
-      window.location.href = data.url
+      window.location.href = data.url // Redirect to Stripe
       return data
     } catch (error) {
       return rejectWithValue(

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const ACCESSORY_TYPE_LABELS = {
-  case: 'Case', charger: 'Charger', cable: 'Cable', 
+  case: 'Case', charger: 'Charger', cable: 'Cable',
   glass: 'Glass', audio: 'Audio', holder: 'Holder', other: 'Other'
 }
 
@@ -67,21 +67,21 @@ function CartScreen() {
   const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
 
   const getProductLink = (item) => {
-  const base = item.variantType === 'accessory'
-    ? `/accessory/${item.slug || item.product}`
-    : `/product/${item.slug || item.product}`;
+    const base = item.variantType === 'accessory'
+      ? `/accessory/${item.slug || item.product}`
+      : `/product/${item.slug || item.product}`;
 
-  // Build query string with all selected options
-  const params = new URLSearchParams();
-  if(item.color) params.append('color', item.color);
-  if(item.storage) params.append('storage', item.storage);
-  if(item.model) params.append('model', item.model);
-  if(item.variantName) params.append('variant', item.variantName);
-  if(item.variantSubName) params.append('variantSub', item.variantSubName);
-  if(item.qty && item.qty > 1) params.append('qty', item.qty); // <-- ADD THIS LINE
+    // Build query string with all selected options
+    const params = new URLSearchParams();
+    if (item.color) params.append('color', item.color);
+    if (item.storage) params.append('storage', item.storage);
+    if (item.model) params.append('model', item.model);
+    if (item.variantName) params.append('variant', item.variantName);
+    if (item.variantSubName) params.append('variantSub', item.variantSubName);
+    if (item.qty && item.qty > 1) params.append('qty', item.qty); // <-- ADD THIS LINE
 
-  return `${base}?${params.toString()}`;
-}
+    return `${base}?${params.toString()}`;
+  }
 
   //drop down qty 
   const CustomDropdown = ({ value, onChange, options }) => {
@@ -172,7 +172,7 @@ function CartScreen() {
 
                     {/* Info */}
                     <div className="flex-1 flex-col">
-                     <Link to={getProductLink(item)} className="hover:underline">
+                      <Link to={getProductLink(item)} className="hover:underline">
                         <h2 className="font-bold text-gray-900 text-base leading-tight">
                           {item.name}
                         </h2>
@@ -180,23 +180,23 @@ function CartScreen() {
 
                       {/* FIX 4: CONDITIONAL VARIANT DISPLAY FOR PHONE vs ACCESSORY */}
                       <div className="text-xs text-gray-600 mt-1 space-y-0.5">
-                      {(item.variantType === 'phone' || item.storage)? ( // Phone
-                        <>
-                          <p>Color: <span className="font-medium">{item.color || 'Default'}</span></p>
-                          {item.storage && <p>Storage: <span className="font-medium">{item.storage}</span></p>}
-                        </>
-                      ) : ( // Accessory
-                        <>
-                          {item.model && item.model !== 'Universal' && <p>Model: <span className="font-medium">{item.model}</span></p>}
-                          <p>Type: <span className="font-medium capitalize">{ACCESSORY_TYPE_LABELS[item.variantName] || item.variantName}</span></p>
-                          {item.variantSubName && <p>Variant: <span className="font-medium">{item.variantSubName}</span></p>}
-                          <p>Color: <span className="font-medium">{item.color || 'Default'}</span></p>
-                          <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] font-semibold mt-1">
-                            <FaTag className="text-[10px]" /> Accessory
-                          </span>
-                        </>
-                      )}
-                    </div>
+                        {(item.variantType === 'phone' || item.storage) ? ( // Phone
+                          <>
+                            <p>Color: <span className="font-medium">{item.color || 'Default'}</span></p>
+                            {item.storage && <p>Storage: <span className="font-medium">{item.storage}</span></p>}
+                          </>
+                        ) : ( // Accessory
+                          <>
+                            {item.model && item.model !== 'Universal' && <p>Model: <span className="font-medium">{item.model}</span></p>}
+                            <p>Type: <span className="font-medium capitalize">{ACCESSORY_TYPE_LABELS[item.variantName] || item.variantName}</span></p>
+                            {item.variantSubName && <p>Variant: <span className="font-medium">{item.variantSubName}</span></p>}
+                            <p>Color: <span className="font-medium">{item.color || 'Default'}</span></p>
+                            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] font-semibold mt-1">
+                              <FaTag className="text-[10px]" /> Accessory
+                            </span>
+                          </>
+                        )}
+                      </div>
 
                       <div className="mt-2">
                         <p className="text-lg font-bold text-red-600">
@@ -266,8 +266,9 @@ function CartScreen() {
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
-                    <span className="text-green-600 font-semibold">Calculated at checkout</span>
+                    <span className="text-green-600 font-semibold">Free</span>
                   </div>
+                  <p className="text-xs text-gray-500 -mt-2 mb-3">Free shipping for COD & Card</p>
                   <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-3">
                     <span>Total</span>
                     <span>${cartSubtotal.toFixed(2)}</span>

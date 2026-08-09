@@ -33,15 +33,16 @@ const OrderScreen = () => {
   const { order, loading, error, successShip, successDeliver } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.auth);
 
+  // FIXED: Add Number() + fallbacks for old orders
   const originalItemsPrice =
     order?.orderItems?.reduce(
-      (acc, item) => acc + (item.originalPrice || item.price) * item.qty,
+      (acc, item) => acc + (Number(item.originalPrice) || Number(item.price) || 0) * (Number(item.qty) || 0),
       0
     ) || 0;
 
   const totalDiscount =
     order?.orderItems?.reduce(
-      (acc, item) => acc + (item.discountAmount || 0) * item.qty,
+      (acc, item) => acc + (Number(item.discountAmount) || 0) * (Number(item.qty) || 0),
       0
     ) || 0;
 
@@ -192,73 +193,116 @@ const OrderScreen = () => {
               )}
             </div>
 
-            {/* FANTASY Order Items */}
+            {/* Order Items */}
             <div className="bg-white p-5 rounded-lg shadow-sm border-gray-200">
               <h2 className="text-lg font-semibold mb-4">Order Items</h2>
               {order.orderItems.length === 0 ? (
                 <Message>Order is empty</Message>
               ) : (
                 <div className="space-y-4">
-                  {order.orderItems.map((item, index) => (
-                    <div key={index} className="flex gap-4 p-3 rounded-lg hover:bg-gray-50 transition">
-                      {/* Image */}
-                      <Link
-                        to={`/product/${item.slug}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`}
-                        className="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0"
-                      >
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-contain rounded-xl bg-gray-50 p-2 border-gray-100"
-                        />
-                      </Link>
+                  {order.orderItems.map((item, index) => {
+                    // FIXED: Add fallbacks for every number field
+                    const isAccessory = !!item.accessory
+                    const isProduct = !!item.product
+                    const price = Number(item.price) || 0
+                    const qty = Number(item.qty) || 0
+                    const originalPrice = Number(item.originalPrice) || price
+                    const discountAmount = Number(item.discountAmount) || 0
 
-                      {/* Details + Price */}
-                      <div className="flex-1 flex-col justify-between">
-                        <div>
-                          <Link
-                            to={`/product/${item.slug}?color=${encodeURIComponent(item.color || 'Default')}&storage=${encodeURIComponent(item.storage || 'Default')}`}
-                            className="text-blue-600 hover:underline font-semibold text-sm sm:text-base line-clamp-2"
-                          >
-                            {item.name}
-                          </Link>
-                          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-600 mt-1">
-                            {item.color && (
-                              <span className="bg-gray-100 px-2 py-0.5 rounded">Color: {item.color}</span>
-                            )}
-                            {item.storage && (
-                              <span className="bg-gray-100 px-2 py-0.5 rounded">Storage: {item.storage}</span>
-                            )}
-                            <span className="bg-gray-100 px-2 py-0.5 rounded">Qty: {item.qty}</span>
+                    const getProductLink = (item) => {
+                      const isAccessory = !!item.accessory
+
+                      // Safe: check if object or just ID string
+                      const productId = item.product && typeof item.product === 'object'
+                        ? item.product._id
+                        : item.product
+
+                      const accessoryId = item.accessory && typeof item.accessory === 'object'
+                        ? item.accessory._id
+                        : item.accessory
+
+                      const slug = item.slug || productId || accessoryId
+
+                      // If both are deleted, return # to prevent crash
+                      if (!slug) return '#'
+
+                      const base = isAccessory
+                        ? `/accessory/${slug}`
+                        : `/product/${slug}`
+
+                      const params = new URLSearchParams()
+                      if (item.color) params.append('color', item.color)
+                      if (item.storage) params.append('storage', item.storage)
+                      if (item.model) params.append('model', item.model)
+
+                      // === KEY FIX FOR BULK PRICE ===
+                      if (item.variantName) params.append('variant', item.variantName) // holder, glass, cable etc
+                      if (item.variantSubName) params.append('variantSub', item.variantSubName) // White-2-Pack, 256GB etc
+
+                      if (item.qty && item.qty > 1) params.append('qty', item.qty)
+
+                      return `${base}?${params.toString()}`
+                    }
+
+                    return (
+                      <div key={index} className="flex gap-4 p-3 rounded-lg hover:bg-gray-50 transition">
+                        {/* Image */}
+                        <Link to={getProductLink(item)} className="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-contain rounded-xl bg-gray-50 p-2 border-gray-100"
+                          />
+                        </Link>
+
+                        {/* Details + Price */}
+                        <div className="flex-1 flex-col justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <Link
+                                to={getProductLink(item)}
+                                className="text-blue-600 hover:underline font-semibold text-sm sm:text-base line-clamp-2"
+                              >
+                                {item.name}
+                              </Link>
+                              {isAccessory && <span className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-0.5 rounded">Accessory</span>}
+                              {isProduct && <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-0.5 rounded">Product</span>}
+                            </div>
+
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-600 mt-1">
+                              {item.color && <span className="bg-gray-100 px-2 py-0.5 rounded">Color: {item.color}</span>}
+                              {item.storage && <span className="bg-gray-100 px-2 py-0.5 rounded">Storage: {item.storage}</span>}
+                              {item.model && <span className="bg-gray-100 px-2 py-0.5 rounded">For: {item.model}</span>}
+                              {item.variantName && <span className="bg-gray-100 px-2 py-0.5 rounded">{item.variantName}</span>}
+                              <span className="bg-gray-100 px-2 py-0.5 rounded">Qty: {qty}</span>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="mt-2 space-y-1">
-                          {item.discountAmount > 0 && (
-                            <>
-                              <div className="text-sm text-gray-500 line-through">
-                                Original: ${Number(item.originalPrice).toFixed(2)}
-                              </div>
+                          <div className="mt-2 space-y-1">
+                            {discountAmount > 0 && (
+                              <>
+                                <div className="text-sm text-gray-500 line-through">
+                                  Original: ${originalPrice.toFixed(2)}
+                                </div>
+                                <div className="text-sm font-medium text-green-600">
+                                  Discount: -${discountAmount.toFixed(2)}
+                                </div>
+                              </>
+                            )}
 
-                              <div className="text-sm font-medium text-green-600">
-                                Discount: -${Number(item.discountAmount).toFixed(2)}
-                              </div>
-                            </>
-                          )}
-
-                          <div className="flex items-end justify-between gap-2 sm:gap-3">
-                            <span className="text-sm text-gray-600 whitespace-nowrap flex-shrink-0">
-                              {item.qty} × ${Number(item.price).toFixed(2)}
-                            </span>
-
-                            <span className="sm:text-lg font-bold text-gray-900">
-                              ${(item.qty * item.price).toFixed(2)}
-                            </span>
+                            <div className="flex items-end justify-between gap-2 sm:gap-3">
+                              <span className="text-sm text-gray-600 whitespace-nowrap flex-shrink-0">
+                                {qty} × ${price.toFixed(2)}
+                              </span>
+                              <span className="sm:text-lg font-bold text-gray-900">
+                                ${(qty * price).toFixed(2)}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -267,7 +311,7 @@ const OrderScreen = () => {
           {/* Right Column - 1/3 Summary + Admin */}
           <div className="lg:col-span-1 space-y-4">
 
-            {/* Order Summary Card - NO MOBILE STICKY */}
+            {/* Order Summary Card */}
             <div className="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-sm border-gray-200 lg:sticky lg:top-4">
               <div className="flex items-center gap-2 mb-4">
                 <FaReceipt className="text-gray-700" />
@@ -277,7 +321,7 @@ const OrderScreen = () => {
                 <div className="flex justify-between text-gray-600">
                   <span>Original Price</span>
                   <span className="font-medium text-gray-900">
-                    ${originalItemsPrice}
+                    ${originalItemsPrice.toFixed(2)}
                   </span>
                 </div>
 
@@ -285,26 +329,26 @@ const OrderScreen = () => {
                   <div className="flex justify-between text-green-600">
                     <span>Discount</span>
                     <span className="font-medium">
-                      ${totalDiscount}
+                      -${totalDiscount.toFixed(2)}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between text-gray-600">
                   <span>Items Subtotal</span>
-                  <span className="font-medium text-gray-900">${order.itemsPrice?.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">${Number(order.itemsPrice || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span className="font-medium text-gray-900">${order.shippingPrice?.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">${Number(order.shippingPrice || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Tax</span>
-                  <span className="font-medium text-gray-900">${order.taxPrice?.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">${Number(order.taxPrice || 0).toFixed(2)}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-3 mt-3">
                   <div className="flex justify-between items-baseline">
                     <span className="text-base font-bold text-gray-900">Order Total</span>
-                    <span className="text-xl sm:text-2xl font-bold text-gray-900">${order.totalPrice?.toFixed(2)}</span>
+                    <span className="text-xl sm:text-2xl font-bold text-gray-900">${Number(order.totalPrice || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -323,14 +367,14 @@ const OrderScreen = () => {
                     placeholder="Tracking Number"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <input
                     type="text"
                     placeholder="Carrier e.g. DHL, FedEx"
                     value={carrier}
                     onChange={(e) => setCarrier(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <button
                     type="button"
