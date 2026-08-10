@@ -22,7 +22,8 @@ import {
   useDeleteAdminReplyMutation,
   useUploadReviewImageMutation,
   useDeleteCloudinaryImageMutation,
-  useGetRecommendedProductsQuery
+  useGetRecommendedProductsQuery,
+  useGetFrequentlyBoughtTogetherQuery
 } from '../slices/productsApiSlice'
 import { addToCart } from '../slices/cartSlice'
 import Loader from '../components/Loader'
@@ -49,6 +50,7 @@ import CompareProducts from '../components/CompareProducts';
 import CompareSearch from '../components/CompareSearch';
 import { addToRecentlyViewed } from '../utils/recentlyViewed';
 import RecommendedProducts from '../components/RecommendedProducts';
+import FrequentlyBoughtTogether from '../components/FrequentlyBoughtTogether'
 
 
 
@@ -82,6 +84,8 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
   } = useGetRecommendedProductsQuery(product?._id, {
     skip: !product?._id // don't run until product loads
   })
+
+  
 
   // const recommendations = data?.recommendations || []
   // const recType = data?.type
@@ -135,6 +139,18 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
     [selectedVariant, selectedColorIndex]
   );
   //console.log(selectedColor?.images)
+//frequentlyBoughtTogether RTK query
+const {
+  data: frequentlyBought,
+  isLoading: loadingFBT,
+  error: errorFBT
+} = useGetFrequentlyBoughtTogetherQuery({
+  productId: product?._id,
+  model: product?.name,
+  color: selectedColor?.name || 'White' // <- USE THE MEMO VALUE
+}, {
+  skip:!product?._id
+})
 
   // const [selectedPrice, setSelectedPrice] = useState(0) // ADD THIS
   // const [selectedImage, setSelectedImage] = useState('') // ADD THIS
@@ -1317,6 +1333,15 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
           onAddToCart={addToCartHandler}
           quickViewProduct={quickViewProduct}
           setQuickViewProduct={setQuickViewProduct}
+        />
+
+        <FrequentlyBoughtTogether
+          product={product}
+          selectedVariant={selectedVariant}
+          selectedColor={selectedColor}
+          finalPrice={finalPrice}
+          frequentlyBought={frequentlyBought}
+          loadingFBT={loadingFBT}
         />
 
 

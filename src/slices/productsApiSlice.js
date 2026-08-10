@@ -94,6 +94,14 @@ getRecommendedProducts: builder.query({
   providesTags: ['Products'],
   keepUnusedDataFor: 5,
 }),
+getFrequentlyBoughtTogether: builder.query({
+  query: ({ productId, model, color }) => ({
+    url: `/products/${productId}/frequently-bought`,
+    params: { model, color },
+  }),
+  providesTags: ["Products"],
+  keepUnusedDataFor: 5,
+}),
     updateProductSpecs: builder.mutation({
       query: ({ productId, specs }) => ({
         url: `/products/${productId}/specs`,
@@ -280,6 +288,7 @@ export const {
   useGetNewArrivalProductsQuery,
   useGetCompareProductsQuery,
   useGetRecommendedProductsQuery,
+  useGetFrequentlyBoughtTogetherQuery,
   useDeleteReviewMutation,
   useMarkReviewHelpfulMutation,
   useMarkReviewNotHelpfulMutation,
