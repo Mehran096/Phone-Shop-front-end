@@ -54,6 +54,7 @@ const AccessoryEditScreen = () => {
       ...v,
         files: [],
         colorHex: v.colorHex || '#000',
+        price: Number(v.price) || 0,
         originalPrice: Number(v.originalPrice || v.price) || 0, // NEW: Load originalPrice. Fallback for old products
         bulkPricing: v.bulkPricing?.length > 0 
         ? v.bulkPricing.map(b => ({

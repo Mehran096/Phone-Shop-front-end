@@ -22,6 +22,14 @@ const MyOrdersScreen = () => {
     }
   }, [dispatch, navigate, userInfo])
 
+  const getStatus = (order) => {
+    if (order.isCancelled) return { text: 'Cancelled', color: 'bg-red-100 text-red-800' }
+    if (order.isDelivered) return { text: 'Delivered', color: 'bg-green-100 text-green-800' }
+    if (order.isShipped) return { text: 'Shipped', color: 'bg-blue-100 text-blue-800' }
+    if (order.isPaid) return { text: 'Processing', color: 'bg-yellow-100 text-yellow-800' }
+    return { text: 'Awaiting Payment', color: 'bg-gray-100 text-gray-800' }
+  }
+
   return (
     <>
       <Helmet><title>My Orders | Phone-Store</title></Helmet>
@@ -60,9 +68,9 @@ const MyOrdersScreen = () => {
                           <td className='py-3'>{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                           <td className='py-3'>${order.totalPrice.toFixed(2)}</td>
                           <td className='py-3'>
-                            {order.isDelivered ? <span className='bg-green-100 text-green-800 px-2.5 py-1 rounded-full text-xs font-medium'>Delivered</span> :
-                             order.isPaid ? <span className='bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs font-medium'>Shipped</span> :
-                             <span className='bg-yellow-100 text-yellow-800 px-2.5 py-1 rounded-full text-xs font-medium'>Processing</span>}
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatus(order).color}`}>
+                              {getStatus(order).text}
+                            </span>
                           </td>
                           <td className='py-3'><button className='text-blue-600 hover:text-blue-800 text-sm font-medium' onClick={() => navigate(`/order/${order._id}`)}>View Details</button></td>
                         </tr>
@@ -79,9 +87,9 @@ const MyOrdersScreen = () => {
                           <p className='text-xs text-gray-500'>{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                         </div>
                         <div className='mb-3'>
-                          {order.isDelivered ? <span className='bg-green-100 text-green-800 px-2.5 py-1 rounded-full text-xs font-medium'>Delivered</span> :
-                           order.isPaid ? <span className='bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs font-medium'>Shipped</span> :
-                           <span className='bg-yellow-100 text-yellow-800 px-2.5 py-1 rounded-full text-xs font-medium'>Processing</span>}
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatus(order).color}`}>
+                            {getStatus(order).text}
+                          </span>
                         </div>
                         <div className='flex justify-between items-center pt-3 border-t'>
                           <p className='font-bold text-lg'>${order.totalPrice.toFixed(2)}</p>

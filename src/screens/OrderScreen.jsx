@@ -16,8 +16,10 @@ import {
   getOrderDetails,
   shipOrder,
   deliverOrder,
+  cancelOrder,
   resetShip,
   resetDeliver,
+  resetCancel,
 } from '../slices/orderSlice';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
@@ -30,7 +32,7 @@ const OrderScreen = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [carrier, setCarrier] = useState('');
 
-  const { order, loading, error, successShip, successDeliver } = useSelector((state) => state.order);
+  const { order, loading, error, successShip, successDeliver, successCancel } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.auth);
 
   // FIXED: Add Number() + fallbacks for old orders
@@ -65,7 +67,13 @@ const OrderScreen = () => {
       dispatch(resetDeliver());
       dispatch(getOrderDetails(orderId));
     }
-  }, [dispatch, orderId, order, navigate, userInfo, successShip, successDeliver]);
+
+    if (successCancel) {
+      toast.success('Order cancelled successfully');
+      dispatch(resetCancel());
+      dispatch(getOrderDetails(orderId));
+    }
+  }, [dispatch, orderId, order, navigate, userInfo, successShip, successDeliver, successCancel]);
 
   const copyOrderId = () => {
     navigator.clipboard.writeText(order._id);
@@ -83,6 +91,12 @@ const OrderScreen = () => {
   const deliverHandler = () => {
     dispatch(deliverOrder(orderId));
   };
+
+  const cancelHandler = () => {
+  if(window.confirm('Are you sure you want to cancel this order? This will revert sales.')) {
+    dispatch(cancelOrder(orderId));
+  }
+};
 
   const getOrderStatus = () => {
     if (order.isDelivered) return { text: 'Delivered', color: 'bg-green-100 text-green-800' };
@@ -355,7 +369,7 @@ const OrderScreen = () => {
             </div>
 
             {/* Admin: Ship Order Card */}
-            {userInfo?.isAdmin && !order.isShipped && (
+            {userInfo?.isAdmin && !order.isShipped && !order.isCancelled && (
               <div className="bg-white p-5 rounded-xl shadow-sm border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
                   <FaTruck className="text-blue-600" />
@@ -389,7 +403,7 @@ const OrderScreen = () => {
             )}
 
             {/* Admin: Mark As Delivered Card */}
-            {userInfo?.isAdmin && order.isShipped && !order.isDelivered && (
+            {userInfo?.isAdmin && order.isShipped && !order.isDelivered && !order.isCancelled && (
               <div className="bg-white p-5 rounded-xl shadow-sm border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
                   <FaBox className="text-green-600" />
@@ -405,6 +419,41 @@ const OrderScreen = () => {
                 </button>
               </div>
             )}
+
+           {/* Admin - Cancel Order Card */}
+{userInfo?.isAdmin && !order.isCancelled && !order.isDelivered && order.paymentMethod === 'COD' && (
+  <div className="bg-white p-5 rounded-xl shadow-sm border border-red-200">
+    <div className="flex items-center gap-2 mb-4">
+      <FaBox className="text-red-600" />
+      <h2 className="text-lg font-semibold text-gray-900">Cancel Order</h2>
+    </div>
+    <p className="text-sm text-gray-600 mb-3">
+      Cancel this COD order. Sales will be reverted for products and accessories.
+    </p>
+    <button
+      type="button"
+      onClick={cancelHandler}
+      disabled={loading}
+      className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-sm text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {loading ? 'Cancelling...' : 'Cancel Order'}
+    </button>
+  </div>
+)}
+
+{/* Show if already cancelled */}
+{userInfo?.isAdmin && order.isCancelled && (
+  <div className="bg-red-50 p-5 rounded-xl shadow-sm border border-red-200">
+    <div className="text-sm font-semibold text-red-800">
+      Order Cancelled on {formatDate(order.cancelledAt)}
+    </div>
+    {order.isRefunded && (
+      <div className="text-sm text-red-700 mt-1">
+        Refunded on {formatDate(order.refundedAt)}
+      </div>
+    )}
+  </div>
+)}
           </div>
         </div>
       </div>

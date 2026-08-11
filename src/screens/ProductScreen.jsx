@@ -139,15 +139,15 @@ const ProductScreen = ({ isOnline, isMobileMenuOpen }) => {
     [selectedVariant, selectedColorIndex]
   );
   //console.log(selectedColor?.images)
+ 
 //frequentlyBoughtTogether RTK query
-const {
+const { 
   data: frequentlyBought,
   isLoading: loadingFBT,
   error: errorFBT
 } = useGetFrequentlyBoughtTogetherQuery({
   productId: product?._id,
-  model: product?.name,
-  color: selectedColor?.name || 'White' // <- USE THE MEMO VALUE
+  model: selectedVariant?.modelName || product?.name, // use selected model, not product name
 }, {
   skip:!product?._id
 })
@@ -379,11 +379,14 @@ const {
       discountAmount: discountAmount,
       discount: colorToAdd?.discount,
 
-      // ADD THESE 2 LINES - THIS FIXES IT
+      // PHONE SPECIFIC KEYS - MUST MATCH OTHER SCREENS
       variantType: 'phone',
+      variant: variantToAdd?.storage || 'Default', // <-- KEY 1: Add this
       variantName: variantToAdd?.storage || colorToAdd?.name || 'Default',
+      variantSubName: variantToAdd?.storage || '',
 
-      color: colorToAdd?.name || '',
+      model: productToAdd.name, // <-- KEY 2: Add this. Use product.name for phones
+      color: colorToAdd?.name || 'Default', // phones use color name
       storage: variantToAdd?.storage || '',
       countInStock: colorToAdd?.countInStock ?? variantToAdd?.countInStock ?? 0,
       qty: qtyToAdd,
@@ -392,39 +395,52 @@ const {
     toast.success(`${productToAdd.name} added to cart`)
     navigate('/cart')
   }
-  //Buy now handler
-  const buyNowHandler = () => {
+   
+ // Buy now handler
+const buyNowHandler = () => {
+  if (selectedVariant?.colors?.length > 0 &&!selectedColor?.name) {
+    toast.error("Please select a color");
+    return;
+  }
 
-    if (selectedVariant?.colors?.length > 0 && !selectedColor?.name) {
-      toast.error("Please select a color");
-      return;
-    }
-    const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
-    const imageUrl = selectedColor.images?.[0]?.url || product.image || '/placeholder.png';
-    dispatch(addToCart({
-      product: product._id,
-      name: product.name,
-      slug: product.slug,
-      image: imageUrl,
-      price: isDiscountActive ? finalPrice : price,
-      originalPrice: price,
-      discountAmount,
-      discount: selectedColor?.discount,
-      color: selectedColor?.name || "",
-      countInStock:
-        selectedColor?.countInStock ??
-        selectedVariant?.countInStock ??
-        0,
-      storage: selectedVariant.storage || "",
-      qty,
-    }));
+  const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
+  const imageUrl = selectedColor?.images?.[0]?.url || product.image || '/placeholder.png';
 
-    navigate("/shipping");
+  const discount = selectedColor?.discount
+  const isDiscountActive = discount?.isActive && discount?.value > 0
+  const finalPrice = isDiscountActive
+   ? discount.type === 'percentage'
+     ? price - (price * discount.value / 100)
+      : price - discount.value
+    : price
 
+  const discountAmount = price - finalPrice
 
+  dispatch(addToCart({
+    product: product._id,
+    name: product.name,
+    slug: product.slug,
+    image: imageUrl,
+    price: isDiscountActive? finalPrice : price,
+    originalPrice: price,
+    discountAmount: discountAmount,
+    discount: selectedColor?.discount,
 
+    // PHONE KEYS - SAME AS ADD TO CART
+    variantType: 'phone',
+    variant: selectedVariant?.storage || 'Default', 
+    variantName: selectedVariant?.storage || selectedColor?.name || 'Default',
+    variantSubName: selectedVariant?.storage || '',
+    
+    model: product.name, 
+    color: selectedColor?.name || 'Default',
+    storage: selectedVariant?.storage || '',
+    countInStock: selectedColor?.countInStock?? selectedVariant?.countInStock?? 0,
+    qty,
+  }));
 
-  };
+  navigate("/shipping");
+}
 
 
   // Filter reviews by selected color, user login to show first his review

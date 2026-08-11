@@ -95,9 +95,9 @@ getRecommendedProducts: builder.query({
   keepUnusedDataFor: 5,
 }),
 getFrequentlyBoughtTogether: builder.query({
-  query: ({ productId, model, color }) => ({
+  query: ({ productId, model }) => ({  
     url: `/products/${productId}/frequently-bought`,
-    params: { model, color },
+    params: { model },  
   }),
   providesTags: ["Products"],
   keepUnusedDataFor: 5,

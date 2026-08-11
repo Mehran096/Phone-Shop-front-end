@@ -199,6 +199,21 @@ export const deleteOrder = createAsyncThunk(
   }
 )
 
+// 10. CANCEL ORDER - ADMIN ONLY
+export const cancelOrder = createAsyncThunk(
+  'order/cancelOrder',
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await api.put(`/orders/${id}/cancel`)
+      return data
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message
+      )
+    }
+  }
+)
+
 const orderSlice = createSlice({
   name: 'order',
   initialState: {
@@ -210,6 +225,7 @@ const orderSlice = createSlice({
     successShip: false,
     successDeliver: false,
     successDelete: false,
+    successCancel: false,
     loading: false,
     error: null,
     page: 1,
@@ -235,6 +251,9 @@ const orderSlice = createSlice({
     },
     resetDelete: (state) => {
       state.successDelete = false
+    },
+     resetCancel: (state) => {  
+    state.successCancel = false
     },
   },
   extraReducers: (builder) => {
@@ -332,7 +351,7 @@ const orderSlice = createSlice({
         state.loading = false
         state.successShip = true
         state.order = action.payload
-        toast.success('Order marked as shipped')
+        toast.success('Order marked as shipped +')
       })
       .addCase(shipOrder.rejected, (state, action) => {
         state.loading = false
@@ -347,7 +366,7 @@ const orderSlice = createSlice({
         state.loading = false
         state.successDeliver = true
         state.order = action.payload
-        toast.success('Order marked as delivered')
+        toast.success('Order marked as delivered +')
       })
       .addCase(deliverOrder.rejected, (state, action) => {
         state.loading = false
@@ -369,8 +388,28 @@ const orderSlice = createSlice({
         state.error = action.payload
         toast.error(action.payload)
       })
+      // CANCEL ORDER
+      .addCase(cancelOrder.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(cancelOrder.fulfilled, (state, action) => {
+        state.loading = false
+        state.successCancel = true
+        state.order = action.payload.order
+        // Update order in orders array too
+        state.orders = state.orders.map(o => 
+          o._id === action.payload.order._id ? action.payload.order : o
+        )
+        toast.success('Order cancelled and sales reverted')
+      })
+      .addCase(cancelOrder.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+        toast.error(action.payload)
+      })
   },
 })
 
-export const { resetMyOrders, resetOrder, resetShip, resetDeliver, resetDelete } = orderSlice.actions
+export const { resetMyOrders, resetOrder, resetShip, resetDeliver, resetDelete, resetCancel } = orderSlice.actions
 export default orderSlice.reducer

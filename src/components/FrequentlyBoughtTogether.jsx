@@ -38,47 +38,63 @@ const FrequentlyBoughtTogether = ({
   }
 
   const handleAddAllToCart = () => {
-    const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
-    const discount = selectedColor?.discount
-    const isDiscountActive = discount?.isActive && discount?.value > 0
-    const final = isDiscountActive? price - (price * discount.value / 100) : price
-    const discountAmount = price - final
-    const imageUrl = selectedColor?.images?.[0]?.url || product?.image || '/placeholder.png';
+  const price = Number(selectedColor?.price || selectedVariant?.price || product?.price || 0);
+  const discount = selectedColor?.discount
+  const isDiscountActive = discount?.isActive && discount?.value > 0
+  const final = isDiscountActive? price - (price * discount.value / 100) : price
+  const discountAmount = price - final
+  const imageUrl = selectedColor?.images?.[0]?.url || product?.image || '/placeholder.png';
 
-    dispatch(addToCart({
-      product: product._id, name: product.name, slug: product.slug, image: imageUrl,
-      price: final, originalPrice: price, discountAmount: discountAmount, discount: selectedColor?.discount,
-      variantType: 'phone', variantName: selectedVariant?.storage || selectedColor?.name || 'Default',
-      variantSubName: selectedVariant?.storage || '', model: phoneModel, color: selectedColor?.name || '',
-      storage: selectedVariant?.storage || '', countInStock: selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, qty: 1,
-    }))
+  // ADD MAIN PRODUCT
+  dispatch(addToCart({
+    product: product._id, name: product.name, slug: product.slug, image: imageUrl,
+    price: final, originalPrice: price, discountAmount: discountAmount, discount: selectedColor?.discount,
+    variantType: 'phone', variantName: selectedVariant?.storage || selectedColor?.name || 'Default',
+    variantSubName: selectedVariant?.storage || '', model: phoneModel, color: selectedColor?.name || '',
+    storage: selectedVariant?.storage || '', countInStock: selectedColor?.countInStock?? selectedVariant?.countInStock?? 0, qty: 1,
+  }))
 
-    const bundleDiscount = selectedItems.length >= 2? 0.05 : 0
-    
-    frequentlyBought.filter(item => selectedItems.includes(item._id)).forEach(item => {
-      const originalPrice = getItemPrice(item)
-      if(originalPrice <= 0) return;
-      
-      const accessoryDiscount = item.discount?.isActive? item.discount.value / 100 : 0
-      const appliedDiscount = accessoryDiscount > 0? accessoryDiscount : bundleDiscount
-      const discountedPrice = originalPrice * (1 - appliedDiscount)
-      const savedAmount = originalPrice - discountedPrice
+  const bundleDiscount = selectedItems.length >= 2? 0.05 : 0
+  
+  frequentlyBought.filter(item => selectedItems.includes(item._id)).forEach(item => {
+  const originalPrice = getItemPrice(item)
+  if(originalPrice <= 0) return;
+  
+  const accessoryDiscount = item.discount?.isActive? item.discount.value / 100 : 0
+  const appliedDiscount = accessoryDiscount > 0? accessoryDiscount : bundleDiscount
+  const discountedPrice = originalPrice * (1 - appliedDiscount)
+  const savedAmount = originalPrice - discountedPrice
 
-      const nameParts = (item.name || '').split(' ')
-      const accColor = item.color || nameParts[0] || 'Default'
-      const accSubType = item.variantSubName || item.name
+  // KEY FIX: Use first variant name for BOTH variant and color
+  const firstVariant = item.variants?.[0] || {};
+  const accVariantName = firstVariant.name || 'Default';
 
-      dispatch(addToCart({ 
-        product: item._id, accessory: item._id, name: item.name, slug: item.slug, image: item.image,
-        price: discountedPrice, originalPrice: originalPrice, discountAmount: savedAmount, discount: item.discount,
-        variantType: 'accessory', variantName: item.accessoryType || 'accessory', variantSubName: accSubType,
-        model: phoneModel, color: accColor, storage: item.storage || '', countInStock: item.countInStock || 999, qty: 1, sku: item.sku || ''
-      }))
-    })
-    
-    toast.success('Items added to cart')
-    navigate('/cart')
-  }
+  dispatch(addToCart({ 
+    product: item._id, 
+    accessory: item._id, 
+    name: item.name, 
+    slug: item.slug, 
+    image: firstVariant.images?.[0]?.url || item.image,
+    price: discountedPrice, 
+    originalPrice: originalPrice, 
+    discountAmount: savedAmount, 
+    discount: item.discount,
+    variantType: 'accessory', 
+    variantName: item.accessoryType || 'Accessory', // same as AccessoryScreen
+    variant: accVariantName, // <-- ADD THIS. This is the match key
+    variantSubName: accVariantName, 
+    model: phoneModel, 
+    color: accVariantName, // FORCE color = variant name
+    storage: item.storage || '', 
+    countInStock: firstVariant.countInStock || item.countInStock || 999, 
+    qty: 1, 
+    sku: firstVariant.sku || item.sku || ''
+  }))
+})
+  
+  toast.success('Items added to cart')
+  navigate('/cart')
+}
 
   const bundleDiscount = selectedItems.length >= 2? 0.05 : 0
   const accessoriesSelected = (frequentlyBought || []).filter(item => selectedItems.includes(item._id))
