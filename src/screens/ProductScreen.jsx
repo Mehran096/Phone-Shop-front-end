@@ -1224,20 +1224,18 @@ const buyNowHandler = () => {
                         <FaShoppingCart size={18} /> Add to Cart
                       </button>
 
+                      
                       {/* WISHLIST - WRAPPED IN DIV */}
-                      <div className="w-14 h-14 flex-shrink-0">
-                        <WishlistButton
-                          product={product}
-                          selectedColor={selectedColor}
-                          selectedStorage={selectedVariant?.storage}
-                          selectedPrice={selectedVariant?.price}
-                          selectedImage={selectedColor?.images?.[0]?.url}
-                          countInStock={selectedVariant?.countInStock}
-                          className="w-14 h-14 flex items-center justify-center border border-gray-300 rounded-lg bg-white 
-                          hover:bg-gray-50 transition"
-                          showText={false}
-                        />
-                      </div>
+                    <div className="w-14 h-14 flex-shrink-0">
+                      <WishlistButton 
+                        type="product"
+                        product={product}
+                        productVariantIndex={selectedVariantIndex}  
+                        productColorIndex={selectedColorIndex}      
+                        className="w-14 h-14 flex items-center justify-center border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
+                        showText={false}
+                      />
+                    </div>
 
                     </div>
                   </div>

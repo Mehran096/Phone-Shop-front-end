@@ -8,6 +8,7 @@ import { FaShoppingCart, FaCheck, FaArrowLeft, FaStar, FaTag } from 'react-icons
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import ProductImageGallery from '../components/ProductImageGallery';
+import WishlistButton from '../components/WishlistButton'
 
 const ACCESSORY_TYPE_LABELS = {
   case: 'Case', charger: 'Charger', cable: 'Cable', glass: 'Glass', audio: 'Audio', holder: 'Holder', other: 'Other'
@@ -507,11 +508,30 @@ const addToCartHandler = () => {
               <p className='text-sm font-bold text-green-600 mt-2'>Estimated Total: ${totalPrice}</p>
             </div>
           )}
-          <button onClick={addToCartHandler} disabled={displayStock === 0}
-            className='w-full bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 
-            disabled:bg-gray-400 text-sm sm:text-base'>
-            <FaShoppingCart /> Add To Cart
-          </button>
+         {/* ADD TO CART + WISHLIST */}
+{/* ADD TO CART + WISHLIST */}
+<div className="flex gap-3">
+  <button 
+    onClick={addToCartHandler} 
+    disabled={displayStock === 0}
+    className='w-full lg:flex-1 bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 
+    disabled:bg-gray-400 disabled:cursor-not-allowed text-base'
+  >
+    <FaShoppingCart /> Add To Cart
+  </button>
+
+  {/* WISHLIST BUTTON - FIXED FOR NEW SCHEMA */}
+  <div className="w-14 h-14 flex-shrink-0">
+    <WishlistButton 
+      type="accessory"
+      accessory={accessory}
+      modelIndex={hasModels ? uniqueModels.findIndex(m => m.modelName === selectedModelName) : 0}
+      accessoryVariantIndex={availableVariants.findIndex(v => v.sku === selectedVariant?.sku || v.name === selectedVariant?.name)} // <-- CHANGED
+      className="w-14 h-14 flex items-center justify-center border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
+      showText={false}
+    />
+  </div>
+</div>
         </div>
       </div>
 

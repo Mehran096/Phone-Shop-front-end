@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { FaTrash, FaHeart, FaShoppingCart, FaChevronDown } from 'react-icons/fa'
+import { FaTrash, FaHeart, FaShoppingCart } from 'react-icons/fa'
 import Message from '../components/Message'
 import Loader from '../components/Loader'
-import { getWishlist, removeFromWishlist, updateWishlistQty } from '../slices/wishlistSlice'
+import { getWishlist, removeWishlistItem, clearWishlist } from '../slices/wishlistSlice'
 import { addToCart } from '../slices/cartSlice'
 import { toast } from 'react-toastify'
 
@@ -14,7 +14,7 @@ const WishlistScreen = () => {
   const navigate = useNavigate()
 
   const { userInfo } = useSelector((state) => state.auth)
-  const { wishlistItems, loading, error } = useSelector((state) => state.wishlist)
+  const { wishlist, loading, error } = useSelector((state) => state.wishlist)
 
   useEffect(() => {
     if (!userInfo) {
@@ -24,99 +24,103 @@ const WishlistScreen = () => {
     }
   }, [dispatch, userInfo, navigate])
 
-  const removeFromWishlistHandler = (id) => {
-    dispatch(removeFromWishlist(id))
+  const removeHandler = (itemId) => {
+    dispatch(removeWishlistItem(itemId)) // slice already refetches
     toast.success('Removed from wishlist')
   }
 
-  const addToCartHandler = (item) => {
-    dispatch(addToCart({
-      product: item.product,
-      slug: item.slug,
-      name: item.name,
-      image: item.image,
-      price: item.price,
-      originalPrice: item.originalPrice,
-      discountAmount: item.discountAmount,
-      color: item.color,
-      storage: item.storage,
-      countInStock: item.countInStock,
-      qty: item.qty,
-    }))
-    dispatch(removeFromWishlist(item._id))
-    toast.success('Added to cart')
+  const clearHandler = () => {
+    dispatch(clearWishlist()) // slice already refetches
+    toast.success('Wishlist cleared')
   }
 
-  const moveAllToCartHandler = () => {
-    wishlistItems.forEach((item) => {
+  // HELPER - backend now sends finalPrice + originalPrice
+  const getItemData = (item) => {
+    if (item.type === 'product' && item.product) {
+      const p = item.product
+      const vIdx = item.productVariantIndex?? 0
+      const cIdx = item.productColorIndex?? 0
+      const variant = p.variants?.[vIdx]
+      const color = variant?.colors?.[cIdx]
+
+      if(!variant ||!color) return null
+
+      const price = Number(color?.price || 0) // this is already discounted
+      const originalPrice = Number(color?.originalPrice || price)
+      const discountAmount = Number(color?.discountAmount || 0)
+      const savingsPercent = color?.discount?.value || 0
+
+      return {
+        type: 'product',
+        id: p._id,
+        slug: p.slug,
+        name: p.name,
+        image: color?.images?.[0]?.url || p.images?.[0]?.url || '/placeholder.jpg',
+        price: price,
+        originalPrice: originalPrice,
+        discountAmount: discountAmount,
+        savingsPercent: savingsPercent,
+        link: `/product/${p.slug}`,
+        subText: `Color: ${color?.name || 'N/A'} | Storage: ${variant?.storage || 'N/A'}`
+      }
+    }
+
+    if (item.type === 'accessory' && item.accessory) {
+      const a = item.accessory
+      const mIdx = item.modelIndex?? 0
+      const vIdx = item.accessoryVariantIndex?? 0
+      const model = a.models?.[mIdx]
+      const variant = model?.variants?.[vIdx]
+
+      if(!model ||!variant) return null
+
+      const price = Number(variant.price || 0) // already discounted
+      const originalPrice = Number(variant.originalPrice || price)
+      const discountAmount = Number(variant.discountAmount || 0)
+      const savingsPercent = variant?.discount?.value || 0
+
+      return {
+        type: 'accessory',
+        id: a._id,
+        slug: a.slug,
+        name: `${a.name} - ${model.modelName} ${variant.name}`,
+        image: variant.images?.[0]?.url || a.image || '/placeholder.jpg',
+        price: price,
+        originalPrice: originalPrice,
+        discountAmount: discountAmount,
+        savingsPercent: savingsPercent,
+        link: `/accessory/${a.slug}`,
+        subText: `Model: ${model.modelName} | ${variant.name}`
+      }
+    }
+    return null
+  }
+
+  const addToCartHandler = (item) => {
+    if (item.type === 'product') {
       dispatch(addToCart({
-        product: item.product,
+        product: item.id,
         slug: item.slug,
         name: item.name,
         image: item.image,
         price: item.price,
-        originalPrice: item.originalPrice,
-        discountAmount: item.discountAmount,
-        color: item.color,
-        storage: item.storage,
-        countInStock: item.countInStock,
-        qty: item.qty,
+        qty: 1,
       }))
-    })
-    toast.success('All items moved to cart')
+      toast.success('Added to cart')
+    } else {
+      toast.info('Add accessory to cart coming soon')
+    }
   }
 
-  //qty drop down
-  // V34.38 KEY: Reusable Dropdown - Works Mobile + Desktop
-  const CustomDropdown = ({ value, onChange, options }) => {
-    const [open, setOpen] = useState(false);
-    const ref = useRef(null);
-
-    useEffect(() => {
-      const handleClickOutside = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    return (
-      <div ref={ref} className="relative w-16">
-        <button
-          type="button"
-          disabled={options.length === 0}
-          onClick={() => setOpen(!open)}
-          className='flex items-center justify-between border rounded-lg gap-1 px-2 h-8 w-full border-gray-300 rounded-md bg-white shadow-sm font-medium text-xs text-gray-900'
-        >
-          <span>{value}</span>
-          <FaChevronDown className={`text-gray-500 transition-transform text-[10px] ${open ? 'rotate-180' : ''}`} />
-        </button>
-
-        {open && (
-          <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto 
-          [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {options.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => { onChange(opt); setOpen(false); }}
-                className={`w-full text-left px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-blue-50 ${Number(value) === Number(opt) ? 'bg-blue-50 text-blue-600' : ''}`}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
+  const items = wishlist?.items || []
+  const validItems = items.map(getItemData).filter(Boolean)
 
   return (
     <>
-      {/* seo start */}
       <Helmet>
         <title>Wishlist | Phone-Store</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      {/* seo end*/}
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
@@ -124,120 +128,95 @@ const WishlistScreen = () => {
           My Wishlist
         </h1>
 
-        {loading ? (
+        {loading? (
           <Loader />
-        ) : error ? (
+        ) : error? (
           <Message variant="danger">{error}</Message>
-        ) : wishlistItems.length === 0 ? (
+        ) : validItems.length === 0? (
           <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center">
             <FaHeart className="text-gray-200 text-6xl sm:text-8xl mb-6" />
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">
               Your wishlist is empty
             </h2>
             <p className="text-gray-500 mb-6 max-w-md">
-              Save your favorite items here. Tap the heart icon on any product to add it to your wishlist.
+              Save your favorite products and accessories here.
             </p>
-            <Link
-              to="/"
-              className="bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-lg sm:rounded-xl hover:bg-blue-700 font-semibold inline-flex items-center gap-2"
-            >
+            <Link to="/" className="bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-lg sm:rounded-xl hover:bg-blue-700 font-semibold inline-flex items-center gap-2">
               <FaShoppingCart /> Start Shopping
             </Link>
           </div>
         ) : (
           <>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-              <p className="text-gray-600 text-sm sm:text-base">{wishlistItems.length} items saved</p>
-              <button
-                onClick={moveAllToCartHandler}
-                className="bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl hover:bg-green-700 font-semibold flex items-center gap-2 text-sm sm:text-base"
-              >
-                <FaShoppingCart /> Move All to Cart
+              <p className="text-gray-600 text-sm sm:text-base">{validItems.length} items saved</p>
+              <button onClick={clearHandler} className="bg-red-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl hover:bg-red-700 font-semibold flex items-center gap-2 text-sm sm:text-base">
+                <FaTrash /> Clear All
               </button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-              {wishlistItems.map((item) => (
-                <div key={item._id} className="border border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-4 hover:shadow-lg transition">
-                  <Link to={`/product/${item.slug}?color=${encodeURIComponent(item.color)}&storage=${encodeURIComponent(item.storage)}`}>
-                    <div className="w-full aspect-square bg-gray-50 rounded-md sm:rounded-lg mb-2 sm:mb-4 flex items-center justify-center overflow-hidden">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-contain p-1 sm:p-2"
-                      />
-                    </div>
-                  </Link>
+              {items.map((item) => {
+                const data = getItemData(item)
+                if (!data) return null
 
-                  <Link to={`/product/${item.slug}?color=${encodeURIComponent(item.color)}&storage=${encodeURIComponent(item.storage)}`}>
-                    <h3 className="font-semibold text-xs sm:text-base mb-1 sm:mb-2 hover:text-blue-600 line-clamp-2">
-                      {item.name}
-                    </h3>
-                  </Link>
+                return (
+                  <div key={item._id} className="border border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-4 hover:shadow-lg transition flex flex-col">
+                    <Link to={data.link}>
+                      <div className="w-full aspect-square bg-gray-50 rounded-md sm:rounded-lg mb-2 sm:mb-4 flex items-center justify-center overflow-hidden">
+                        <img src={data.image} alt={data.name} className="w-full h-full object-contain p-1 sm:p-2" />
+                      </div>
+                    </Link>
 
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-4">
-                    <span className="font-medium">Color:</span> {item.color}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-4">
-                    <span className="font-medium">Storage:</span> {item.storage}
-                  </p>
+                    <Link to={data.link}>
+                      <h3 className="font-semibold text-xs sm:text-base mb-1 hover:text-blue-600 line-clamp-2 flex-1">
+                        {data.name}
+                      </h3>
+                    </Link>
 
-                  <div className="mb-2 sm:mb-4">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-lg sm:text-2xl font-bold text-red-600">
-                        ${Number(item.price).toFixed(2)}
-                      </span>
+                    <p className="text-xs text-gray-500 mb-2">{data.subText}</p>
 
-                      {item.originalPrice > item.price && (
-                        <span className="text-sm sm:text-lg text-gray-500 line-through">
-                          ${Number(item.originalPrice).toFixed(2)}
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-lg sm:text-xl font-bold text-red-600">
+                          ${data.price.toFixed(2)}
                         </span>
+                        {data.originalPrice > data.price && (
+                          <>
+                            <span className="text-xs sm:text-sm text-gray-500 line-through">
+                              ${data.originalPrice.toFixed(2)}
+                            </span>
+                            {data.savingsPercent > 0 && (
+                              <span className="px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">
+                                -{data.savingsPercent}%
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      {data.discountAmount > 0 && (
+                        <p className="text-xs text-green-600 font-medium mt-1">
+                          You save ${data.discountAmount.toFixed(2)}
+                        </p>
                       )}
                     </div>
 
-                    {item.discountAmount > 0 && (
-                      <p className="text-xs sm:text-sm text-green-600 font-medium mt-1">
-                        You save ${Number(item.discountAmount).toFixed(2)}
-                      </p>
-                    )}
+                    <div className="flex gap-2 mt-auto">
+                      {item.type === 'product' && (
+                        <button onClick={() => addToCartHandler(data)} className="flex-1 bg-blue-600 text-white py-1.5 sm:py-2 rounded-md sm:rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-semibold">
+                          <FaShoppingCart /> Add
+                        </button>
+                      )}
+                      <button onClick={() => removeHandler(item._id)} className="px-3 py-1.5 sm:py-2 border-red-200 text-red-500 rounded-md sm:rounded-lg hover:bg-red-50 transition" title="Remove">
+                        <FaTrash />
+                      </button>
+                    </div>
                   </div>
-
-                  {/* Add this qty selector */}
-                  {/* QTY ROW - V34.39 KEY */}
-                  <div className="flex items-center gap-2 mb-2 sm:mb-4">
-                    <label className="text-xs sm:text-sm text-gray-600">Qty:</label>
-                    <CustomDropdown
-                      value={item.qty}
-                      onChange={(val) => dispatch(updateWishlistQty({ id: item._id, qty: Number(val) }))}
-                      options={Array.from({ length: Math.min(item.countInStock, 10) }, (_, i) => i + 1)}
-                    />
-                    <span className="text-xs text-gray-500">({item.countInStock} in stock)</span>
-                  </div>
-
-                  <div className="flex gap-1 sm:gap-2">
-                    <button
-                      onClick={() => addToCartHandler(item)}
-                      className="flex-1 bg-blue-600 text-white py-1.5 sm:py-2 rounded-md sm:rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-semibold"
-                    >
-                      <FaShoppingCart className="text-xs sm:text-base" />
-                      <span className="hidden xs:inline sm:inline">Add to Cart</span>
-                      <span className="xs:hidden sm:hidden">Add</span>
-                    </button>
-                    <button
-                      onClick={() => removeFromWishlistHandler(item._id)}
-                      className="px-2 sm:px-4 py-1.5 sm:py-2 border border-red-200 sm:border-2 text-red-500 rounded-md sm:rounded-lg hover:bg-red-50 hover:border-red-300 transition"
-                      title="Remove"
-                    >
-                      <FaTrash className="text-xs sm:text-base" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}
       </div>
-
     </>
   )
 }

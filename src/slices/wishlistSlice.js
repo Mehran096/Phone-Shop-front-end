@@ -6,75 +6,73 @@ export const getWishlist = createAsyncThunk(
   'wishlist/get',
   async (_, { rejectWithValue }) => {
     try {
-      const config = {
-        withCredentials: true,
-      }
-      const { data } = await api.get('/users/wishlist', config)
-      return data
+      const config = { withCredentials: true }
+      const { data } = await api.get('/wishlist', config)
+      return data // returns { user, items: [], _id, createdAt }
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
     }
   }
 )
 
-// Add to wishlist - UPDATED: added countInStock
-export const addToWishlist = createAsyncThunk(
-  'wishlist/add',
-  async ({ product, color, storage, image, price, originalPrice, discountAmount,  name, countInStock, slug, qty }, { rejectWithValue }) => {
-    try {
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        withCredentials: true,
-      }
-      const { data } = await api.post('/users/wishlist', {
-        product,
-        slug,
-        color,
-        storage,
-        image,
-        price,
-        originalPrice,
-        discountAmount,
-        name,
-        countInStock, // <-- Added this
-        qty: qty || 1,
-      }, config)
-      return data // returns updated wishlist array
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message)
-    }
-  }
-)
-
-// Remove from wishlist - uses wishlist item _id
-export const removeFromWishlist = createAsyncThunk(
-  'wishlist/remove',
-  async (wishlistItemId, { rejectWithValue }) => {
-    try {
-      const config = {
-        withCredentials: true,
-      }
-      const { data } = await api.delete(`/users/wishlist/${wishlistItemId}`, config)
-      return data // returns updated wishlist array
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message)
-    }
-  }
-)
-
-// Update wishlist item qty - NEW THUNK
-export const updateWishlistQty = createAsyncThunk(
-  'wishlist/updateQty',
-  async ({ id, qty }, { rejectWithValue }) => {
+// Toggle wishlist - handles both add + remove for product + accessory
+export const toggleWishlist = createAsyncThunk(
+  'wishlist/toggle',
+  async ({ 
+    type, 
+    productId, 
+    accessoryId, 
+    modelIndex = 0, 
+    accessoryVariantIndex = 0,
+    productVariantIndex = 0,
+    productColorIndex = 0
+  }, { rejectWithValue }) => {
     try {
       const config = {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true,
       }
-      const { data } = await api.put(`/users/wishlist/${id}`, { qty }, config)
-      return data // returns updated wishlist item
+      const { data } = await api.post('/wishlist/toggle', { 
+        type, 
+        productId, 
+        accessoryId, 
+        modelIndex, 
+        accessoryVariantIndex,
+        productVariantIndex,
+        productColorIndex
+      }, config)
+      return data.wishlist // backend returns { message, wishlist }
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  }
+)
+
+// Remove by item._id
+export const removeWishlistItem = createAsyncThunk(
+  'wishlist/removeItem',
+  async (itemId, { dispatch, rejectWithValue }) => {
+    try {
+      const config = { withCredentials: true }
+      await api.delete(`/wishlist/${itemId}`, config)
+      // Refetch to get updated prices/discounts from backend
+      dispatch(getWishlist())
+      return itemId
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  }
+)
+
+// Clear all
+export const clearWishlist = createAsyncThunk(
+  'wishlist/clear',
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const config = { withCredentials: true }
+      await api.delete('/wishlist', config)
+      dispatch(getWishlist())
+      return { items: [] }
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
     }
@@ -84,14 +82,14 @@ export const updateWishlistQty = createAsyncThunk(
 const wishlistSlice = createSlice({
   name: 'wishlist',
   initialState: {
-    wishlistItems: [],
+    wishlist: { items: [] },
     loading: false,
     error: null,
     success: false,
   },
   reducers: {
     resetWishlist: (state) => {
-      state.wishlistItems = []
+      state.wishlist = { items: [] }
       state.loading = false
       state.error = null
       state.success = false
@@ -99,61 +97,59 @@ const wishlistSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Get wishlist
-     .addCase(getWishlist.pending, (state) => {
+      // Get
+      .addCase(getWishlist.pending, (state) => {
         state.loading = true
         state.error = null
       })
-     .addCase(getWishlist.fulfilled, (state, action) => {
+      .addCase(getWishlist.fulfilled, (state, action) => {
         state.loading = false
-        state.wishlistItems = action.payload
+        state.wishlist = action.payload
       })
-     .addCase(getWishlist.rejected, (state, action) => {
+      .addCase(getWishlist.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
-      // Add to wishlist
-     .addCase(addToWishlist.pending, (state) => {
+      
+      // Toggle
+      .addCase(toggleWishlist.pending, (state) => {
         state.loading = true
         state.success = false
         state.error = null
       })
-     .addCase(addToWishlist.fulfilled, (state, action) => {
+      .addCase(toggleWishlist.fulfilled, (state, action) => {
         state.loading = false
         state.success = true
-        state.wishlistItems = action.payload
+        state.wishlist = action.payload
       })
-     .addCase(addToWishlist.rejected, (state, action) => {
+      .addCase(toggleWishlist.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
-      // Remove from wishlist
-     .addCase(removeFromWishlist.pending, (state) => {
+      
+      // Remove - FIXED: just refetch
+      .addCase(removeWishlistItem.pending, (state) => {
         state.loading = true
         state.error = null
       })
-     .addCase(removeFromWishlist.fulfilled, (state, action) => {
+      .addCase(removeWishlistItem.fulfilled, (state) => {
         state.loading = false
-        state.wishlistItems = action.payload
+        // state updated by getWishlist dispatch
       })
-     .addCase(removeFromWishlist.rejected, (state, action) => {
+      .addCase(removeWishlistItem.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
-      // Update wishlist qty - NEW CASES
-     .addCase(updateWishlistQty.pending, (state) => {
+      
+      // Clear
+      .addCase(clearWishlist.pending, (state) => {
         state.loading = true
-        state.error = null
       })
-     .addCase(updateWishlistQty.fulfilled, (state, action) => {
+      .addCase(clearWishlist.fulfilled, (state) => {
         state.loading = false
-        const updatedItem = action.payload
-        const index = state.wishlistItems.findIndex((x) => x._id === updatedItem._id)
-        if (index!== -1) {
-          state.wishlistItems[index] = updatedItem
-        }
+        // state updated by getWishlist dispatch
       })
-     .addCase(updateWishlistQty.rejected, (state, action) => {
+      .addCase(clearWishlist.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
