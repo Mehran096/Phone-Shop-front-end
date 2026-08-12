@@ -32,6 +32,10 @@ const OrderScreen = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [carrier, setCarrier] = useState('');
 
+  const [showCancelModal, setShowCancelModal] = useState(false)
+const [cancelReason, setCancelReason] = useState('Customer requested')
+const [cancelCode, setCancelCode] = useState('ADMIN_CANCEL_COD')
+
   const { order, loading, error, successShip, successDeliver, successCancel } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.auth);
 
@@ -92,18 +96,28 @@ const OrderScreen = () => {
     dispatch(deliverOrder(orderId));
   };
 
-  const cancelHandler = () => {
-  if(window.confirm('Are you sure you want to cancel this order? This will revert sales.')) {
-    dispatch(cancelOrder(orderId));
-  }
+ const cancelHandler = () => {
+  setShowCancelModal(true)
 };
 
+const confirmCancel = () => {
+  if(window.confirm(`Are you sure? This will revert sales + FBT.`)) {
+    dispatch(cancelOrder({ 
+      id: orderId, 
+      cancelReason,
+      cancelCode
+    }))
+    setShowCancelModal(false)
+  }
+}
+
   const getOrderStatus = () => {
-    if (order.isDelivered) return { text: 'Delivered', color: 'bg-green-100 text-green-800' };
-    if (order.isShipped) return { text: 'Shipped', color: 'bg-blue-100 text-blue-800' };
-    if (order.isPaid) return { text: 'Processing', color: 'bg-yellow-100 text-yellow-800' };
-    return { text: 'Awaiting Payment', color: 'bg-gray-100 text-gray-800' };
-  };
+  if (order.isCancelled) return { text: 'Cancelled', color: 'bg-red-100 text-red-800' }; // <-- ADD THIS FIRST
+  if (order.isDelivered) return { text: 'Delivered', color: 'bg-green-100 text-green-800' };
+  if (order.isShipped) return { text: 'Shipped', color: 'bg-blue-100 text-blue-800' };
+  if (order.isPaid) return { text: 'Processing', color: 'bg-yellow-100 text-yellow-800' };
+  return { text: 'Awaiting Payment', color: 'bg-gray-100 text-gray-800' };
+};
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -114,6 +128,8 @@ const OrderScreen = () => {
       minute: '2-digit',
     });
   };
+
+  
 
   return loading ? (
     <Loader />
@@ -421,37 +437,92 @@ const OrderScreen = () => {
             )}
 
            {/* Admin - Cancel Order Card */}
-{userInfo?.isAdmin && !order.isCancelled && !order.isDelivered && order.paymentMethod === 'COD' && (
-  <div className="bg-white p-5 rounded-xl shadow-sm border border-red-200">
+{userInfo?.isAdmin && !order?.isCancelled && order?.isDelivered && order?.paymentMethod === 'COD' && (
+  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
     <div className="flex items-center gap-2 mb-4">
       <FaBox className="text-red-600" />
       <h2 className="text-lg font-semibold text-gray-900">Cancel Order</h2>
     </div>
     <p className="text-sm text-gray-600 mb-3">
-      Cancel this COD order. Sales will be reverted for products and accessories.
+      Cancel this COD order. Sales and FBT will be reverted.
     </p>
     <button
       type="button"
       onClick={cancelHandler}
       disabled={loading}
-      className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-sm text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-sm text-sm font-semibold disabled:opacity-50"
     >
       {loading ? 'Cancelling...' : 'Cancel Order'}
     </button>
   </div>
 )}
 
+{/* Cancel Modal */}
+{showCancelModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl p-6 w-full max-w-md">
+      <h3 className="text-lg font-bold mb-4">Cancel Order</h3>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Cancel Code</label>
+          <select 
+            value={cancelCode}
+            onChange={(e) => setCancelCode(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="ADMIN_CANCEL_COD">ADMIN_CANCEL_COD</option>
+            <option value="USER_REQUEST">USER_REQUEST</option>
+            <option value="OUT_OF_STOCK">OUT_OF_STOCK</option>
+            <option value="WRONG_ADDRESS">WRONG_ADDRESS</option>
+            <option value="FRAUD">FRAUD</option>
+            <option value="DUPLICATE_ORDER">DUPLICATE_ORDER</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Reason</label>
+          <input
+            type="text"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="Enter reason..."
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-3 mt-6">
+        <button 
+          onClick={() => setShowCancelModal(false)}
+          className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg text-sm font-medium"
+        >
+          Close
+        </button>
+        <button 
+          onClick={confirmCancel}
+          className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium"
+        >
+          Confirm Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 {/* Show if already cancelled */}
 {userInfo?.isAdmin && order.isCancelled && (
   <div className="bg-red-50 p-5 rounded-xl shadow-sm border border-red-200">
-    <div className="text-sm font-semibold text-red-800">
+    <div className="text-sm font-semibold text-red-800 mb-2">
       Order Cancelled on {formatDate(order.cancelledAt)}
     </div>
-    {order.isRefunded && (
-      <div className="text-sm text-red-700 mt-1">
-        Refunded on {formatDate(order.refundedAt)}
-      </div>
-    )}
+    <div className="text-xs text-red-700 space-y-1">
+      <p><strong>Code:</strong> {order.cancelCode}</p>
+      <p><strong>Reason:</strong> {order.cancelReason}</p>
+      {order.isRefunded && (
+        <p><strong>Refunded:</strong> {formatDate(order.refundedAt)}</p>
+      )}
+    </div>
   </div>
 )}
           </div>

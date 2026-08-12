@@ -22,13 +22,21 @@ const MyOrdersScreen = () => {
     }
   }, [dispatch, navigate, userInfo])
 
-  const getStatus = (order) => {
-    if (order.isCancelled) return { text: 'Cancelled', color: 'bg-red-100 text-red-800' }
-    if (order.isDelivered) return { text: 'Delivered', color: 'bg-green-100 text-green-800' }
-    if (order.isShipped) return { text: 'Shipped', color: 'bg-blue-100 text-blue-800' }
-    if (order.isPaid) return { text: 'Processing', color: 'bg-yellow-100 text-yellow-800' }
-    return { text: 'Awaiting Payment', color: 'bg-gray-100 text-gray-800' }
+  const formatCancelReason = (reason) => {
+  if(!reason) return ''
+  return reason.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')
+}
+
+ const getStatus = (order) => {
+  if (order.isCancelled) return { 
+    text: `Cancelled${order.cancelReason ? ` - ${formatCancelReason(order.cancelReason)}` : ''}`, 
+    color: 'bg-red-100 text-red-800' 
   }
+  if (order.isDelivered) return { text: 'Delivered', color: 'bg-green-100 text-green-800' }
+  if (order.isShipped) return { text: 'Shipped', color: 'bg-blue-100 text-blue-800' }
+  if (order.isPaid) return { text: 'Processing', color: 'bg-yellow-100 text-yellow-800' }
+  return { text: 'Awaiting Payment', color: 'bg-gray-100 text-gray-800' }
+}
 
   return (
     <>
@@ -64,7 +72,7 @@ const MyOrdersScreen = () => {
                       </tr></thead>
                       <tbody>{myOrders.map((order, index) => (
                         <tr key={order._id} className='border-b'>
-                          <td className='py-3'>#{1001 + index}</td>
+                          <td className='py-3'>#{order._id.slice(-6).toUpperCase()}</td>
                           <td className='py-3'>{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                           <td className='py-3'>${order.totalPrice.toFixed(2)}</td>
                           <td className='py-3'>
@@ -83,7 +91,7 @@ const MyOrdersScreen = () => {
                     {myOrders.map((order, index) => (
                       <div key={order._id} className='border border-gray-200 rounded-lg p-4'>
                         <div className='flex justify-between mb-2'>
-                          <p className='font-semibold text-sm'>#{1001 + index}</p>
+                          <p className='font-semibold text-sm'>#{order._id.slice(-6).toUpperCase()}</p>
                           <p className='text-xs text-gray-500'>{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                         </div>
                         <div className='mb-3'>

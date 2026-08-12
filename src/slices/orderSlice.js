@@ -151,6 +151,21 @@ export const listOrders = createAsyncThunk(
   }
 )
 
+// 6B. GET ALL ORDERS - ADMIN ONLY - NO PAGINATION - FOR DASHBOARD
+export const listAllOrders = createAsyncThunk(
+  'order/listAllOrders',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get('/orders/all')
+      return data
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message
+      )
+    }
+  }
+)
+
 // 7. SHIP ORDER - ADMIN ONLY - ADDS TRACKING
 export const shipOrder = createAsyncThunk(
   'order/shipOrder',
@@ -202,9 +217,9 @@ export const deleteOrder = createAsyncThunk(
 // 10. CANCEL ORDER - ADMIN ONLY
 export const cancelOrder = createAsyncThunk(
   'order/cancelOrder',
-  async (id, { rejectWithValue }) => {
+  async ({ id, cancelReason, cancelCode }, { rejectWithValue }) => {
     try {
-      const { data } = await api.put(`/orders/${id}/cancel`)
+      const { data } = await api.put(`/orders/${id}/cancel`, { cancelReason, cancelCode }) // <-- SEND BODY HERE
       return data
     } catch (error) {
       return rejectWithValue(
@@ -217,7 +232,9 @@ export const cancelOrder = createAsyncThunk(
 const orderSlice = createSlice({
   name: 'order',
   initialState: {
-    orders: [],
+    orders: [], // paginated
+    allOrders: [], // for dashboard stats
+    loadingAll: false, // separate loading for allOrders without pagination
     myOrders: [],
     order: null,
     success: false,
@@ -313,6 +330,19 @@ const orderSlice = createSlice({
       })
       .addCase(listMyOrders.rejected, (state, action) => {
         state.loading = false
+        state.error = action.payload
+      })
+      // LIST ALL ORDERS - ADMIN - NO PAGINATION
+      .addCase(listAllOrders.pending, (state) => {
+        state.loadingAll = true
+        state.error = null
+      })
+      .addCase(listAllOrders.fulfilled, (state, action) => {
+        state.loadingAll = false
+        state.allOrders = action.payload
+      })
+      .addCase(listAllOrders.rejected, (state, action) => {
+        state.loadingAll = false
         state.error = action.payload
       })
       // GET ORDER DETAILS
