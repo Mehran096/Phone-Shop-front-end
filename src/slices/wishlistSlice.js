@@ -8,14 +8,14 @@ export const getWishlist = createAsyncThunk(
     try {
       const config = { withCredentials: true }
       const { data } = await api.get('/wishlist', config)
-      return data // returns { user, items: [], _id, createdAt }
+      return data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
     }
   }
 )
 
-// Toggle wishlist - handles both add + remove for product + accessory
+// Toggle wishlist
 export const toggleWishlist = createAsyncThunk(
   'wishlist/toggle',
   async ({ 
@@ -41,37 +41,34 @@ export const toggleWishlist = createAsyncThunk(
         productVariantIndex,
         productColorIndex
       }, config)
-      return data.wishlist // backend returns { message, wishlist }
+      return data.wishlist
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
     }
   }
 )
 
-// Remove by item._id
+// Remove by item._id - KEY FIX 1: Remove dispatch getWishlist
 export const removeWishlistItem = createAsyncThunk(
   'wishlist/removeItem',
-  async (itemId, { dispatch, rejectWithValue }) => {
+  async (itemId, { rejectWithValue }) => {
     try {
       const config = { withCredentials: true }
       await api.delete(`/wishlist/${itemId}`, config)
-      // Refetch to get updated prices/discounts from backend
-      dispatch(getWishlist())
-      return itemId
+      return itemId // just return id
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
     }
   }
 )
 
-// Clear all
+// Clear all - KEY FIX 2: Remove dispatch getWishlist
 export const clearWishlist = createAsyncThunk(
   'wishlist/clear',
-  async (_, { dispatch, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
       const config = { withCredentials: true }
       await api.delete('/wishlist', config)
-      dispatch(getWishlist())
       return { items: [] }
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -127,27 +124,30 @@ const wishlistSlice = createSlice({
         state.error = action.payload
       })
       
-      // Remove - FIXED: just refetch
+      // Remove - KEY FIX 3: Optimistic delete
       .addCase(removeWishlistItem.pending, (state) => {
-        state.loading = true
+        state.loading = false // don't show loader
         state.error = null
       })
-      .addCase(removeWishlistItem.fulfilled, (state) => {
+      .addCase(removeWishlistItem.fulfilled, (state, action) => {
         state.loading = false
-        // state updated by getWishlist dispatch
+        // INSTANT DELETE: remove from UI immediately
+        state.wishlist.items = state.wishlist.items.filter(
+          (item) => item._id !== action.payload
+        )
       })
       .addCase(removeWishlistItem.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
       
-      // Clear
+      // Clear - KEY FIX 4: Clear instantly
       .addCase(clearWishlist.pending, (state) => {
-        state.loading = true
+        state.loading = false
       })
       .addCase(clearWishlist.fulfilled, (state) => {
         state.loading = false
-        // state updated by getWishlist dispatch
+        state.wishlist = { items: [] } // clear instantly
       })
       .addCase(clearWishlist.rejected, (state, action) => {
         state.loading = false

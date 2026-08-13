@@ -25,16 +25,55 @@ const WishlistScreen = () => {
   }, [dispatch, userInfo, navigate])
 
   const removeHandler = (itemId) => {
-    dispatch(removeWishlistItem(itemId)) // slice already refetches
+    dispatch(removeWishlistItem(itemId)) // INSTANT DELETE now
     toast.success('Removed from wishlist')
   }
 
   const clearHandler = () => {
-    dispatch(clearWishlist()) // slice already refetches
+    dispatch(clearWishlist()) // INSTANT CLEAR now
     toast.success('Wishlist cleared')
   }
 
-  // HELPER - backend now sends finalPrice + originalPrice
+  //for links
+  const getProductLink = (item) => {
+  if (item.type === 'product') {
+    const p = item.product
+    const vIdx = item.productVariantIndex?? 0
+    const cIdx = item.productColorIndex?? 0
+    const variant = p.variants?.[vIdx]
+    const color = variant?.colors?.[cIdx]
+
+    const base = `/product/${p.slug}`
+    const params = new URLSearchParams()
+
+    if (color?.name) params.append('color', color.name)
+    if (variant?.storage) params.append('storage', variant.storage)
+    if (variant?.storage) params.append('v', vIdx) // for index
+    if (color) params.append('c', cIdx) // for index
+    
+    return `${base}?${params.toString()}`
+  }
+
+  if (item.type === 'accessory') {
+    const a = item.accessory
+    const mIdx = item.modelIndex?? 0
+    const vIdx = item.accessoryVariantIndex?? 0
+    const model = a.models?.[mIdx]
+    const variant = model?.variants?.[vIdx]
+
+    const base = `/accessory/${a.slug}`
+    const params = new URLSearchParams()
+
+    if (model?.modelName) params.append('model', model.modelName)
+    if (variant?.name) params.append('variant', variant.name)
+    if (mIdx!== undefined) params.append('m', mIdx)
+    if (vIdx!== undefined) params.append('v', vIdx)
+
+    return `${base}?${params.toString()}`
+  }
+  return '/'
+}
+
   const getItemData = (item) => {
     if (item.type === 'product' && item.product) {
       const p = item.product
@@ -45,7 +84,7 @@ const WishlistScreen = () => {
 
       if(!variant ||!color) return null
 
-      const price = Number(color?.price || 0) // this is already discounted
+      const price = Number(color?.price || 0)
       const originalPrice = Number(color?.originalPrice || price)
       const discountAmount = Number(color?.discountAmount || 0)
       const savingsPercent = color?.discount?.value || 0
@@ -56,11 +95,11 @@ const WishlistScreen = () => {
         slug: p.slug,
         name: p.name,
         image: color?.images?.[0]?.url || p.images?.[0]?.url || '/placeholder.jpg',
-        price: price,
-        originalPrice: originalPrice,
-        discountAmount: discountAmount,
-        savingsPercent: savingsPercent,
-        link: `/product/${p.slug}`,
+        price,
+        originalPrice,
+        discountAmount,
+        savingsPercent,
+        link: getProductLink(item),
         subText: `Color: ${color?.name || 'N/A'} | Storage: ${variant?.storage || 'N/A'}`
       }
     }
@@ -74,7 +113,7 @@ const WishlistScreen = () => {
 
       if(!model ||!variant) return null
 
-      const price = Number(variant.price || 0) // already discounted
+      const price = Number(variant.price || 0)
       const originalPrice = Number(variant.originalPrice || price)
       const discountAmount = Number(variant.discountAmount || 0)
       const savingsPercent = variant?.discount?.value || 0
@@ -85,16 +124,18 @@ const WishlistScreen = () => {
         slug: a.slug,
         name: `${a.name} - ${model.modelName} ${variant.name}`,
         image: variant.images?.[0]?.url || a.image || '/placeholder.jpg',
-        price: price,
-        originalPrice: originalPrice,
-        discountAmount: discountAmount,
-        savingsPercent: savingsPercent,
-        link: `/accessory/${a.slug}`,
+        price,
+        originalPrice,
+        discountAmount,
+        savingsPercent,
+        link: getProductLink(item),
         subText: `Model: ${model.modelName} | ${variant.name}`
       }
     }
     return null
   }
+
+  
 
   const addToCartHandler = (item) => {
     if (item.type === 'product') {
@@ -155,12 +196,10 @@ const WishlistScreen = () => {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-              {items.map((item) => {
-                const data = getItemData(item)
-                if (!data) return null
-
+              {validItems.map((data, index) => { // KEY FIX: map validItems
+                const item = items[index] // get original item for _id
                 return (
-                  <div key={item._id} className="border border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-4 hover:shadow-lg transition flex flex-col">
+                  <div key={item._id} className="border border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-4 hover:shadow-lg transition flex-col">
                     <Link to={data.link}>
                       <div className="w-full aspect-square bg-gray-50 rounded-md sm:rounded-lg mb-2 sm:mb-4 flex items-center justify-center overflow-hidden">
                         <img src={data.image} alt={data.name} className="w-full h-full object-contain p-1 sm:p-2" />
@@ -201,7 +240,7 @@ const WishlistScreen = () => {
                     </div>
 
                     <div className="flex gap-2 mt-auto">
-                      {item.type === 'product' && (
+                      {data.type === 'product' && (
                         <button onClick={() => addToCartHandler(data)} className="flex-1 bg-blue-600 text-white py-1.5 sm:py-2 rounded-md sm:rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-semibold">
                           <FaShoppingCart /> Add
                         </button>
