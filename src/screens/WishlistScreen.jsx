@@ -36,53 +36,53 @@ const WishlistScreen = () => {
 
   //for links
   const getProductLink = (item) => {
-  if (item.type === 'product') {
-    const p = item.product
-    const vIdx = item.productVariantIndex?? 0
-    const cIdx = item.productColorIndex?? 0
-    const variant = p.variants?.[vIdx]
-    const color = variant?.colors?.[cIdx]
+    if (item.type === 'product') {
+      const p = item.product
+      const vIdx = item.productVariantIndex ?? 0
+      const cIdx = item.productColorIndex ?? 0
+      const variant = p.variants?.[vIdx]
+      const color = variant?.colors?.[cIdx]
 
-    const base = `/product/${p.slug}`
-    const params = new URLSearchParams()
+      const base = `/product/${p.slug}`
+      const params = new URLSearchParams()
 
-    if (color?.name) params.append('color', color.name)
-    if (variant?.storage) params.append('storage', variant.storage)
-    if (variant?.storage) params.append('v', vIdx) // for index
-    if (color) params.append('c', cIdx) // for index
-    
-    return `${base}?${params.toString()}`
+      if (color?.name) params.append('color', color.name)
+      if (variant?.storage) params.append('storage', variant.storage)
+      if (variant?.storage) params.append('v', vIdx) // for index
+      if (color) params.append('c', cIdx) // for index
+
+      return `${base}?${params.toString()}`
+    }
+
+    if (item.type === 'accessory') {
+      const a = item.accessory
+      const mIdx = item.modelIndex ?? 0
+      const vIdx = item.accessoryVariantIndex ?? 0
+      const model = a.models?.[mIdx]
+      const variant = model?.variants?.[vIdx]
+
+      const base = `/accessory/${a.slug}`
+      const params = new URLSearchParams()
+
+      if (model?.modelName) params.append('model', model.modelName)
+      if (variant?.name) params.append('variant', variant.name)
+      if (mIdx !== undefined) params.append('m', mIdx)
+      if (vIdx !== undefined) params.append('v', vIdx)
+
+      return `${base}?${params.toString()}`
+    }
+    return '/'
   }
-
-  if (item.type === 'accessory') {
-    const a = item.accessory
-    const mIdx = item.modelIndex?? 0
-    const vIdx = item.accessoryVariantIndex?? 0
-    const model = a.models?.[mIdx]
-    const variant = model?.variants?.[vIdx]
-
-    const base = `/accessory/${a.slug}`
-    const params = new URLSearchParams()
-
-    if (model?.modelName) params.append('model', model.modelName)
-    if (variant?.name) params.append('variant', variant.name)
-    if (mIdx!== undefined) params.append('m', mIdx)
-    if (vIdx!== undefined) params.append('v', vIdx)
-
-    return `${base}?${params.toString()}`
-  }
-  return '/'
-}
 
   const getItemData = (item) => {
     if (item.type === 'product' && item.product) {
       const p = item.product
-      const vIdx = item.productVariantIndex?? 0
-      const cIdx = item.productColorIndex?? 0
+      const vIdx = item.productVariantIndex ?? 0
+      const cIdx = item.productColorIndex ?? 0
       const variant = p.variants?.[vIdx]
       const color = variant?.colors?.[cIdx]
 
-      if(!variant ||!color) return null
+      if (!variant || !color) return null
 
       const price = Number(color?.price || 0)
       const originalPrice = Number(color?.originalPrice || price)
@@ -106,12 +106,12 @@ const WishlistScreen = () => {
 
     if (item.type === 'accessory' && item.accessory) {
       const a = item.accessory
-      const mIdx = item.modelIndex?? 0
-      const vIdx = item.accessoryVariantIndex?? 0
+      const mIdx = item.modelIndex ?? 0
+      const vIdx = item.accessoryVariantIndex ?? 0
       const model = a.models?.[mIdx]
       const variant = model?.variants?.[vIdx]
 
-      if(!model ||!variant) return null
+      if (!model || !variant) return null
 
       const price = Number(variant.price || 0)
       const originalPrice = Number(variant.originalPrice || price)
@@ -135,22 +135,80 @@ const WishlistScreen = () => {
     return null
   }
 
-  
 
-  const addToCartHandler = (item) => {
-    if (item.type === 'product') {
+
+  const addToCartHandler = (data, wishlistItem) => {
+    if (data.type === 'product') {
+      const p = wishlistItem.product
+      const vIdx = wishlistItem.productVariantIndex ?? 0
+      const cIdx = wishlistItem.productColorIndex ?? 0
+      const variant = p.variants?.[vIdx]
+      const color = variant?.colors?.[cIdx]
+
+      if (!variant || !color) return toast.error('Variant not found')
+
       dispatch(addToCart({
-        product: item.id,
-        slug: item.slug,
-        name: item.name,
-        image: item.image,
-        price: item.price,
+        product: p._id,
+        accessory: null,
+        sku: color?.sku || variant?.sku || p?.sku || '', // <-- NOW WE HAVE SKU
+        name: p.name,
+        slug: p.slug,
+        image: data.image,
+        price: data.price,
+        originalPrice: data.originalPrice,
+        discountAmount: data.discountAmount,
+        discount: color?.discount,
+
+        variantType: 'phone',
+        variant: variant?.storage || 'Default',
+        variantName: variant?.storage || color?.name || 'Default',
+        variantSubName: variant?.storage || '',
+
+        model: p.name,
+        color: color?.name || 'Default', // <-- NOW WE HAVE COLOR
+        storage: variant?.storage || '', // <-- NOW WE HAVE STORAGE
+        countInStock: color?.countInStock ?? variant?.countInStock ?? 0,
         qty: 1,
       }))
-      toast.success('Added to cart')
-    } else {
-      toast.info('Add accessory to cart coming soon')
+      toast.success(`${data.name} added to cart`)
     }
+
+    if (data.type === 'accessory') {
+      const a = wishlistItem.accessory
+      const mIdx = wishlistItem.modelIndex ?? 0
+      const vIdx = wishlistItem.accessoryVariantIndex ?? 0
+      const model = a.models?.[mIdx]
+      const variant = model?.variants?.[vIdx]
+
+      if (!model || !variant) return toast.error('Variant not found')
+
+      dispatch(addToCart({
+        product: a._id,
+        accessory: a._id,
+        sku: variant?.sku || '', // <-- NOW WE HAVE SKU
+        name: a.name,
+        slug: a.slug,
+        image: data.image,
+        price: data.price,
+        originalPrice: data.originalPrice,
+        discountAmount: data.discountAmount,
+        discountAmountPerItem: data.discountAmount,
+
+        variantType: 'accessory',
+        variantName: a.accessoryType,
+        variant: variant?.name,
+        variantSubName: variant?.name,
+
+        model: model?.modelName || 'Universal',
+        color: variant?.name, // <-- NOW WE HAVE COLOR
+        storage: '',
+        qty: 1,
+        countInStock: variant?.countInStock || 0,
+      }))
+      toast.success(`${data.name} added to cart`)
+    }
+
+    navigate('/cart')
   }
 
   const items = wishlist?.items || []
@@ -169,11 +227,11 @@ const WishlistScreen = () => {
           My Wishlist
         </h1>
 
-        {loading? (
+        {loading ? (
           <Loader />
-        ) : error? (
+        ) : error ? (
           <Message variant="danger">{error}</Message>
-        ) : validItems.length === 0? (
+        ) : validItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center">
             <FaHeart className="text-gray-200 text-6xl sm:text-8xl mb-6" />
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">
@@ -240,11 +298,12 @@ const WishlistScreen = () => {
                     </div>
 
                     <div className="flex gap-2 mt-auto">
-                      {data.type === 'product' && (
-                        <button onClick={() => addToCartHandler(data)} className="flex-1 bg-blue-600 text-white py-1.5 sm:py-2 rounded-md sm:rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-semibold">
-                          <FaShoppingCart /> Add
-                        </button>
-                      )}
+                      <button
+                        onClick={() => addToCartHandler(data, item)}
+                        className="flex-1 bg-blue-600 text-white py-1.5 sm:py-2 rounded-md sm:rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-semibold"
+                      >
+                        <FaShoppingCart /> Add
+                      </button>
                       <button onClick={() => removeHandler(item._id)} className="px-3 py-1.5 sm:py-2 border-red-200 text-red-500 rounded-md sm:rounded-lg hover:bg-red-50 transition" title="Remove">
                         <FaTrash />
                       </button>
