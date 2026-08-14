@@ -9,6 +9,7 @@ import Loader from '../components/Loader';
 import Message from '../components/Message';
 import ProductImageGallery from '../components/ProductImageGallery';
 import WishlistButton from '../components/WishlistButton'
+import AccessoryReviewSection from '../components/AccessoryReviewSection'
 
 const ACCESSORY_TYPE_LABELS = {
   case: 'Case', charger: 'Charger', cable: 'Cable', glass: 'Glass', audio: 'Audio', holder: 'Holder', other: 'Other'
@@ -333,9 +334,14 @@ const AccessoryScreen = () => {
           <h1 className='text-xl sm:text-2xl font-bold mb-3'>{displayTitle}</h1>
 
           <div className='flex items-center gap-2 mb-4'>
-            <div className='flex text-yellow-400 text-sm'><FaStar /><FaStar /><FaStar /><FaStar /><FaStar /></div>
-            <span className='text-sm'>({accessory?.numReviews || 0} reviews)</span>
-          </div>
+  <div className='flex text-yellow-400 text-sm'>
+    {[...Array(5)].map((_, i) => (
+      <FaStar key={i} className={i < Math.round(accessory?.rating || 0) ? 'text-yellow-400' : 'text-gray-300'} />
+    ))}
+  </div>
+  <span className='text-sm'>({accessory?.numReviews || 0} reviews)</span>
+  <a href="#reviews" className="text-blue-600 text-sm hover:underline">Write a review</a>
+</div>
 
           {/* PRICE WITH ORIGINAL + CUT PRICE */}
           <div className='mb-4'>
@@ -516,7 +522,7 @@ const AccessoryScreen = () => {
         </div>
       </div>
 
-      {/* SPECS + DESCRIPTION */}
+           {/* SPECS + DESCRIPTION */}
       <div className='mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
         <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
           <h3 className='font-bold text-base sm:text-lg mb-4'>Description</h3>
@@ -536,6 +542,10 @@ const AccessoryScreen = () => {
           ) : <p className="text-gray-400 text-sm">No specifications added</p>}
         </div>
       </div>
+
+      {/* V33.80 KEY: REVIEWS SECTION */}
+      <AccessoryReviewSection accessory={accessory} />
+
     </div>
   );
 };

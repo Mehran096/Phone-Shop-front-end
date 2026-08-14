@@ -54,9 +54,10 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
 import AccessoryScreen from './screens/AccessoryScreen';
+import AccessoryReviewsScreen from './screens/AccessoryReviewsScreen';
   
  
-
+ 
  
 
 
@@ -175,6 +176,7 @@ const dispatch = useDispatch()
             <Route path='/deals' element={<DealsScreen isOnline={isOnline}/>} />
             <Route path="/compare" element={<CompareScreen />} />
             <Route path='/accessory/:slug' element={<AccessoryScreen />} />
+            <Route path="/accessories/:slug/reviews" element={<AccessoryReviewsScreen />} />
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
