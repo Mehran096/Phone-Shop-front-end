@@ -12,8 +12,8 @@ import {
   useVoteReviewMutation,
   useUploadAccessoryReviewImageMutation, // V33.80 KEY
   useReplyToReviewMutation,
-   useGetRepliesQuery,  
-  useUpdateReplyMutation,  
+  useGetRepliesQuery,
+  useUpdateReplyMutation,
   useDeleteReplyMutation,
 } from '../slices/accessoriesApiSlice'
 
@@ -60,18 +60,23 @@ const AccessoryReviewSection = ({ accessory }) => {
   const [editDragActive, setEditDragActive] = useState(false)
   const editFileInputRef = useRef(null)
 
+  //filter review states
+  //   const [selectedRating, setSelectedRating] = useState('')
+  // const [keyword, setKeyword] = useState('')
+  // const [sort, setSort] = useState('newest')
+
   const { userInfo } = useSelector((state) => state.auth)
 
-  const { data: reviewData, isLoading, refetch } = useGetAccessoryReviewsQuery({
-  slug: accessory.slug,
-  page: 1,
-  limit: 3, // only show 3 on main page
-  sort: 'newest',
-  model: '',
-  variant: '',
-  rating: '',
-  keyword: ''
-})
+  const { data: reviewData, isLoading } = useGetAccessoryReviewsQuery({
+    slug: accessory.slug,
+    page: 1,
+    limit: 10, // only show 3 on main page
+    sort: 'newest',
+    model: '',
+    variant: '',
+    rating: '',
+    keyword: ''
+  })
   const [createReview, { isLoading: loadingReview }] = useCreateAccessoryReviewMutation()
   const [updateReview, { isLoading: loadingUpdate }] = useUpdateAccessoryReviewMutation()
   const [uploadImages] = useUploadAccessoryReviewImageMutation()
@@ -80,33 +85,45 @@ const AccessoryReviewSection = ({ accessory }) => {
 
   const [replyText, setReplyText] = useState({}) // {reviewId: 'text'}
   const [activeReplyBox, setActiveReplyBox] = useState(null) // reviewId
-const [editingReplyId, setEditingReplyId] = useState(null)
-const [editReplyText, setEditReplyText] = useState('')
+  const [editingReplyId, setEditingReplyId] = useState(null)
+  const [editReplyText, setEditReplyText] = useState('')
 
-const [replyToReview, { isLoading: replying }] = useReplyToReviewMutation()
-const [updateReply, { isLoading: updatingReply }] = useUpdateReplyMutation()
-const [deleteReply, { isLoading: deletingReply }] = useDeleteReplyMutation()
+  const [replyToReview, { isLoading: replying }] = useReplyToReviewMutation()
+  const [updateReply, { isLoading: updatingReply }] = useUpdateReplyMutation()
+  const [deleteReply, { isLoading: deletingReply }] = useDeleteReplyMutation()
 
   const reviews = useMemo(() => {
-  const all = reviewData?.reviews || []
-  if (!userInfo) return all
-  
-  const userRev = all.find(r => r.user === userInfo._id)
-  const others = all.filter(r => r.user !== userInfo._id)
-  
-  return userRev ? [userRev, ...others] : all // user review first
-}, [reviewData, userInfo])
+    const all = reviewData?.reviews || []
+
+    // 1. IF LOGGED IN: User review first, then sort rest by most helpful
+    if (userInfo) {
+      const userRev = all.find(r => r.user?.toString() === userInfo._id?.toString())
+      const others = all.filter(r => r.user?.toString() !== userInfo._id?.toString())
+
+      // sort others by most helpful
+      others.sort((a, b) => (b.helpful?.length || 0) - (a.helpful?.length || 0))
+
+      const sorted = userRev ? [userRev, ...others] : others
+      return sorted.slice(0, 3) // only 3 on main page
+    }
+
+    // 2. IF NOT LOGGED IN: Sort all by most helpful
+    const sorted = [...all].sort((a, b) => (b.helpful?.length || 0) - (a.helpful?.length || 0))
+    return sorted.slice(0, 3) // only 3 on main page
+  }, [reviewData, userInfo])
 
   const userReview = reviews.find(r => r.user?.toString() === userInfo?._id?.toString())
 
+  //filter for reviews summary
   const ratingBreakdown = useMemo(() => {
-    const counts = [0, 0, 0, 0, 0, 0]
-    reviews.forEach(r => counts[r.rating]++)
-    const total = reviews.length
+    const breakdown = reviewData?.ratingBreakdown || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+    const total = reviewData?.totalReviews || 0
     return [5, 4, 3, 2, 1].map(star => ({
-      star, count: counts[star], percent: total > 0 ? (counts[star] / total) * 100 : 0
+      star,
+      count: breakdown[star],
+      percent: total > 0 ? (breakdown[star] / total) * 100 : 0
     }))
-  }, [reviews])
+  }, [reviewData])
 
   // V33.80 KEY: DRAG DROP + PREVIEW HANDLER
   const handleFiles = (files, isEdit = false) => {
@@ -206,7 +223,7 @@ const [deleteReply, { isLoading: deletingReply }] = useDeleteReplyMutation()
       setShowReviewForm(false)
       setRating(0); setTitle(''); setComment('');
       setReviewImageFiles([]); setImagePreviews([])
-      refetch()
+
     } catch (err) {
       toast.error(err?.data?.message || err.error)
     } finally {
@@ -254,7 +271,7 @@ const [deleteReply, { isLoading: deletingReply }] = useDeleteReplyMutation()
       }).unwrap()
       toast.success('Review updated')
       cancelEdit()
-      refetch()
+
     } catch (err) {
       toast.error(err?.data?.message || err.error)
     }
@@ -263,94 +280,94 @@ const [deleteReply, { isLoading: deletingReply }] = useDeleteReplyMutation()
   const deleteHandler = async (reviewId) => {
     if (window.confirm('Delete this review?')) {
       await deleteReview({ slug: accessory.slug, reviewId }).unwrap()
-      refetch()
+
     }
   }
 
   const helpfulHandler = async (reviewId, type) => {
-  if (!userInfo) return toast.error('Please login to vote')
-  
-  const review = reviews.find(r => r._id === reviewId)
-  if (!review) return
+    if (!userInfo) return toast.error('Please login to vote')
 
-  const userIdStr = userInfo._id
-  const alreadyVotedHelpful = review.helpful?.some(id => id.toString() === userIdStr)
-  const alreadyVotedNotHelpful = review.notHelpful?.some(id => id.toString() === userIdStr)
+    const review = reviews.find(r => r._id === reviewId)
+    if (!review) return
 
-  let message = ''
+    const userIdStr = userInfo._id
+    const alreadyVotedHelpful = review.helpful?.some(id => id.toString() === userIdStr)
+    const alreadyVotedNotHelpful = review.notHelpful?.some(id => id.toString() === userIdStr)
 
-  try {
-    await voteReview({
-      slug: accessory.slug,
-      reviewId,
-      type // 'helpful' or 'notHelpful'
-    }).unwrap()
+    let message = ''
 
-    // SET TOAST BASED ON ACTION
-    if (type === 'helpful') {
-      if (alreadyVotedHelpful) {
-        message = 'Removed helpful vote 👍'
-      } else if (alreadyVotedNotHelpful) {
-        message = 'Changed to helpful 👍'
-      } else {
-        message = 'Thanks for marking this helpful! 👍'
-      }
-    } 
-    else { // notHelpful
-      if (alreadyVotedNotHelpful) {
-        message = 'Removed not helpful vote 👎'
-      } else if (alreadyVotedHelpful) {
-        message = 'Changed to not helpful 👎'
-      } else {
-        message = 'Thanks for your feedback! 👎'
-      }
-    }
-
-    toast.success(message)
-    refetch() // Refresh UI
-  } catch (err) {
-    toast.error(err?.data?.message || err.error)
-  }
-}
-
-const submitReply = async (reviewId) => {
-  const comment = replyText[reviewId]
-  if (!comment?.trim()) return toast.error('Reply cannot be empty')
-  try {
-    await replyToReview({ slug: accessory.slug, reviewId, comment }).unwrap()
-    toast.success('Reply posted')
-    setReplyText({...replyText, [reviewId]: '' })
-    setActiveReplyBox(null) // CLOSE THE BOX AFTER POST
-    refetch()
-  } catch (err) {
-    toast.error(err?.data?.message || err.error)
-  }
-}
-
-const submitEditReply = async (reviewId, replyId) => {
-  if (!editReplyText?.trim()) return toast.error('Reply cannot be empty')
-  try {
-    await updateReply({ slug: accessory.slug, reviewId, replyId, comment: editReplyText }).unwrap()
-    toast.success('Reply updated')
-    setEditingReplyId(null)
-    setEditReplyText('')
-    refetch()
-  } catch (err) {
-    toast.error(err?.data?.message || err.error)
-  }
-}
-
-const deleteReplyHandler = async (reviewId, replyId) => {
-  if (window.confirm('Delete this reply?')) {
     try {
-      await deleteReply({ slug: accessory.slug, reviewId, replyId }).unwrap()
-      toast.success('Reply deleted')
-      refetch()
+      await voteReview({
+        slug: accessory.slug,
+        reviewId,
+        type // 'helpful' or 'notHelpful'
+      }).unwrap()
+
+      // SET TOAST BASED ON ACTION
+      if (type === 'helpful') {
+        if (alreadyVotedHelpful) {
+          message = 'Removed helpful vote 👍'
+        } else if (alreadyVotedNotHelpful) {
+          message = 'Changed to helpful 👍'
+        } else {
+          message = 'Thanks for marking this helpful! 👍'
+        }
+      }
+      else { // notHelpful
+        if (alreadyVotedNotHelpful) {
+          message = 'Removed not helpful vote 👎'
+        } else if (alreadyVotedHelpful) {
+          message = 'Changed to not helpful 👎'
+        } else {
+          message = 'Thanks for your feedback! 👎'
+        }
+      }
+
+      toast.success(message)
+
     } catch (err) {
       toast.error(err?.data?.message || err.error)
     }
   }
-}
+
+  const submitReply = async (reviewId) => {
+    const comment = replyText[reviewId]
+    if (!comment?.trim()) return toast.error('Reply cannot be empty')
+    try {
+      await replyToReview({ slug: accessory.slug, reviewId, comment }).unwrap()
+      toast.success('Reply posted')
+      setReplyText({ ...replyText, [reviewId]: '' })
+      setActiveReplyBox(null) // CLOSE THE BOX AFTER POST
+
+    } catch (err) {
+      toast.error(err?.data?.message || err.error)
+    }
+  }
+
+  const submitEditReply = async (reviewId, replyId) => {
+    if (!editReplyText?.trim()) return toast.error('Reply cannot be empty')
+    try {
+      await updateReply({ slug: accessory.slug, reviewId, replyId, comment: editReplyText }).unwrap()
+      toast.success('Reply updated')
+      setEditingReplyId(null)
+      setEditReplyText('')
+
+    } catch (err) {
+      toast.error(err?.data?.message || err.error)
+    }
+  }
+
+  const deleteReplyHandler = async (reviewId, replyId) => {
+    if (window.confirm('Delete this reply?')) {
+      try {
+        await deleteReply({ slug: accessory.slug, reviewId, replyId }).unwrap()
+        toast.success('Reply deleted')
+
+      } catch (err) {
+        toast.error(err?.data?.message || err.error)
+      }
+    }
+  }
 
   {/* image selector to show in create form review*/ }
   const selectedModelObj = accessory.models?.find(m => m.modelName === selectedModel)
@@ -373,22 +390,33 @@ const deleteReplyHandler = async (reviewId, replyId) => {
 
   return (
     <div id="reviews" className="mt-10">
+
       {/* 1. SUMMARY */}
       <div className="bg-white border rounded-xl p-6 mb-6 shadow-sm">
         <h3 className="text-lg font-semibold mb-5">Customer Reviews Summary</h3>
         <div className="flex flex-col md:flex-row gap-10">
           <div className="md:w-56 text-center">
-            <div className="text-5xl font-bold">{accessory.rating?.toFixed(1) || 0}</div>
-            <div className="flex justify-center text-yellow-400 text-3xl mt-2">
-              {[1, 2, 3, 4, 5].map((i) => <span key={i}>{accessory.rating >= i ? "★" : "☆"}</span>)}
+            <div className="text-5xl font-bold">
+              {(reviewData?.rating || accessory.rating || 0).toFixed(1)}
             </div>
-            <p className="text-sm text-gray-500 mt-3">{accessory.numReviews} customer reviews</p>
+            <div className="flex justify-center text-yellow-400 text-3xl mt-2">
+              {[1, 2, 3, 4, 5].map((i) =>
+                <span key={i}>
+                  {(reviewData?.rating || accessory.rating || 0) >= i ? "★" : "☆"}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 mt-3">
+              {reviewData?.totalReviews || accessory.numReviews || 0} customer reviews
+            </p>
           </div>
           <div className="flex-1">
             {ratingBreakdown.map(({ star, count, percent }) => (
               <div key={star} className="flex items-center gap-3 mb-2">
                 <span className="w-8 text-sm">{star}★</span>
-                <div className="flex-1 h-2 bg-gray-200 rounded-full"><div className="bg-yellow-400 h-2 rounded-full" style={{ width: `${percent}%` }}></div></div>
+                <div className="flex-1 h-2 bg-gray-200 rounded-full">
+                  <div className="bg-yellow-400 h-2 rounded-full" style={{ width: `${percent}%` }}></div>
+                </div>
                 <span className="w-16 text-right text-sm">{count} ({Math.round(percent)}%)</span>
               </div>
             ))}
@@ -427,8 +455,8 @@ const deleteReplyHandler = async (reviewId, replyId) => {
                   onClick={() => helpfulHandler(review._id, 'helpful')}
                   disabled={voting}
                   className={`flex items-center gap-1 transition ${review.helpful?.some(id => id.toString() === userInfo?._id?.toString())
-                      ? 'text-green-600 font-semibold'
-                      : 'text-gray-600 hover:text-green-600'
+                    ? 'text-green-600 font-semibold'
+                    : 'text-gray-600 hover:text-green-600'
                     }`}
                 >
                   <FaThumbsUp /> Helpful ({review.helpful?.length || 0})
@@ -438,15 +466,15 @@ const deleteReplyHandler = async (reviewId, replyId) => {
                   onClick={() => helpfulHandler(review._id, 'notHelpful')}
                   disabled={voting}
                   className={`flex items-center gap-1 transition ${review.notHelpful?.some(id => id.toString() === userInfo?._id?.toString())
-                      ? 'text-red-600 font-semibold'
-                      : 'text-gray-600 hover:text-red-600'
+                    ? 'text-red-600 font-semibold'
+                    : 'text-gray-600 hover:text-red-600'
                     }`}
                 >
                   <FaThumbsDown /> Not Helpful ({review.notHelpful?.length || 0})
                 </button>
               </div>
             )}
-             {/* === REPLIES START === */}
+            {/* === REPLIES START === */}
             {/* SHOW ALL REPLIES */}
             {review.replies?.length > 0 && (
               <div className='ml-6 mt-4 space-y-3 border-l-4 border-blue-500 pl-4'>
@@ -460,13 +488,13 @@ const deleteReplyHandler = async (reviewId, replyId) => {
                       </div>
                       {userInfo?.isAdmin && (
                         <div className='flex gap-2'>
-                          <button 
+                          <button
                             onClick={() => { setEditingReplyId(reply._id); setEditReplyText(reply.comment) }}
                             className='text-blue-600 hover:text-blue-800'
                           >
                             <FaPen size={12} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => deleteReplyHandler(review._id, reply._id)}
                             disabled={deletingReply}
                             className='text-red-600 hover:text-red-800'
@@ -510,48 +538,48 @@ const deleteReplyHandler = async (reviewId, replyId) => {
             )}
 
             {/* ADMIN REPLY BUTTON + BOX */}
-{userInfo?.isAdmin && (
-  <div className='ml-6 mt-3'>
-    {activeReplyBox === review._id? (
-      <>
-        <textarea
-          value={replyText[review._id] || ''}
-          onChange={(e) => setReplyText({...replyText, [review._id]: e.target.value })}
-          placeholder="Reply as Admin..."
-          rows="2"
-          className="w-full border p-2 rounded text-sm focus:border-blue-500 outline-none"
-          autoFocus
-        />
-        <div className='flex gap-2 mt-2'>
-          <button
-            onClick={() => submitReply(review._id)}
-            disabled={replying}
-            className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {replying? 'Posting...' : 'Post Reply'}
-          </button>
-          <button
-            onClick={() => setActiveReplyBox(null)}
-            className="bg-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-400"
-          >
-            Cancel
-          </button>
-        </div>
-      </>
-    ) : (
-      <button
-        onClick={() => setActiveReplyBox(review._id)}
-        className="text-blue-600 text-sm font-semibold hover:underline"
-      >
-        Reply
-      </button>
-    )}
-  </div>
-)}
+            {userInfo?.isAdmin && (
+              <div className='ml-6 mt-3'>
+                {activeReplyBox === review._id ? (
+                  <>
+                    <textarea
+                      value={replyText[review._id] || ''}
+                      onChange={(e) => setReplyText({ ...replyText, [review._id]: e.target.value })}
+                      placeholder="Reply as Admin..."
+                      rows="2"
+                      className="w-full border p-2 rounded text-sm focus:border-blue-500 outline-none"
+                      autoFocus
+                    />
+                    <div className='flex gap-2 mt-2'>
+                      <button
+                        onClick={() => submitReply(review._id)}
+                        disabled={replying}
+                        className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:bg-gray-400"
+                      >
+                        {replying ? 'Posting...' : 'Post Reply'}
+                      </button>
+                      <button
+                        onClick={() => setActiveReplyBox(null)}
+                        className="bg-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-400"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setActiveReplyBox(review._id)}
+                    className="text-blue-600 text-sm font-semibold hover:underline"
+                  >
+                    Reply
+                  </button>
+                )}
+              </div>
+            )}
             {/* === REPLIES END === */}
           </div>
         ))}
-        {reviews.length > 3 && <Link to={`/accessories/${accessory.slug}/reviews`} className="border px-6 py-2 rounded hover:bg-gray-50">View All Reviews ({reviews.length})</Link>}
+        {reviewData?.totalReviews > 3 && <Link to={`/accessories/${accessory.slug}/reviews`} className="border px-6 py-2 rounded hover:bg-gray-50">View All Reviews ({reviewData.totalReviews})</Link>}
       </div>
 
       {/* 3. WRITE REVIEW BUTTON */}
@@ -562,26 +590,35 @@ const deleteReplyHandler = async (reviewId, replyId) => {
       )}
 
       {/* 3.5 ALREADY REVIEWED MESSAGE */}
-{userInfo && userReview && !showReviewForm && (
-  <div className='mt-8 pt-8 border-t'>
-    <div className='bg-green-50 border border-green-200 rounded-lg p-4'>
-      <div className='flex items-center justify-between'>
-        <div>
-          <p className="text-green-700 font-semibold flex items-center gap-2">
-            <FaCheck /> You have already reviewed this accessory
-          </p>
-          <p className="text-sm text-gray-600 mt-1">You can edit or delete your review below</p>
+      {userInfo && userReview && !showReviewForm && (
+        <div className='mt-8 pt-8 border-t'>
+          <div className='bg-green-50 border border-green-200 rounded-lg p-4'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className="text-green-700 font-semibold flex items-center gap-2">
+                  <FaCheck /> You have already reviewed this accessory
+                </p>
+                <p className="text-sm text-gray-600 mt-1">You can edit or delete your review below</p>
+              </div>
+              <button
+                onClick={() => handleEditClick(userReview)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
+              >
+                Edit Review
+              </button>
+            </div>
+          </div>
         </div>
-        <button 
-          onClick={() => handleEditClick(userReview)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
-        >
-          Edit Review
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
+
+      {/* 3.75 SIGN IN MESSAGE for guest */}
+      {!userInfo && (
+        <div className='mt-8 pt-8 border-t'>
+          <Link to='/login' className='bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700'>
+            Sign in to write a review
+          </Link>
+        </div>
+      )}
 
       {/* 4. CREATE FORM */}
       {userInfo && !userReview && showReviewForm && (
@@ -725,118 +762,169 @@ const deleteReplyHandler = async (reviewId, replyId) => {
         </div>
       )}
 
+
       {/* 5. EDIT MODAL */}
+
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4" onClick={cancelEdit}>
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={cancelEdit}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full p-1.5 transition"
-            >
-              <FaX size={18} />
-            </button>
-            <h3 className='text-2xl font-bold mb-5'>Edit Your Review</h3>
-            <form onSubmit={submitEditHandler} className='space-y-4'>
-              <div className='flex gap-1'>{[1, 2, 3, 4, 5].map(num => <FaStar key={num} onClick={() => setEditRating(num)} className={`w-8 h-8 cursor-pointer ${num <= editRating ? 'text-amber-500' : 'text-gray-300'}`} />)}</div>
-              <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="Review Title" className="w-full border p-2 rounded" />
-              <textarea value={editComment} onChange={e => setEditComment(e.target.value)} rows="4" className="w-full border p-2 rounded" required />
-
-              <div
-                onDragEnter={editDragHandlers.handleDragIn}
-                onDragLeave={editDragHandlers.handleDragOut}
-                onDragOver={editDragHandlers.handleDrag}
-                onDrop={(e) => editDragHandlers.handleDrop(e, true)}
-                className={`border-2 border-dashed rounded-lg p-4 text-center transition ${editDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} ${editImagePreviews.length >= 3 ? 'opacity-50 pointer-events-none' : 'hover:border-gray-400'}`}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-2 sm:p-4"
+          onClick={cancelEdit}
+        >
+          <div
+            className="bg-white w-full sm:max-w-lg rounded-2xl shadow-2xl relative flex flex-col h-[95vh] sm:h-auto sm:max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* HEADER - FIXED */}
+            <div className="flex justify-between items-center p-4 sm:p-5 border-b flex-shrink-0">
+              <h3 className='text-lg sm:text-2xl font-bold'>Edit Your Review</h3>
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2 transition"
               >
-                {editImagePreviews.length >= 3
-                  ? <p className="text-red-500 text-sm font-semibold">Max 3 images. Delete one to add more</p>
-                  : <button type="button" onClick={() => editFileInputRef.current.click()} className="text-blue-600 text-sm underline">Add More Images ({editImagePreviews.length}/3)</button>
-                }
-                <input
-                  ref={editFileInputRef}
-                  type='file'
-                  multiple
-                  accept='image/*'
-                  onChange={(e) => handleFiles(e.target.files, true)}
-                  className='hidden'
-                  disabled={editImagePreviews.length >= 3}
-                />
-              </div>
-              {editImagePreviews.length > 0 && (
-                <DragDropContext onDragEnd={(result) => onDragEnd(result, true)}>
-                  <Droppable droppableId="edit-review-images" direction="horizontal">
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className='flex gap-3 p-3 mt-4 justify-start flex-wrap'
-                      >
-                        {editImagePreviews.map((url, idx) => (
-                          <Draggable key={url + idx} draggableId={`edit-${url}-${idx}`} index={idx}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={`relative group ${snapshot.isDragging ? 'opacity-50 scale-105' : ''}`}
-                              >
-                                <img src={url} className='w-20 h-20 object-contain rounded-lg border bg-white p-1' />
+                <FaX size={20} />
+              </button>
+            </div>
 
-                                {/* Drag Handle */}
-                                <div
-                                  {...provided.dragHandleProps}
-                                  className="absolute -top-2 -left-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-grab hover:bg-gray-900"
-                                  title="Drag to reorder"
-                                >
-                                  <FaGripVertical size={12} />
-                                </div>
-
-                                {/* Delete Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => removeImage(idx, true)}
-                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                                >
-                                  <FaX size={12} />
-                                </button>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
+            {/* BODY - ONLY THIS SCROLLS */}
+            <div className='overflow-y-auto p-4 sm:p-5 flex-1'>
+              <form onSubmit={submitEditHandler} className='space-y-4'>
+                <div>
+                  <label className='block text-sm font-semibold mb-2'>Rating *</label>
+                  <div className='flex gap-1'>
+                    {[1, 2, 3, 4, 5].map(num =>
+                      <FaStar
+                        key={num}
+                        onClick={() => setEditRating(num)}
+                        className={`w-9 h-9 sm:w-8 sm:h-8 cursor-pointer transition ${num <= editRating ? 'text-amber-500' : 'text-gray-300 hover:text-amber-300'}`}
+                      />
                     )}
-                  </Droppable>
-                </DragDropContext>
-              )}
+                  </div>
+                </div>
 
-              <div className='flex gap-3 pt-4'>
-                <button
-                  type='submit'
-                  disabled={loadingUpdate}
-                  className='flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 flex items-center justify-center gap-2'
-                >
-                  {loadingUpdate ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Updating...
-                    </>
-                  ) : 'Update Review'}
-                </button>
+                <div>
+                  <label className='block text-sm font-semibold mb-2'>Review Title</label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    placeholder="Summarize your review"
+                    className="w-full border p-3 rounded-lg focus:border-black outline-none text-base"
+                  />
+                </div>
 
-                <button
-                  type='button'
-                  onClick={cancelEdit}
-                  disabled={loadingUpdate}
-                  className='px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+                <div>
+                  <label className='block text-sm font-semibold mb-2'>Review Comment *</label>
+                  <textarea
+                    value={editComment}
+                    onChange={e => setEditComment(e.target.value)}
+                    rows="4"
+                    placeholder="What did you like or dislike?"
+                    className="w-full border p-3 rounded-lg focus:border-black outline-none text-base"
+                    required
+                  />
+                </div>
+
+                {/* IMAGE UPLOAD */}
+                <div>
+                  <label className='block text-sm font-semibold mb-2'>Add photos ({editImagePreviews.length}/3)</label>
+                  <div
+                    onDragEnter={editDragHandlers.handleDragIn}
+                    onDragLeave={editDragHandlers.handleDragOut}
+                    onDragOver={editDragHandlers.handleDrag}
+                    onDrop={(e) => editDragHandlers.handleDrop(e, true)}
+                    className={`border-2 border-dashed rounded-lg p-4 text-center transition ${editDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} ${editImagePreviews.length >= 3 ? 'opacity-50 pointer-events-none' : 'hover:border-gray-400'}`}
+                  >
+                    {editImagePreviews.length >= 3
+                      ? <p className="text-red-500 text-sm font-semibold">Max 3 images. Delete one to add more</p>
+                      : <button type="button" onClick={() => editFileInputRef.current.click()} className="text-blue-600 text-sm font-medium underline">Add More Images ({editImagePreviews.length}/3)</button>
+                    }
+                    <input
+                      ref={editFileInputRef}
+                      type='file'
+                      multiple
+                      accept='image/*'
+                      onChange={(e) => handleFiles(e.target.files, true)}
+                      className='hidden'
+                      disabled={editImagePreviews.length >= 3}
+                    />
+                  </div>
+
+                  {/* IMAGE PREVIEW GRID - WRAP ON MOBILE */}
+                  {editImagePreviews.length > 0 && (
+                    <DragDropContext onDragEnd={(result) => onDragEnd(result, true)}>
+                      <Droppable droppableId="edit-review-images" direction="horizontal">
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className='flex gap-3 mt-3 flex-wrap'
+                          >
+                            {editImagePreviews.map((url, idx) => (
+                              <Draggable key={url + idx} draggableId={`edit-${url}-${idx}`} index={idx}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`relative group ${snapshot.isDragging ? 'opacity-50 scale-105' : ''}`}
+                                  >
+                                    <img src={url} className='w-20 h-20 object-contain rounded-lg border bg-white p-1' />
+                                    <div
+                                      {...provided.dragHandleProps}
+                                      className="absolute -top-2 -left-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-grab hover:bg-gray-900"
+                                      title="Drag to reorder"
+                                    >
+                                      <FaGripVertical size={12} />
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeImage(idx, true)}
+                                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                                    >
+                                      <FaX size={12} />
+                                    </button>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {/* FOOTER - FIXED */}
+            <div className='flex gap-3 p-4 sm:p-5 border-t bg-white flex-shrink-0'>
+              <button
+                type='button'
+                onClick={submitEditHandler}
+                disabled={loadingUpdate}
+                className='flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 flex items-center justify-center gap-2'
+              >
+                {loadingUpdate ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Updating...
+                  </>
+                ) : 'Update Review'}
+              </button>
+
+              <button
+                type='button'
+                onClick={cancelEdit}
+                disabled={loadingUpdate}
+                className='px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
