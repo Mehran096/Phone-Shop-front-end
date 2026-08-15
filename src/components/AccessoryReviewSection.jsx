@@ -47,6 +47,7 @@ const AccessoryReviewSection = ({ accessory }) => {
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [hoverRating, setHoverRating] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
   const fileInputRef = useRef(null)
 
   // EDIT MODAL STATE
@@ -55,8 +56,7 @@ const AccessoryReviewSection = ({ accessory }) => {
   const [editRating, setEditRating] = useState(0)
   const [editTitle, setEditTitle] = useState('')
   const [editComment, setEditComment] = useState('')
-  const [editImageFiles, setEditImageFiles] = useState([])
-  const [editImagePreviews, setEditImagePreviews] = useState([])
+  const [editImages, setEditImages] = useState([])
   const [editDragActive, setEditDragActive] = useState(false)
   const editFileInputRef = useRef(null)
 
@@ -126,48 +126,49 @@ const AccessoryReviewSection = ({ accessory }) => {
   }, [reviewData])
 
   // V33.80 KEY: DRAG DROP + PREVIEW HANDLER
-  const handleFiles = (files, isEdit = false) => {
-    const newFiles = Array.from(files)
-    const currentPreviewCount = isEdit ? editImagePreviews.length : imagePreviews.length
+ const handleFiles = (files, isEdit = false) => {
+  const newFiles = Array.from(files)
+  const currentCount = isEdit? editImages.length : imagePreviews.length
 
-    if (currentPreviewCount + newFiles.length > 3) {
-      return toast.error(`Max 3 images allowed. You can only add ${3 - currentPreviewCount} more`)
-    }
-
-    if (isEdit) {
-      setEditImageFiles(prev => [...prev, ...newFiles])
-      setEditImagePreviews(prev => [...prev, ...newFiles.map(file => URL.createObjectURL(file))])
-    } else {
-      setReviewImageFiles(prev => [...prev, ...newFiles])
-      setImagePreviews(prev => [...prev, ...newFiles.map(file => URL.createObjectURL(file))])
-    }
+  if (currentCount + newFiles.length > 3) {
+    return toast.error(`Max 3 images allowed. You can only add ${3 - currentCount} more`)
   }
 
-  const removeImage = (index, isEdit = false) => {
-    if (isEdit) {
-      URL.revokeObjectURL(editImagePreviews[index])
-      setEditImagePreviews(editImagePreviews.filter((_, i) => i !== index))
-      setEditImageFiles(editImageFiles.filter((_, i) => i !== index))
-    } else {
-      URL.revokeObjectURL(imagePreviews[index])
-      setImagePreviews(imagePreviews.filter((_, i) => i !== index))
-      setReviewImageFiles(reviewImageFiles.filter((_, i) => i !== index))
-    }
+  if (isEdit) {
+    const newImageObjs = newFiles.map(file => ({
+      id: `new-${Date.now()}-${Math.random()}`, // unique id
+      url: URL.createObjectURL(file),
+      file: file,
+      isNew: true
+    }))
+    setEditImages(prev => [...prev,...newImageObjs])
+  } else {
+    setReviewImageFiles(prev => [...prev,...newFiles])
+    setImagePreviews(prev => [...prev,...newFiles.map(file => URL.createObjectURL(file))])
   }
+}
+
+ const removeImage = (id, isEdit = false) => {
+  if (isEdit) {
+    const imgToRemove = editImages.find(i => i.id === id)
+    if(imgToRemove?.url && imgToRemove.url.startsWith('blob:')) URL.revokeObjectURL(imgToRemove.url) // FIXED
+    setEditImages(prev => prev.filter((i) => i.id!== id)) // FIXED
+  } else {
+    URL.revokeObjectURL(imagePreviews[index])
+    setImagePreviews(imagePreviews.filter((_, i) => i!== index))
+    setReviewImageFiles(reviewImageFiles.filter((_, i) => i!== index))
+  }
+}
   //image reOrder - sorting - drag n drop
   const onDragEnd = (result, isEdit = false) => {
     if (!result.destination) return
 
-    if (isEdit) {
-      const items = Array.from(editImagePreviews)
-      const files = Array.from(editImageFiles)
-      const [reorderedItem] = items.splice(result.source.index, 1)
-      const [reorderedFile] = files.splice(result.source.index, 1)
-      items.splice(result.destination.index, 0, reorderedItem)
-      files.splice(result.destination.index, 0, reorderedFile)
-      setEditImagePreviews(items)
-      setEditImageFiles(files)
-    } else {
+   if (isEdit) {
+  const items = Array.from(editImages)
+  const [reorderedItem] = items.splice(result.source.index, 1)
+  items.splice(result.destination.index, 0, reorderedItem)
+  setEditImages(items) // <-- ONLY 1 SETTER NOW
+} else {
       const items = Array.from(imagePreviews)
       const files = Array.from(reviewImageFiles)
       const [reorderedItem] = items.splice(result.source.index, 1)
@@ -233,49 +234,62 @@ const AccessoryReviewSection = ({ accessory }) => {
 
   // EDIT LOGIC
   const handleEditClick = (review) => {
-    setEditReviewId(review._id)
-    setEditRating(review.rating)
-    setEditTitle(review.title)
-    setEditComment(review.comment)
-    setEditImagePreviews(review.images?.map(img => img.url) || [])
-    setEditImageFiles([])
-    setIsEditModalOpen(true)
-  }
+  setEditReviewId(review._id)
+  setEditRating(review.rating)
+  setEditTitle(review.title)
+  setEditComment(review.comment)
+  
+  const existing = review.images?.map((img, i) => ({
+    id: `existing-${img.imagePublicId || img.url}-${i}`, // use publicId as id
+    url: img.url,
+    file: null,
+    isNew: false
+  })) || []
+  
+  setEditImages(existing) // <-- USE THIS NOW
+  setIsEditModalOpen(true)
+}
 
-  const cancelEdit = () => {
-    setIsEditModalOpen(false)
-    setEditReviewId(null)
-    editImagePreviews.forEach(url => { if (!url.startsWith('http')) URL.revokeObjectURL(url) })
-    setEditImageFiles([])
-    setEditImagePreviews([])
-  }
+ const cancelEdit = () => {
+  setIsEditModalOpen(false)
+  setEditReviewId(null)
+  editImages.forEach(img => { if (!img.url.startsWith('http')) URL.revokeObjectURL(img.url) }) // cleanup
+  setEditImages([]) // <-- RESET THIS
+}
 
   const submitEditHandler = async (e) => {
-    e.preventDefault()
-    try {
-      const newUploadedImages = await uploadImagesAndGetUrls(editImageFiles)
+  e.preventDefault()
+   if (isUpdating) return // prevent double click
+  
+  setIsUpdating(true) // START LOADING IMMEDIATELY
+   try {
+    const newFiles = editImages.filter(i => i.isNew).map(i => i.file)
+    const newUploadedImages = newFiles.length > 0? await uploadImagesAndGetUrls(newFiles) : []
 
-      // V33.80 KEY: KEEP OLD IMAGES + ADD NEW ONES
-      const existingImages = editImagePreviews
-        .filter(url => url.startsWith('http'))
-        .map(url => {
-          const originalImg = reviews.find(r => r._id === editReviewId)?.images?.find(img => img.url === url)
-          return { url, imagePublicId: originalImg?.imagePublicId || '' }
-        })
-      const allImages = [...existingImages, ...newUploadedImages]
+    const existingImages = editImages
+    .filter(i =>!i.isNew)
+    .map(i => {
+        const originalImg = reviews.find(r => r._id === editReviewId)?.images?.find(img => img.url === i.url)
+        return { url: i.url, imagePublicId: originalImg?.imagePublicId || '' }
+      })
+      
+    const allImages = [...existingImages,...newUploadedImages]
 
-      await updateReview({
-        slug: accessory.slug,
-        reviewId: editReviewId,
-        review: { rating: editRating, title: editTitle, comment: editComment, images: allImages }
-      }).unwrap()
-      toast.success('Review updated')
-      cancelEdit()
+    await updateReview({
+      slug: accessory.slug,
+      reviewId: editReviewId,
+      review: { rating: editRating, title: editTitle, comment: editComment, images: allImages }
+    }).unwrap()
+    
+    toast.success('Review updated')
+    cancelEdit()
 
-    } catch (err) {
-      toast.error(err?.data?.message || err.error)
-    }
+  } catch (err) {
+    toast.error(err?.data?.message || err.error)
+  }finally {
+    setIsUpdating(false) // STOP LOADING
   }
+}
 
   const deleteHandler = async (reviewId) => {
     if (window.confirm('Delete this review?')) {
@@ -827,17 +841,17 @@ const AccessoryReviewSection = ({ accessory }) => {
 
                 {/* IMAGE UPLOAD */}
                 <div>
-                  <label className='block text-sm font-semibold mb-2'>Add photos ({editImagePreviews.length}/3)</label>
+                  <label className='block text-sm font-semibold mb-2'>Add photos ({editImages.length}/3)</label>
                   <div
                     onDragEnter={editDragHandlers.handleDragIn}
                     onDragLeave={editDragHandlers.handleDragOut}
                     onDragOver={editDragHandlers.handleDrag}
                     onDrop={(e) => editDragHandlers.handleDrop(e, true)}
-                    className={`border-2 border-dashed rounded-lg p-4 text-center transition ${editDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} ${editImagePreviews.length >= 3 ? 'opacity-50 pointer-events-none' : 'hover:border-gray-400'}`}
+                    className={`border-2 border-dashed rounded-lg p-4 text-center transition ${editDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} ${editImages.length >= 3 ? 'opacity-50 pointer-events-none' : 'hover:border-gray-400'}`}
                   >
-                    {editImagePreviews.length >= 3
+                    {editImages.length >= 3
                       ? <p className="text-red-500 text-sm font-semibold">Max 3 images. Delete one to add more</p>
-                      : <button type="button" onClick={() => editFileInputRef.current.click()} className="text-blue-600 text-sm font-medium underline">Add More Images ({editImagePreviews.length}/3)</button>
+                      : <button type="button" onClick={() => editFileInputRef.current.click()} className="text-blue-600 text-sm font-medium underline">Add More Images ({editImages.length}/3)</button>
                     }
                     <input
                       ref={editFileInputRef}
@@ -846,85 +860,88 @@ const AccessoryReviewSection = ({ accessory }) => {
                       accept='image/*'
                       onChange={(e) => handleFiles(e.target.files, true)}
                       className='hidden'
-                      disabled={editImagePreviews.length >= 3}
+                      disabled={editImages.length >= 3}
                     />
                   </div>
 
-                  {/* IMAGE PREVIEW GRID - WRAP ON MOBILE */}
-                  {editImagePreviews.length > 0 && (
-                    <DragDropContext onDragEnd={(result) => onDragEnd(result, true)}>
-                      <Droppable droppableId="edit-review-images" direction="horizontal">
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className='flex gap-3 mt-3 flex-wrap'
-                          >
-                            {editImagePreviews.map((url, idx) => (
-                              <Draggable key={url + idx} draggableId={`edit-${url}-${idx}`} index={idx}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`relative group ${snapshot.isDragging ? 'opacity-50 scale-105' : ''}`}
-                                  >
-                                    <img src={url} className='w-20 h-20 object-contain rounded-lg border bg-white p-1' />
-                                    <div
-                                      {...provided.dragHandleProps}
-                                      className="absolute -top-2 -left-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-grab hover:bg-gray-900"
-                                      title="Drag to reorder"
-                                    >
-                                      <FaGripVertical size={12} />
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeImage(idx, true)}
-                                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                                    >
-                                      <FaX size={12} />
-                                    </button>
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
+                {/* IMAGE PREVIEW GRID - WRAP ON MOBILE */}
+{editImages.length > 0 && (
+  <DragDropContext onDragEnd={(result) => onDragEnd(result, true)}>
+    <Droppable droppableId="edit-review-images" direction="horizontal">
+      {(provided) => (
+        <div ref={provided.innerRef} {...provided.droppableProps} className='flex gap-3 mt-3 flex-wrap'>
+          {editImages.map((img) => (
+            <Draggable 
+              key={img.id} 
+              draggableId={img.id} 
+              index={editImages.findIndex(i => i.id === img.id)}
+              isDragDisabled={img.isNew} // NEW can't drag
+            >
+              {(provided, snapshot) => (
+                <div ref={provided.innerRef} {...provided.draggableProps} className={`relative group ${snapshot.isDragging? 'opacity-50 scale-105' : ''}`}>
+                  <img src={img.url} className='w-20 h-20 object-contain rounded-lg border bg-white p-1' />
+                  
+                  {!img.isNew && (
+                    <div {...provided.dragHandleProps} className="absolute -top-2 -left-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-grab hover:bg-gray-900">
+                      <FaGripVertical size={12} />
+                    </div>
                   )}
+
+                  {img.isNew && (
+                    <span className="absolute -top-2 -left-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow">
+                      New
+                    </span>
+                  )}
+
+                  <button type="button" onClick={() => removeImage(img.id, true)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition">
+                    <FaX size={12} />
+                  </button>
+                </div>
+              )}
+            </Draggable>
+          ))}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
+  </DragDropContext>
+)}
                 </div>
               </form>
             </div>
 
-            {/* FOOTER - FIXED */}
-            <div className='flex gap-3 p-4 sm:p-5 border-t bg-white flex-shrink-0'>
-              <button
-                type='button'
-                onClick={submitEditHandler}
-                disabled={loadingUpdate}
-                className='flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 flex items-center justify-center gap-2'
-              >
-                {loadingUpdate ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Updating...
-                  </>
-                ) : 'Update Review'}
-              </button>
+           {/* FOOTER - FIXED */}
+<div className='flex gap-3 p-4 sm:p-5 border-t bg-white flex-shrink-0'>
+  <button
+    type='button'
+    onClick={submitEditHandler}
+    disabled={isUpdating || loadingUpdate} // USE BOTH
+    className={`flex-1 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 flex items-center justify-center gap-2
+      ${isUpdating || loadingUpdate 
+        ? 'bg-gray-400 text-white cursor-not-allowed' 
+        : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white'
+      }`}
+  >
+    {isUpdating || loadingUpdate ? (
+      <>
+        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Updating...
+      </>
+    ) : 'Update Review'}
+  </button>
 
-              <button
-                type='button'
-                onClick={cancelEdit}
-                disabled={loadingUpdate}
-                className='px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
-              >
-                Cancel
-              </button>
-            </div>
+  <button
+    type='button'
+    onClick={cancelEdit}
+    disabled={isUpdating || loadingUpdate}
+    className='px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+  >
+    Cancel
+  </button>
+</div>
           </div>
         </div>
       )}
