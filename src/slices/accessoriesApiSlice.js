@@ -101,33 +101,40 @@ export const accessoriesApiSlice = apiSlice.injectEndpoints({
     
    // GET /accessories/slug/:slug/reviews?page=&limit=&sort=&model=&variant=&rating=&keyword=
 getAccessoryReviews: builder.query({
-    query: ({ slug, page = 1, limit = 10, sort = 'newest', model = '', variant = '', rating = '', keyword = '', hasPhotos = false }) => ({
-        url: `/accessories/slug/${slug}/reviews`,
-        params: { page, limit, sort, model, variant, rating, keyword, hasPhotos },
-    }),
-    providesTags: (result, error, { slug }) => [ { type: 'AccessoryReviews', id: slug } ],
+  query: ({ slug, page = 1, limit = 10, sort = 'newest', model = '', variant = '', rating = '', keyword = '', hasPhotos = false }) => ({
+    url: `/accessories/slug/${slug}/reviews`,
+    params: { 
+      page, 
+      limit, 
+      sort, 
+      model, 
+      variant, 
+      rating, 
+      keyword, 
+      hasPhotos: hasPhotos ? 'true' : 'false'
+    },
+  }),
+  providesTags: (result, error, { slug }) => [{ type: 'AccessoryReviews', id: slug }],
+  serializeQueryArgs: ({ queryArgs }) => {
+    const { page, ...rest } = queryArgs;
+    return JSON.stringify(rest); // all pages share same cache key
+  },
+  merge: (currentCache, newItems) => {
+    if (!currentCache) return newItems; // first load
+    if (newItems.page === 1) return newItems; // reset on filter change
 
-    serializeQueryArgs: ({ queryArgs }) => {
-        const { page, ...rest } = queryArgs;
-        return JSON.stringify(rest); // all pages share same cache key
-    },
-    merge: (currentCache, newItems) => {
-        if (!currentCache) return newItems; // first load
-        if (newItems.page === 1) return newItems; // reset on filter change
-        
-        // Proper immutable merge
-        const merged = [...currentCache.reviews, ...newItems.reviews];
-        const unique = Array.from(new Map(merged.map(r => [r._id, r])).values());
-        
-        return {
-            ...newItems,
-            reviews: unique
-        };
-    },
-    forceRefetch({ currentArg, previousArg }) {
-        return currentArg?.page !== previousArg?.page;
-    },
-    keepUnusedDataFor: 300, // 5 min so cache doesn't drop
+    const merged = [...currentCache.reviews, ...newItems.reviews];
+    const unique = Array.from(new Map(merged.map(r => [r._id, r])).values());
+
+    return {
+      ...newItems,
+      reviews: unique,
+    };
+  },
+  forceRefetch({ currentArg, previousArg }) {
+    return currentArg?.page !== previousArg?.page;
+  },
+  keepUnusedDataFor: 300, // 5 min so cache doesn't drop
 }),
 
 

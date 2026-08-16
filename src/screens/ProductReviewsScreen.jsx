@@ -1,6 +1,5 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Link } from "react-router-dom";
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Link, useParams } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import {
     useGetProductBySlugQuery,
@@ -10,15 +9,14 @@ import {
     useAddAdminReplyMutation,
     useEditAdminReplyMutation,
     useDeleteAdminReplyMutation,
+    useGetProductReviewImagesQuery,
 } from '../slices/productsApiSlice';
-import { FaStar, FaTimes, FaThumbsUp, FaThumbsDown, FaReply, FaEdit, FaTrash, FaChevronDown } from 'react-icons/fa';
+import { FaStar, FaTimes, FaThumbsUp, FaThumbsDown, FaReply, FaEdit, FaTrash, FaChevronDown, FaCheck } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Rating from '../components/Rating';
 import ReviewSkeleton from '../components/ReviewSkeleton';
-
-
 
 const ProductReviewsScreen = () => {
     const { slug } = useParams();
@@ -29,33 +27,29 @@ const ProductReviewsScreen = () => {
     const [storageFilter, setStorageFilter] = useState('All');
     const [ratingFilter, setRatingFilter] = useState("");
     const [replyingTo, setReplyingTo] = useState(null);
-    const [replyText, setReplyText] = useState('');
     const [editingReply, setEditingReply] = useState(null);
-    const [allReviews, setAllReviews] = useState([]);
+    const [replyText, setReplyText] = useState('');
     const [search, setSearch] = useState('');
-    //image view
     const [selectedImage, setSelectedImage] = useState(null);
 
     const { userInfo } = useSelector((state) => state.auth);
 
+    // 1. GET PRODUCT BY SLUG
     const {
         data: product,
         isLoading: loadingProduct,
         error: errorProduct,
     } = useGetProductBySlugQuery(slug);
 
-
-    const productId = product?._id;
-
+    // 2. GET REVIEWS BY SLUG
     const {
         data,
         isLoading,
         isFetching,
         error,
-        refetch,
     } = useGetProductReviewsQuery(
         {
-            productId,
+            slug,
             page,
             limit: 10,
             sort,
@@ -64,12 +58,41 @@ const ProductReviewsScreen = () => {
             keyword: search,
             rating: ratingFilter,
         },
-        {
-            skip: !productId,
-        }
+        { skip: !slug }
     );
 
+    //gets ALL images, not just loaded page
+    const {
+        data: customerPhotos = [],
+        isLoading: loadingPhotos
+    } = useGetProductReviewImagesQuery(slug, { skip: !slug });
 
+    // 2. For pagination: use current page only, like accessory
+    const reviews = data?.reviews || [];
+    const totalReviews = data?.total || product?.numReviews || 0;
+
+    const ratingBreakdown = useMemo(() => {
+        // OPTION 1: If backend sends it - BEST
+        if (data?.ratingBreakdown) {
+            const breakdown = data.ratingBreakdown
+            const total = totalReviews || 1
+            return [5, 4, 3, 2, 1].map(star => ({
+                star,
+                count: breakdown[star] || 0,
+                percent: total > 0 ? (breakdown[star] / total) * 100 : 0
+            }))
+        }
+
+        // OPTION 2: Fallback - count from loaded reviews only
+        const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        reviews.forEach(r => { breakdown[r.rating] = (breakdown[r.rating] || 0) + 1 });
+        const total = totalReviews || 1;
+        return [5, 4, 3, 2, 1].map(star => ({
+            star,
+            count: breakdown[star],
+            percent: total > 0 ? (breakdown[star] / total) * 100 : 0
+        }));
+    }, [data, reviews, totalReviews]);
 
     const [markHelpful, { isLoading: loadingHelpful }] = useMarkReviewHelpfulMutation();
     const [markReviewNotHelpful, { isLoading: loadingNotHelpful }] = useMarkReviewNotHelpfulMutation();
@@ -77,125 +100,54 @@ const ProductReviewsScreen = () => {
     const [editAdminReply, { isLoading: loadingEdit }] = useEditAdminReplyMutation();
     const [deleteAdminReply, { isLoading: loadingDelete }] = useDeleteAdminReplyMutation();
 
-    const colors = [
-        ...new Set(
-            product?.variants?.flatMap(v =>
-                v.colors.map(c => c.name)
-            ) || []
-        )
-    ];
-
+    const colors = [...new Set(product?.variants?.flatMap(v => v.colors.map(c => c.name)) || [])];
     const storages = [...new Set(product?.variants?.map(v => v.storage) || [])];
 
-
-    //filter image start
-    const selectedVariant =
-        product?.variants?.find(
-            v => storageFilter === 'All' || v.storage === storageFilter
-        );
-
-    const selectedColor =
-        selectedVariant?.colors?.find(
-            c => colorFilter === 'All' || c.name === colorFilter
-        );
-
-    const productImage =
-        selectedColor?.images?.[0]?.url ||
-        selectedVariant?.colors?.[0]?.images?.[0]?.url ||
-        product?.variants?.[0]?.colors?.[0]?.images?.[0]?.url;
-
-    //filters iamge end
+    const selectedVariant = product?.variants?.find(v => storageFilter === 'All' || v.storage === storageFilter);
+    const selectedColor = selectedVariant?.colors?.find(c => colorFilter === 'All' || c.name === colorFilter);
+    const productImage = selectedColor?.images?.[0]?.url || selectedVariant?.colors?.[0]?.images?.[0]?.url || product?.variants?.[0]?.colors?.[0]?.images?.[0]?.url;
 
     useEffect(() => {
         setPage(1);
-        setAllReviews([]);
-    }, [sort, colorFilter, storageFilter]);
+    }, [sort, colorFilter, storageFilter, ratingFilter, search, slug]);
 
-    //const reviews = data?.reviews || [];
-    useEffect(() => {
-        if (!data) return;
-
-        if (data.page === 1) {
-            setAllReviews(data.reviews);
-        } else {
-            setAllReviews(prev => [...prev, ...data.reviews]);
-        }
-    }, [data]);
-
-    const customerPhotos = allReviews.flatMap((review) =>
-        (review.images || []).map((img) => ({
-            ...img,
-            reviewId: review._id,
-        }))
-    );
+    // const customerPhotos = useMemo(() =>
+    //     reviews.flatMap((review) => (review.images || []).map((img) => ({ ...img, reviewId: review._id }))),
+    //     [reviews]);
 
     const handleHelpful = async (reviewId) => {
-        if (!userInfo) {
-            toast.error('Please login to mark as helpful');
-            return;
-        }
+        if (!userInfo) return toast.error('Please login to mark as helpful');
         try {
-            const res = await markHelpful({ productId, reviewId }).unwrap();
-            refetch();
-            toast.success(
-  res.userVoted
-    ? 'Thanks! You found this review helpful.'
-    : 'Your helpful vote has been removed.'
-);
+            const res = await markHelpful({ slug, reviewId }).unwrap();
+            toast.success(res.userVoted ? 'Marked as helpful' : 'Vote removed');
         } catch (err) {
             toast.error(err?.data?.message || err.error);
         }
     };
 
     const handleNotHelpful = async (reviewId) => {
-        if (!userInfo) {
-            toast.error("Please login to mark as not helpful");
-            return;
-        }
-
+        if (!userInfo) return toast.error("Please login to mark as not helpful");
         try {
-           const res = await markReviewNotHelpful({
-                productId,
-                reviewId,
-            }).unwrap();
-
-            refetch();
-            toast.success(
-  res.userVoted
-    ? "Thanks! You marked this review as not helpful."
-    : 'Your not helpful vote has been removed.'
-);
+            const res = await markReviewNotHelpful({ slug, reviewId }).unwrap();
+            toast.success(res.userVoted ? 'Marked as not helpful' : 'Vote removed');
         } catch (err) {
             toast.error(err?.data?.message || err.error);
         }
     };
 
     const handleReply = async (reviewId) => {
-        if (!replyText.trim()) {
-            toast.error('Reply cannot be empty');
-            return;
-        }
+        if (!replyText.trim()) return toast.error('Reply cannot be empty');
         try {
             if (editingReply === reviewId) {
-                await editAdminReply({
-                    productId,
-                    reviewId,
-                    reply: replyText,
-                }).unwrap();
+                await editAdminReply({ slug, reviewId, reply: replyText }).unwrap();
                 toast.success('Reply updated');
             } else {
-                await addAdminReply({
-                    productId,
-                    reviewId,
-                    reply: replyText,
-                }).unwrap();
+                await addAdminReply({ slug, reviewId, reply: replyText }).unwrap();
                 toast.success('Reply posted');
             }
-            refetch();
             setReplyText('');
             setReplyingTo(null);
             setEditingReply(null);
-
         } catch (err) {
             toast.error(err?.data?.message || err.error);
         }
@@ -204,51 +156,32 @@ const ProductReviewsScreen = () => {
     const handleDeleteReply = async (reviewId) => {
         if (window.confirm('Delete this admin reply?')) {
             try {
-                await deleteAdminReply({ productId, reviewId }).unwrap();
+                await deleteAdminReply({ slug, reviewId }).unwrap();
                 toast.success('Reply deleted');
-                refetch();
             } catch (err) {
                 toast.error(err?.data?.message || err.error);
             }
         }
     };
 
-
-    const CustomDropdown = ({ value, onChange, options, label, displayMap = {} }) => {
+    const CustomDropdown = ({ value, onChange, options, label }) => {
         const [open, setOpen] = useState(false);
         const ref = useRef(null);
-
         useEffect(() => {
             const handleClickOutside = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
             document.addEventListener("mousedown", handleClickOutside);
             return () => document.removeEventListener("mousedown", handleClickOutside);
         }, []);
-
         return (
             <div ref={ref} className="relative w-full md:w-auto md:min-w-[160px]">
-                <button
-                    type="button"
-                    onClick={() => setOpen(!open)}
-                    className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white 
-          hover:border-gray-400 transition"
-                >
-                    <span className="text-gray-900">
-                        {options.find((opt) => opt.value === value)?.label || label}
-                    </span>
+                <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-white hover:border-gray-400 transition">
+                    <span className="text-gray-900">{options.find((opt) => opt.value === value)?.label || label}</span>
                     <FaChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
                 </button>
-
                 {open && (
-                    <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] 
-          max-h-60 overflow-y-auto">
+                    <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] max-h-60 overflow-y-auto">
                         {options.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => { onChange(opt.value); setOpen(false); }}
-                                className={`w-full text-left px-4 py-2.5 text-sm text-gray-900
-                   hover:bg-gray-100 ${value === opt.value ? 'bg-gray-100 font-medium' : ''}`}
-                            >
+                            <button key={opt.value} type="button" onClick={() => { onChange(opt.value); setOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-100 ${value === opt.value ? 'bg-gray-100 font-medium' : ''}`}>
                                 {opt.label}
                             </button>
                         ))}
@@ -258,529 +191,198 @@ const ProductReviewsScreen = () => {
         );
     };
 
-    if (loadingProduct) {
-        return <Loader />;
-    }
-
-    if (errorProduct) {
-        return (
-            <Message variant="danger">
-                {errorProduct?.data?.message || errorProduct.error}
-            </Message>
-        );
-    }
-
-    if (!product) {
-        return <Message>Product not found</Message>;
-    }
+    const CustomerPhotos = ({ photos = [] }) => {
+    if (!photos || photos.length === 0) return null
+    const [showAll, setShowAll] = useState(false)
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* Header */}
-            <div className="mb-10">
-
-                <Link
-                    to={`/product/${product.slug}`}
-                    className="text-blue-600 hover:text-blue-700 text-sm"
-                >
-                    ← Back to Product
-                </Link>
-
-                <h1 className="text-4xl font-bold mt-3">
-                    Customer Reviews
-                </h1>
-
-                <div className="mt-6 bg-white rounded-xl border shadow-sm p-6">
-                    <div className="flex flex-col md:flex-row gap-6 items-center">
-                        <img
-                            src={productImage}
-                            alt={product.name}
-                            className="w-36 h-36 object-contain"
-                        />
-                        <div className="flex-1">
-
-                            <h2 className="text-2xl font-bold">
-                                {product.name}
-                            </h2>
-
-                            <div className="mt-2 flex items-center gap-3">
-                                <Rating value={product.rating} />
-                                <span className="text-gray-600">
-                                    ({product.numReviews} allReviews)
-                                </span>
-                            </div>
-
-                            <p className="mt-3 text-gray-600">
-                                Read real customer experiences, ratings,
-                                photos and seller responses.
-                            </p>
-
-                        </div>
-
-                    </div>
+        <>
+            <div className="mt-6 bg-white border rounded-xl shadow-sm p-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-base font-semibold">Customer Photos ({photos.length})</h3>
+                    {photos.length > 8 && (
+                        <button onClick={() => setShowAll(true)} className="text-blue-600 text-sm font-medium hover:underline">
+                            View all {photos.length}
+                        </button>
+                    )}
                 </div>
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+                    {photos.slice(0, 8).map((photo, i) => (
+                        <div key={i} onClick={() => setSelectedImage(photo.url)} className="aspect-square border rounded-lg bg-white cursor-pointer hover:border-blue-500 transition p-1">
+                            <img src={photo.url} alt="Customer photo" className="w-full h-full object-contain" />
+                        </div>
+                    ))}
+                </div>
+            </div>
 
-                <div className="mt-8 bg-white border rounded-xl shadow-sm p-6 mb-8">
-
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-
-                        {/* Left */}
-                        <div>
-
-                            <div className="flex items-center gap-4">
-
-                                <span className="text-5xl font-bold">
-                                    {product.rating.toFixed(1)}
-                                </span>
-
-                                <div>
-
-                                    <Rating value={product.rating} />
-
-                                    <p className="text-gray-500 mt-1">
-                                        Based on {product.numReviews} allReviews
-                                    </p>
-
+            {/* FULL GALLERY MODAL */}
+            {showAll && (
+                <div className="fixed inset-0 bg-black/90 z-[100] overflow-y-auto" onClick={() => setShowAll(false)}>
+                    <div className="max-w-5xl mx-auto p-6" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6 text-white">
+                            <h2 className="text-2xl font-bold">All Customer Photos ({photos.length})</h2>
+                            <button onClick={() => setShowAll(false)}><FaTimes size={24} /></button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            {photos.map((photo, i) => (
+                                <div key={i} onClick={() => setSelectedImage(photo.url)} className="aspect-square bg-white p-2 rounded-lg cursor-pointer">
+                                    <img src={photo.url} className="w-full h-full object-contain" />
                                 </div>
-
-                            </div>
-
-                        </div>
-
-                        {/* Right */}
-                        <div className="w-full lg:w-80 space-y-2">
-
-                            {[5, 4, 3, 2, 1].map(star => {
-
-                                const count = product.reviews.filter(
-                                    r => r.rating === star
-                                ).length;
-
-                                const percent =
-                                    product.numReviews
-                                        ? (count / product.numReviews) * 100
-                                        : 0;
-
-                                return (
-
-                                    <div
-                                        key={star}
-                                        className="flex items-center gap-3"
-                                    >
-
-                                        <span className="w-10 text-sm">
-                                            {star} ★
-                                        </span>
-
-                                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-
-                                            <div
-                                                className="bg-yellow-400 h-2 rounded-full"
-                                                style={{
-                                                    width: `${percent}%`
-                                                }}
-                                            />
-
-                                        </div>
-
-                                        <span className="w-6 text-sm text-gray-600">
-                                            {count}
-                                        </span>
-
-                                    </div>
-
-                                );
-
-                            })}
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                {customerPhotos.length > 0 && (
-                    <div className="bg-white rounded-lg border p-5 mb-8">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Customer Photos ({customerPhotos.length})
-                        </h3>
-
-                        <div className="flex flex-wrap gap-3">
-                            {customerPhotos.map((photo, index) => (
-                                <img
-                                    key={index}
-                                    src={photo.url}
-                                    alt="Customer Review"
-                                    onClick={() => setSelectedImage(photo.url)}
-                                    className="w-16 h-16
-                                        sm:w-20 sm:h-20
-                                        lg:w-24 lg:h-24
-                                        object-contain
-                                        rounded-lg
-                                        bg-white
-                                        border
-                                        border-gray-200
-                                        p-1
-                                        cursor-pointer
-                                        hover:opacity-80
-                                        flex-shrink-0"
-                                />
                             ))}
                         </div>
                     </div>
-                )}
-
-            </div>
-
-            {/* Search Reviews */}
-            <div className="mb-6">
-                <div className="relative w-full md:max-w-md lg:max-w-lg">
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search reviews..."
-                        className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                    </svg>
-                </div>
-            </div>
-
-
-            {/* Sort + Stats */}
-            <div className="p-3 sm:p-4 border-b flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 gap-3">
-                <span className="text-sm text-gray-600">
-                    {data?.totalReviews || 0} allReviews
-                </span>
-
-                <div className="flex flex-col md:flex-row gap-2 sm:gap-3 w-full md:w-auto">
-                    <CustomDropdown
-                        value={ratingFilter}
-                        onChange={(value) => setRatingFilter(value)}
-                        options={[
-                            { label: "All Stars", value: "" },
-                            { label: "5 Stars", value: "5" },
-                            { label: "4 Stars", value: "4" },
-                            { label: "3 Stars", value: "3" },
-                            { label: "2 Stars", value: "2" },
-                            { label: "1 Star", value: "1" },
-                        ]}
-                    />
-                    <CustomDropdown
-                        value={colorFilter}
-                        onChange={(val) => {
-                            setColorFilter(val);
-                            setPage(1);
-                        }}
-                        options={[
-                            { label: 'All Colors', value: 'All' },
-                            ...colors.map((color) => ({
-                                label: color,
-                                value: color,
-                            })),
-                        ]}
-                        label="All Colors"
-                    />
-                    <CustomDropdown
-                        value={storageFilter}
-                        onChange={(val) => {
-                            setStorageFilter(val);
-                            setPage(1);
-                        }}
-                        options={[
-                            { label: 'All Storage', value: 'All' },
-                            ...storages.map((storage) => ({
-                                label: storage,
-                                value: storage,
-                            })),
-                        ]}
-                        label="All Storage"
-                    />
-                    <CustomDropdown
-                        value={sort}
-                        onChange={(val) => {
-                            setSort(val);
-                            setPage(1);
-                        }}
-                        options={[
-                            { label: 'Most Helpful', value: 'helpful' },
-                            { label: 'Most Not Helpful', value: 'notHelpful' },
-                            { label: 'Newest', value: 'newest' },
-                            { label: 'Highest Rating', value: 'highest' },
-                            { label: 'Lowest Rating', value: 'lowest' },
-                        ]}
-                        label="Sort By"
-
-                    />
-                </div>
-            </div>
-
-            {/* Reviews list */}
-            <div className="overflow-y-auto p-3 sm:p-4 flex-1">
-                {isLoading ? (
-                    <Loader />
-                ) : error ? (
-                    <Message variant="danger">{error?.data?.message || error.error}</Message>
-                ) : (
-                    <>
-                        {allReviews.length === 0 ? (
-                            <Message>No reviews yet</Message>
-                        ) : (
-                            allReviews.map((review, index) => {
-                                const hasMarkedHelpful = review.helpful?.includes(userInfo?._id);
-                                const hasMarkedNotHelpful = review.notHelpful?.includes(userInfo?._id);
-
-                                return (
-                                    <div key={`${review._id}-${index}`} className="border-b py-4 sm:py-6 last:border-b-0">
-                                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                                            <span className="font-semibold">{review.name}</span>
-                                            {review.verifiedPurchase && (
-                                                <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-                                                    ✓ Verified Purchase
-                                                </span>
-                                            )}
-                                            <span className="text-gray-500">
-                                                {review.color || review.storage ? (
-                                                    <>
-                                                        {review.color}
-                                                        {review.storage && ` / ${review.storage}`}
-                                                        {' | '}
-                                                    </>
-                                                ) : null}
-                                                {new Date(review.createdAt).toLocaleDateString()}
-                                            </span>
-                                        </div>
-
-                                        <Rating value={review.rating} />
-                                        {review.title && (
-                                            <h4 className="font-semibold text-gray-900 text-base sm:text-lg mt-2 mb-1">
-                                                {review.title}
-                                            </h4>
-                                        )}
-                                        <p className="text-gray-800 mb-3 break-words text-sm sm:text-base">{review.comment}</p>
-
-                                        {review.images?.length > 0 && (
-                                            <div className="flex gap-2 mb-3 flex-wrap">
-                                                {review.images.map((img, idx) => (
-                                                    <img
-                                                        key={idx}
-                                                        src={img.url}
-                                                        onClick={() => setSelectedImage(img.url)}
-                                                        alt={`review-${idx}`}
-                                                        className="w-16 h-16
-                                                                sm:w-20 sm:h-20
-                                                                lg:w-24 lg:h-24
-                                                                object-contain
-                                                                rounded-lg
-                                                                bg-white
-                                                                border
-                                                                border-gray-200
-                                                                p-1
-                                                                cursor-pointer
-                                                                hover:opacity-80
-                                                                flex-shrink-0"
-                                                    />
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {selectedImage && (
-                                            <div
-                                                className="fixed inset-0 bg-black/80 flex justify-center items-center z-50"
-                                                onClick={() => setSelectedImage(null)}
-                                            >
-                                                <img
-                                                    src={selectedImage}
-                                                    className="max-w-[90%] max-h-[90%] rounded-lg"
-                                                />
-
-                                            </div>
-                                        )}
-
-                                        {/* Admin Reply Section */}
-                                        {review.adminReply?.reply && (
-                                            <div className="bg-blue-50 p-3 rounded mt-3 text-sm">
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <div className="flex-1">
-                                                        <p className="font-semibold text-blue-800">
-                                                            {review.adminReply.name || 'Seller'} Response:
-                                                        </p>
-                                                        {editingReply === review._id ? (
-                                                            <div className="mt-2">
-                                                                <textarea
-                                                                    value={replyText}
-                                                                    onChange={(e) => setReplyText(e.target.value)}
-                                                                    className="w-full border rounded p-2 text-sm"
-                                                                    rows="2"
-                                                                />
-                                                                <div className="flex gap-2 mt-2">
-                                                                    <button
-                                                                        onClick={() => handleReply(review._id)}
-                                                                        disabled={loadingEdit}
-                                                                        className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
-                                                                    >
-                                                                        {loadingEdit ? 'Saving...' : 'Save'}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setEditingReply(null);
-                                                                            setReplyText('');
-                                                                        }}
-                                                                        className="bg-gray-300 px-3 py-1 rounded text-xs"
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                <p className="text-gray-700 mt-1 break-words">
-                                                                    {review.adminReply.reply}
-                                                                </p>
-                                                                <p className="text-xs text-gray-500 mt-1">
-                                                                    {review.adminReply?.createdAt
-                                                                        ? new Date(review.adminReply.createdAt).toLocaleDateString('en-US', {
-                                                                            year: 'numeric',
-                                                                            month: 'short',
-                                                                            day: 'numeric',
-                                                                        })
-                                                                        : 'Just now'}
-                                                                </p>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                    {userInfo?.isAdmin && editingReply !== review._id && (
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setEditingReply(review._id);
-                                                                    setReplyingTo(null);
-                                                                    setReplyText(review.adminReply.reply);
-                                                                }}
-                                                                className="text-blue-600 hover:text-blue-800 flex-shrink-0"
-                                                            >
-                                                                <FaEdit />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteReply(review._id)}
-                                                                disabled={loadingDelete}
-                                                                className="text-red-600 hover:text-red-800 flex-shrink-0"
-                                                            >
-                                                                <FaTrash />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Actions */}
-                                        <div className="flex flex-wrap items-center gap-4 mt-3">
-                                            <button
-                                                onClick={() => handleHelpful(review._id)}
-                                                disabled={loadingHelpful}
-                                                className={`flex items-center gap-1 text-sm ${hasMarkedHelpful
-                                                    ? 'text-blue-600 font-semibold'
-                                                    : 'text-gray-600 hover:text-blue-600'
-                                                    }`}
-                                            >
-                                                <FaThumbsUp className={hasMarkedHelpful ? 'fill-current' : ''} />
-                                                Helpful ({review.helpful?.length || 0})
-                                            </button>
-                                            <button
-                                                onClick={() => handleNotHelpful(review._id)}
-                                                disabled={loadingNotHelpful}
-                                                className={`flex items-center gap-1 text-sm ${hasMarkedNotHelpful
-                                                        ? "text-red-600 font-semibold"
-                                                        : "text-gray-600 hover:text-red-600"
-                                                    }`}
-                                            >
-                                                <FaThumbsDown className={hasMarkedNotHelpful ? "fill-current" : ""} />
-                                                Not Helpful ({review.notHelpful?.length || 0})
-                                            </button>
-
-                                            {userInfo?.isAdmin && !review.adminReply?.reply && (
-                                                <button
-                                                    onClick={() => {
-                                                        setReplyingTo(review._id === replyingTo ? null : review._id);
-                                                        setEditingReply(null);
-                                                        setReplyText('');
-                                                    }}
-                                                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-                                                >
-                                                    <FaReply />
-                                                    {replyingTo === review._id ? 'Cancel' : 'Reply as Admin'}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* New Reply Form */}
-                                        {replyingTo === review._id && (
-                                            <div className="mt-3 bg-gray-50 p-3 rounded">
-                                                <textarea
-                                                    value={replyText}
-                                                    onChange={(e) => setReplyText(e.target.value)}
-                                                    placeholder="Write your reply..."
-                                                    className="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-blue-500"
-                                                    rows={3}
-                                                />
-                                                <button
-                                                    onClick={() => handleReply(review._id)}
-                                                    disabled={loadingReply || loadingEdit}
-                                                    className="mt-2 bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 
-                            disabled:bg-gray-400"
-                                                >
-                                                    {loadingReply || loadingEdit ? 'Posting...' : editingReply ? 'Update Reply' : 'Post Reply'}
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })
-                        )}
-                    </>
-                )}
-            </div>
-
-            {/* Pagination */}
-            {/* Show skeleton while loading more */}
-            {isFetching && (
-                <div className="mt-6">
-                    {[1, 2, 3].map((item) => (
-                        <ReviewSkeleton key={item} />
-                    ))}
                 </div>
             )}
+        </>
+    )
+}
 
-            {/* Load More Button */}
-            {page < data?.totalPages && (
+    if (loadingProduct) return <Loader />;
+    if (errorProduct) return <Message variant="danger">{errorProduct?.data?.message || errorProduct.error}</Message>;
+    if (!product) return <Message>Product not found</Message>;
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 py-8">
+            <Link to={`/product/${product.slug}`} className="text-blue-600 hover:text-blue-700 text-sm">← Back to Product</Link>
+            <h1 className="text-4xl font-bold mt-3">Customer Reviews</h1>
+
+        {/* MAIN PRODUCT IMAGE + COLOR/STORAGE PREVIEW */}
+<div className="mt-6 bg-white border rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+    {/* Left: Image */}
+    <div className="w-40 h-40 sm:w-48 sm:h-48 flex-shrink-0 border rounded-lg p-2 bg-gray-50 mx-auto sm:mx-0">
+        <img 
+            src={productImage} 
+            alt={product.name} 
+            className="w-full h-full object-contain" 
+        />
+    </div>
+
+    {/* Right: Info */}
+    <div className="flex-1 text-center sm:text-left">
+        <h2 className="text-xl font-bold">{product.name}</h2>
+        <p className="text-sm text-gray-500 mt-1">
+            <span className="text-gray-500">Color: </span>
+            <span className="font-semibold text-gray-900">{selectedColor?.name!== 'All'? selectedColor?.name : 'All Colors'}</span>
+        </p>
+        <p className="text-sm text-gray-500">
+            <span className="text-gray-500">Storage: </span>
+            <span className="font-semibold text-gray-900">{selectedVariant?.storage!== 'All'? selectedVariant?.storage : 'All Storage'}</span>
+        </p>
+        <p className="text-sm text-gray-600 mt-3">
+            Select Color and Storage from filters below to see reviews for that variant
+        </p>
+    </div>
+</div>
+
+            {/* SUMMARY */}
+            <div className="mt-8 bg-white border rounded-xl p-6 mb-6 shadow-sm">
+                <h3 className="text-lg font-semibold mb-5">Customer Reviews Summary</h3>
+                <div className="flex flex-col lg:flex-row gap-10">
+                    <div className="lg:w-56 text-center">
+                        <div className="text-5xl font-bold">{product.rating?.toFixed(1)}</div>
+                        <div className="flex justify-center mt-2"><Rating value={product.rating} /></div>
+                        <p className="text-sm text-gray-500 mt-3">Based on {totalReviews} customer reviews</p>
+                    </div>
+                    <div className="flex-1">
+                        {ratingBreakdown.map(({ star, count, percent }) => (
+                            <button key={star} onClick={() => { setRatingFilter(ratingFilter === star.toString() ? "" : star.toString()); setPage(1) }} className="flex items-center gap-3 mb-2 w-full group">
+                                <span className={`w-8 text-sm flex items-center gap-1 ${ratingFilter === star.toString() ? 'text-blue-600 font-semibold' : 'text-gray-700 group-hover:text-blue-600'}`}>{star} <FaStar size={12} className="text-yellow-400" /></span>
+                                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden"><div className="bg-yellow-400 h-2 rounded-full transition-all duration-300" style={{ width: `${percent}%` }}></div></div>
+                                <span className={`w-16 text-right text-sm ${ratingFilter === star.toString() ? 'text-blue-600 font-semibold' : 'text-gray-600'}`}>{count}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* CUSTOMER PHOTOS */}
+            {!loadingPhotos && customerPhotos.length > 0 && <CustomerPhotos photos={customerPhotos} />}
+
+            {/* SEARCH */}
+            <div className="mb-6 mt-6">
+                <div className="relative w-full md:max-w-md">
+                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search reviews..." className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+            </div>
+
+            {/* FILTERS */}
+            <div className="p-3 sm:p-4 border-b flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 gap-3">
+                <span className="text-sm text-gray-600">{totalReviews} reviews</span>
+                <div className="flex flex-col md:flex-row gap-2 sm:gap-3 w-full md:w-auto">
+                    <CustomDropdown value={ratingFilter} onChange={(val) => { setRatingFilter(val); setPage(1) }} options={[{ label: "All Stars", value: "" }, { label: "5 Stars", value: "5" }, { label: "4 Stars", value: "4" }, { label: "3 Stars", value: "3" }, { label: "2 Stars", value: "2" }, { label: "1 Star", value: "1" }]} />
+                    <CustomDropdown value={colorFilter} onChange={(val) => { setColorFilter(val); setPage(1) }} options={[{ label: 'All Colors', value: 'All' }, ...colors.map((color) => ({ label: color, value: color }))]} label="All Colors" />
+                    <CustomDropdown value={storageFilter} onChange={(val) => { setStorageFilter(val); setPage(1) }} options={[{ label: 'All Storage', value: 'All' }, ...storages.map((storage) => ({ label: storage, value: storage }))]} label="All Storage" />
+                    <CustomDropdown value={sort} onChange={(val) => { setSort(val); setPage(1) }} options={[{ label: 'Most Helpful', value: 'helpful' }, { label: 'Newest', value: 'newest' }, { label: 'Highest Rating', value: 'highest' }, { label: 'Lowest Rating', value: 'lowest' }]} label="Sort By" />
+                </div>
+            </div>
+
+            {/* REVIEWS LIST */}
+            <div className="overflow-y-auto p-3 sm:p-4 flex-1">
+                {isLoading ? <Loader /> : error ? <Message variant="danger">{error?.data?.message || error.error}</Message> : reviews.length === 0 ? <Message>No reviews yet</Message> : (
+                    reviews.map((review) => {
+                        const hasMarkedHelpful = review.helpful?.includes(userInfo?._id);
+                        const hasMarkedNotHelpful = review.notHelpful?.includes(userInfo?._id);
+                        return (
+                            <div key={review._id} className="border-b py-4 sm:py-6 last:border-b-0">
+                                <div className="flex flex-wrap items-center gap-2 text-sm">
+                                    <span className="font-semibold">{review.name}</span>
+                                    {review.verifiedPurchase && <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1"><FaCheck /> Verified</span>}
+                                    <span className="text-gray-500">{review.color}{review.storage && ` / ${review.storage}`} | {new Date(review.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <Rating value={review.rating} />
+                                {review.title && <h4 className="font-semibold mt-2">{review.title}</h4>}
+                                <p className="text-gray-800 mb-3">{review.comment}</p>
+
+                                {review.images?.length > 0 && (
+                                    <div className="flex gap-2 mb-3 flex-wrap">
+                                        {review.images.map((img, idx) => <img key={idx} src={img.url} onClick={() => setSelectedImage(img.url)} className="w-20 h-20 object-contain border rounded bg-white p-1 cursor-pointer" />)}
+                                    </div>
+                                )}
+
+                                {/* ADMIN REPLY */}
+                                {review.adminReply?.reply && (
+                                    <div className="bg-blue-50 p-3 rounded mt-3 ml-6">
+                                        <div className="flex justify-between items-start">
+                                            <div><span className='bg-blue-600 text-white text-xs px-2 py-0.5 rounded font-semibold'>Seller</span><strong className='text-sm ml-2'>{review.adminReply.name}</strong></div>
+                                            {userInfo?.isAdmin && editingReply !== review._id && (
+                                                <div className="flex gap-2"><button onClick={() => { setEditingReply(review._id); setReplyText(review.adminReply.reply); }} className="text-blue-600 text-xs"><FaEdit /></button><button onClick={() => handleDeleteReply(review._id)} className="text-red-600 text-xs"><FaTrash /></button></div>
+                                            )}
+                                        </div>
+                                        {editingReply === review._id ? (
+                                            <div className="mt-2"><textarea value={replyText} onChange={e => setReplyText(e.target.value)} className="w-full border p-2 rounded text-sm" rows={2} /><div className="flex gap-2 mt-2"><button onClick={() => handleReply(review._id)} disabled={loadingEdit} className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm">Update Reply</button><button onClick={() => { setEditingReply(null); setReplyText('') }} className="bg-gray-300 px-3 py-1 rounded text-xs">Cancel</button></div></div>
+                                        ) : (<p className='text-sm mt-1'>{review.adminReply.reply}</p>)}
+                                    </div>
+                                )}
+
+                                {/* ACTIONS */}
+                                <div className="flex gap-4 mt-3">
+                                    <button onClick={() => handleHelpful(review._id)} disabled={loadingHelpful} className={`flex items-center gap-1 text-sm ${hasMarkedHelpful ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-blue-600'}`}><FaThumbsUp /> Helpful ({review.helpful?.length || 0})</button>
+                                    <button onClick={() => handleNotHelpful(review._id)} disabled={loadingNotHelpful} className={`flex items-center gap-1 text-sm ${hasMarkedNotHelpful ? "text-red-600 font-semibold" : "text-gray-600 hover:text-red-600"}`}><FaThumbsDown /> Not Helpful ({review.notHelpful?.length || 0})</button>
+                                    {userInfo?.isAdmin && !review.adminReply?.reply && <button onClick={() => setReplyingTo(review._id)} className="text-blue-600 text-sm"><FaReply /> Reply</button>}
+                                </div>
+
+                                {/* REPLY BOX */}
+                                {userInfo?.isAdmin && replyingTo === review._id && (
+                                    <div className="mt-3 ml-6"><textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Reply as Seller..." className="w-full border p-2 rounded text-sm" rows={2} /><div className="flex gap-2 mt-2"><button onClick={() => handleReply(review._id)} disabled={loadingReply} className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm">Post Reply</button><button onClick={() => { setReplyingTo(null); setReplyText('') }} className="bg-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm">Cancel</button></div></div>
+                                )}
+                            </div>
+                        )
+                    })
+                )}
+                {isFetching && page > 1 && <div className="mt-4"><ReviewSkeleton /><ReviewSkeleton /></div>}
+            </div>
+
+            {/* LOAD MORE */}
+            {data?.hasMore && (
                 <div className="flex justify-center mt-10">
-                    <button
-                        onClick={() => setPage((prev) => prev + 1)}
-                        disabled={isFetching}
-                        className="px-8 py-3 bg-gray-900 text-white rounded-xl
-                 hover:bg-black transition-all duration-300
-                 hover:scale-105 shadow-lg
-                 disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={() => setPage(prev => prev + 1)} disabled={isFetching} className="px-8 py-3 bg-gray-900 text-white rounded-xl hover:bg-black disabled:opacity-50">
                         {isFetching ? "Loading..." : "Load More Reviews"}
                     </button>
                 </div>
             )}
+
+            {selectedImage && <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50" onClick={() => setSelectedImage(null)}><img src={selectedImage} className="max-w-[90%] max-h-[90%] rounded-lg" /></div>}
         </div>
     );
 };

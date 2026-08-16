@@ -7,7 +7,7 @@ import { apiSlice } from './slices/apiSlice'
 import wishlistReducer from './slices/wishlistSlice'
 import compareReducer from './slices/compareSlice';
 
-export default configureStore({
+const store = configureStore({
   reducer: {
     [apiSlice.reducerPath]: apiSlice.reducer,
     products: productReducer, 
@@ -21,3 +21,6 @@ export default configureStore({
    middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),
 });
+
+export default store;  
+export { store };  

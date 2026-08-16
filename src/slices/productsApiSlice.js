@@ -103,13 +103,13 @@ getFrequentlyBoughtTogether: builder.query({
   keepUnusedDataFor: 5,
 }),
     updateProductSpecs: builder.mutation({
-      query: ({ productId, specs }) => ({
-        url: `/products/${productId}/specs`,
+      query: ({ slug, specs }) => ({
+        url: `/products/slug/${slug}/specs`,
         method: 'PUT',
         body: specs,
       }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
+      invalidatesTags: (result, error, { slug }) => [
+        { type: 'Product', id: slug },
       ],
     }),
     deleteProduct: builder.mutation({
@@ -121,114 +121,251 @@ getFrequentlyBoughtTogether: builder.query({
     }),
     getProductReviews: builder.query({
       query: ({
-        productId,
+        slug,
         page = 1,
         limit = 10,
         color = '',
         storage = '',
-        sort = '',
+        sort = 'newest',
         keyword = '',
         rating = "",
       }) => ({
-        url: `/products/${productId}/reviews`,
-        params: {
-          page,
-          limit,
-          ...(color && { color }),
-          ...(storage && { storage }),
-          ...(sort && { sort }),
-          ...(keyword && { keyword }),
-          ...(rating && { rating }),
-        },
+        url: `/products/slug/${slug}/reviews`,
+        params: { page, limit, color, storage, sort, keyword, rating },
       }),
-      providesTags: ['Reviews'],
-      keepUnusedDataFor: 5,
+      providesTags: (result, error, { slug }) => [{ type: 'ProductReviews', id: slug }],
+
+      serializeQueryArgs: ({ queryArgs }) => {
+        const { page, ...rest } = queryArgs;
+        return JSON.stringify(rest);
+      },
+      merge: (currentCache, newItems, { arg }) => {  
+    if (arg.page === 1) return newItems;  
+    
+    const merged = [...currentCache.reviews, ...newItems.reviews];
+    const unique = Array.from(new Map(merged.map(r => [r._id, r])).values());
+    
+    return { ...newItems, reviews: unique };
+  },
+      forceRefetch({ currentArg, previousArg }) {
+        return currentArg?.page !== previousArg?.page;
+      },
+      keepUnusedDataFor: 300,
     }),
+
     createProductReview: builder.mutation({
-      query: ({ productId, ...data }) => ({
-        url: `/products/${productId}/reviews`,
+      query: ({ slug, ...data }) => ({ 
+        url: `/products/slug/${slug}/reviews`,
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-        { type: 'Reviews', id: 'LIST' },
+      invalidatesTags: (result, error, { slug }) => [
+        { type: 'Product', id: slug },
+        { type: 'ProductReviews', id: slug },  
       ],
     }),
-    updateReview: builder.mutation({
+     updateReview: builder.mutation({
       query: (data) => ({
-        url: `/products/${data.productId}/reviews/${data.reviewId}`,
+        url: `/products/slug/${data.slug}/reviews/${data.reviewId}`, 
         method: 'PUT',
         body: data,
       }),
       invalidatesTags: (result, error, arg) => [
-        { type: 'Product', id: arg.productId },
-        { type: 'Reviews', id: 'LIST' },
+        { type: 'Product', id: arg.slug },
+        { type: 'ProductReviews', id: arg.slug },
       ],
     }),
-    deleteReview: builder.mutation({
-      query: ({ productId, reviewId }) => ({
-        url: `/products/${productId}/reviews/${reviewId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-        { type: 'Reviews', id: 'LIST' },
-      ],
-    }),
-    markReviewHelpful: builder.mutation({
-      query: ({ productId, reviewId }) => ({
-        url: `/products/${productId}/reviews/${reviewId}/helpful`,
+   deleteReview: builder.mutation({
+  query: ({ slug, reviewId }) => ({  
+    url: `/products/slug/${slug}/reviews/${reviewId}`,
+    method: 'DELETE',
+  }),
+  invalidatesTags: (result, error, { slug }) => [
+    { type: 'Product', id: slug },
+    { type: 'ProductReviews', id: slug }, 
+  ],
+}),
+
+     // 1. HELPFUL
+     markReviewHelpful: builder.mutation({
+      query: ({ slug, reviewId }) => ({  
+        url: `/products/slug/${slug}/reviews/${reviewId}/helpful`,
         method: 'PUT',
       }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-      ],
+      async onQueryStarted({ slug, reviewId }, { dispatch, queryFulfilled, getState }) {
+        const patchResults = [];
+        const state = getState();
+        const userId = state.auth.userInfo?._id;
+        const queries = productsApiSlice.util.selectCachedArgsForQuery(state, 'getProductReviews');
+        
+        queries.forEach((args) => {
+          if (args.slug === slug) {
+            patchResults.push(
+              dispatch(
+                productsApiSlice.util.updateQueryData('getProductReviews', args, (draft) => {
+                  const review = draft.reviews?.find(r => r._id === reviewId);
+                  if (review) {
+                    const hasVoted = review.helpful?.includes(userId);
+                    review.helpful = hasVoted ? review.helpful.filter(id => id !== userId) : [...(review.helpful || []), userId];
+                    review.notHelpful = review.notHelpful?.filter(id => id !== userId) || [];
+                    if (args.sort === 'helpful') draft.reviews.sort((a,b) => (b.helpful?.length||0) - (a.helpful?.length||0));
+                  }
+                })
+              )
+            );
+          }
+        });
+
+        try { await queryFulfilled; dispatch(apiSlice.util.invalidateTags([{ type: 'Product', id: slug }])); } 
+        catch { patchResults.forEach(patch => patch.undo()); }
+      },
     }),
+   // 2. NOT HELPFUL
     markReviewNotHelpful: builder.mutation({
-      query: ({ productId, reviewId }) => ({
-        url: `/products/${productId}/reviews/${reviewId}/not-helpful`,
+      query: ({ slug, reviewId }) => ({ 
+        url: `/products/slug/${slug}/reviews/${reviewId}/not-helpful`,
         method: 'PUT',
       }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-      ],
+      async onQueryStarted({ slug, reviewId }, { dispatch, queryFulfilled, getState }) {
+        const patchResults = [];
+        const state = getState();
+        const userId = state.auth.userInfo?._id;
+        const queries = productsApiSlice.util.selectCachedArgsForQuery(state, 'getProductReviews');
+        
+        queries.forEach((args) => {
+          if (args.slug === slug) {
+            patchResults.push(
+              dispatch(
+                productsApiSlice.util.updateQueryData(
+                  'getProductReviews',
+                  args,
+                  (draft) => {
+                    const review = draft.reviews?.find(r => r._id === reviewId);
+                    if (review) {
+                      const hasVoted = review.notHelpful?.includes(userId);
+                      review.notHelpful = hasVoted
+                        ? review.notHelpful.filter(id => id !== userId)
+                        : [...(review.notHelpful || []), userId];
+                      // Remove from helpful if voted there
+                      review.helpful = review.helpful?.filter(id => id !== userId) || [];
+                    }
+                  }
+                )
+              )
+            );
+          }
+        });
+
+        try { await queryFulfilled; dispatch(apiSlice.util.invalidateTags([{ type: 'Product', id: slug }])); } 
+        catch { patchResults.forEach(patch => patch.undo()); }
+      },
     }),
-    addAdminReply: builder.mutation({
-      query: ({ productId, reviewId, reply }) => ({
-        url: `/products/${productId}/reviews/${reviewId}/reply`,
+     // 3. ADD ADMIN REPLY
+     addAdminReply: builder.mutation({
+      query: ({ slug, reviewId, reply }) => ({  
+        url: `/products/slug/${slug}/reviews/${reviewId}/reply`,
         method: 'POST',
         body: { reply },
       }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-        { type: 'Reviews', id: 'LIST' },
-        { type: 'Reviews', id: productId },
-      ],
+      async onQueryStarted({ slug, reviewId, reply }, { dispatch, queryFulfilled, getState }) {
+        const patchResults = [];
+        const state = getState();
+        const userName = state.auth.userInfo?.name || 'Admin';
+        const queries = productsApiSlice.util.selectCachedArgsForQuery(state, 'getProductReviews');
+        
+        queries.forEach((args) => {
+          if (args.slug === slug) {
+            patchResults.push(
+              dispatch(
+                productsApiSlice.util.updateQueryData('getProductReviews', args, (draft) => {
+                  const review = draft.reviews?.find(r => r._id === reviewId);
+                  if (review) review.adminReply = { reply, name: userName, createdAt: new Date().toISOString() };
+                })
+              )
+            );
+          }
+        });
+
+        try { await queryFulfilled; dispatch(apiSlice.util.invalidateTags([{ type: 'Product', id: slug }])); } 
+        catch { patchResults.forEach(patch => patch.undo()); }
+      },
     }),
+
+     // 4. EDIT ADMIN REPLY
     editAdminReply: builder.mutation({
-      query: ({ productId, reviewId, reply }) => ({
-        url: `/products/${productId}/reviews/${reviewId}/reply`,
+      query: ({ slug, reviewId, reply }) => ({  
+        url: `/products/slug/${slug}/reviews/${reviewId}/reply`,
         method: 'PUT',
         body: { reply },
       }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-        { type: 'Reviews', id: 'LIST' },
-        { type: 'Reviews', id: productId },
-      ],
+      async onQueryStarted({ slug, reviewId, reply }, { dispatch, queryFulfilled, getState }) {
+        const patchResults = [];
+        const queries = productsApiSlice.util.selectCachedArgsForQuery(getState(), 'getProductReviews');
+        
+        queries.forEach((args) => {
+          if (args.slug === slug) {
+            patchResults.push(
+              dispatch(
+                productsApiSlice.util.updateQueryData(
+                  'getProductReviews',
+                  args,
+                  (draft) => {
+                    const review = draft.reviews?.find(r => r._id === reviewId);
+                    if (review?.adminReply) {
+                      review.adminReply.reply = reply;
+                    }
+                  }
+                )
+              )
+            );
+          }
+        });
+
+        try { await queryFulfilled; dispatch(apiSlice.util.invalidateTags([{ type: 'Product', id: slug }]));}
+        
+        catch { patchResults.forEach(patch => patch.undo()); }
+      },
     }),
-    deleteAdminReply: builder.mutation({
-      query: ({ productId, reviewId }) => ({
-        url: `/products/${productId}/reviews/${reviewId}/reply`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-        { type: 'Reviews', id: 'LIST' },
-        { type: 'Reviews', id: productId },
-      ],
-    }),
+     // 5. DELETE ADMIN REPLY
+    // 5. DELETE ADMIN REPLY
+deleteAdminReply: builder.mutation({
+  query: ({ slug, reviewId }) => ({  
+    url: `/products/slug/${slug}/reviews/${reviewId}/reply`,
+    method: 'DELETE',
+  }),
+  async onQueryStarted({ slug, reviewId }, { dispatch, queryFulfilled, getState }) { // KEY: added getState
+    const patchResults = [];
+    const queries = productsApiSlice.util.selectCachedArgsForQuery(getState(), 'getProductReviews');
+    
+    queries.forEach((args) => {
+      if (args.slug === slug) {
+        patchResults.push(
+          dispatch(
+            productsApiSlice.util.updateQueryData(
+              'getProductReviews',
+              args, // use args directly so it works for page 1,2,3
+              (draft) => {
+                const review = draft.reviews?.find(r => r._id === reviewId);
+                if (review) {
+                  review.adminReply = null; // delete reply
+                }
+              }
+            )
+          )
+        );
+      }
+    });
+
+    try { 
+      await queryFulfilled;
+      dispatch(apiSlice.util.invalidateTags([{ type: 'Product', id: slug }]));
+    } 
+    catch { 
+      patchResults.forEach(patch => patch.undo()); 
+    }
+  },
+}),
+
     uploadProductImage: builder.mutation({ // V8.6 for Products -> Admin only
       query: (formData) => ({
         url: '/upload/products', // <-- hits :type = products
@@ -266,6 +403,11 @@ getFrequentlyBoughtTogether: builder.query({
       })
     }),
 
+    getProductReviewImages: builder.query({
+  query: (slug) => `/products/slug/${slug}/reviews/images`,
+  keepUnusedDataFor: 300,
+}),
+
 
   }),
 });
@@ -295,6 +437,7 @@ export const {
   useAddAdminReplyMutation,
   useEditAdminReplyMutation,
   useDeleteAdminReplyMutation,
+  useGetProductReviewImagesQuery,
   useUploadProductImageMutation,
   useUploadReviewImageMutation,
   useDeleteCloudinaryImageMutation,

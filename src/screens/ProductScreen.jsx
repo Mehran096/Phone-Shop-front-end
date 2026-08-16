@@ -515,7 +515,7 @@ const buyNowHandler = () => {
       const uploadedImages = await uploadReviewImage(formData).unwrap(); // [{url, imagePublicId}]
 
       await createProductReview({
-        productId,
+        slug,
         rating,
         comment,
         title,
@@ -550,7 +550,7 @@ const buyNowHandler = () => {
     try {
       // V33.89 KEY: Send editImages as-is. No upload, no merge
       await updateProductReview({
-        productId,
+        slug,
         reviewId: editingReview._id,
         rating: editRating,
         comment: editComment,
@@ -648,7 +648,7 @@ const buyNowHandler = () => {
   const deleteHandler = async (reviewId) => {
     if (window.confirm('Are you sure you want to delete this review?')) {
       try {
-        await deleteProductReview({ productId, reviewId }).unwrap();
+        await deleteProductReview({ slug, reviewId }).unwrap();
         toast.success('Review deleted');
       } catch (err) {
         toast.error(err?.data?.message || err.error);
@@ -667,7 +667,7 @@ const buyNowHandler = () => {
     }
     try {
       const res = await markHelpful({
-        productId: product._id,
+        slug,
         reviewId,
       }).unwrap();
 
@@ -691,7 +691,7 @@ const buyNowHandler = () => {
 
     try {
       const res = await markReviewNotHelpful({
-        productId: product._id,
+        slug,
         reviewId,
       }).unwrap();
 
@@ -713,7 +713,7 @@ const buyNowHandler = () => {
     }
     try {
       await addAdminReply({
-        productId,
+        slug,
         reviewId,
         reply: replyText, // <-- Change key from replyText to reply
       }).unwrap();
@@ -728,7 +728,7 @@ const buyNowHandler = () => {
   const updateReplyHandler = async (reviewId) => {
     try {
       await editAdminReply({
-        productId,
+        slug,
         reviewId,
         reply: editReplyText  // <-- Change from replyText: to reply:
       }).unwrap();
@@ -742,7 +742,7 @@ const buyNowHandler = () => {
   const deleteReplyHandler = async (reviewId) => {
     if (window.confirm('Delete this reply?')) {
       try {
-        await deleteAdminReply({ productId, reviewId }).unwrap();
+        await deleteAdminReply({ slug, reviewId }).unwrap();
         toast.success('Reply deleted');
       } catch (err) {
         toast.error(err?.data?.message || err.error);
@@ -2039,7 +2039,7 @@ const buyNowHandler = () => {
         <StickyPurchaseBar
           product={product}
           selectedColor={selectedColor}
-          selectedVariant={selectedVariant}
+          selectedVariant={selectedVariant} 
           qty={qty}
           setQty={setQty}
           addToCartHandler={addToCartHandler}
