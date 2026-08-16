@@ -15,11 +15,27 @@ const ACCESSORY_TYPES = [
   { value: "holder", label: "Holder / Stand" },
 ];
 
+const ACCESSORY_CATEGORIES = [
+  { value: "iPhone Cases", label: "iPhone Cases" },
+  { value: "Samsung Cases", label: "Samsung Cases" },
+  { value: "Google Pixel Cases", label: "Google Pixel Cases" },
+  { value: "Chargers", label: "Chargers" },
+  { value: "Fast Chargers", label: "Fast Chargers 20W+" },
+  { value: "Cables", label: "Cables" },
+  { value: "USB-C Cables", label: "USB-C Cables" },
+  { value: "Lightning Cables", label: "Lightning Cables" },
+  { value: "Screen Protectors", label: "Screen Protectors" },
+  { value: "Audio", label: "Audio Adapters" },
+  { value: "Holders", label: "Holders / Stands" },
+  { value: "Other", label: "Other" },
+];
+
 const AccessoryCreateScreen = () => {
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
   const [accessoryType, setAccessoryType] = useState('case');
   const [keywords, setKeywords] = useState('');
+  const [category, setCategory] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
 
@@ -140,7 +156,7 @@ const AccessoryCreateScreen = () => {
         name,
         brand,
         accessoryType,
-        category: accessoryType,
+        category: category || accessoryType,
         keywords: keywords.split(',').map(k => k.trim()).filter(k => k),
         metaTitle,
         metaDescription,
@@ -198,6 +214,15 @@ const AccessoryCreateScreen = () => {
           <select className="p-3 border rounded-lg text-sm" value={accessoryType} onChange={(e) => setAccessoryType(e.target.value)}>
             {ACCESSORY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
+          <select 
+    className="p-3 border rounded-lg text-sm" 
+    value={category} 
+    onChange={(e) => setCategory(e.target.value)}
+  >
+    <option value="">Select Category</option>
+    {ACCESSORY_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+  </select>
+          
           <input className="p-3 border rounded-lg text-sm" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
           <input className="p-3 border rounded-lg text-sm" placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} required />
         </div>

@@ -2,13 +2,26 @@ import { apiSlice } from './apiSlice';
 
 export const accessoriesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // GET /api/accessories?keyword=&pageNumber=&type=
+     // GET /api/accessories?keyword=&pageNumber=&type=
     getAccessories: builder.query({
-      query: ({ keyword = '', pageNumber = '', type = '' }) => ({
+      query: ({ keyword = '', pageNumber = '', type = '', pageSize = '' }) => ({
         url: '/accessories',
-        params: { keyword, pageNumber, type },
+        params: { keyword, pageNumber, type, pageSize },
       }),
       providesTags: ['Accessories'],
+      keepUnusedDataFor: 5,
+    }),
+
+    // V37.71 KEY: NEW SEARCH SUGGESTION ENDPOINT
+    getAccessorySearchSuggestions: builder.query({
+      query: (keyword) => ({
+        url: '/accessories',
+        params: { 
+          keyword, 
+          pageSize: 6 // only 6 for dropdown
+        },
+      }),
+      transformResponse: (response) => response.accessories || [], // backend returns {accessories: []}
       keepUnusedDataFor: 5,
     }),
 
@@ -367,12 +380,15 @@ getAccessoryReviewImages: builder.query({
   keepUnusedDataFor: 60, // cache for 1 min
 }),
 
+ 
+
   }),
 });
 
 // Export hooks
 export const {
   useGetAccessoriesQuery,
+  useGetAccessorySearchSuggestionsQuery,
   useGetAccessoryDetailsQuery,
   useGetAccessoryBySlugQuery,
   useCreateAccessoryMutation,
@@ -390,5 +406,5 @@ export const {
   useGetReplyQuery,
   useUpdateReplyMutation,
   useDeleteReplyMutation,
-  useGetAccessoryReviewImagesQuery,
+  useGetAccessoryReviewImagesQuery, 
 } = accessoriesApiSlice;

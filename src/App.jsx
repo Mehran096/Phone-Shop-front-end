@@ -44,6 +44,7 @@ import DealsScreen from './screens/DealsScreen';
 import SearchBox from './components/SearchBox';
 import CompareScreen from './screens/CompareScreen';
 import CompareBar from './components/CompareBar';
+import SearchScreen from './screens/SearchScreen'
  
 
 import { FaExclamationTriangle, FaWifi } from 'react-icons/fa'
@@ -172,6 +173,7 @@ const dispatch = useDispatch()
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<HomeScreen isOnline={isOnline} />} />
+             <Route path='/search' element={<SearchScreen isOnline={isOnline} />} />
             <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
             <Route path='/deals' element={<DealsScreen isOnline={isOnline}/>} />
             <Route path="/compare" element={<CompareScreen />} />
