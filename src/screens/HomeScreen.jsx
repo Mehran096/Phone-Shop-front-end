@@ -307,6 +307,7 @@ const {
 )}
 
 {/* 5. ACCESSORIES SECTION */}
+{!keyword && !brand && (
 <section className='py-16 bg-gray-50'>
   <div className='container mx-auto px-4'>
     <div className='text-center mb-10'>
@@ -335,8 +336,10 @@ const {
     )}
   </div>
 </section>
+)}
 
 {/* 3. Recently Viewed Section - Same style as Deals */}
+
 {recentProducts.length > 0 && (
   <section className='mt-12 md:mt-16 lg:mt-20 py-16 bg-gray-50'>
     <div className='container mx-auto px-4'>
@@ -372,6 +375,7 @@ const {
   </section>
 )}
 
+ 
       {/* 4. Why Choose Us - Only on homepage */}
       {!keyword && !brand && ( // Fix 8: Hide when filtering by brand too
         <section className='py-16 bg-gray-50'>

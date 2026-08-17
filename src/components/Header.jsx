@@ -12,6 +12,7 @@ import { FaWifi } from 'react-icons/fa'
 import CollapsibleMenu from './CollapsibleMenu';
 import api from '../utils/axios'
 import CompareBar from './CompareBar'
+import Navbar from './Navbar' 
 
 const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
   const location = useLocation();
@@ -36,14 +37,30 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
 
   const currentBrand = searchParams.get('brand')
 
-  const { wishlist } = useSelector((state) => state.wishlist) // <-- NEW STATE
+  const { wishlist } = useSelector((state) => state.wishlist)
   const { cartItems } = useSelector((state) => state.cart)
   const { userInfo } = useSelector((state) => state.auth)
 
-  const wishlistCount = wishlist.items.length // <-- KEY LINE
+  const wishlistCount = wishlist.items.length
 
   const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'Oppo', 'Vivo']
+  
+  // V38.04: ADD ACCESSORY CATEGORIES
+  const accessoryCategories = [
+    { name: 'iPhone Cases', slug: 'iphone-cases' },
+    { name: 'Samsung Cases', slug: 'samsung-cases' },
+    { name: 'Chargers', slug: 'chargers' },
+    { name: 'USB-C Cables', slug: 'usb-cables' },
+    { name: 'Screen Protectors', slug: 'screen-protectors' },
+    { name: 'Accessories', slug: 'all' }
+  ]
+  
   const activeBrand = searchParams.get('brand')
+ const activeCategory = location.pathname.startsWith('/category/')
+ ? location.pathname.split('/')[2] 
+  : location.pathname === '/accessories' 
+ ? 'all' // key for "All Accessories"
+  : null
 
   const logoutHandler = async () => {
     if (userInfo?._id) {
@@ -64,6 +81,13 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
 
   const handleBrandClick = (brand) => {
     navigate(`/products?brand=${brand}`)
+    setIsMobileMenuOpen(false)
+  }
+
+  // V38.04: NEW HANDLER FOR ACCESSORIES
+  const handleCategoryClick = (slug) => {
+    if(slug === 'all') navigate('/accessories')
+    else navigate(`/category/${slug}`)
     setIsMobileMenuOpen(false)
   }
 
@@ -217,26 +241,7 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
       </nav>
 
       {/* Brand Navbar - Desktop */}
-      <div className='hidden md:block bg-gray-800 border-t border-gray-700'>
-        <div className='container mx-auto px-4'>
-          <div className='flex space-x-8 h-10 items-center'>
-            {brands.map((brand) => (
-              <button
-                key={brand}
-                onClick={() => handleBrandClick(brand)}
-                className={`text-sm px-2 py-1 border border-transparent rounded-sm transition-all 
-                  duration-100 ${activeBrand === brand
-                    ? 'text-white border-white font-bold'  // bold when active
-                    : 'text-gray-200 hover:text-white hover:border-white font-normal'
-                  }`}
-              >
-                {brand}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
+    <Navbar />
       {/* Mobile Menu */}
       <div onClick={closeMobileMenu} className={`md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity duration-500 ease-out ${isMobileMenuOpen? "opacity-100" : "opacity-0 pointer-events-none"}`} />
       <div className={`md:hidden fixed top-16 left-0 bottom-0 w-[85%] max-w-sm bg-gray-900 z-50 overflow-y-auto transition-all duration-300 ease-in-out shadow-2xl ${isMobileMenuOpen? "translate-x-0" : "-translate-x-full"}`}>
@@ -256,6 +261,16 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
             {brands.map((brand) => (
               <button key={brand} onClick={() => handleBrandClick(brand)} className={`block w-full text-left py-2 text-lg hover:text-blue-400 ${activeBrand === brand? 'text-blue-400' : 'text-white'}`}>
                 {brand}
+              </button>
+            ))}
+          </div>
+
+          {/* V38.04: ACCESSORIES - MOBILE */}
+          <div className='border-t border-gray-700 pt-4 mt-2'>
+            <h3 className="text-gray-400 uppercase text-xs tracking-widest">Shop by Accessory</h3>
+            {accessoryCategories.map((cat) => (
+              <button key={cat.slug} onClick={() => handleCategoryClick(cat.slug)} className={`block w-full text-left py-2 text-lg hover:text-blue-400 ${activeCategory === cat.slug? 'text-blue-400' : 'text-white'}`}>
+                {cat.name}
               </button>
             ))}
           </div>

@@ -609,14 +609,14 @@ const AccessoryReviewSection = ({ accessory }) => {
           <div className='bg-green-50 border border-green-200 rounded-lg p-4'>
             <div className='flex items-center justify-between'>
               <div>
-                <p className="text-green-700 font-semibold flex items-center gap-2">
+                <p className="text-green-700 font-semibold text-sm sm:text-lg flex items-center gap-2">
                   <FaCheck /> You have already reviewed this accessory
                 </p>
-                <p className="text-sm text-gray-600 mt-1">You can edit or delete your review below</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">You can edit or delete your review above</p>
               </div>
               <button
                 onClick={() => handleEditClick(userReview)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
+                className="bg-blue-600 text-white px-2 sm:px-4 py-1 rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-700"
               >
                 Edit Review
               </button>

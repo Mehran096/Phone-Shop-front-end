@@ -408,6 +408,11 @@ deleteAdminReply: builder.mutation({
   keepUnusedDataFor: 300,
 }),
 
+getBrandMenuProducts: builder.query({  
+  query: (brand) => `/products/brand-menu/${brand}`,
+  keepUnusedDataFor: 60,  
+}),
+
 
   }),
 });
@@ -442,4 +447,5 @@ export const {
   useUploadReviewImageMutation,
   useDeleteCloudinaryImageMutation,
   useDeleteCloudinaryImagesBatchMutation,
+  useGetBrandMenuProductsQuery,
 } = productsApiSlice;

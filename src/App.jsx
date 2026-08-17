@@ -56,6 +56,8 @@ import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
 import AccessoryScreen from './screens/AccessoryScreen';
 import AccessoryReviewsScreen from './screens/AccessoryReviewsScreen';
+import AccessoryCategoryScreen from './screens/AccessoryCategoryScreen';
+import AccessoryCategoryListScreen from './screens/AccessoryCategoryListScreen'
   
  
  
@@ -177,8 +179,10 @@ const dispatch = useDispatch()
             <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
             <Route path='/deals' element={<DealsScreen isOnline={isOnline}/>} />
             <Route path="/compare" element={<CompareScreen />} />
+            <Route path='/accessories' element={<AccessoryCategoryListScreen />} />
             <Route path='/accessory/:slug' element={<AccessoryScreen />} />
             <Route path="/accessories/:slug/reviews" element={<AccessoryReviewsScreen />} />
+            <Route path='/category/:categorySlug' element={<AccessoryCategoryScreen />} />
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
