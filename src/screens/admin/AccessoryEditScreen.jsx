@@ -30,7 +30,8 @@ const ACCESSORY_CATEGORIES = [
   { value: "USB-C Cables", label: "USB-C Cables" },
   { value: "Lightning Cables", label: "Lightning Cables" },
   { value: "Screen Protectors", label: "Screen Protectors" },
-  { value: "Audio", label: "Audio Adapters" },
+  { value: "Audio Adapters", label: "Audio Adapters" },
+  { value: "Adapters", label: "Adapters" },
   { value: "Holders", label: "Holders / Stands" },
   { value: "Other", label: "Other" },
 ];
@@ -74,6 +75,7 @@ const AccessoryEditScreen = () => {
         colorHex: v.colorHex || '#000',
         price: Number(v.price) || 0,
         originalPrice: Number(v.originalPrice || v.price) || 0, // NEW: Load originalPrice. Fallback for old products
+        bulkBase: v.bulkBase || 'discounted',
         bulkPricing: v.bulkPricing?.length > 0 
         ? v.bulkPricing.map(b => ({
               qty: Number(b.qty) || 1,
@@ -148,7 +150,7 @@ const AccessoryEditScreen = () => {
 
   const addVariant = (mIdx) => setModels(prev => prev.map((m, i) => i === mIdx? {
 ...m,
-    variants: [...(m.variants || []), { sku: '', name: '', color: '', colorHex: '#000', originalPrice: 0, price: 0, countInStock: 0, images: [], files: [], bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }], discount: { type: 'percentage', value: 0, isActive: false } }]
+    variants: [...(m.variants || []), { sku: '', name: '', color: '', colorHex: '#000', originalPrice: 0, bulkBase: 'discounted', price: 0, countInStock: 0, images: [], files: [], bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }], discount: { type: 'percentage', value: 0, isActive: false } }]
   } : m));
   const updateVariant = (mIdx, vIdx, field, value) => setModels(prev => prev.map((m, i) => i === mIdx? {...m, variants: m.variants.map((v, j) => j === vIdx? {...v, [field]: value } : v) } : m));
   const removeVariant = (mIdx, vIdx) => setModels(prev => prev.map((m, i) => i === mIdx? {...m, variants: m.variants.filter((_, j) => j!== vIdx) } : m));
@@ -188,6 +190,7 @@ const AccessoryEditScreen = () => {
             colorHex: v.colorHex,
             originalPrice: Number(v.originalPrice), // NEW
             price: Number(v.price),
+            bulkBase: v.bulkBase || 'discounted',
             countInStock: Number(v.countInStock),
             wattage: v.wattage || '', cableType: v.cableType || '', cableLength: v.cableLength || '',
             hardness: v.hardness || '', thickness: v.thickness || '', glassType: v.glassType || '',
@@ -312,6 +315,18 @@ const AccessoryEditScreen = () => {
                         <input type="date" className="p-2.5 border rounded text-sm" value={v.discount.endDate?.split('T')[0] || ''} onChange={(e) => updateDiscount(mIdx, vIdx, 'endDate', e.target.value)} />
                       </div>
                     </div>
+
+                    <div className="p-3 bg-blue-50 rounded mb-3">
+  <h6 className="font-semibold text-xs mb-2 text-blue-800">Bulk Pricing Base</h6>
+  <select
+    className="p-2.5 border rounded text-sm w-full"
+    value={v.bulkBase || 'discounted'}
+    onChange={(e) => updateVariant(mIdx, vIdx, 'bulkBase', e.target.value)}
+  >
+    <option value="discounted">Bulk from Discounted Price - Stacked</option>
+    <option value="original">Bulk from Original Price - No Stack</option>
+  </select>
+</div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                       {(accessoryType === 'charger' || accessoryType === 'cable') && (

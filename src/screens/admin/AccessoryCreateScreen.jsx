@@ -25,7 +25,8 @@ const ACCESSORY_CATEGORIES = [
   { value: "USB-C Cables", label: "USB-C Cables" },
   { value: "Lightning Cables", label: "Lightning Cables" },
   { value: "Screen Protectors", label: "Screen Protectors" },
-  { value: "Audio", label: "Audio Adapters" },
+  { value: "Audio Adapters", label: "Audio Adapters" },
+  { value: "Adapters", label: "Adapters" },
   { value: "Holders", label: "Holders / Stands" },
   { value: "Other", label: "Other" },
 ];
@@ -48,6 +49,7 @@ const AccessoryCreateScreen = () => {
         {
           sku: '', name: '', color: '', colorHex: '#000', 
           originalPrice: 0, price: 0, countInStock: 0, // NEW: originalPrice
+          bulkBase: 'discounted',
           wattage: '', cableType: '', cableLength: '',
           hardness: '', thickness: '', glassType: '',
           connectorType: '', audioBits: '',
@@ -126,6 +128,7 @@ const AccessoryCreateScreen = () => {
               colorHex: v.colorHex || '#000',
               originalPrice: Number(v.originalPrice), // NEW
               price: Number(v.price), // After single discount
+              bulkBase: v.bulkBase || 'discounted',
               countInStock: Number(v.countInStock),
               wattage: v.wattage || '',
               cableType: v.cableType || '',
@@ -174,7 +177,7 @@ const AccessoryCreateScreen = () => {
     }
   };
 
-  const addModel = () => setModels([...models, { modelName: '', description: '', specs: [{ key: '', value: '' }], variants: [{ sku: '', name: '', originalPrice: 0, price: 0, countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }], discount: { type: 'percentage', value: 0, isActive: false } }] }]);
+  const addModel = () => setModels([...models, { modelName: '', description: '', specs: [{ key: '', value: '' }], variants: [{ sku: '', name: '', originalPrice: 0, price: 0, countInStock: 0, bulkBase: 'discounted', files: [], bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }], discount: { type: 'percentage', value: 0, isActive: false } }] }]);
   const removeModel = (mIdx) => setModels(models.filter((_, i) => i!== mIdx));
   const handleModelChange = (mIdx, field, value) => { const updated = [...models]; updated[mIdx][field] = value; setModels(updated); };
 
@@ -184,7 +187,7 @@ const AccessoryCreateScreen = () => {
 
   const addVariant = (mIdx) => {
     const updated = [...models];
-    updated[mIdx].variants.push({ sku: '', name: '', originalPrice: 0, price: 0, countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }], discount: { type: 'percentage', value: 0, isActive: false } });
+    updated[mIdx].variants.push({ sku: '', name: '', originalPrice: 0, price: 0, bulkBase: 'discounted', countInStock: 0, files: [], bulkPricing: [{ qty: 1, price: 0, discountLabel: '' }], discount: { type: 'percentage', value: 0, isActive: false } });
     setModels(updated);
   };
   const removeVariant = (mIdx, vIdx) => { const updated = [...models]; updated[mIdx].variants = updated[mIdx].variants.filter((_, i) => i!== vIdx); setModels(updated); };
@@ -307,6 +310,22 @@ const AccessoryCreateScreen = () => {
                         <input type="date" className="p-2.5 border rounded text-sm" value={v.discount.endDate} onChange={(e) => updateDiscount(mIdx, vIdx, 'endDate', e.target.value)} />
                       </div>
                     </div>
+                    <div className="p-3 bg-blue-50 rounded mb-3">
+  <h6 className="font-semibold text-xs mb-2 text-blue-800">Bulk Pricing Base</h6>
+  <select
+    className="p-2.5 border rounded text-sm w-full"
+    value={v.bulkBase || 'discounted'}
+    onChange={(e) => updateVariant(mIdx, vIdx, 'bulkBase', e.target.value)}
+  >
+    <option value="discounted">Bulk from Discounted Price - Stacked. Best for sales</option>
+    <option value="original">Bulk from Original Price - No Stack. Protect margin</option>
+  </select>
+  <p className="text-[11px] text-gray-500 mt-1">
+    Stacked: $9.99 → 10% off = $8.99 → Bulk 17% = $7.45
+    <br/>
+    No Stack: $9.99 → Bulk 17% = $8.29. Ignores 10% off
+  </p>
+</div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                       {(accessoryType === 'charger' || accessoryType === 'cable') && (

@@ -56,7 +56,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
 import AccessoryScreen from './screens/AccessoryScreen';
 import AccessoryReviewsScreen from './screens/AccessoryReviewsScreen';
-import AccessoryCategoryScreen from './screens/AccessoryCategoryScreen';
+ 
 import AccessoryCategoryListScreen from './screens/AccessoryCategoryListScreen'
   
  
@@ -182,7 +182,7 @@ const dispatch = useDispatch()
             <Route path='/accessories' element={<AccessoryCategoryListScreen />} />
             <Route path='/accessory/:slug' element={<AccessoryScreen />} />
             <Route path="/accessories/:slug/reviews" element={<AccessoryReviewsScreen />} />
-            <Route path='/category/:categorySlug' element={<AccessoryCategoryScreen />} />
+             
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />

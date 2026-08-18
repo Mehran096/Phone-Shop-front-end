@@ -27,19 +27,33 @@ const Navbar = () => {
         skip: !hoveredBrand
     })
 
+    // V38.66: Map category slug to DB accessoryType
+const slugToType = {
+  'iphone-cases': 'case',
+  'samsung-cases': 'case',
+  'google-pixel-cases': 'case',
+  'chargers': 'charger',
+  'fast-chargers-20w+': 'charger',
+  'cables': 'cable',
+  'usb-c-cables': 'cable',
+  'lightning-cables': 'cable',
+  'adapters': 'cable',
+  'screen-protectors': 'glass',  
+  'audio-adapters': 'audio',
+  'holders': 'holder', 
+}
+
     const accessoryTypes = [
     { name: 'Cases', dbValue: 'case', sub: ['iPhone Cases', 'Samsung Cases', 'Google Pixel Cases'] },
     { name: 'Chargers', dbValue: 'charger', sub: ['Chargers', 'Fast Chargers 20W+'] },
-    { name: 'Cables', dbValue: 'cable', sub: ['Cables', 'USB-C Cables', 'Lightning Cables'] },
+    { name: 'Cables', dbValue: 'cable', sub: ['Cables', 'USB-C Cables', 'Lightning Cables', 'Adapters'] },
     { name: 'Screen Protectors', dbValue: 'glass', sub: ['Screen Protectors'] },
     { name: 'Audio', dbValue: 'audio', sub: ['Audio Adapters'] },
-    { name: 'Holders & Stands', dbValue: 'holder', sub: ['Holders / Stands'] },
+    { name: 'Holders & Stands', dbValue: 'holder', sub: ['Holders'] },
 ]
 
     const activeBrand = searchParams.get('brand')
-    const activeCategory = location.pathname.startsWith('/category/') ? location.pathname.split('/')[2]
-        : location.pathname.startsWith('/accessory/') ? location.pathname.split('/')[2]
-            : location.pathname === '/accessories' ? 'all' : null
+    const activeType = searchParams.get('type')  
 
     useEffect(() => {
         setShowAccessoryMenu(false)
@@ -93,9 +107,17 @@ const Navbar = () => {
     setShowAccessoryMenu(false)
 }
     const handleSubCategoryClick = (subCat) => {
-        const slug = subCat.toLowerCase().replace(/\s+/g, '-')
-        navigate(`/category/${slug}`)
+    const slug = subCat.toLowerCase().replace(/\s+/g, '-')
+    const dbType = slugToType[slug]
+
+    if(dbType) {
+        navigate(`/accessories?type=${encodeURIComponent(dbType)}`) // NEW 1 ROUTE
+    } else {
+        navigate('/accessories') // fallback
     }
+    setShowAccessoryMenu(false)
+}
+ 
 
     return (
         <div className='bg-gray-800 border-t border-gray-700 relative hidden lg:block' ref={dropdownRef}>
@@ -240,7 +262,7 @@ const Navbar = () => {
                     >
                         <button
                             className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-all
-                ${activeCategory ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300 hover:text-white hover:bg-gray-700'}`}
+                ${activeType  ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300 hover:text-white hover:bg-gray-700'}`}
                         >
                             Shop <FaChevronDown className={`text-xs transition-transform duration-200 ${showAccessoryMenu ? 'rotate-180' : ''}`} />
                         </button>
@@ -256,22 +278,50 @@ const Navbar = () => {
                                             <button key={type.dbValue} onClick={() => handleTypeClick(type.dbValue)} className="text-[15px] font-semibold hover:text-blue-400 block mb-2.5">{type.name}</button>
                                         ))}
                                     </div>
+                                   <div>
+    <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-4 font-semibold">Shop by Category</p>
+    <div className="space-y-1">
+        {accessoryTypes.map((type) => type.sub.map((subCat) => {
+            const slug = subCat.toLowerCase().replace(/\s+/g, '-') // DEFINE SLUG HERE
+            const dbType = slugToType[slug]
+            
+            return (
+                <button
+                    key={subCat}
+                    onClick={() => handleSubCategoryClick(subCat)}
+                    className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${
+                        activeType === dbType? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    }`}
+                >
+                    {subCat}
+                </button>
+            )
+        }))}
+    </div>
+</div>
                                     <div>
-                                        <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-4 font-semibold">Shop by Category</p>
-                                        <div className="space-y-1">
-                                            {accessoryTypes.map((type) => type.sub.map((subCat) => (
-                                                <button key={subCat} onClick={() => handleSubCategoryClick(subCat)} className="text-[14px] text-gray-300 hover:text-white hover:bg-gray-800 px-2 py-1 rounded-md block w-full text-left">{subCat}</button>
-                                            )))}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-4 font-semibold">More to Explore</p>
-                                        <div className="space-y-1">
-                                            <button className="text-[14px] text-gray-300 hover:text-white hover:bg-gray-800 px-2 py-1 rounded-md block w-full text-left">New Arrivals</button>
-                                            <button className="text-[14px] text-gray-300 hover:text-white hover:bg-gray-800 px-2 py-1 rounded-md block w-full text-left">Best Sellers</button>
-                                            <button className="text-[14px] text-gray-300 hover:text-white hover:bg-gray-800 px-2 py-1 rounded-md block w-full text-left">Deals</button>
-                                        </div>
-                                    </div>
+    <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-4 font-semibold">More to Explore</p>
+    <div className="space-y-1">
+        <button
+            onClick={() => { navigate('/accessories?filter=new'); setShowAccessoryMenu(false) }}
+            className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'new'? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
+        >
+            New Arrivals
+        </button>
+        <button
+            onClick={() => { navigate('/accessories?filter=bestseller'); setShowAccessoryMenu(false) }}
+            className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'bestseller'? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
+        >
+            Best Sellers
+        </button>
+        <button
+            onClick={() => { navigate('/accessories?filter=deal'); setShowAccessoryMenu(false) }}
+            className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'deal'? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
+        >
+            Deals
+        </button>
+    </div>
+</div>
                                     <div className="bg-gray-800 rounded-lg p-4 h-fit border border-gray-700">
                                         <p className="text-sm font-semibold">Featured</p>
                                         <p className="text-xs text-gray-400 mt-1 mb-3">iPhone 17 Cases</p>

@@ -121,28 +121,47 @@ const AccessoryScreen = () => {
     return foundVariant || availableVariants[0] || null;
   }, [availableVariants, selectedVariantName, urlColor, urlVariantSub]);
 
-  // === USE DATA DIRECTLY FROM BACKEND ===
-  const originalPrice = Number(selectedVariant?.originalPrice || 0);
-  const dbPrice = Number(selectedVariant?.price || 0); // Already after discount from DB
-  const displayStock = Number(selectedVariant?.countInStock || 0);
-  const displaySKU = selectedVariant?.sku || '';
-  const discount = selectedVariant?.discount;
-  const isOutOfStock = displayStock <= 0;
-  const bulkPricing = selectedVariant?.bulkPricing || [];
+  const processVariant = (variant, qty = 1) => {
+  const originalPrice = Number(variant.originalPrice) || 0;
+  const dbPrice = Number(variant.price) || 0;
 
-  // === READ BULK FROM DB ===
-  const appliedTier = bulkPricing
-    .filter(tier => qty >= Number(tier.qty) && Number(tier.price) > 0)
-    .sort((a, b) => Number(b.qty) - Number(a.qty))[0];
+  const appliedTier = (variant.bulkPricing || [])
+   .filter(t => qty >= Number(t.qty))
+   .sort((a, b) => Number(b.qty) - Number(a.qty))[0];
 
-  const finalPrice = appliedTier ? Number(appliedTier.price) : dbPrice; // Final price per item
-  const totalPrice = (finalPrice * qty).toFixed(2);
+  const pricePerItem = appliedTier? Number(appliedTier.price) : dbPrice;
+  const totalPrice = Number((pricePerItem * qty).toFixed(2));
 
-  // Calculate savings - TOTAL for all quantity
-  const originalTotal = (originalPrice * qty).toFixed(2);
-  const totalSavings = (originalTotal - totalPrice).toFixed(2);
-  const savingsPercent = originalPrice > 0 ? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
-  const discountAmountPerItem = originalPrice - finalPrice; // for cart
+  return {
+   ...variant,
+    displayPrice: pricePerItem,
+    totalPrice: totalPrice,
+    appliedBulkTier: appliedTier,
+  };
+};
+
+// const processedVariant = processVariant(selectedVariant, qty)
+
+//   // === USE DATA DIRECTLY FROM BACKEND ===
+//   const originalPrice = Number(processedVariant.originalPrice || 0);
+//   const dbPrice = Number(selectedVariant?.price || 0); // Already after discount from DB
+//   const displayStock = Number(selectedVariant?.countInStock || 0);
+//   const displaySKU = selectedVariant?.sku || '';
+//   const discount = selectedVariant?.discount;
+//   const isOutOfStock = displayStock <= 0;
+//   const bulkPricing = selectedVariant?.bulkPricing || [];
+
+//   // === READ BULK FROM DB ===
+//  const appliedTier = processedVariant.appliedBulkTier;
+
+//   const finalPrice = Number(processedVariant.displayPrice || 0);
+//   const totalPrice = processedVariant.totalPrice.toFixed(2);
+
+//   // Calculate savings - TOTAL for all quantity
+//   const originalTotal = (originalPrice * qty).toFixed(2);
+//  const totalSavings = ((originalPrice - finalPrice) * qty).toFixed(2);
+//   const savingsPercent = originalPrice > 0? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
+//  const discountAmountPerItem = originalPrice - finalPrice;
 
   const getImageUrls = (images) => {
     if (!images || !Array.isArray(images)) return [];
@@ -159,13 +178,7 @@ const AccessoryScreen = () => {
     }
   }, [selectedVariant?.sku]); // <-- only when variant changes
 
-  // RESET QTY WHEN VARIANT CHANGES
-  // useEffect(() => {
-  //   setQty(1);
-  //   const params = new URLSearchParams(searchParams);
-  //   params.set('qty', 1);
-  //   setSearchParams(params);
-  // }, [selectedVariant?.sku]);
+   
 
   const modelSpecs = selectedModel?.specs || [];
 
@@ -291,6 +304,25 @@ const AccessoryScreen = () => {
   if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>;
   if (!selectedVariant) return <Loader />;
 
+  const processedVariant = processVariant(selectedVariant, qty)
+
+// === USE DATA FROM processedVariant ===
+const originalPrice = Number(processedVariant.originalPrice || 0);
+const finalPrice = Number(processedVariant.displayPrice || 0);
+const totalPrice = processedVariant.totalPrice.toFixed(2);
+const appliedTier = processedVariant.appliedBulkTier;
+const displayStock = Number(processedVariant.countInStock || 0);
+const displaySKU = processedVariant.sku || '';
+const discount = processedVariant.discount;
+const isOutOfStock = displayStock <= 0;
+const bulkPricing = processedVariant.bulkPricing || [];
+
+// Calculate savings
+const originalTotal = (originalPrice * qty).toFixed(2);
+const totalSavings = ((originalPrice - finalPrice) * qty).toFixed(2);
+const savingsPercent = originalPrice > 0? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
+const discountAmountPerItem = originalPrice - finalPrice;
+
   const typeLabel = ACCESSORY_TYPE_LABELS[accessory?.accessoryType];
 
   return (
@@ -398,7 +430,8 @@ const AccessoryScreen = () => {
             <label className='block text-sm font-medium mb-2'>{hasModels ? 'Choose Color' : 'Choose Option'}</label>
             <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3'>
               {availableVariants.map((v) => {
-                const isVariantOut = Number(v.countInStock) <= 0;
+                const processedV = processVariant(v, qty)
+                 const isVariantOut = Number(processedV.countInStock) <= 0;
                 const vOriginalPrice = Number(v.originalPrice || 0);
 
                 const vDbPrice = Number(v.price || 0);
@@ -407,7 +440,7 @@ const AccessoryScreen = () => {
                   .sort((a, b) => Number(b.qty) - Number(a.qty))[0];
 
                 const vFinalPrice = vAppliedTier ? Number(vAppliedTier.price) : vDbPrice;
-                const hasDiscount = vOriginalPrice > vFinalPrice;
+                const hasDiscount = Number(processedV.originalPrice) > Number(processedV.displayPrice);
 
                 return (
                   <button
