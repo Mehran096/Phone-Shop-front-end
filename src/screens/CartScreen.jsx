@@ -27,43 +27,45 @@ function CartScreen() {
     }
   };
 
-  // FIX 1: Pass ALL fields so we delete correct variant + model
   const removeFromCartHandler = (item) => {
     dispatch(removeFromCart({
       product: item.product,
-      model: item.model, // NEW
+      model: item.model,
       color: item.color,
       storage: item.storage,
       variantType: item.variantType,
       variantName: item.variantName,
-      variantSubName: item.variantSubName, // NEW
+      variantSubName: item.variantSubName,
     }));
   };
 
-  // FIX 2: Pass ALL fields so we update correct variant + model
   const updateQtyHandler = (item, qty) => {
     dispatch(updateCartQty({
       product: item.product,
-      model: item.model, // NEW
+      model: item.model,
       color: item.color,
       storage: item.storage,
       variantType: item.variantType,
       variantName: item.variantName,
-      variantSubName: item.variantSubName, // NEW
+      variantSubName: item.variantSubName,
       qty: Number(qty),
     }));
   };
 
-  const cartSubtotal = cartItems?.reduce((acc, item) => acc + item.qty * Number(item.price || 0), 0);
+  // FIX: Use totalPrice from cartSlice which already has bulk calc
+  const cartSubtotal = cartItems?.reduce((acc, item) => acc + Number(item.price * item.qty), 0);
+
   const originalSubtotal = cartItems.reduce(
     (acc, item) => acc + (Number(item.originalPrice || item.price) * item.qty),
     0
   );
 
+  // FIX: Calculate savings using displayPrice vs originalPrice
   const totalSavings = cartItems.reduce(
-    (acc, item) => acc + (Number(item.discountAmount || 0) * item.qty),
+    (acc, item) => acc + ((Number(item.originalPrice || 0) - Number(item.price)) * item.qty),
     0
   );
+
   const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
 
   const getProductLink = (item) => {
@@ -71,19 +73,20 @@ function CartScreen() {
       ? `/accessory/${item.slug || item.product}`
       : `/product/${item.slug || item.product}`;
 
-    // Build query string with all selected options
     const params = new URLSearchParams();
     if (item.color) params.append('color', item.color);
     if (item.storage) params.append('storage', item.storage);
     if (item.model) params.append('model', item.model);
     if (item.variantName) params.append('variant', item.variantName);
     if (item.variantSubName) params.append('variantSub', item.variantSubName);
-    if (item.qty && item.qty > 1) params.append('qty', item.qty); // <-- ADD THIS LINE
+
+    // CHANGED: Always send qty and tier
+    params.append('qty', item.qty); // <-- removed the > 1 check
+    params.append('tier', item.qty); // <-- ADD THIS. Tier = qty for bulk
 
     return `${base}?${params.toString()}`;
   }
 
-  //drop down qty 
   const CustomDropdown = ({ value, onChange, options }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
@@ -157,7 +160,6 @@ function CartScreen() {
             {/* Left: Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                // FIX 3: Key now includes model + variantSubName so nothing clashes
                 <div key={`${item.product}-${item.model}-${item.variantName}-${item.variantSubName}-${item.color}`} className="flex flex-col p-3 lg:p-4 border-gray-200 rounded-xl bg-white shadow-sm">
 
                   {/* TOP: Image + Info Row */}
@@ -178,14 +180,13 @@ function CartScreen() {
                         </h2>
                       </Link>
 
-                      {/* FIX 4: CONDITIONAL VARIANT DISPLAY FOR PHONE vs ACCESSORY */}
                       <div className="text-xs text-gray-600 mt-1 space-y-0.5">
-                        {(item.variantType === 'phone' || item.storage) ? ( // Phone
+                        {(item.variantType === 'phone' || item.storage) ? (
                           <>
                             <p>Color: <span className="font-medium">{item.color || 'Default'}</span></p>
                             {item.storage && <p>Storage: <span className="font-medium">{item.storage}</span></p>}
                           </>
-                        ) : ( // Accessory
+                        ) : (
                           <>
                             {item.model && item.model !== 'Universal' && <p>Model: <span className="font-medium">{item.model}</span></p>}
                             <p>Type: <span className="font-medium capitalize">{ACCESSORY_TYPE_LABELS[item.variantName] || item.variantName}</span></p>
@@ -198,22 +199,27 @@ function CartScreen() {
                         )}
                       </div>
 
-                      <div className="mt-2">
-                        <p className="text-lg font-bold text-red-600">
-                          ${Number(item.price || 0).toFixed(2)}
-                        </p>
+                       
+                      {/* BULK PRICE DISPLAY */}
+<div className="mt-2">
+  <p className="text-lg font-bold text-red-600">
+    ${Number(item.price).toFixed(2)} <span className="text-sm font-normal text-gray-500">each</span>
+  </p>
 
-                        {item.originalPrice > item.price && (
-                          <>
-                            <p className="text-sm text-gray-500 line-through">
-                              ${Number(item.originalPrice).toFixed(2)}
-                            </p>
-                            <p className="text-sm text-green-600 font-medium">
-                              You save ${Number(item.discountAmount || 0).toFixed(2)} each
-                            </p>
-                          </>
-                        )}
-                      </div>
+  {Number(item.originalPrice) > Number(item.price) && (  
+    <>
+      <p className="text-sm text-gray-500 line-through">
+        ${Number(item.originalPrice).toFixed(2)}
+      </p>
+      <p className="text-sm text-green-600 font-medium">
+        You save ${((Number(item.originalPrice) - Number(item.price)) * item.qty).toFixed(2)} 
+      </p>
+    </>
+  )}
+  <p className="text-sm font-bold text-gray-900 mt-1">
+    Item Total: ${(Number(item.price) * item.qty).toFixed(2)} 
+  </p>
+</div>
                     </div>
                   </div>
 
@@ -293,4 +299,4 @@ function CartScreen() {
   );
 }
 
-export default CartScreen; 
+export default CartScreen;

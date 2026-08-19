@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch } from 'react-redux';
 import { useGetAccessoryBySlugQuery } from '../slices/accessoriesApiSlice';
 import { addToCart } from '../slices/cartSlice';
+import { calculateBulkPrice } from '../utils/calculateBulkPrice'
 import { toast } from 'react-toastify';
 import { FaShoppingCart, FaCheck, FaArrowLeft, FaStar, FaTag } from 'react-icons/fa';
 import Loader from '../components/Loader';
@@ -53,13 +54,21 @@ const AccessoryScreen = () => {
   const urlVariantSub = searchParams.get('variantSub');
   const urlColor = searchParams.get('color');
   const urlQty = Number(searchParams.get('qty')) || 1;
+  const urlTier = Number(searchParams.get('tier')) || 1;
 
+  // 1. Sync from URL when coming back from cart
+  useEffect(() => {
+    setSelectedTierQty(urlTier);
+    setQty(urlQty);
+  }, [urlTier, urlQty]);
+
+  // 2. Set default model if none in URL
   useEffect(() => {
     if (!accessory) return;
+    if (urlModel && urlVariant) return; // <-- ADD THIS GUARD
 
     let modelToSet = urlModel;
     let variantToSet = urlVariant;
-    let qtyToSet = urlQty;
 
     if (!modelToSet && !variantToSet) {
       if (hasModels && uniqueModels.length > 0) {
@@ -71,19 +80,15 @@ const AccessoryScreen = () => {
       }
     }
 
-    if (urlQty > 1) {
-      setQty(qtyToSet);
-    }
-
     if (modelToSet && modelToSet !== urlModel) {
       const params = new URLSearchParams();
       params.set('model', modelToSet);
       params.set('variant', variantToSet || '');
-      if (urlQty > 1) params.set('qty', urlQty);
+      params.set('qty', urlQty);
+      params.set('tier', urlTier);
       setSearchParams(params);
     }
-
-  }, [accessory, hasModels, uniqueModels, urlModel, urlVariant, urlQty, setSearchParams]);
+  }, [accessory, hasModels, uniqueModels, urlModel, urlVariant, urlQty, urlTier, setSearchParams]);
 
   const selectedModelName = urlModel || '';
   const selectedVariantName = urlVariant || '';
@@ -121,47 +126,7 @@ const AccessoryScreen = () => {
     return foundVariant || availableVariants[0] || null;
   }, [availableVariants, selectedVariantName, urlColor, urlVariantSub]);
 
-  const processVariant = (variant, qty = 1) => {
-  const originalPrice = Number(variant.originalPrice) || 0;
-  const dbPrice = Number(variant.price) || 0;
 
-  const appliedTier = (variant.bulkPricing || [])
-   .filter(t => qty >= Number(t.qty))
-   .sort((a, b) => Number(b.qty) - Number(a.qty))[0];
-
-  const pricePerItem = appliedTier? Number(appliedTier.price) : dbPrice;
-  const totalPrice = Number((pricePerItem * qty).toFixed(2));
-
-  return {
-   ...variant,
-    displayPrice: pricePerItem,
-    totalPrice: totalPrice,
-    appliedBulkTier: appliedTier,
-  };
-};
-
-// const processedVariant = processVariant(selectedVariant, qty)
-
-//   // === USE DATA DIRECTLY FROM BACKEND ===
-//   const originalPrice = Number(processedVariant.originalPrice || 0);
-//   const dbPrice = Number(selectedVariant?.price || 0); // Already after discount from DB
-//   const displayStock = Number(selectedVariant?.countInStock || 0);
-//   const displaySKU = selectedVariant?.sku || '';
-//   const discount = selectedVariant?.discount;
-//   const isOutOfStock = displayStock <= 0;
-//   const bulkPricing = selectedVariant?.bulkPricing || [];
-
-//   // === READ BULK FROM DB ===
-//  const appliedTier = processedVariant.appliedBulkTier;
-
-//   const finalPrice = Number(processedVariant.displayPrice || 0);
-//   const totalPrice = processedVariant.totalPrice.toFixed(2);
-
-//   // Calculate savings - TOTAL for all quantity
-//   const originalTotal = (originalPrice * qty).toFixed(2);
-//  const totalSavings = ((originalPrice - finalPrice) * qty).toFixed(2);
-//   const savingsPercent = originalPrice > 0? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
-//  const discountAmountPerItem = originalPrice - finalPrice;
 
   const getImageUrls = (images) => {
     if (!images || !Array.isArray(images)) return [];
@@ -178,7 +143,7 @@ const AccessoryScreen = () => {
     }
   }, [selectedVariant?.sku]); // <-- only when variant changes
 
-   
+
 
   const modelSpecs = selectedModel?.specs || [];
 
@@ -207,9 +172,10 @@ const AccessoryScreen = () => {
     params.set('variant', variantToUse?.name || '');
     params.set('variantSub', variantToUse?.name || '');
     params.set('color', variantToUse?.color || variantToUse?.name || '');
-    params.set('qty', 1);
+    params.set('qty', qty); // CHANGED: Keep current qty
+    params.set('tier', selectedTierQty); // CHANGED: Keep current tier
     setSearchParams(params);
-    setQty(1);
+    // REMOVED: setQty(1) and setSelectedTierQty(1)
   };
 
   const handleVariantChange = (variantName) => {
@@ -228,31 +194,9 @@ const AccessoryScreen = () => {
 
   const displayTitle = `${accessory?.name || ''} ${hasModels && selectedModelName ? `for ${selectedModelName}` : ''} ${selectedVariant ? `(${selectedVariant.name})` : ''}`;
 
-  useEffect(() => {
-    if (!accessory) return;
-    if (urlModel && urlVariant) return;
 
-    if (hasModels && uniqueModels.length > 0) {
-      const firstModel = uniqueModels[0];
-      const firstVariant = firstModel.variants?.[0];
-      if (firstVariant) {
-        const params = new URLSearchParams();
-        params.set('model', firstModel.modelName);
-        params.set('variant', firstVariant.name);
-        params.set('variantSub', firstVariant.name);
-        params.set('color', firstVariant.color || firstVariant.name);
-        setSearchParams(params);
-      }
-    } else if (accessory.variants?.length > 0) {
-      const firstVariant = accessory.variants[0];
-      const params = new URLSearchParams();
-      params.set('model', 'Universal');
-      params.set('variant', firstVariant.name);
-      params.set('variantSub', firstVariant.name);
-      params.set('color', firstVariant.color || firstVariant.name);
-      setSearchParams(params);
-    }
-  }, [accessory]);
+
+
 
   useEffect(() => {
     if (!selectedModel || !selectedVariant) return;
@@ -268,6 +212,71 @@ const AccessoryScreen = () => {
 
 
   // === FINAL FIXED ADD TO CART ===
+  // const addToCartHandler = () => {
+  //   if (!selectedVariant) return toast.error('Please select an option');
+
+  //   const variantColor = selectedVariant.name;
+  //   const variantSubType = selectedVariant.name;
+  //   const currentModel = selectedModelName || 'Universal';
+
+  //   dispatch(addToCart({
+  //     product: accessory._id,
+  //     accessory: accessory._id,
+  //     name: accessory.name,
+  //     slug: accessory.slug,
+  //     image: mainImage || displayImages[0] || accessory.image || '/placeholder.jpg',
+  //     price: finalPrice,
+  //     originalPrice: originalPrice,
+  //     discountAmount: discountAmountPerItem,
+  //     variantType: 'accessory',
+  //     variantName: accessory.accessoryType,
+  //     variant: variantSubType,
+  //     variantSubName: variantSubType,
+  //     color: variantColor,
+  //     storage: '',
+  //     model: currentModel,
+  //     qty: qty,
+  //     sku: displaySKU,
+  //     countInStock: displayStock,
+  //   }));
+
+  //   toast.success('Added to cart');
+  //   navigate('/cart');
+  // };
+
+  if (isLoading) return <Loader />;
+  if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>;
+  if (!selectedVariant) return <Loader />;
+
+  const originalPrice = Number(selectedVariant.originalPrice || 0); // $9.99
+  const discountedPrice = Number(selectedVariant.price || 0); // $8.49
+  const displayStock = Number(selectedVariant.countInStock || 0);
+  const displaySKU = selectedVariant.sku || '';
+  const discount = selectedVariant.discount;
+  const isOutOfStock = displayStock <= 0;
+  const bulkPricing = selectedVariant.bulkPricing || [];
+
+  const { pricePerItem, totalPrice, appliedTier } = calculateBulkPrice(
+    discountedPrice,
+    qty,
+    bulkPricing
+  );
+
+  const bulkPricePerItem = pricePerItem;
+
+  const mainPrice = bulkPricing.length > 0
+    ? Number(bulkPricing.find(t => t.qty === 1)?.price || discountedPrice)
+    : discountedPrice; // New - reads from tier 1// Always $8.49 for display
+  const finalPriceForCart = pricePerItem;
+
+
+  const originalTotal = (originalPrice * qty).toFixed(2);
+  const totalSavings = ((originalPrice - finalPriceForCart) * qty).toFixed(2);
+  const mainSavingsPercent = originalPrice > 0 ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0;
+  const bulkSavingsPercent = originalPrice > 0 ? Math.round(((originalPrice - finalPriceForCart) / originalPrice) * 100) : 0;
+  const discountAmountPerItem = originalPrice - discountedPrice;
+
+  // === FINAL FIXED ADD TO CART ===
   const addToCartHandler = () => {
     if (!selectedVariant) return toast.error('Please select an option');
 
@@ -281,7 +290,7 @@ const AccessoryScreen = () => {
       name: accessory.name,
       slug: accessory.slug,
       image: mainImage || displayImages[0] || accessory.image || '/placeholder.jpg',
-      price: finalPrice,
+      price: finalPriceForCart, // <-- KEY: Send bulk price to cart
       originalPrice: originalPrice,
       discountAmount: discountAmountPerItem,
       variantType: 'accessory',
@@ -294,34 +303,12 @@ const AccessoryScreen = () => {
       qty: qty,
       sku: displaySKU,
       countInStock: displayStock,
+      bulkPricing: bulkPricing,
     }));
 
     toast.success('Added to cart');
     navigate('/cart');
   };
-
-  if (isLoading) return <Loader />;
-  if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>;
-  if (!selectedVariant) return <Loader />;
-
-  const processedVariant = processVariant(selectedVariant, qty)
-
-// === USE DATA FROM processedVariant ===
-const originalPrice = Number(processedVariant.originalPrice || 0);
-const finalPrice = Number(processedVariant.displayPrice || 0);
-const totalPrice = processedVariant.totalPrice.toFixed(2);
-const appliedTier = processedVariant.appliedBulkTier;
-const displayStock = Number(processedVariant.countInStock || 0);
-const displaySKU = processedVariant.sku || '';
-const discount = processedVariant.discount;
-const isOutOfStock = displayStock <= 0;
-const bulkPricing = processedVariant.bulkPricing || [];
-
-// Calculate savings
-const originalTotal = (originalPrice * qty).toFixed(2);
-const totalSavings = ((originalPrice - finalPrice) * qty).toFixed(2);
-const savingsPercent = originalPrice > 0? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
-const discountAmountPerItem = originalPrice - finalPrice;
 
   const typeLabel = ACCESSORY_TYPE_LABELS[accessory?.accessoryType];
 
@@ -339,11 +326,11 @@ const discountAmountPerItem = originalPrice - finalPrice;
               <span className={`px-2 py-1 text-[10px] font-semibold rounded-full ${getTypeColor(accessory?.accessoryType)}`}>
                 {typeLabel}
               </span>
-              {discount?.isActive && savingsPercent > 0 && (
-                <span className='px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded flex items-center gap-1'>
-                  <FaTag />-{savingsPercent}%
-                </span>
-              )}
+              {/* {Number(totalSavings) > 0 && (
+                <p className="text-xs text-red-500 font-semibold">
+                  You save ${totalSavings} ({bulkSavingsPercent}%) off ${originalTotal}
+                </p>
+              )} */}
             </div>
 
             {isOutOfStock && (
@@ -366,25 +353,25 @@ const discountAmountPerItem = originalPrice - finalPrice;
           <h1 className='text-xl sm:text-2xl font-bold mb-3'>{displayTitle}</h1>
 
           <div className='flex items-center gap-2 mb-4'>
-  <div className='flex text-yellow-400 text-sm'>
-    {[...Array(5)].map((_, i) => (
-      <FaStar key={i} className={i < Math.round(accessory?.rating || 0) ? 'text-yellow-400' : 'text-gray-300'} />
-    ))}
-  </div>
-  <span className='text-sm'>({accessory?.numReviews || 0} reviews)</span>
-  <a href="#reviews" className="text-blue-600 text-sm hover:underline">Write a review</a>
-</div>
+            <div className='flex text-yellow-400 text-sm'>
+              {[...Array(5)].map((_, i) => (
+                <FaStar key={i} className={i < Math.round(accessory?.rating || 0) ? 'text-yellow-400' : 'text-gray-300'} />
+              ))}
+            </div>
+            <span className='text-sm'>({accessory?.numReviews || 0} reviews)</span>
+            <a href="#reviews" className="text-blue-600 text-sm hover:underline">Write a review</a>
+          </div>
 
           {/* PRICE WITH ORIGINAL + CUT PRICE */}
           <div className='mb-4'>
             <div className='flex items-center gap-3 mb-1 flex-wrap'>
-              <h2 className='text-2xl sm:text-3xl text-green-600 font-bold'>${finalPrice.toFixed(2)}</h2>
-              {originalPrice > finalPrice && (
+              <h2 className='text-2xl sm:text-3xl text-green-600 font-bold'>${mainPrice.toFixed(2)}</h2>
+              {originalPrice > mainPrice && (
                 <span className='text-sm sm:text-lg text-gray-400 line-through'>${originalPrice.toFixed(2)}</span>
               )}
-              {discount?.isActive && discount?.value > 0 && (
+              {discount?.isActive && mainSavingsPercent > 0 && (
                 <span className='px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded flex items-center gap-1'>
-                  <FaTag />-{discount.value}{discount.type === 'percentage' ? '%' : '$'}
+                  <FaTag />-{mainSavingsPercent}%
                 </span>
               )}
             </div>
@@ -395,7 +382,7 @@ const discountAmountPerItem = originalPrice - finalPrice;
 
             {Number(totalSavings) > 0 && (
               <p className="text-xs text-red-500 font-semibold">
-                You save ${totalSavings} ({savingsPercent}%) off ${originalTotal}
+                You save ${totalSavings} ({bulkSavingsPercent}%) off ${originalTotal}
               </p>
             )}
 
@@ -430,25 +417,22 @@ const discountAmountPerItem = originalPrice - finalPrice;
             <label className='block text-sm font-medium mb-2'>{hasModels ? 'Choose Color' : 'Choose Option'}</label>
             <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3'>
               {availableVariants.map((v) => {
-                const processedV = processVariant(v, qty)
-                 const isVariantOut = Number(processedV.countInStock) <= 0;
+                const { pricePerItem: vFinalPrice, appliedTier: vAppliedTier } = calculateBulkPrice(
+                  Number(v.price || 0), // basePrice = db price
+                  qty,
+                  v.bulkPricing || []
+                )
+                const isVariantOut = Number(v.countInStock) <= 0;
                 const vOriginalPrice = Number(v.originalPrice || 0);
-
-                const vDbPrice = Number(v.price || 0);
-                const vAppliedTier = (v.bulkPricing || [])
-                  .filter(tier => qty >= Number(tier.qty) && Number(tier.price) > 0)
-                  .sort((a, b) => Number(b.qty) - Number(a.qty))[0];
-
-                const vFinalPrice = vAppliedTier ? Number(vAppliedTier.price) : vDbPrice;
-                const hasDiscount = Number(processedV.originalPrice) > Number(processedV.displayPrice);
+                const hasDiscount = vOriginalPrice > vFinalPrice;
 
                 return (
                   <button
                     key={v.sku}
                     onClick={() => handleVariantChange(v.name)}
                     className={`border-2 rounded-lg p-2 transition relative
-                      ${selectedVariant?.sku === v.sku || selectedVariant?.name === v.name ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'}
-                      ${isVariantOut ? 'opacity-50 grayscale' : 'hover:border-gray-400'}`}
+        ${selectedVariant?.sku === v.sku || selectedVariant?.name === v.name ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'}
+        ${isVariantOut ? 'opacity-50 grayscale' : 'hover:border-gray-400'}`}
                   >
                     {isVariantOut && <span className='absolute -top-1 -right-1 bg-red-500 text-white text-[9px] px-1 py-0.5 rounded-full font-semibold'>OUT</span>}
                     <img src={v.images?.[0]?.url || '/placeholder.jpg'} className='w-full h-12 sm:h-16 object-contain mb-1' alt={v.name} />
@@ -478,28 +462,30 @@ const discountAmountPerItem = originalPrice - finalPrice;
                 <p className='text-sm font-semibold mb-2 text-purple-800'>Bulk Pricing - Save more:</p>
                 <div className='grid grid-cols-2 sm:grid-cols-4 gap-2'>
                   {sortedTiers.map((tier) => {
-                    const isActive = tierToHighlight.qty === tier.qty; // Lock to clicked tier
+                    const isActive = tierToHighlight.qty === tier.qty;
 
-                    const tierDbPrice = Number(tier.price || 0);
-                    const tierFinalPrice = tierDbPrice;
-                    const tierTotal = (tierFinalPrice * tier.qty).toFixed(2);
+                    const { pricePerItem: tierFinalPrice, totalPrice: tierTotal } = calculateBulkPrice(
+                      Number(tier.price || 0),
+                      Number(tier.qty),
+                      []
+                    )
 
                     return (
                       <button
                         key={tier.qty}
                         onClick={() => {
                           setQty(tier.qty);
-                          setSelectedTierQty(tier.qty); // Save which tier was clicked
+                          setSelectedTierQty(tier.qty);
                           const params = new URLSearchParams(searchParams);
                           params.set('qty', tier.qty);
-                          params.set('tier', tier.qty); // Save tier in URL like we do for model/color
+                          params.set('tier', tier.qty);
                           setSearchParams(params);
                         }}
                         className={`border-2 rounded-lg p-2 text-center transition ${isActive ? 'border-purple-600 bg-white shadow-sm ring-2 ring-purple-200' : 'border-purple-200 hover:border-gray-300'}`}
                       >
                         <p className='text-xs font-semibold'>Buy {tier.qty}+</p>
-                        <p className='text-[11px] font-bold text-purple-700'>${tierFinalPrice.toFixed(2)} each</p>
-                        <p className='text-[10px] text-gray-500'>Total: ${tierTotal}</p>
+                        <p className='text-[11px] font-bold text-purple-700'>${Number(tier.price).toFixed(2)} each</p>
+                        <p className='text-[10px] text-gray-500'>Total: ${(Number(tier.price) * Number(tier.qty)).toFixed(2)}</p>
                         {tier.discountLabel && <p className='text-[10px] text-red-500 font-medium mt-1'>{tier.discountLabel}</p>}
                       </button>
                     )
@@ -519,8 +505,10 @@ const discountAmountPerItem = originalPrice - finalPrice;
                 onChange={(e) => {
                   const newQty = Number(e.target.value);
                   setQty(newQty);
+                  setSelectedTierQty(newQty);
                   const params = new URLSearchParams(searchParams);
                   params.set('qty', newQty);
+                  params.set('tier', newQty);
                   setSearchParams(params);
                 }}
                 className='border-2 rounded-lg p-2 w-full text-sm'
@@ -555,7 +543,7 @@ const discountAmountPerItem = originalPrice - finalPrice;
         </div>
       </div>
 
-           {/* SPECS + DESCRIPTION */}
+      {/* SPECS + DESCRIPTION */}
       <div className='mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
         <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
           <h3 className='font-bold text-base sm:text-lg mb-4'>Description</h3>

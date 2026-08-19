@@ -88,7 +88,8 @@ const FrequentlyBoughtTogether = ({
     storage: item.storage || '', 
     countInStock: firstVariant.countInStock || item.countInStock || 999, 
     qty: 1, 
-    sku: firstVariant.sku || item.sku || ''
+    sku: firstVariant.sku || item.sku || '',
+    bulkPricing: item.bulkPricing || []
   }))
 })
   

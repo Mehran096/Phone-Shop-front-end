@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { calculateBulkPrice } from '../utils/calculateBulkPrice'
 
 const cartItemsFromStorage = localStorage.getItem('cartItems')
   ? JSON.parse(localStorage.getItem('cartItems'))
@@ -28,8 +29,12 @@ const updateCart = (state) => {
     return (Math.round(num * 100) / 100).toFixed(2)
   }
 
+ // FIX: Use helper for bulk pricing
   state.itemsPrice = addDecimals(
-    state.cartItems.reduce((acc, item) => acc + Number(item.price) * item.qty, 0)
+    state.cartItems.reduce((acc, item) => {
+      const { totalPrice } = calculateBulkPrice(item.price, item.qty, item.bulkPricing)
+      return acc + totalPrice
+    }, 0)
   )
 
   localStorage.setItem('cartItems', JSON.stringify(state.cartItems))
@@ -42,6 +47,13 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (state, action) => {
       const item = action.payload
+
+      // NEW: Calculate price based on qty when adding
+      const { pricePerItem, totalPrice, appliedTier } = calculateBulkPrice(
+        item.price, 
+        item.qty, 
+        item.bulkPricing
+      )
 
       // FIX: Key now includes model + variantSubName
       const existItem = state.cartItems.find(
@@ -56,13 +68,17 @@ const cartSlice = createSlice({
       )
 
       if (existItem) {
-        // If same item exists, just update qty and price
         existItem.qty = item.qty
-        existItem.price = item.price
-        existItem.discountAmount = item.discountAmount
+        existItem.displayPrice = pricePerItem // NEW: show bulk price
+        existItem.totalPrice = totalPrice     // NEW: for cart item total
+        existItem.appliedBulkTier = appliedTier
       } else {
-        // New item
-        state.cartItems = [...state.cartItems, { ...item }]
+        state.cartItems = [...state.cartItems, { 
+          ...item,
+          displayPrice: pricePerItem, // NEW
+          totalPrice: totalPrice,     // NEW
+          appliedBulkTier: appliedTier
+        }]
       }
 
       updateCart(state)
@@ -89,15 +105,24 @@ const cartSlice = createSlice({
       const existItem = state.cartItems.find(
         (x) => 
           x.product === product && 
-          x.model === model && // NEW
+          x.model === model &&
           x.color === color && 
           x.storage === storage &&
           x.variantType === variantType &&
           x.variantName === variantName &&
-          x.variantSubName === variantSubName // NEW
+          x.variantSubName === variantSubName
       )
       if (existItem) {
         existItem.qty = qty
+        // NEW: Recalculate price when qty changes
+        const { pricePerItem, totalPrice, appliedTier } = calculateBulkPrice(
+          existItem.price, 
+          qty, 
+          existItem.bulkPricing
+        )
+        existItem.displayPrice = pricePerItem
+        existItem.totalPrice = totalPrice
+        existItem.appliedBulkTier = appliedTier
       }
       updateCart(state)
     },
