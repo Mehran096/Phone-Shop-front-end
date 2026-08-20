@@ -2036,16 +2036,16 @@ const buyNowHandler = () => {
         </div>
       </div>
       {!quickViewProduct && !isImageFullscreen && !isEditModalOpen && !isMobileMenuOpen && (
-        <StickyPurchaseBar
-          product={product}
-          selectedColor={selectedColor}
-          selectedVariant={selectedVariant} 
-          qty={qty}
-          setQty={setQty}
-          addToCartHandler={addToCartHandler}
-          buyNowHandler={buyNowHandler}
-        />
-      )}
+  <StickyPurchaseBar
+    product={product}
+    selectedColorIndex={selectedColorIndex}
+    selectedVariantIndex={selectedVariantIndex}
+    qty={qty}
+    setQty={setQty}
+    addToCartHandler={addToCartHandler}
+    buyNowHandler={buyNowHandler}
+  />
+)}
     </>
   )
 }

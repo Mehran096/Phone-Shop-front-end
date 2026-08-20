@@ -310,6 +310,40 @@ const AccessoryScreen = () => {
     navigate('/cart');
   };
 
+  //buy now handler
+  const buyNowHandler = () => {
+    if (!selectedVariant) return toast.error('Please select an option');
+
+    const variantColor = selectedVariant.name;
+    const variantSubType = selectedVariant.name;
+    const currentModel = selectedModelName || 'Universal';
+
+    dispatch(addToCart({
+      product: accessory._id,
+      accessory: accessory._id,
+      name: accessory.name,
+      slug: accessory.slug,
+      image: mainImage || displayImages[0] || accessory.image || '/placeholder.jpg',
+      price: finalPriceForCart,
+      originalPrice: originalPrice,
+      discountAmount: discountAmountPerItem,
+      variantType: 'accessory',
+      variantName: accessory.accessoryType,
+      variant: variantSubType,
+      variantSubName: variantSubType,
+      color: variantColor,
+      storage: '',
+      model: currentModel,
+      qty: qty,
+      sku: displaySKU,
+      countInStock: displayStock,
+      bulkPricing: bulkPricing,
+    }));
+
+    toast.success('Added to cart');
+    navigate('/cart'); // Buy Now goes straight to cart
+  };
+
   const typeLabel = ACCESSORY_TYPE_LABELS[accessory?.accessoryType];
 
   return (
@@ -334,16 +368,16 @@ const AccessoryScreen = () => {
             </div>
 
             {/* WISHLIST HEART - TOP RIGHT */}
-  <div className='absolute top-3 right-3 z-30'>
-    <WishlistButton
-      type="accessory"
-      accessory={accessory}
-      modelIndex={hasModels ? uniqueModels.findIndex(m => m.modelName === selectedModelName) : 0}
-      accessoryVariantIndex={availableVariants.findIndex(v => v.sku === selectedVariant?.sku || v.name === selectedVariant?.name)}
-      className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-200"
-      showText={false}
-    />
-  </div>
+            <div className='absolute top-3 right-3 z-30'>
+              <WishlistButton
+                type="accessory"
+                accessory={accessory}
+                modelIndex={hasModels ? uniqueModels.findIndex(m => m.modelName === selectedModelName) : 0}
+                accessoryVariantIndex={availableVariants.findIndex(v => v.sku === selectedVariant?.sku || v.name === selectedVariant?.name)}
+                className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-200"
+                showText={false}
+              />
+            </div>
 
             {isOutOfStock && (
               <div className='absolute top-3 right-3 z-20'>
@@ -532,16 +566,23 @@ const AccessoryScreen = () => {
           )}
 
           {/* ADD TO CART + WISHLIST */}
-          <div className="flex gap-3">
+          {/* ADD TO CART + BUY NOW */}
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={addToCartHandler}
               disabled={displayStock === 0}
-              className='w-full lg:flex-1 bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed text-base'
+              className='flex-1 bg-[#FFD814] hover:bg-[#F7CA00] text-gray-900 font-bold py-3 rounded-xl flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed text-base transition active:scale-95'
             >
               <FaShoppingCart /> Add To Cart
             </button>
 
-            
+            <button
+              onClick={buyNowHandler}
+              disabled={displayStock === 0}
+              className='flex-1 bg-[#111827] hover:bg-black text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed text-base transition active:scale-95'
+            >
+              Buy Now
+            </button>
           </div>
         </div>
       </div>
