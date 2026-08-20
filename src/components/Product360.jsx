@@ -11,6 +11,8 @@ const Product360 = ({
   color,
   slideDirection,
   setSlideDirection,
+  renderTopLeft, 
+  renderTopRight, 
 
 }) => {
   const [touchStart, setTouchStart] = useState(null)
@@ -294,12 +296,23 @@ const Product360 = ({
             </div>
           )}
           <div
-            className="w-full h-full flex items-center justify-center pt-12 pb-4 px-4 md:p-8"
+            className="w-full h-full flex items-center justify-center pt-4 pb-4 px-4 md:p-8"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
             <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+              {/* OVERLAY BUTTONS - INJECTED FROM PARENT */}
+            {renderTopLeft && (
+              <div className="absolute top-1 left-1 z-[20] pointer-events-auto">
+                {renderTopLeft}
+              </div>
+            )}
+            {renderTopRight && (
+              <div className="absolute top-1 right-1 z-[20] pointer-events-auto">
+                {renderTopRight}
+              </div>
+            )}
 
               {/* LOADING SKELETON */}
               {isImgLoading && !imgError && (
