@@ -924,8 +924,14 @@ const buyNowHandler = () => {
               <div className='lg:col-span-7 min-w-0'>
                 <div className='relative'>
 
-                   
-                 
+                  <button
+                    onClick={handleCompareThisPhone}
+                    disabled={!product}
+                    className="absolute top-3 right-3 z-20 bg-white hover:bg-gray-100 text-gray-700 p-2.5 rounded-full shadow-lg border-gray-200 transition-all duration-200 hover:scale-110"
+                    title="Compare this phone"
+                  >
+                    <FaBalanceScale className="text-lg" />
+                  </button>
                   {!product || !selectedColor ? (
                     // SKELETON WHILE LOADING
                     <div className="relative w-full h-[500px] flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
@@ -939,8 +945,6 @@ const buyNowHandler = () => {
                       </div>
                     </div>
                   ) : (
-
-                    
                     <Product360
                       images={selectedColor.images?.length > 0
                         ? selectedColor.images.map(img => img.url)
@@ -955,33 +959,9 @@ const buyNowHandler = () => {
                       //setExternalLoading={setImageLoadingTrigger}  
                       slideDirection={slideDirection}
                       setSlideDirection={setSlideDirection}
-                      renderTopLeft={
-  <WishlistButton
-    type="product"
-    product={product}
-    productVariantIndex={selectedVariantIndex}
-    productColorIndex={selectedColorIndex}
-     className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-md
-    hover:bg-white text-gray-700 shadow-lg border-gray-200 transition-all duration-200 hover:scale-110"
-    showText={false}
-  />
-}
-renderTopRight={
-  <button
-    onClick={handleCompareThisPhone}
-    disabled={!product}
-    className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-md
-      hover:bg-white text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:scale-110"
-  >
-    <FaBalanceScale className="text-lg" />
-  </button>
-}
-
 
                     />
                   )}
-
-                  
                 </div>
               </div>
 
@@ -1246,7 +1226,7 @@ renderTopRight={
 
                       
                       {/* WISHLIST - WRAPPED IN DIV */}
-                    {/* <div className="w-14 h-14 flex-shrink-0">
+                    <div className="w-14 h-14 flex-shrink-0">
                       <WishlistButton 
                         type="product"
                         product={product}
@@ -1255,7 +1235,7 @@ renderTopRight={
                         className="w-14 h-14 flex items-center justify-center border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
                         showText={false}
                       />
-                    </div> */}
+                    </div>
 
                     </div>
                   </div>
