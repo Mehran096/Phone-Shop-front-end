@@ -541,16 +541,7 @@ const AccessoryScreen = () => {
               <FaShoppingCart /> Add To Cart
             </button>
 
-            {/* <div className="w-14 h-14 flex-shrink-0">
-              <WishlistButton
-                type="accessory"
-                accessory={accessory}
-                modelIndex={hasModels ? uniqueModels.findIndex(m => m.modelName === selectedModelName) : 0}
-                accessoryVariantIndex={availableVariants.findIndex(v => v.sku === selectedVariant?.sku || v.name === selectedVariant?.name)}
-                className="w-14 h-14 flex items-center justify-center border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
-                showText={false}
-              />
-            </div> */}
+            
           </div>
         </div>
       </div>
