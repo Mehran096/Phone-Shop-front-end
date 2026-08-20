@@ -375,6 +375,12 @@ deleteReply: builder.mutation({
     ],
 }),
 
+getFeaturedAccessory: builder.query({
+  query: () => '/accessories/featured',
+  keepUnusedDataFor: 300, // cache 5 min
+  providesTags: ['Accessory'],
+}),
+
 getAccessoryReviewImages: builder.query({
   query: (slug) => `/accessories/${slug}/reviews/images`,
   keepUnusedDataFor: 60, // cache for 1 min
@@ -393,6 +399,7 @@ export const {
   useGetAccessorySearchSuggestionsQuery,
   useGetAccessoryDetailsQuery,
   useGetAccessoryBySlugQuery,
+  useGetFeaturedAccessoryQuery,
   useCreateAccessoryMutation,
   useUpdateAccessoryMutation,
   useDeleteAccessoryMutation,

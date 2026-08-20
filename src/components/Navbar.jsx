@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { FaChevronDown } from 'react-icons/fa'
 import { useGetBrandMenuProductsQuery } from '../slices/productsApiSlice' // V38.30
+import { useGetFeaturedAccessoryQuery } from '../slices/accessoriesApiSlice'
 
 const Navbar = () => {
     const navigate = useNavigate()
@@ -13,7 +14,7 @@ const Navbar = () => {
     const dropdownRef = useRef(null)
     const timeoutRef = useRef(null)
 
-   
+
 
     const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'Oppo', 'Vivo']
 
@@ -27,33 +28,38 @@ const Navbar = () => {
         skip: !hoveredBrand
     })
 
+    const {
+        data: featuredAccessory,
+        isLoading: loadingFeatured
+    } = useGetFeaturedAccessoryQuery()
+
     // V38.66: Map category slug to DB accessoryType
-const slugToType = {
-  'iphone-cases': 'case',
-  'samsung-cases': 'case',
-  'google-pixel-cases': 'case',
-  'chargers': 'charger',
-  'fast-chargers-20w+': 'charger',
-  'cables': 'cable',
-  'usb-c-cables': 'cable',
-  'lightning-cables': 'cable',
-  'adapters': 'cable',
-  'screen-protectors': 'glass',  
-  'audio-adapters': 'audio',
-  'holders': 'holder', 
-}
+    const slugToType = {
+        'iphone-cases': 'case',
+        'samsung-cases': 'case',
+        'google-pixel-cases': 'case',
+        'chargers': 'charger',
+        'fast-chargers-20w+': 'charger',
+        'cables': 'cable',
+        'usb-c-cables': 'cable',
+        'lightning-cables': 'cable',
+        'adapters': 'cable',
+        'screen-protectors': 'glass',
+        'audio-adapters': 'audio',
+        'holders': 'holder',
+    }
 
     const accessoryTypes = [
-    { name: 'Cases', dbValue: 'case', sub: ['iPhone Cases', 'Samsung Cases', 'Google Pixel Cases'] },
-    { name: 'Chargers', dbValue: 'charger', sub: ['Chargers', 'Fast Chargers 20W+'] },
-    { name: 'Cables', dbValue: 'cable', sub: ['Cables', 'USB-C Cables', 'Lightning Cables', 'Adapters'] },
-    { name: 'Screen Protectors', dbValue: 'glass', sub: ['Screen Protectors'] },
-    { name: 'Audio', dbValue: 'audio', sub: ['Audio Adapters'] },
-    { name: 'Holders & Stands', dbValue: 'holder', sub: ['Holders'] },
-]
+        { name: 'Cases', dbValue: 'case', sub: ['iPhone Cases', 'Samsung Cases', 'Google Pixel Cases'] },
+        { name: 'Chargers', dbValue: 'charger', sub: ['Chargers', 'Fast Chargers 20W+'] },
+        { name: 'Cables', dbValue: 'cable', sub: ['Cables', 'USB-C Cables', 'Lightning Cables', 'Adapters'] },
+        { name: 'Screen Protectors', dbValue: 'glass', sub: ['Screen Protectors'] },
+        { name: 'Audio', dbValue: 'audio', sub: ['Audio Adapters'] },
+        { name: 'Holders & Stands', dbValue: 'holder', sub: ['Holders'] },
+    ]
 
     const activeBrand = searchParams.get('brand')
-    const activeType = searchParams.get('type')  
+    const activeType = searchParams.get('type')
 
     useEffect(() => {
         setShowAccessoryMenu(false)
@@ -103,21 +109,21 @@ const slugToType = {
         setHoveredBrand(null)
     }
     const handleTypeClick = (dbValue) => {
-    navigate(`/accessories?type=${encodeURIComponent(dbValue)}`)
-    setShowAccessoryMenu(false)
-}
-    const handleSubCategoryClick = (subCat) => {
-    const slug = subCat.toLowerCase().replace(/\s+/g, '-')
-    const dbType = slugToType[slug]
-
-    if(dbType) {
-        navigate(`/accessories?type=${encodeURIComponent(dbType)}`) // NEW 1 ROUTE
-    } else {
-        navigate('/accessories') // fallback
+        navigate(`/accessories?type=${encodeURIComponent(dbValue)}`)
+        setShowAccessoryMenu(false)
     }
-    setShowAccessoryMenu(false)
-}
- 
+    const handleSubCategoryClick = (subCat) => {
+        const slug = subCat.toLowerCase().replace(/\s+/g, '-')
+        const dbType = slugToType[slug]
+
+        if (dbType) {
+            navigate(`/accessories?type=${encodeURIComponent(dbType)}`) // NEW 1 ROUTE
+        } else {
+            navigate('/accessories') // fallback
+        }
+        setShowAccessoryMenu(false)
+    }
+
 
     return (
         <div className='bg-gray-800 border-t border-gray-700 relative hidden lg:block' ref={dropdownRef}>
@@ -139,11 +145,11 @@ const slugToType = {
                             >
                                 <button
                                     onClick={() => handleBrandClick(brand)}
-                                    className={`text-sm px-3 py-1.5 rounded-md transition-all whitespace-nowrap
-                    ${activeBrand === brand
-                                            ? 'bg-gray-700 text-white font-semibold'
-                                            : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                                        }`}
+                                     className={`text-sm px-2 py-1 border border-transparent rounded-sm transition-all 
+                  duration-100 ${activeBrand === brand
+                  ? 'text-white border-white font-bold'  // bold when active
+                  : 'text-gray-200 hover:text-white hover:border-white font-normal'
+                  }`}
                                 >
                                     {brand}
                                 </button>
@@ -251,7 +257,14 @@ const slugToType = {
 
                     {/* DIVIDER + ACCESSORY MENU */}
                     <div className="w-px h-5 bg-gray-600 mx-5"></div>
-                    <span className='text-gray-400 mr-3 font-medium whitespace-nowrap'>Accessory:</span>
+                    <span className='text-gray-400 mr-3 font-medium whitespace-nowrap flex items-center gap-2'>
+                        Accessory:
+                        {featuredAccessory && !loadingFeatured && (
+                            <span className='flex items-center gap-1 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full border-yellow-500/30 animate-pulse'>
+                                🔥 FEATURED
+                            </span>
+                        )}
+                    </span>
                     <div
                         onMouseEnter={() => {
                             setShowAccessoryMenu(true)
@@ -262,7 +275,7 @@ const slugToType = {
                     >
                         <button
                             className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-all
-                ${activeType  ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300 hover:text-white hover:bg-gray-700'}`}
+                ${activeType ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300 hover:text-white hover:bg-gray-700'}`}
                         >
                             Shop <FaChevronDown className={`text-xs transition-transform duration-200 ${showAccessoryMenu ? 'rotate-180' : ''}`} />
                         </button>
@@ -278,54 +291,102 @@ const slugToType = {
                                             <button key={type.dbValue} onClick={() => handleTypeClick(type.dbValue)} className="text-[15px] font-semibold hover:text-blue-400 block mb-2.5">{type.name}</button>
                                         ))}
                                     </div>
-                                   <div>
-    <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-4 font-semibold">Shop by Category</p>
-    <div className="space-y-1">
-        {accessoryTypes.map((type) => type.sub.map((subCat) => {
-            const slug = subCat.toLowerCase().replace(/\s+/g, '-') // DEFINE SLUG HERE
-            const dbType = slugToType[slug]
-            
-            return (
-                <button
-                    key={subCat}
-                    onClick={() => handleSubCategoryClick(subCat)}
-                    className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${
-                        activeType === dbType? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                    }`}
-                >
-                    {subCat}
-                </button>
-            )
-        }))}
-    </div>
-</div>
                                     <div>
-    <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-4 font-semibold">More to Explore</p>
-    <div className="space-y-1">
-        <button
-            onClick={() => { navigate('/accessories?filter=new'); setShowAccessoryMenu(false) }}
-            className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'new'? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
-        >
-            New Arrivals
-        </button>
-        <button
-            onClick={() => { navigate('/accessories?filter=bestseller'); setShowAccessoryMenu(false) }}
-            className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'bestseller'? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
-        >
-            Best Sellers
-        </button>
-        <button
-            onClick={() => { navigate('/accessories?filter=deal'); setShowAccessoryMenu(false) }}
-            className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'deal'? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
-        >
-            Deals
-        </button>
-    </div>
-</div>
-                                    <div className="bg-gray-800 rounded-lg p-4 h-fit border border-gray-700">
-                                        <p className="text-sm font-semibold">Featured</p>
-                                        <p className="text-xs text-gray-400 mt-1 mb-3">iPhone 17 Cases</p>
-                                        <button className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-1.5 rounded-md w-full">Shop Now</button>
+                                        <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-4 font-semibold">Shop by Category</p>
+                                        <div className="space-y-1">
+                                            {accessoryTypes.map((type) => type.sub.map((subCat) => {
+                                                const slug = subCat.toLowerCase().replace(/\s+/g, '-') // DEFINE SLUG HERE
+                                                const dbType = slugToType[slug]
+
+                                                return (
+                                                    <button
+                                                        key={subCat}
+                                                        onClick={() => handleSubCategoryClick(subCat)}
+                                                        className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${activeType === dbType ? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                                            }`}
+                                                    >
+                                                        {subCat}
+                                                    </button>
+                                                )
+                                            }))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-4 font-semibold">More to Explore</p>
+                                        <div className="space-y-1">
+                                            <button
+                                                onClick={() => { navigate('/accessories?filter=new'); setShowAccessoryMenu(false) }}
+                                                className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'new' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
+                                            >
+                                                New Arrivals
+                                            </button>
+                                            <button
+                                                onClick={() => { navigate('/accessories?filter=bestseller'); setShowAccessoryMenu(false) }}
+                                                className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'bestseller' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
+                                            >
+                                                Best Sellers
+                                            </button>
+                                            <button
+                                                onClick={() => { navigate('/accessories?filter=deal'); setShowAccessoryMenu(false) }}
+                                                className={`text-[14px] px-2 py-1 rounded-md block w-full text-left ${searchParams.get('filter') === 'deal' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
+                                            >
+                                                Deals
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-yellow-900/30 to-gray-900 rounded-lg p-4 h-fit border border-yellow-600/30">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-[10px] bg-yellow-500 text-black font-bold px-2 py-0.5 rounded">🔥 FEATURED</span>
+                                        </div>
+
+                                        {loadingFeatured ? (
+                                            <div className="animate-pulse">
+                                                <div className="bg-gray-700 rounded-md h-24 mb-2"></div>
+                                                <div className="bg-gray-700 h-3 rounded w-3/4 mb-1"></div>
+                                                <div className="bg-gray-700 h-3 rounded w-1/2"></div>
+                                            </div>
+                                        ) : !featuredAccessory ? (
+                                            <div>
+                                                <p className="text-xs text-gray-400 mb-3">No featured accessory set</p>
+                                                <button
+                                                    onClick={() => navigate('/admin/accessorylist')}
+                                                    className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-1.5 rounded-md w-full"
+                                                >
+                                                    Set Featured
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <div className="bg-white rounded-md p-2 mb-3">
+                                                    <img
+                                                        src={featuredAccessory.image}
+                                                        alt={featuredAccessory.name}
+                                                        className="w-full h-24 object-contain"
+                                                    />
+                                                </div>
+                                                <p className="text-[13px] font-semibold text-white line-clamp-2 mb-1">
+                                                    {featuredAccessory.name}
+                                                </p>
+                                                <p className="text-[11px] text-gray-400 mb-2">
+                                                    {featuredAccessory.brand}
+                                                </p>
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <p className="text-[14px] font-bold text-yellow-400">${featuredAccessory.price}</p>
+                                                    {featuredAccessory.originalPrice > featuredAccessory.price && (
+                                                        <p className="text-[10px] text-gray-500 line-through">${featuredAccessory.originalPrice}</p>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        navigate(`/accessory/${featuredAccessory.slug}`)
+                                                        setShowAccessoryMenu(false)
+                                                    }}
+                                                    className="bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold px-4 py-2 rounded-md w-full transition"
+                                                >
+                                                    View Product
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

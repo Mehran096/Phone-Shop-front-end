@@ -79,7 +79,8 @@ const dispatch = useDispatch()
   (
     pathname === "/" ||
     pathname === "/products" ||
-    pathname === "/deals"
+    pathname === "/deals" ||
+    pathname === "/search"
   );
 
    const showMobileSearch =

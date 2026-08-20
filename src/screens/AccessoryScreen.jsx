@@ -333,6 +333,18 @@ const AccessoryScreen = () => {
               )} */}
             </div>
 
+            {/* WISHLIST HEART - TOP RIGHT */}
+  <div className='absolute top-3 right-3 z-30'>
+    <WishlistButton
+      type="accessory"
+      accessory={accessory}
+      modelIndex={hasModels ? uniqueModels.findIndex(m => m.modelName === selectedModelName) : 0}
+      accessoryVariantIndex={availableVariants.findIndex(v => v.sku === selectedVariant?.sku || v.name === selectedVariant?.name)}
+      className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-200"
+      showText={false}
+    />
+  </div>
+
             {isOutOfStock && (
               <div className='absolute top-3 right-3 z-20'>
                 <span className='px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-md shadow-sm border'>SOLD OUT</span>
@@ -353,7 +365,7 @@ const AccessoryScreen = () => {
           <h1 className='text-xl sm:text-2xl font-bold mb-3'>{displayTitle}</h1>
 
           <div className='flex items-center gap-2 mb-4'>
-            <div className='flex text-yellow-400 text-sm'>
+            <div className='flex text-yellow-400 text-sm sm:text-lg'>
               {[...Array(5)].map((_, i) => (
                 <FaStar key={i} className={i < Math.round(accessory?.rating || 0) ? 'text-yellow-400' : 'text-gray-300'} />
               ))}
@@ -529,7 +541,7 @@ const AccessoryScreen = () => {
               <FaShoppingCart /> Add To Cart
             </button>
 
-            <div className="w-14 h-14 flex-shrink-0">
+            {/* <div className="w-14 h-14 flex-shrink-0">
               <WishlistButton
                 type="accessory"
                 accessory={accessory}
@@ -538,7 +550,7 @@ const AccessoryScreen = () => {
                 className="w-14 h-14 flex items-center justify-center border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition"
                 showText={false}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

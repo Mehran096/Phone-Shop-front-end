@@ -50,6 +50,8 @@ const AccessoryEditScreen = () => {
   const [models, setModels] = useState([]);
   const [removedPublicIds, setRemovedPublicIds] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [featured, setFeatured] = useState(false);
+  const [featuredPriority, setFeaturedPriority] = useState(0);
 
 
   const { data: accessory, isLoading, error } = useGetAccessoryDetailsQuery(accessoryId);
@@ -63,6 +65,8 @@ const AccessoryEditScreen = () => {
     setAccessoryType(accessory.accessoryType || accessory.category);
     setCategory(accessory.category || '');
     setKeywords(accessory.keywords?.join(', ') || '');
+    setFeatured(accessory.featured || false);
+    setFeaturedPriority(accessory.featuredPriority || 0);
     setMetaTitle(accessory.metaTitle || '');
     setMetaDescription(accessory.metaDescription || '');
 
@@ -217,6 +221,8 @@ const AccessoryEditScreen = () => {
         keywords: keywords.split(',').map(k => k.trim()).filter(k => k),
         metaTitle, metaDescription,
         models: finalModels,
+        featured,
+        featuredPriority,
         removedPublicIds,
       }).unwrap();
       toast.success('Accessory Updated');
@@ -238,6 +244,30 @@ const AccessoryEditScreen = () => {
 
         <div className="bg-white p-3 sm:p-4 rounded-xl shadow">
           <h2 className="text-base sm:text-lg font-semibold mb-4">Basic Information</h2>
+          <div className='mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+  <label className='flex items-center gap-3 cursor-pointer'>
+    <input 
+      type="checkbox" 
+      checked={featured}
+      onChange={(e) => setFeatured(e.target.checked)}
+      className='w-5 h-5 text-yellow-600 rounded'
+    />
+    <span className='font-semibold text-yellow-800'>🔥 Mark as Featured for Navbar</span>
+  </label>
+  {featured && (
+    <div className='mt-3'>
+      <label className='block text-xs text-yellow-700 mb-1'>Priority - 1 shows first</label>
+      <input 
+        type="number"
+        min="1"
+        placeholder="1"
+        value={featuredPriority}
+        onChange={(e) => setFeaturedPriority(Number(e.target.value))}
+        className='border border-yellow-300 rounded p-2 w-24 text-sm'
+      />
+    </div>
+  )}
+</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <select value={accessoryType} onChange={(e) => setAccessoryType(e.target.value)} className="w-full p-3 border rounded-lg text-sm">
               {ACCESSORY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}

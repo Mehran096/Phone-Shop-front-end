@@ -340,7 +340,7 @@ const {
 
 {/* 3. Recently Viewed Section - Same style as Deals */}
 
-{recentProducts.length > 0 && (
+{!keyword && !brand && recentProducts.length > 0 && (
   <section className='mt-12 md:mt-16 lg:mt-20 py-16 bg-gray-50'>
     <div className='container mx-auto px-4'>
       
