@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams, useLocation, } from 'react-router-d
 import { useDispatch, useSelector } from 'react-redux'
 
 import { logout } from '../slices/authSlice'
-import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaHeart, FaBox, FaOutdent, } from 'react-icons/fa'
+import { FaShoppingCart, FaUser, FaBars, FaTimes, FaChevronDown, FaHeart, FaUserPlus, FaOutdent, } from 'react-icons/fa'
 import { IoLogOutOutline } from "react-icons/io5";
 import { clearCartItems } from '../slices/cartSlice'
 import { getWishlist, resetWishlist } from '../slices/wishlistSlice'
@@ -36,7 +36,7 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
-  const currentBrand = searchParams.get('brand')
+  //const currentBrand = searchParams.get('brand')
 
   const { wishlist } = useSelector((state) => state.wishlist)
   const { cartItems } = useSelector((state) => state.cart)
@@ -44,24 +44,11 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
 
   const wishlistCount = wishlist.items.length
 
-  const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'Oppo', 'Vivo']
+  //const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'Oppo', 'Vivo']
   
-  // V38.04: ADD ACCESSORY CATEGORIES
-  const accessoryCategories = [
-    { name: 'iPhone Cases', slug: 'iphone-cases' },
-    { name: 'Samsung Cases', slug: 'samsung-cases' },
-    { name: 'Chargers', slug: 'chargers' },
-    { name: 'USB-C Cables', slug: 'usb-cables' },
-    { name: 'Screen Protectors', slug: 'screen-protectors' },
-    { name: 'Accessories', slug: 'all' }
-  ]
+   
   
-  const activeBrand = searchParams.get('brand')
- const activeCategory = location.pathname.startsWith('/category/')
- ? location.pathname.split('/')[2] 
-  : location.pathname === '/accessories' 
- ? 'all' // key for "All Accessories"
-  : null
+   
 
   const logoutHandler = async () => {
     if (userInfo?._id) {
@@ -80,17 +67,7 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
     setIsMobileMenuOpen(false)
   }
 
-  const handleBrandClick = (brand) => {
-    navigate(`/products?brand=${brand}`)
-    setIsMobileMenuOpen(false)
-  }
-
-  // V38.04: NEW HANDLER FOR ACCESSORIES
-  const handleCategoryClick = (slug) => {
-    if(slug === 'all') navigate('/accessories')
-    else navigate(`/category/${slug}`)
-    setIsMobileMenuOpen(false)
-  }
+   
 
   useEffect(() => {
     if (userInfo) {
@@ -212,32 +189,49 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
           </div>
 
           {/* Mobile Menu Icons */}
-          <div className='md:hidden lg:hidden gap-4 flex pr-5'>
-            {/* wishlist mobile */}
-            {userInfo && (
-              <Link to='/wishlist' className="relative" onClick={closeMobileMenu}>
-                <FaHeart className="text-white text-2xl" />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Link>
-            )}
-            {/* Cart mobile */}
-            <Link to="/cart" className="relative">
-              <FaShoppingCart className="text-white text-2xl" />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
-            {/* Mobile Hamburger */}
-            <button className='md:hidden text-2xl' onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-              {isMobileMenuOpen? <FaTimes /> : <FaBars />}
-            </button>
-          </div>
+<div className='md:hidden lg:hidden gap-4 flex items-center pr-5'>
+  
+  {/* wishlist mobile */}
+  {userInfo && (
+    <Link to='/wishlist' className="relative" onClick={closeMobileMenu}>
+      <FaHeart className="text-white text-2xl" />
+      {wishlistCount > 0 && (
+        <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+          {wishlistCount}
+        </span>
+      )}
+    </Link>
+  )}
+
+  {/* Cart mobile */}
+  <Link to="/cart" className="relative">
+    <FaShoppingCart className="text-white text-2xl" />
+    {cartCount > 0 && (
+      <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+        {cartCount}
+      </span>
+    )}
+  </Link>
+
+  {/* User / Sign In mobile - NEW */}
+  {userInfo? (
+    <Link to="/my-account" onClick={closeMobileMenu}>
+      <FaUser className="text-white text-2xl" />
+    </Link>
+  ) : (
+    <Link to="/login" onClick={closeMobileMenu}>
+      <FaUserPlus className="text-white text-2xl" />
+    </Link>
+  )}
+
+  {/* Mobile Hamburger - ONLY OPEN, NO X */}
+  <button 
+    className='text-white text-2xl' 
+    onClick={() => setIsMobileMenuOpen(true)}
+  >
+    <FaBars />
+  </button>
+</div>
         </div>
       </nav>
 
