@@ -13,6 +13,7 @@ import CollapsibleMenu from './CollapsibleMenu';
 import api from '../utils/axios'
 import CompareBar from './CompareBar'
 import Navbar from './Navbar' 
+import MobileSidebar from './MobileSidebar' // ADD AT TOP
 
 const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
   const location = useLocation();
@@ -243,62 +244,7 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
       {/* Brand Navbar - Desktop */}
     <Navbar />
       {/* Mobile Menu */}
-      <div onClick={closeMobileMenu} className={`md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity duration-500 ease-out ${isMobileMenuOpen? "opacity-100" : "opacity-0 pointer-events-none"}`} />
-      <div className={`md:hidden fixed top-16 left-0 bottom-0 w-[85%] max-w-sm bg-gray-900 z-50 overflow-y-auto transition-all duration-300 ease-in-out shadow-2xl ${isMobileMenuOpen? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="px-6 pb-6 space-y-6">
-
-          {/* wishlist mobile menu */}
-          {userInfo && (
-            <Link to='/wishlist' className='flex items-center gap-2 py-2 hover:text-red-400 border-gray-700 pt-7' onClick={closeMobileMenu}>
-              <FaHeart />
-              Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
-            </Link>
-          )}
-
-          {/* Brands - Mobile */}
-          <div className='border-t border-gray-700 pt-4 mt-2'>
-            <h3 className="text-gray-400 uppercase text-xs tracking-widest">Shop by Brand</h3>
-            {brands.map((brand) => (
-              <button key={brand} onClick={() => handleBrandClick(brand)} className={`block w-full text-left py-2 text-lg hover:text-blue-400 ${activeBrand === brand? 'text-blue-400' : 'text-white'}`}>
-                {brand}
-              </button>
-            ))}
-          </div>
-
-          {/* V38.04: ACCESSORIES - MOBILE */}
-          <div className='border-t border-gray-700 pt-4 mt-2'>
-            <h3 className="text-gray-400 uppercase text-xs tracking-widest">Shop by Accessory</h3>
-            {accessoryCategories.map((cat) => (
-              <button key={cat.slug} onClick={() => handleCategoryClick(cat.slug)} className={`block w-full text-left py-2 text-lg hover:text-blue-400 ${activeCategory === cat.slug? 'text-blue-400' : 'text-white'}`}>
-                {cat.name}
-              </button>
-            ))}
-          </div>
-
-          {/* User Links Mobile */}
-          {userInfo? (
-            <div className='border-t border-gray-700 pt-4 mt-2'>
-              <Link to='/my-account' className='flex items-center gap-2 py-2 hover:text-blue-400' onClick={closeMobileMenu}><FaUser />My Account</Link>
-              <Link to='/myOrders' className='flex items-center gap-2 py-2 hover:text-blue-400' onClick={closeMobileMenu}><FaBox />My Orders</Link>
-              <button onClick={() => { logoutHandler(); closeMobileMenu() }} className='flex items-center gap-2 py-2 hover:text-red-400'><IoLogOutOutline className="text-xl" />Logout</button>
-            </div>
-          ) : (
-            <Link to='/login' className='flex items-center gap-2 py-2 hover:text-blue-400 mt-2' onClick={closeMobileMenu}><FaUser />Sign In</Link>
-          )}
-
-          {/* Admin Mobile */}
-          {userInfo && userInfo.isAdmin && (
-            <div className='border-t border-gray-700 pt-2 mt-2'>
-              <div className='text-gray-400 text-sm mb-1'>Admin</div>
-              <Link to='/admin' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400 text-blue-400 font-semibold'>Dashboard</Link>
-              <Link to='/admin/userlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Users</Link>
-              <Link to='/admin/productlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Products</Link>
-              <Link to='/admin/orderlist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Orders</Link>
-              <Link to='/admin/accessorylist' onClick={closeMobileMenu} className='block py-2 pl-4 hover:text-blue-400'>Accessories</Link>
-            </div>
-          )}
-        </div>
-      </div>
+      <MobileSidebar show={isMobileMenuOpen} setShow={setIsMobileMenuOpen} />
     </header>
   )
 }
