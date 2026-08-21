@@ -565,7 +565,7 @@ const AccessoryScreen = () => {
             </div>
           )}
 
-          {/* ADD TO CART + WISHLIST */}
+          
           {/* ADD TO CART + BUY NOW */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button

@@ -10,7 +10,7 @@ const Navbar = () => {
     const [searchParams] = useSearchParams()
     const [showAccessoryMenu, setShowAccessoryMenu] = useState(false)
     const [showBrandMenu, setShowBrandMenu] = useState(null)
-    const [hoveredBrand, setHoveredBrand] = useState(null) // V38.30 KEY
+    const [hoveredBrand, setHoveredBrand] = useState(null) // V38.30 KEY 
     const dropdownRef = useRef(null)
     const timeoutRef = useRef(null)
 
@@ -144,19 +144,24 @@ const Navbar = () => {
                                 className="relative"
                             >
                                 <button
-                                    onClick={() => handleBrandClick(brand)}
-                                     className={`text-sm px-2 py-1 border border-transparent rounded-sm transition-all 
-                  duration-100 ${activeBrand === brand
-                  ? 'text-white border-white font-bold'  // bold when active
-                  : 'text-gray-200 hover:text-white hover:border-white font-normal'
-                  }`}
-                                >
+  onClick={() => handleBrandClick(brand)}
+   className={`text-sm px-2 py-1 border border-transparent rounded-sm transition-all 
+                  duration-100  ${activeBrand === brand || showBrandMenu === brand
+   ?'text-white border-white font-bold'  // bold when active
+    : 'text-gray-200 hover:text-white hover:border-white font-normal'
+    }`}
+>
                                     {brand}
                                 </button>
 
                                 {/* BRAND MEGA MENU WITH REAL PRODUCTS */}
-                                {showBrandMenu === brand && (
-                                    <div className="fixed top-[104px] left-0 w-full bg-[#1a1a1a] text-white shadow-2xl z-[9999] border-t border-gray-700">
+                                
+                                    <div className={`fixed top-[104px] left-0 w-full bg-[#1a1a1a] text-white shadow-2xl z-[9999] border-t border-gray-700
+  transition-all duration-300 ease-out origin-top
+  ${showBrandMenu === brand
+   ? 'opacity-100 translate-y-0 scale-100'
+    : 'opacity-0 -translate-y-3 scale-95 pointer-events-none'
+  }`}>
                                         <div className="w-full px-4 py-4 grid grid-cols-[200px_1fr_1fr_240px] gap-3 max-w-[1300px] mx-auto">
 
                                             {/* COL 1: LINKS */}
@@ -198,12 +203,12 @@ const Navbar = () => {
                                                     <div className="grid grid-cols-4 gap-3">
                                                         {brandProducts.map((product) => (
                                                             <button
-                                                                key={product._id}
-                                                                onClick={() => navigate(`/product/${product.slug}`)}
-                                                                className="group text-left hover:bg-gray-800 p-1.5 rounded-lg transition-all"
-                                                            >
+  key={product._id}
+  onClick={() => navigate(`/product/${product.slug}`)}
+  className="group text-left hover:bg-gray-800 p-1.5 rounded-lg transition-all duration-300 hover:scale-[1.03]"
+>
                                                                 <div className="bg-white rounded-md p-1.5 mb-1.5">
-                                                                    <img src={product.image} alt={product.name} className="w-full h-28 object-contain" />
+                                                                    <img src={product.image} alt={product.name} className="w-full h-28 object-contain transition-transform duration-300 group-hover:scale-110" />
                                                                 </div>
                                                                 <p className="text-[12px] font-medium text-gray-200 group-hover:text-white line-clamp-2 h-9 leading-tight">
                                                                     {product.name}
@@ -250,7 +255,7 @@ const Navbar = () => {
 
                                         </div>
                                     </div>
-                                )}
+                                 
                             </div>
                         ))}
                     </div>
@@ -273,15 +278,20 @@ const Navbar = () => {
                         }}
                         className="relative"
                     >
-                        <button
-                            className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-all
-                ${activeType ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300 hover:text-white hover:bg-gray-700'}`}
-                        >
+                       <button
+  className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-all duration-200
+    ${activeType || showAccessoryMenu? 'bg-gray-700 text-white font-semibold scale-105' : 'text-gray-300 hover:text-white hover:bg-gray-700 hover:scale-105'}`}
+>
                             Shop <FaChevronDown className={`text-xs transition-transform duration-200 ${showAccessoryMenu ? 'rotate-180' : ''}`} />
                         </button>
 
-                        {showAccessoryMenu && (
-                            <div className="fixed top-[104px] left-0 w-full bg-[#1a1a1a] text-white shadow-2xl z-[99999] border-t border-gray-700">
+                         
+                            <div className={`fixed top-[104px] left-0 w-full bg-[#1a1a1a] text-white shadow-2xl z-[99999] border-t border-gray-700
+  transition-all duration-300 ease-out origin-top
+  ${showAccessoryMenu
+   ? 'opacity-100 translate-y-0 scale-100'
+    : 'opacity-0 -translate-y-3 scale-95 pointer-events-none'
+  }`}>
                                 <div className="container mx-auto px-8 py-5 grid grid-cols-4 gap-8 max-w-[1300px]">
                                     {/*...same accessory columns from V38.26... */}
                                     <div>
@@ -390,7 +400,7 @@ const Navbar = () => {
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        
                     </div>
 
                 </div>
