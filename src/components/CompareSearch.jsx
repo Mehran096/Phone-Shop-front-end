@@ -214,9 +214,10 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compar
             <form onSubmit={submitHandler} className="relative w-full">
   {/* Search icon */}
   <FaSearch
-    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-    size={18}
-  />
+  className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-400
+             w-[10px] h-[8px] md:w-[18px] md:h-[18px]"
+/>
+
 
   <input
     type="text"
@@ -235,7 +236,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compar
                focus:outline-none focus:ring-2 focus:ring-blue-500
                placeholder:text-gray-400
                text-base md:text-lg
-               placeholder:text-[8px] md:placeholder:text-base
+               placeholder:text-[10px] md:placeholder:text-base
 
                "
                
