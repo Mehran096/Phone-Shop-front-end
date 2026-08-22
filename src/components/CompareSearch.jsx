@@ -215,7 +215,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compar
   {/* Search icon */}
   <FaSearch
   className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-400
-             w-[16px] h-[16px] md:w-[18px] md:h-[18px]"
+             w-[12px] h-[12px] md:w-[18px] md:h-[18px]"
 />
 
 
