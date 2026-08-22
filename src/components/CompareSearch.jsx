@@ -214,7 +214,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compar
             <form onSubmit={submitHandler} className="relative w-full">
   {/* Search icon */}
   <FaSearch
-  className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-400
+  className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 text-gray-400
              w-[16px] h-[16px] md:w-[18px] md:h-[18px]"
 />
 
@@ -231,7 +231,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compar
     }}
     value={displayKeyword}
     placeholder="Search another phone..."
-   className="w-full pl-8 md:pl-11 pr-10 py-2.5 md:py-3 border border-gray-300 rounded-lg
+   className="w-full pl-7 md:pl-11 pr-10 py-2.5 md:py-3 border border-gray-300 rounded-lg
              bg-white text-gray-900
              focus:outline-none focus:ring-2 focus:ring-blue-500
              placeholder:text-gray-400
