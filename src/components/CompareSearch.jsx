@@ -312,7 +312,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compar
                                             {product.brand}
                                         </p>
 
-                                        <p className="text-[10px] sm:text-sm font-semibold text-blue-600">
+                                        <p className="text-[8px] sm:text-sm font-semibold text-blue-600">
                                             From ${product.minPrice?.toLocaleString()}
                                         </p>
                                     </div>
