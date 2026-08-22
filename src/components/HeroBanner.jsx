@@ -5,7 +5,7 @@ const slides = [
   {
     id: 1,
     brand: 'Apple',
-    title: 'iPhone 17 Pro',
+    title: 'iPhone 17 Pro Max',
     features: ['A19 Pro Chip', 'Titanium Design', '48MP Fusion Camera'],
     desktopImg: '/assets/apple.png',
     mobileImg: '/assets/HeroBanner.png', // reuse your current one for now
@@ -17,7 +17,7 @@ const slides = [
     title: 'Galaxy S25 Ultra',
     features: ['Snapdragon 8 Gen 4', '200MP Camera', 'AI Powered'],
     desktopImg: '/assets/samsung.png', // duplicate your apple img and rename
-    mobileImg: '/assets/samsung.png',
+    mobileImg: '/assets/samsungs.png',
     link: '/products?brand=Samsung',
   },
   {
