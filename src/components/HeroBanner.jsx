@@ -8,15 +8,15 @@ const slides = [
     title: 'iPhone 17 Pro Max',
     features: ['A19 Pro Chip', 'Titanium Design', '48MP Fusion Camera'],
     desktopImg: '/assets/apple.png',
-    mobileImg: '/assets/HeroBanner.png', // reuse your current one for now
+    mobileImg: '/assets/HeroBanner.png',  
     link: '/products?brand=Apple',
   },
   {
     id: 2,
     brand: 'Samsung',
-    title: 'Galaxy S25 Ultra',
+    title: 'Galaxy S26 Ultra',
     features: ['Snapdragon 8 Gen 4', '200MP Camera', 'AI Powered'],
-    desktopImg: '/assets/samsung.png', // duplicate your apple img and rename
+    desktopImg: '/assets/samsung.png',  
     mobileImg: '/assets/samsungs.png',
     link: '/products?brand=Samsung',
   },
@@ -25,7 +25,7 @@ const slides = [
     brand: 'Google',
     title: 'Pixel 9 Pro',
     features: ['Tensor G4 Chip', 'Best AI Photos', '7 Years Updates'],
-    desktopImg: '/assets/google.png', // duplicate your apple img and rename
+    desktopImg: '/assets/google.png', 
     mobileImg: '/assets/google.png',
     link: '/products?brand=Google',
   }
