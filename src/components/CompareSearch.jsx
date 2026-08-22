@@ -235,7 +235,7 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compar
              bg-white text-gray-900
              focus:outline-none focus:ring-2 focus:ring-blue-500
              placeholder:text-gray-400
-             text-base md:text-lg
+             text-sm md:text-lg
              placeholder:text-[10px] md:placeholder:text-base"
                
   />
