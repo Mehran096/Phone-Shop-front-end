@@ -304,15 +304,15 @@ const CompareSearch = ({ currentSlug, setCompareSlug, onSelect, disabled, compar
                                     />
 
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="text-[10px] sm:text-base font-medium text-gray-900 truncate">
+                                        <h4 className="text-[8px] sm:text-base font-medium text-gray-900 truncate">
                                             {highlightText(product.name, keyword)}
                                         </h4>
 
-                                        <p className="text-[10px] uppercase traching-wide sm:text-sm text-gray-500">
+                                        <p className="text-[8px] uppercase traching-wide sm:text-sm text-gray-500">
                                             {product.brand}
                                         </p>
 
-                                        <p className="text-[11px] sm:text-sm font-semibold text-blue-600">
+                                        <p className="text-[10px] sm:text-sm font-semibold text-blue-600">
                                             From ${product.minPrice?.toLocaleString()}
                                         </p>
                                     </div>
