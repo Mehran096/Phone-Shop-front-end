@@ -13,13 +13,15 @@ const CompareBar = () => {
 
   const maxCompare = window.innerWidth < 1024 ? 2 : 4;
 
-const displayProducts = [...products];
+ 
+  const realProducts = products.filter(Boolean); // only real data
+  const displayProducts = [...realProducts]; // for UI
 
 while (displayProducts.length < maxCompare) {
   displayProducts.push(null);
 }
 
-const hasProducts = displayProducts.some(Boolean);
+const hasProducts = realProducts.length > 0;
 
 const handleCompareClick = () => {
   const compareUrl = `/compare?phones=${products
@@ -32,7 +34,7 @@ const handleCompareClick = () => {
   });
 };
   //console.log(products)
-  if (products.length === 0) return null;
+   if (!hasProducts) return null;
 
 
   return (
@@ -47,7 +49,7 @@ const handleCompareClick = () => {
             >
               {showCompareBar
                 ? "Hide Compare"
-                : `Show Compare (${products.length})`}
+                : `Show Compare (${realProducts.length})`}
             </button>
           </div>
           {/* Compare Bar */}
@@ -146,7 +148,7 @@ const handleCompareClick = () => {
                   font-medium
                 "
               >
-                Compare ({displayProducts.length})
+                Compare ({realProducts.length})
               </button>
                 )}
 

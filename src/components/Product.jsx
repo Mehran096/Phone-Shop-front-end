@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaEdit, FaStar, FaBalanceScale } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { useState, useEffect, useMemo } from 'react';
 import { addToCompare, removeFromCompare } from '../slices/compareSlice';
+import { addToCart } from '../slices/cartSlice';
 import { toast } from 'react-toastify';
 import CountdownTimer from './CountdownTimer';
 
@@ -26,6 +27,7 @@ const calculateDiscount = (price, discount = {}) => {
 
 const Product = ({ product, userInfo, hideCompare = false, fromRecent = false, showDiscountBadge = false}) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
    const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedStorageIndex, setSelectedStorageIndex] = useState(0);
   const { products: compareProducts } = useSelector((state) => state.compare);
@@ -76,12 +78,15 @@ useEffect(() => {
   }
 }, [product._id, showDiscountBadge, fromRecent, product.storage, product.color, product.variants]) // REMOVED selectedStorageIndex
 
- // 2. ONLY RUN WHEN USER CLICKS STORAGE: Reset color to 0
+ // 2. STORAGE CHANGE: Auto select first IN-STOCK color of that storage
 useEffect(() => {
-  if (!showDiscountBadge &&!fromRecent) {
-    setSelectedColorIndex(0)
+  if (!showDiscountBadge &&!fromRecent && selectedVariant) {
+    const firstInStockIdx = selectedVariant.colors?.findIndex(c => c.countInStock > 0);
+    if (firstInStockIdx!== -1 && firstInStockIdx!== undefined) {
+      setSelectedColorIndex(firstInStockIdx);
+    }
   }
-}, [selectedStorageIndex, showDiscountBadge, fromRecent]) 
+}, [selectedStorageIndex, selectedVariant, showDiscountBadge, fromRecent])
 
  const currentColor = isFlat? null : selectedVariant?.colors?.[selectedColorIndex] || selectedVariant?.colors?.[0] || null;
 
@@ -113,6 +118,51 @@ useEffect(() => {
   const rating = product.rating || 0;
   const numReviews = product.numReviews || 0;
 
+  //add to cart
+  const addToCartHandler = () => {
+    if (isFlat ||!currentColor) {
+      toast.error('Please select options');
+      return;
+    }
+    if (currentColor.countInStock === 0) {
+      toast.error('Out of stock');
+      return;
+    }
+
+    const price = Number(currentColor.price || 0);
+    const discount = currentColor.discount;
+    const isDiscountActive = discount?.isActive && discount?.value > 0;
+    const finalPrice = isDiscountActive
+     ? discount.type === 'percentage'
+       ? price - (price * discount.value / 100)
+        : price - discount.value
+      : price;
+
+    const imageUrl = currentColor?.images?.[0]?.url || product.image || '/images/placeholder-phone.jpg';
+
+    dispatch(addToCart({
+      product: product._id,
+      name: product.name,
+      slug: product.slug,
+      image: imageUrl,
+      price: isDiscountActive? finalPrice : price,
+      originalPrice: price,
+      discount: currentColor.discount,
+      variantType: 'phone',
+      variantName: selectedVariant.storage,
+      variantSubName: selectedVariant.storage,
+      model: product.name,
+      color: currentColor.name,
+      storage: selectedVariant.storage,
+      countInStock: currentColor.countInStock,
+      qty: 1,
+    }));
+
+    toast.success(`${product.name} - ${selectedVariant.storage} added to cart`);
+    // navigate('/cart') // 👈 agar cart pe jana hai to ye line uncomment kar do
+  }
+
+
  const productUrl = useMemo(() => {
   const baseUrl = `/product/${product.slug}`;
 
@@ -129,7 +179,7 @@ useEffect(() => {
 }, [product.slug, fromRecent, product.storage, product.color, isFlat, selectedVariant, currentColor]);
 
   return (
-    <div key={product._id} className='bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200 overflow-hidden border-gray-100 group relative flex-col h-full'>
+    <div key={product._id} className='bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200 overflow-hidden border-gray-100 group relative flex flex-col justify-between h-full'>
       {userInfo && userInfo.isAdmin && (
         <Link to={`/admin/product/${product._id}/edit`} className='absolute top-2 right-2 z-10 bg-white/90 backdrop-blur-sm text-gray-700 p-1.5 rounded-full hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity'>
           <FaEdit size={12} />
@@ -171,7 +221,7 @@ useEffect(() => {
         </div>
       </Link>
 
-      <div className='p-3 sm:p-4 lg:p-5 flex-col flex-1'>
+      <div className='p-3 sm:p-4 lg:p-5 flex flex-col flex-1'>
         <Link to={productUrl} className='block mb-1.5'>
           <h3 className='text-[15px] sm:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-indigo-600 leading-snug'>{product.name}</h3>
         </Link>
@@ -194,27 +244,30 @@ useEffect(() => {
        {!fromRecent && (showDiscountBadge? variantColors : allVariantColors).length > 0 && (
   <div className='mb-3'>
     <p className='text-[11px] text-gray-500 mb-1.5 font-medium'>
-      {(showDiscountBadge? variantColors : allVariantColors).length} Color{(showDiscountBadge? variantColors : allVariantColors).length > 1? 's' : ''} Available
+       
+      {(showDiscountBadge? variantColors : allVariantColors).filter(c => c.countInStock > 0).length} Color{(showDiscountBadge? variantColors : allVariantColors).filter(c => c.countInStock > 0).length > 1? 's' : ''} Available
     </p>
     <div className='flex flex-wrap gap-2 sm:gap-2.5'>
-      {(showDiscountBadge? variantColors : allVariantColors).slice(0, 8).map((color) => {
+      
+      {(showDiscountBadge? variantColors : allVariantColors)
+       .filter(color => color.countInStock > 0)
+       .slice(0, 8).map((color) => {
         const actualIdx = allVariantColors.findIndex(c => c.name === color.name);
         const isSelected = selectedColorIndex === actualIdx;
-        
+
         return (
-          <button 
-            key={color.name} 
-            type="button" 
-            disabled={color.countInStock === 0} 
-            onClick={(e) => { 
-              e.preventDefault(); 
-              e.stopPropagation(); 
-              setSelectedColorIndex(actualIdx); 
+          <button
+            key={color.name}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedColorIndex(actualIdx);
             }}
             className={`relative rounded-full border-2 transition-all duration-200 w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 ${
-              isSelected? 'border-gray-900 scale-110 shadow-md ring-2 ring-gray-300 ring-offset-1' 
+              isSelected? 'border-gray-900 scale-110 shadow-md ring-2 ring-gray-300 ring-offset-1'
               : 'border-gray-300 hover:border-gray-500 hover:scale-105'
-            } ${color.countInStock === 0? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+            } cursor-pointer`}
             style={{ backgroundColor: color.hexCode || color.name.toLowerCase() }}
             title={`${color.name} - ${color.countInStock} in stock`}>
             {isSelected && (
@@ -246,11 +299,12 @@ useEffect(() => {
           key={variant.storage}
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedStorageIndex(variant.originalIndex); }}
+          disabled={!variant.colors?.some(c => c.countInStock > 0)}
           className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
             selectedStorageIndex === variant.originalIndex
            ? 'bg-gray-900 text-white border-gray-900'
               : 'bg-gray-100 text-gray-700 border-gray-200 hover:border-gray-400'
-          }`}
+          } ${!variant.colors?.some(c => c.countInStock > 0)? 'opacity-40 cursor-not-allowed' : '' }`}
         >
           {variant.storage}
         </button>
@@ -261,15 +315,41 @@ useEffect(() => {
 
         <div className='mt-auto pt-1'>
           {mainPrice? (
-            <div className='flex items-baseline gap-2 flex-wrap'>
+            <div className='flex items-baseline gap-2 flex-wrap sm:min-h-[48px]'>
               {discountPercent > 0 && Number(mainOriginalPrice) > Number(mainPrice)? (
-                <><p className='text-xl sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p><p className='text-sm line-through text-gray-500'>${mainOriginalPriceFormatted}</p><span className='text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-semibold'>{discountPercent}% OFF</span><p className='text-xs text-green-600 mt-0.5 w-full'>You save ${discountAmount.toFixed(2)}</p></>
+                <><p className='text-xl sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p><p className='text-sm line-through text-gray-500'>${mainOriginalPriceFormatted}</p><span className='text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-semibold'>{discountPercent}% OFF</span><p className='text-xs text-green-600 mt-0.5 w-full pb-2'>You save ${discountAmount.toFixed(2)}</p></>
               ) : (
-                <>{!showDiscountBadge &&!fromRecent && (product.variants?.length > 1 || allVariantColors.length > 1) && (<span className='text-[10px] uppercase tracking-wider text-gray-500 font-medium'>Starting at</span>)}<p className='text-xl sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p></>
+                <>{!showDiscountBadge &&!fromRecent && (product.variants?.length > 1 || allVariantColors.length > 1) && (<span className='text-[10px] uppercase tracking-wider text-gray-500 font-medium pb-2'>Starting at</span>)}<p className='text-xl sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p></>
               )}
             </div>
           ) : (<p className='text-sm text-gray-400 font-medium'>Contact</p>)}
+
+           
         </div>
+ 
+{/* FOOTER BUTTON SECTION */}
+{!isFlat &&!fromRecent && (
+  <div className='px-2 sm:px-3 lg:px-4 pb-2 sm:pb-3 lg:pb-4 pt-0 mt-auto'>  
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        addToCartHandler();
+      }}
+      disabled={!currentColor || currentColor.countInStock === 0}
+      className='w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-black font-semibold
+      text-sm sm:text-base  
+      py-2 sm:py-2.5 
+      px-3 sm:px-4
+      rounded-md sm:rounded-lg 
+      transition-colors duration-200 shadow-sm
+      h-[38px] sm:h-[44px]' 
+    >
+      Add to Cart
+    </button>
+  </div>
+)}
       </div>
     </div>
   );

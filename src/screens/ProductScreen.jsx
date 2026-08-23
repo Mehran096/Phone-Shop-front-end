@@ -1302,7 +1302,7 @@ const buyNowHandler = () => {
           </div>
         </div>
         {/* compare phone section */}
-        <div className="mt-8 rounded-xl border bg-white p-4 lg:p-6 shadow-sm">
+        {/* <div className="mt-8 rounded-xl border bg-white p-4 lg:p-6 shadow-sm">
           <div className="flex items-start sm:items-center gap-3">
             <FaBalanceScale className="text-blue-600 text-xl lg:text-2xl mt-1 sm:mt-0" />
 
@@ -1318,7 +1318,7 @@ const buyNowHandler = () => {
           <div className="relative mt-4">
             {/* <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /> */}
 
-            <CompareSearch
+           {/* <CompareSearch
               currentSlug={product.slug}
               setCompareSlug={setCompareSlug}
             />
@@ -1337,7 +1337,7 @@ const buyNowHandler = () => {
               )
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* Customers also viewed section */}
         <RecommendedProducts

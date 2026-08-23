@@ -5,6 +5,7 @@ import {
   replaceCompareProduct,
   clearCompareSlot,
   setCompareProducts,
+  clearCompare,
 } from "../slices/compareSlice";
 
 import CompareProducts from '../components/CompareProducts';
@@ -219,6 +220,13 @@ useEffect(() => {
     document.removeEventListener("mousedown", handleClickOutside);
   };
 }, []);
+
+//useEffect for clearComapare bar when a user go back from compare page
+ useEffect(() => {
+    return () => { 
+      dispatch(clearCompare());
+    }
+  }, [dispatch]);
 
 //handler for Export start
 const handleExportPDF = async () => {
