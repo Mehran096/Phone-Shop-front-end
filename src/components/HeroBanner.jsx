@@ -8,7 +8,7 @@ const slides = [
     title: 'iPhone 17 Pro Max',
     features: ['A19 Pro Chip', 'Titanium Design', '48MP Fusion Camera'],
     desktopImg: '/assets/apple.png',
-    mobileImg: '/assets/HeroBanner.png',  
+    mobileImg: '/assets/apples.png',  
     link: '/products?brand=Apple',
   },
   {
