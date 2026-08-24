@@ -137,6 +137,7 @@ useEffect(() => {
        ? price - (price * discount.value / 100)
         : price - discount.value
       : price;
+    const discountAmount = price - finalPrice;
 
     const imageUrl = currentColor?.images?.[0]?.url || product.image || '/images/placeholder-phone.jpg';
 
@@ -147,6 +148,7 @@ useEffect(() => {
       image: imageUrl,
       price: isDiscountActive? finalPrice : price,
       originalPrice: price,
+      discountAmount: discountAmount,
       discount: currentColor.discount,
       variantType: 'phone',
       variantName: selectedVariant.storage,
@@ -159,7 +161,7 @@ useEffect(() => {
     }));
 
     toast.success(`${product.name} - ${selectedVariant.storage} added to cart`);
-    // navigate('/cart') // 👈 agar cart pe jana hai to ye line uncomment kar do
+    // navigate('/cart') // 👈 if you want to go to cart then uncomment this line
   }
 
 
