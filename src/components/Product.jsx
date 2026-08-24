@@ -225,7 +225,7 @@ useEffect(() => {
 
       <div className='p-3 sm:p-4 lg:p-5 flex flex-col flex-1'>
         <Link to={productUrl} className='block mb-1.5'>
-          <h3 className='text-[15px] sm:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-indigo-600 leading-snug'>{product.name}</h3>
+          <h3 className='text-[12px] sm:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-indigo-600 leading-snug'>{product.name}</h3>
         </Link>
 
         {numReviews > 0 && (
