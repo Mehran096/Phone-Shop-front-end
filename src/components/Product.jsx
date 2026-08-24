@@ -321,7 +321,7 @@ useEffect(() => {
               {discountPercent > 0 && Number(mainOriginalPrice) > Number(mainPrice)? (
                 <><p className='text-lg sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p><p className='text-sm line-through text-gray-500'>${mainOriginalPriceFormatted}</p><span className='text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-semibold'>{discountPercent}% OFF</span><p className='text-xs text-green-600 mt-0.5 w-full pb-2'>You save ${discountAmount.toFixed(2)}</p></>
               ) : (
-                <>{!showDiscountBadge &&!fromRecent && (product.variants?.length > 1 || allVariantColors.length > 1) && (<span className='text-[10px] uppercase tracking-wider text-gray-500 font-medium pb-2'>Starting at</span>)}<p className='text-xl sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p></>
+                <>{!showDiscountBadge &&!fromRecent && (product.variants?.length > 1 || allVariantColors.length > 1) && (<span className='text-[10px] uppercase tracking-wider text-gray-500 font-medium pb-2'>Starting at</span>)}<p className='text-lg sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p></>
               )}
             </div>
           ) : (<p className='text-sm text-gray-400 font-medium'>Contact</p>)}
