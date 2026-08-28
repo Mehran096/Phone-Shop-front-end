@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/sitemap.xml",
+      "destination": "https://phone-shop-back-end.onrender.com/sitemap.xml"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "https://phone-shop-back-end.onrender.com/api/$1"
     },
