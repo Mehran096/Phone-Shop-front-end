@@ -1,16 +1,26 @@
 {
   "rewrites": [
     {
-      "source": "/robots.txt",
-      "destination": "https://phone-shop-back-end.onrender.com/robots.txt"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "https://phone-shop-back-end.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain" }
+      ]
+    },
+    {
+      "source": "/api/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml" }
+      ]
     }
   ]
 }
