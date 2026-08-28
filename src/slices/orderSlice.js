@@ -89,6 +89,22 @@ export const createCheckoutSession = createAsyncThunk(
   }
 )
 
+// 3. RETRY PAYMENT - For unpaid Stripe orders
+export const retryPayment = createAsyncThunk(
+  'order/retryPayment',
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const { data } = await api.post(`/orders/${orderId}/retry-payment`)
+      window.location.href = data.url // Seedha Stripe pe bhej do
+      return data
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message
+      )
+    }
+  }
+)
+
 // 3. VERIFY STRIPE SESSION
 export const verifyStripeSession = createAsyncThunk(
   'order/verifyStripeSession',
@@ -304,6 +320,19 @@ const orderSlice = createSlice({
         state.error = action.payload
         toast.error(action.payload)
       })
+      // RETRY PAYMENT
+.addCase(retryPayment.pending, (state) => {
+  state.loading = true
+  state.error = null
+})
+.addCase(retryPayment.fulfilled, (state) => {
+  state.loading = false
+})
+.addCase(retryPayment.rejected, (state, action) => {
+  state.loading = false
+  state.error = action.payload
+  toast.error(action.payload)
+})
       // VERIFY STRIPE SESSION
       .addCase(verifyStripeSession.pending, (state) => {
         state.loading = true

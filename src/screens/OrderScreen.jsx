@@ -20,6 +20,7 @@ import {
   resetShip,
   resetDeliver,
   resetCancel,
+  retryPayment
 } from '../slices/orderSlice';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
@@ -99,6 +100,10 @@ const [cancelCode, setCancelCode] = useState('ADMIN_CANCEL_COD')
  const cancelHandler = () => {
   setShowCancelModal(true)
 };
+
+const handleRetryPayment = () => {
+  dispatch(retryPayment(orderId))
+}
 
 const confirmCancel = () => {
   if(window.confirm(`Are you sure? This will revert sales + FBT.`)) {
@@ -200,28 +205,40 @@ const confirmCancel = () => {
               </div>
             </div>
 
-            {/* Payment Card */}
-            <div className="bg-white p-5 rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center gap-2 mb-4">
-                <FaCreditCard className="text-gray-600" />
-                <h2 className="text-lg font-semibold">Payment Method</h2>
-              </div>
-              <p className="text-sm text-gray-700"><strong>{order.paymentMethod}</strong></p>
+           {/* Payment Card */}
+<div className="bg-white p-5 rounded-lg shadow-sm border-gray-200">
+  <div className="flex items-center gap-2 mb-4">
+    <FaCreditCard className="text-gray-600" />
+    <h2 className="text-lg font-semibold">Payment Method</h2>
+  </div>
+  <p className="text-sm text-gray-700"><strong>{order.paymentMethod}</strong></p>
 
-              {order.isPaid ? (
-                <div className="mt-3 p-3 bg-green-50 text-green-700 rounded-md text-sm font-medium">
-                  Paid on {formatDate(order.paidAt)}
-                </div>
-              ) : order.paymentMethod === 'COD' ? (
-                <div className="mt-3 p-3 bg-yellow-50 text-yellow-800 rounded-md text-sm font-medium">
-                  Pay when you receive your order
-                </div>
-              ) : (
-                <div className="mt-3 p-3 bg-blue-50 text-blue-700 rounded-md text-sm font-medium">
-                  Payment Pending
-                </div>
-              )}
-            </div>
+  {order.isPaid ? (
+    <div className="mt-3 p-3 bg-green-50 text-green-700 rounded-md text-sm font-medium">
+      Paid on {formatDate(order.paidAt)}
+    </div>
+  ) : order.paymentMethod === 'COD' ? (
+    <div className="mt-3 p-3 bg-yellow-50 text-yellow-800 rounded-md text-sm font-medium">
+      Pay when you receive your order
+    </div>
+  ) : (
+    <>
+      <div className="mt-3 p-3 bg-blue-50 text-blue-700 rounded-md text-sm font-medium">
+        Payment Pending
+      </div>
+      {/* YE BUTTON NAYA ADD KIYA */}
+      {!order.isCancelled && (
+        <button
+          onClick={handleRetryPayment}
+          disabled={loading}
+          className="w-full mt-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2.5 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-semibold disabled:opacity-50"
+        >
+          {loading ? 'Redirecting...' : 'Pay Again'}
+        </button>
+      )}
+    </>
+  )}
+</div>
 
             {/* Order Items */}
             <div className="bg-white p-5 rounded-lg shadow-sm border-gray-200">
