@@ -301,7 +301,46 @@ const AccessoryEditScreen = () => {
 
               <input placeholder="Model Name: iPhone 17 Pro Max or Universal" value={m.modelName} onChange={(e) => updateModel(mIdx, 'modelName', e.target.value)} className="w-full p-3 border rounded-lg text-sm mb-3" required/>
               <textarea placeholder="Model Description" value={m.description} onChange={(e) => updateModel(mIdx, 'description', e.target.value)} className="w-full p-3 border rounded-lg text-sm mb-3" rows="2"/>
+            {/* SPECS SECTION */}
+<div className="mb-4 p-3 bg-white rounded-lg border">
+  <div className="flex justify-between items-center mb-2">
+    <h4 className="font-semibold text-sm">Specs</h4>
+    <button type="button" onClick={() => addSpec(mIdx)} className="text-sm text-blue-600 flex items-center gap-1">
+      <FaPlus size={12} /> Add Spec
+    </button>
+  </div>
 
+  {m.specs?.length === 0 && (
+    <p className="text-xs text-gray-400">No specs added yet</p>
+  )}
+
+  {m.specs.map((s, sIdx) => (
+    <div key={sIdx} className="flex flex-col sm:flex-row gap-2 mb-2">
+      <input 
+        className="p-2.5 border rounded flex-1 text-sm" 
+        placeholder="Key: Material" 
+        value={s.key} 
+        onChange={(e) => updateSpec(mIdx, sIdx, 'key', e.target.value)} 
+      />
+      <div className="flex gap-2">
+        <input 
+          className="p-2.5 border rounded flex-1 text-sm" 
+          placeholder="Value: PC + TPU" 
+          value={s.value} 
+          onChange={(e) => updateSpec(mIdx, sIdx, 'value', e.target.value)} 
+        />
+        <button 
+          type="button" 
+          onClick={() => removeSpec(mIdx, sIdx)} 
+          className="px-3 bg-red-50 text-red-600 rounded hover:bg-red-100"
+        >
+          <FaTrash size={12} />
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
+{/* END SPECS SECTION */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-sm">Variants</h3>
                 {m.variants.map((v, vIdx) => (

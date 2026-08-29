@@ -16,6 +16,7 @@ import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Rating from '../components/Rating';
 import ReviewSkeleton from '../components/ReviewSkeleton';
+import { Helmet } from 'react-helmet-async'; 
 
 const AccessoryReviewsScreen = () => {
     const { slug } = useParams();
@@ -101,6 +102,12 @@ const AccessoryReviewsScreen = () => {
     const selectedModelObj = accessory?.models?.find(m => modelFilter === 'All' || m.modelName === modelFilter);
     const selectedVariantObj = selectedModelObj?.variants?.find(v => variantFilter === 'All' || v.name === variantFilter);
     const accessoryImage = selectedVariantObj?.images?.[0]?.url || accessory?.models?.[0]?.variants?.[0]?.images?.[0]?.url || '/placeholder.png';
+
+    
+const siteUrl = 'https://phone-store.asia';  
+// SEO VARS - ADD THIS
+const seoTitle = accessory? `${accessory.name} Reviews - Customer Ratings & Photos | phone-store.asia` : 'Customer Reviews';
+const seoDescription = accessory? `Read ${totalReviews} verified customer reviews for ${accessory.name} by ${accessory.brand}. See ratings, photos, pros and cons. Buy with confidence at phone-store.asia` : 'Customer Reviews';
 
     useEffect(() => {
         setPage(1);
@@ -230,6 +237,7 @@ const AccessoryReviewsScreen = () => {
 
         return (
             <>
+             
                 <div className="mt-6 bg-white border rounded-xl shadow-sm p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-base font-semibold">Customer Photos ({photos.length})</h3>
@@ -283,6 +291,39 @@ const AccessoryReviewsScreen = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
+            {/* ===== SEO HELMET BLOCK FOR REVIEWS PAGE ===== */}
+        {accessory && (
+            <Helmet>
+                <title>{seoTitle}</title>
+                <meta name="description" content={seoDescription} />
+                <meta name="keywords" content={`${accessory.name} reviews, ${accessory.brand} reviews, ${accessory.accessoryType} customer rating`} />
+                <link rel="canonical" href={`${siteUrl}/accessory/${accessory.slug}/reviews`} />
+
+                <meta property="og:title" content={seoTitle} />
+                <meta property="og:description" content={seoDescription} />
+                <meta property="og:image" content={accessoryImage} />
+                <meta property="og:url" content={`${siteUrl}/accessory/${accessory.slug}/reviews`} />
+
+                {totalReviews > 0 && (
+                    <script type="application/ld+json">
+                        {JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "Product",
+                            "name": accessory.name,
+                            "brand": { "@type": "Brand", "name": accessory.brand },
+                            "image": accessoryImage,
+                            "aggregateRating": {
+                                "@type": "AggregateRating",
+                                "ratingValue": accessory.rating?.toFixed(1),
+                                "reviewCount": totalReviews
+                            }
+                        })}
+                    </script>
+                )}
+            </Helmet>
+        )}
+        {/* ===== END SEO BLOCK ===== */}
+        
             <Link to={`/accessory/${accessory.slug}`} className="text-blue-600 hover:text-blue-700 text-sm">← Back to Accessory</Link>
             <h1 className="text-4xl font-bold mt-3">Customer Reviews</h1>
 

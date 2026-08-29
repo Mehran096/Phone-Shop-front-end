@@ -6,6 +6,7 @@ import { addToCart } from '../slices/cartSlice';
 import { calculateBulkPrice } from '../utils/calculateBulkPrice'
 import { toast } from 'react-toastify';
 import { FaShoppingCart, FaCheck, FaArrowLeft, FaStar, FaTag } from 'react-icons/fa';
+import { Helmet } from 'react-helmet-async';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import ProductImageGallery from '../components/ProductImageGallery';
@@ -244,6 +245,9 @@ const AccessoryScreen = () => {
   //   navigate('/cart');
   // };
 
+  const mainOgImage = displayImages[0] || '/placeholder.jpg'; // For OG image
+  const siteUrl = 'https://phone-store.asia'; // <-- put your domain here
+
   if (isLoading) return <Loader />;
   if (error) return <Message variant='danger'>{error?.data?.message || error.error}</Message>;
   if (!selectedVariant) return <Loader />;
@@ -348,6 +352,35 @@ const AccessoryScreen = () => {
 
   return (
     <div className='container mx-auto px-3 sm:px-4 py-4 sm:py-6'>
+
+      {/* ===== SEO HELMET BLOCK START ===== */}
+      {accessory && (
+        <Helmet>
+          <title>{accessory.metaTitle || displayTitle}</title>
+          <meta name="description" content={accessory.metaDescription || `Buy ${displayTitle} at best price`} />
+          <meta name="keywords" content={`${accessory.brand}, ${accessory.name}, ${accessory.accessoryType}, ${accessory.category}, ${accessory.keywords?.join(', ')}`} />
+          <link rel="canonical" href={`${siteUrl}/accessory/${accessory.slug}`} />
+
+          {/* Open Graph for Facebook/WhatsApp */}
+          <meta property="og:type" content="product" />
+          <meta property="og:title" content={accessory.name} />
+          <meta property="og:description" content={accessory.metaDescription} />
+          <meta property="og:image" content={mainOgImage} />
+          <meta property="og:url" content={`${siteUrl}/accessory/${accessory.slug}`} />
+          <meta property="product:price:amount" content={mainPrice.toFixed(2)} />
+          <meta property="product:price:currency" content="USD" />
+          <meta property="product:brand" content={accessory.brand} />
+          <meta property="product:availability" content={isOutOfStock ? "out of stock" : "in stock"} />
+
+          {/* Twitter Card */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={accessory.name} />
+          <meta name="twitter:description" content={accessory.metaDescription} />
+          <meta name="twitter:image" content={mainOgImage} />
+        </Helmet>
+      )}
+      {/* ===== SEO HELMET BLOCK END ===== */}
+
       <Link to='/' className='inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4 sm:mb-6 font-medium text-sm'>
         <FaArrowLeft /> Go Back
       </Link>

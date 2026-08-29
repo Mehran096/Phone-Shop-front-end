@@ -41,6 +41,8 @@ import ShippingPolicyScreen from './screens/ShippingPolicyScreen';
 import MyAccountScreen from './screens/MyAccountScreen';
 import ProductReviewsScreen from './screens/ProductReviewsScreen';
 import DealsScreen from './screens/DealsScreen';
+import BestSellersScreen from './screens/BestSellersScreen'
+import NewArrivalsScreen from './screens/NewArrivalsScreen'
 import SearchBox from './components/SearchBox';
 import CompareScreen from './screens/CompareScreen';
 import CompareBar from './components/CompareBar';
@@ -56,8 +58,9 @@ import 'react-toastify/dist/ReactToastify.css'
 import api from './utils/axios';
 import AccessoryScreen from './screens/AccessoryScreen';
 import AccessoryReviewsScreen from './screens/AccessoryReviewsScreen';
+import AccessoryViewListScreen from './screens/AccessoryViewListScreen'
  
-import AccessoryCategoryListScreen from './screens/AccessoryCategoryListScreen'
+//import AccessoryCategoryListScreen from './screens/AccessoryViewListScreen'
   
  
  
@@ -175,15 +178,17 @@ const dispatch = useDispatch()
 
         <main className="flex-grow">
           <Routes>
-            <Route path="/" element={<HomeScreen isOnline={isOnline} />} />
              <Route path='/search' element={<SearchScreen isOnline={isOnline} />} />
-            <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
+            <Route path='/bestsellers' element={<BestSellersScreen />} />
+            <Route path='/new-arrivals' element={<NewArrivalsScreen />} />
             <Route path='/deals' element={<DealsScreen isOnline={isOnline}/>} />
             <Route path="/compare" element={<CompareScreen />} />
-            <Route path='/accessories' element={<AccessoryCategoryListScreen />} />
+             
+            <Route path='/accessories' element={<AccessoryViewListScreen />} />
             <Route path='/accessory/:slug' element={<AccessoryScreen />} />
             <Route path="/accessories/:slug/reviews" element={<AccessoryReviewsScreen />} />
              
+            <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
@@ -205,6 +210,7 @@ const dispatch = useDispatch()
             <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
             <Route path="/reset-password/:token" element={<ResetPasswordScreen />} />
             <Route path="/wishlist" element={<WishlistScreen />} />
+            <Route path="/" element={<HomeScreen isOnline={isOnline} />} />
 
             {/* Admin Routes */}
             <Route path="" element={<AdminRoute />}>

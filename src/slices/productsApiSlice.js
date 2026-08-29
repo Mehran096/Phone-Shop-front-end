@@ -60,10 +60,13 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       ],
     }),
     getBestSellerProducts: builder.query({
-      query: () => '/products/bestsellers',
-      providesTags: ['Products'],
-      keepUnusedDataFor: 5,
-    }),
+  query: ({ limit = 8 } = {}) => ({  
+    url: '/products/bestsellers',
+    params: { limit }
+  }),
+  providesTags: ['Products'],
+  keepUnusedDataFor: 5,
+}),
     getDealsProducts: builder.query({
       query: ({ limit = 12, minDiscount = 0 } = {}) => ({
         url: '/products/deals',
@@ -73,10 +76,13 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       keepUnusedDataFor: 5,
     }),
     getNewArrivalProducts: builder.query({
-      query: () => '/products/new-arrivals',
-      providesTags: ['Products'],
-      keepUnusedDataFor: 5,
-    }),
+  query: ({ limit = 8 } = {}) => ({ 
+    url: '/products/new-arrivals',
+    params: { limit }
+  }),
+  providesTags: ['Products'],
+  keepUnusedDataFor: 5,
+}),
     getCompareProducts: builder.query({
   query: (slugs) => ({
     url: "/products/compare",

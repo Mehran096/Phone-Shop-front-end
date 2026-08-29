@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { FaChevronDown } from 'react-icons/fa'
 import { useGetBrandMenuProductsQuery } from '../slices/productsApiSlice' // V38.30
 import { useGetFeaturedAccessoryQuery } from '../slices/accessoriesApiSlice'
+import {   FaFire } from 'react-icons/fa'
 
 const Navbar = () => {
     const navigate = useNavigate()
@@ -203,10 +204,10 @@ const Navbar = () => {
                                                     <div className="grid grid-cols-4 gap-3">
                                                         {brandProducts.map((product) => (
                                                             <button
-  key={product._id}
-  onClick={() => navigate(`/product/${product.slug}`)}
-  className="group text-left hover:bg-gray-800 p-1.5 rounded-lg transition-all duration-300 hover:scale-[1.03]"
->
+                                                                key={product._id}
+                                                                onClick={() => navigate(`/product/${product.slug}`)}
+                                                                className="group text-left hover:bg-gray-800 p-1.5 rounded-lg transition-all duration-300 hover:scale-[1.03]"
+                                                                >
                                                                 <div className="bg-white rounded-md p-1.5 mb-1.5">
                                                                     <img src={product.image} alt={product.name} className="w-full h-28 object-contain transition-transform duration-300 group-hover:scale-110" />
                                                                 </div>
@@ -255,9 +256,50 @@ const Navbar = () => {
 
                                         </div>
                                     </div>
+                                    
                                  
                             </div>
                         ))}
+                        {/* DIVIDER */}
+<div className="w-px h-5 bg-gray-600 mx-5"></div>
+
+{/* QUICK LINKS SECTION */}
+<div className='flex items-center space-x-4'>
+  <span className='text-gray-400 mr-2 font-medium whitespace-nowrap ml-3'>Quick Links:</span>
+  
+  {/* DEALS */}
+  <button 
+    onClick={() => navigate('/deals')}
+    className={`text-sm px-3 py-1.5 rounded-md transition-all duration-200 font-semibold
+      ${location.pathname === '/deals' 
+        ? 'bg-red-600 text-white' 
+        : 'text-red-400 hover:text-white hover:bg-red-600/30'}`}
+  >
+    💸 Deals
+  </button>
+
+  {/* BEST SELLERS */}
+  <button 
+    onClick={() => navigate('/bestsellers')}
+    className={`text-sm px-3 py-1.5 rounded-md flex transition-all duration-200 font-semibold
+      ${location.pathname === '/bestsellers' 
+        ? 'bg-orange-600 text-white' 
+        : 'text-orange-400 hover:text-white hover:bg-orange-600/30'}`}
+  >
+    <FaFire className="text-sm mt-1 mr-1.5 text-red-500" /> Best Sellers
+  </button>
+
+  {/* NEW ARRIVALS */}
+  <button 
+    onClick={() => navigate('/new-arrivals')}
+    className={`text-sm px-3 py-1.5 rounded-md transition-all duration-200 font-semibold
+      ${location.pathname === '/new-arrivals' 
+        ? 'bg-blue-600 text-white' 
+        : 'text-blue-400 hover:text-white hover:bg-blue-600/30'}`}
+  >
+    ✨ New Arrivals
+  </button>
+</div>
                     </div>
 
                     {/* DIVIDER + ACCESSORY MENU */}

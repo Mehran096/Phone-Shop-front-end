@@ -44,6 +44,15 @@ const ProductListScreen = () => {
     }
   };
 
+  //for pagination
+  const handlePageChange = (pageNum) => {
+  const newParams = new URLSearchParams()
+  if (keyword) newParams.set('keyword', keyword)
+  newParams.set('pageNumber', pageNum)
+  setSearchParams(newParams)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
   const clearSearch = () => {
     setSearchKeyword('');
     setSearchParams({});
@@ -182,15 +191,13 @@ const ProductListScreen = () => {
           </div>
 
           {/* Paginate */}
-          <div className='mt-6'>
-            <Paginate
-              pages={data.pages}
-              page={data.page}
-              keyword={keyword ? keyword : ''}
-              isAdmin={true}
-              pathname='/admin/productlist'
-            />
-          </div>
+      <div className='mt-6'>
+        <Paginate
+          pages={data.pages}
+          page={data.page}
+          onPageChange={handlePageChange}  
+        />
+      </div>
         </>
       )}
     </div>

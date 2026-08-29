@@ -17,10 +17,19 @@ import { useGetAccessoriesQuery } from '../slices/accessoriesApiSlice'
 //import CountdownTimer from '../components/CountdownTimer'
  
 const HomeScreen = ({ isOnline }) => {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const keyword = searchParams.get('keyword') || ''
   const brand = searchParams.get('brand') || '' // Fix 1: Read brand
   const pageNumber = Number(searchParams.get('pageNumber')) || 1
+// ===== ADD THIS FUNCTION =====
+  const handleProductPageChange = (pageNum) => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.set('pageNumber', pageNum)
+    setSearchParams(newParams)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  // ===== END =====
+   
 
 const [recentProducts, setRecentProducts] = useState([])
 
@@ -56,15 +65,19 @@ const {
   error: arrivalError,
 } = useGetNewArrivalProductsQuery();
 
-const { 
-  data: accessories, 
-  isLoading: accessoriesLoading, 
-  error: accessoriesError 
-} = useGetAccessoriesQuery({ 
-  keyword: '', 
-  pageNumber: 1,
-  type: '' 
+// ===== HOME ACCESSORIES - ONLY 8 ITEMS, NO PAGINATION =====
+const {
+  data: accessoriesData,
+  isLoading: accessoriesLoading,
+  error: accessoriesError
+} = useGetAccessoriesQuery({
+  keyword: '',
+  limit: 8, // <-- KEY: only 8 for home
+  type: ''
 });
+
+const accessories = accessoriesData?.accessories || [];
+// ===== END API CALL =====
 
   const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'OPPO', 'ViVO']
 
@@ -175,16 +188,13 @@ const {
             </div>
 
             {/* Add pagination here */}
-            <div className='mt-12 flex justify-center'>
-              <Paginate
-                pages={data.pages}
-                page={data.page}
-                keyword={keyword}
-                brand={brand} // Fix 6: Pass brand to Paginate
-                pathname='/products' // Fix 7: Set correct path
-                isAdmin={false}
-              />
-            </div>
+<div className='mt-12 flex justify-center'>
+  <Paginate
+    pages={data.pages}
+    page={data.page}
+    onPageChange={handleProductPageChange}
+  />
+</div>
           </>
         )}
       </div>
@@ -205,6 +215,9 @@ const {
         <p className="mt-3 text-gray-500 text-sm sm:text-base max-w-2xl mx-auto">
             Discover the smartphones customers are buying the most.
         </p>
+        <Link to="/bestsellers" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline mt-2 inline-block">
+    View All →
+  </Link> 
     </div>
     {bestSellerLoading ? (
       <Loader />
@@ -237,6 +250,10 @@ const {
         <p className="mt-3 text-gray-500 text-sm sm:text-base max-w-2xl mx-auto">
            Freshly added smartphones
         </p>
+
+         <Link to="/new-arrivals" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline mt-2 inline-block">
+    View All →
+  </Link> 
         
     </div>
      
@@ -309,34 +326,38 @@ const {
 
 {/* 5. ACCESSORIES SECTION */}
 {!keyword && !brand && (
-<section className='py-16 bg-gray-50'>
-  <div className='container mx-auto px-4'>
-    <div className='text-center mb-10'>
-      <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900'>
-        Phone Accessories
-      </h2>
-      <p className='mt-3 text-gray-500 text-sm sm:text-base'>
-        Cases, Chargers, Screen Protectors & More
-      </p>
-    </div>
-
-    {accessoriesLoading ? (
-      <Loader />
-    ) : accessoriesError ? (
-      <Message variant='danger'>
-        {accessoriesError?.data?.message || accessoriesError?.error || 'Failed to load accessories'}
-      </Message>
-    ) : accessories?.length === 0 ? (
-      <Message>No accessories found</Message>
-    ) : (
-      <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6'>
-        {accessories?.accessories?.map((accessory) => (
-          <AccessoryCard key={accessory._id} accessory={accessory} />
-        ))}
+  <section id='accessories-section' className='py-16 bg-gray-50'>
+    <div className='container mx-auto px-4'>
+      <div className='text-center mb-10'>
+        <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900'>
+          Phone Accessories
+        </h2>
+        <p className='mt-3 text-gray-500 text-sm sm:text-base'>
+          Cases, Chargers, Screen Protectors & More
+        </p>
+        <Link to="/accessories" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline mt-2 inline-block">
+          View All →
+        </Link>
       </div>
-    )}
-  </div>
-</section>
+
+      {accessoriesLoading ? (
+        <Loader />
+      ) : accessoriesError ? (
+        <Message variant='danger'>
+          {accessoriesError?.data?.message || accessoriesError?.error || 'Failed to load accessories'}
+        </Message>
+      ) : accessories?.length === 0 ? (
+        <Message>No accessories found</Message>
+      ) : (
+       
+        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6'>
+          {accessories.map((accessory) => (
+            <AccessoryCard key={accessory._id} accessory={accessory} />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
 )}
 
 {/* 3. Recently Viewed Section - Same style as Deals */}

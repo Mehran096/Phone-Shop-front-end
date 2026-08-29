@@ -17,13 +17,26 @@ const SearchScreen = ({ isOnline }) => {
   const navigate = useNavigate();
   const keyword = searchParams.get('keyword') || '';
   const pageNumber = Number(searchParams.get('pageNumber')) || 1;
+  const accessoryPageNumber = Number(searchParams.get('accessoryPage')) || 1;
   const [activeTab, setActiveTab] = useState('all');
    const [searchKeyword, setSearchKeyword] = useState(keyword);
+
+    // ===== ADD THESE 2 FUNCTIONS for Pagination =====
+  const handleProductPageChange = (pageNum) => {
+    navigate(`/search?keyword=${keyword}&pageNumber=${pageNum}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleAccessoryPageChange = (pageNum) => {
+    navigate(`/search?keyword=${keyword}&accessoryPage=${pageNum}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  // ===== END =====
 
   const { userInfo } = useSelector((state) => state.auth)
 
   const { data: productData, isLoading: loadingProducts, error: errorProducts, refetch: refetchProducts } = useGetProductsQuery({ keyword, pageNumber });
-  const { data: accessoryData, isLoading: loadingAccessories, error: errorAccessories, refetch: refetchAccessories } = useGetAccessoriesQuery({ keyword, pageNumber });
+  const { data: accessoryData, isLoading: loadingAccessories, error: errorAccessories, refetch: refetchAccessories } = useGetAccessoriesQuery({ keyword, pageNumber: accessoryPageNumber });
 
   const isLoading = loadingProducts || loadingAccessories;
   const error = errorProducts || errorAccessories;
@@ -140,16 +153,24 @@ const SearchScreen = ({ isOnline }) => {
             </div>
 
             {(activeTab === 'products' || activeTab === 'all') && productPages > 1 && (
-              <div className='mt-12 flex justify-center'>
-                <Paginate pages={productPages} page={productPage} keyword={keyword} pathname='/search' isAdmin={false} />
-              </div>
-            )}
+  <div className='mt-12 flex justify-center'>
+    <Paginate 
+      pages={productPages} 
+      page={productPage} 
+      onPageChange={handleProductPageChange} // <-- SIRF YE
+    />
+  </div>
+)}
 
             {activeTab === 'accessories' && accessoryPages > 1 && (
-              <div className='mt-12 flex justify-center'>
-                <Paginate pages={accessoryPages} page={accessoryPage} keyword={keyword} pathname='/search' isAdmin={false} />
-              </div>
-            )}
+  <div className='mt-12 flex justify-center'>
+    <Paginate 
+      pages={accessoryPages} 
+      page={accessoryPage} 
+      onPageChange={handleAccessoryPageChange} // <-- SIRF YE
+    />
+  </div>
+)}
           </>
         )}
       </div>

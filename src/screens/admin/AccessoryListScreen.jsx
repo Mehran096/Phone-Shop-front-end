@@ -44,10 +44,10 @@ const getStockBadge = (stock) => {
 const AccessoryListScreen = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const keyword = searchParams.get('keyword') || '';
-  const accessoryType = searchParams.get('accessoryType') || '';
+  const accessoryType = searchParams.get('type') || '';
   const pageNumber = searchParams.get('pageNumber') || 1;
 
-  const { data, isLoading, error, refetch } = useGetAccessoriesQuery({ keyword, accessoryType, pageNumber });
+  const { data, isLoading, error, refetch } = useGetAccessoriesQuery({ keyword, type: accessoryType, pageNumber });
   const [deleteAccessory, { isLoading: loadingDelete }] = useDeleteAccessoryMutation();
   const [searchKeyword, setSearchKeyword] = useState(keyword);
   const navigate = useNavigate();
@@ -65,18 +65,30 @@ const AccessoryListScreen = () => {
   };
 
   const submitHandler = (e) => {
-    e.preventDefault();
-    if (searchKeyword.trim()) {
-      setSearchParams({ keyword: searchKeyword, accessoryType, pageNumber: 1 });
-    } else {
-      setSearchParams({ accessoryType });
-    }
-  };
+  e.preventDefault();
+  const newParams = new URLSearchParams()
+  if (searchKeyword.trim()) newParams.set('keyword', searchKeyword.trim())
+  if (accessoryType) newParams.set('type', accessoryType)
+  newParams.set('pageNumber', 1)
+  setSearchParams(newParams)
+};
 
   const clearSearch = () => {
-    setSearchKeyword('');
-    setSearchParams({ accessoryType });
-  };
+  setSearchKeyword('');
+  const newParams = new URLSearchParams()
+  if (accessoryType) newParams.set('type', accessoryType)  
+  setSearchParams(newParams)
+};
+
+  //for pagination
+  const handlePageChange = (pageNum) => {
+  const newParams = new URLSearchParams()
+  if (keyword) newParams.set('keyword', keyword)
+  if (accessoryType) newParams.set('type', accessoryType)
+  newParams.set('pageNumber', pageNum)
+  setSearchParams(newParams)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
   // HELPER: Calculate stats for the accessory - MATCHES NEW SCHEMA
   const getAccessoryStats = (accessory) => {
@@ -136,9 +148,18 @@ const AccessoryListScreen = () => {
             />
           )}
         </div>
-        <select
+       <select
           value={accessoryType}
-          onChange={(e) => setSearchParams({ keyword: searchKeyword, accessoryType: e.target.value })}
+          onChange={(e) => {
+            const newParams = new URLSearchParams(searchParams)
+            if (e.target.value) {
+              newParams.set('type', e.target.value)
+            } else {
+              newParams.delete('type')
+            }
+            newParams.set('pageNumber', 1)
+            setSearchParams(newParams)
+          }}
           className='p-2 border rounded-lg text-sm'
         >
           <option value="">All Types</option>
@@ -266,9 +287,13 @@ const AccessoryListScreen = () => {
             })}
           </div>
 
-          <div className='mt-6'>
-            <Paginate pages={data?.pages} page={data?.page} isAdmin={true} />
-          </div>
+         <div className='mt-6'>
+  <Paginate 
+    pages={data?.pages} 
+    page={data?.page} 
+    onPageChange={handlePageChange}
+  />
+</div>
         </>
       )}
     </div>

@@ -2,11 +2,11 @@ import { apiSlice } from './apiSlice';
 
 export const accessoriesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-     // GET /api/accessories?keyword=&pageNumber=&type=
+     // GET /api/accessories?keyword=&pageNumber=&type=&limit=
     getAccessories: builder.query({
-      query: ({ keyword = '', pageNumber = '',  type = '', brand = '', pageSize = '', filter = '' }) => ({
+      query: ({ keyword = '', pageNumber = '',  type = '', brand = '', pageSize = '', filter = '', limit = 0 }) => ({
         url: '/accessories',
-        params: { keyword, pageNumber, type, brand, pageSize, filter },
+        params: { keyword, pageNumber, type, brand, pageSize, filter, limit },
       }),
       providesTags: ['Accessories'],
       keepUnusedDataFor: 5,

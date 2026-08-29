@@ -6,6 +6,7 @@ import Product from '../components/Product'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
 
+
 import { useGetDealsProductsQuery } from '../slices/productsApiSlice'
 
 const DealsScreen = () => {
@@ -73,6 +74,7 @@ const DealsScreen = () => {
                   key={product._id}
                   product={product}
                   userInfo={userInfo}
+                  showDiscountBadge={true}
                 />
               ))}
             </div>

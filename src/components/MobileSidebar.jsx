@@ -110,6 +110,38 @@ const MobileSidebar = ({ show, setShow }) => {
             ))}
           </div>
 
+          {/* QUICK LINKS - NEW SECTION */}
+<div className='border-t border-gray-700 pt-4'>
+  <h3 className="text-gray-400 uppercase text-[11px] tracking-widest mb-3 font-semibold">QUICK LINKS</h3>
+
+  {/* DEALS */}
+  <button
+    onClick={() => { navigate('/deals'); closeSidebar() }}
+    className={`flex items-center gap-2 w-full text-left py-2.5 text-[16px] transition
+      ${location.pathname === '/deals'? 'text-red-400 font-semibold' : 'text-white hover:text-red-400'}`}
+  >
+    <FaFire className="text-sm text-red-500" /> Deals
+  </button>
+
+  {/* BEST SELLERS */}
+  <button
+    onClick={() => { navigate('/bestsellers'); closeSidebar() }}
+    className={`flex items-center gap-2 w-full text-left py-2.5 text-[16px] transition
+      ${location.pathname === '/bestsellers'? 'text-orange-400 font-semibold' : 'text-white hover:text-orange-400'}`}
+  >
+    <FaStar className="text-sm text-orange-400" /> Best Sellers
+  </button>
+
+  {/* NEW ARRIVALS */}
+  <button
+    onClick={() => { navigate('/new-arrivals'); closeSidebar() }}
+    className={`flex items-center gap-2 w-full text-left py-2.5 text-[16px] transition
+      ${location.pathname === '/new-arrivals'? 'text-blue-400 font-semibold' : 'text-white hover:text-blue-400'}`}
+  >
+    <FaClock className="text-sm text-blue-400" /> New Arrivals
+  </button>
+</div>
+
           {/* ACCESSORY WITH 3 NESTED DROPDOWNS */}
           <div className='border-t border-gray-700 pt-4'>
             <button
