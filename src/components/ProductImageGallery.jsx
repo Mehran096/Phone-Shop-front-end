@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { FaChevronLeft, FaChevronRight, FaTimes } from 'react-icons/fa';
 import ZoomableImage from './ZoomableImage';
 
-const ProductImageGallery = ({ images = [], selectedImage, onSelectImage }) => {
+const ProductImageGallery = ({ images = [], selectedImage, onSelectImage, isOutOfStock = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isZoomDragging, setIsZoomDragging] = useState(false);
@@ -15,6 +15,37 @@ const ProductImageGallery = ({ images = [], selectedImage, onSelectImage }) => {
 
   const validImages = images.filter(Boolean);
   const SWIPE_THRESHOLD = 50; // min px to trigger swipe
+
+  
+
+  const goToIndex = (newIndex) => {
+    setCurrentIndex(newIndex);
+    onSelectImage(validImages[newIndex]);
+    scrollThumbnail(newIndex);
+    scrollModalThumbnail(newIndex);
+  };
+
+  const goPrev = () => {
+    if (isZoomDragging) return;
+    const newIndex = currentIndex === 0? validImages.length - 1 : currentIndex - 1;
+    goToIndex(newIndex);
+  };
+
+  const goNext = () => {
+    if (isZoomDragging) return;
+    const newIndex = currentIndex === validImages.length - 1? 0 : currentIndex + 1;
+    goToIndex(newIndex);
+  };
+
+  const scrollThumbnail = (index) => {
+    const el = thumbnailRef.current?.children[index];
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
+
+  const scrollModalThumbnail = (index) => {
+    const el = modalThumbRef.current?.children[index];
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
 
   // LOCK BODY SCROLL WHEN MODAL OPEN
   useEffect(() => {
@@ -60,35 +91,6 @@ const ProductImageGallery = ({ images = [], selectedImage, onSelectImage }) => {
     }
   }, [currentIndex, isZoomDragging]);
 
-  const goToIndex = (newIndex) => {
-    setCurrentIndex(newIndex);
-    onSelectImage(validImages[newIndex]);
-    scrollThumbnail(newIndex);
-    scrollModalThumbnail(newIndex);
-  };
-
-  const goPrev = () => {
-    if (isZoomDragging) return;
-    const newIndex = currentIndex === 0? validImages.length - 1 : currentIndex - 1;
-    goToIndex(newIndex);
-  };
-
-  const goNext = () => {
-    if (isZoomDragging) return;
-    const newIndex = currentIndex === validImages.length - 1? 0 : currentIndex + 1;
-    goToIndex(newIndex);
-  };
-
-  const scrollThumbnail = (index) => {
-    const el = thumbnailRef.current?.children[index];
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  };
-
-  const scrollModalThumbnail = (index) => {
-    const el = modalThumbRef.current?.children[index];
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  };
-
   // <-- SWIPE HANDLERS FOR MOBILE
   const handleTouchStart = (e) => {
     if (isZoomDragging) return; // don't swipe if zoomed
@@ -122,7 +124,7 @@ const ProductImageGallery = ({ images = [], selectedImage, onSelectImage }) => {
   return (
     <div className="w-full">
       {/* MAIN IMAGE SLIDER */}
-      <div className="relative border-gray-200 rounded-lg p-2 md:p-4 bg-white group overflow-hidden">
+       <div className={`relative border-gray-200 rounded-lg p-2 md:p-4 bg-white group overflow-hidden transition duration-300 ${isOutOfStock? 'opacity-40 grayscale' : ''}`}>
         <div
           ref={sliderRef}
           className="flex w-full h-[350px] md:h-[450px] overflow-hidden scroll-smooth snap-x snap-mandatory" // <-- RESPONSIVE HEIGHT
@@ -177,7 +179,7 @@ const ProductImageGallery = ({ images = [], selectedImage, onSelectImage }) => {
       {/* THUMBNAILS - SMALLER ON MOBILE */}
       <div
         ref={thumbnailRef}
-        className="flex gap-2 md:gap-3 mt-3 md:mt-4 overflow-x-auto scroll-smooth py-2 md:py-4"
+        className={`flex gap-2 md:gap-3 mt-3 md:mt-4 overflow-x-auto scroll-smooth py-2 md:py-4 transition duration-300 ${isOutOfStock? 'opacity-40 grayscale' : ''}`}
         style={{ scrollbarWidth: 'none' }}
       >
         {validImages.map((img, index) => (

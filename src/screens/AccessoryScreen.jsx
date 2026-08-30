@@ -400,6 +400,13 @@ const AccessoryScreen = () => {
               )} */}
             </div>
 
+            {/* ===== FIX 1: SOLD OUT BADGE - TOP LEFT + HIGHER Z-INDEX ===== */}
+            {isOutOfStock && (
+              <div className='absolute top-3 left-3 z-40 flex flex-col gap-2'>
+                <span className='px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-md shadow-sm border'>SOLD OUT</span>
+              </div>
+            )}
+
             {/* WISHLIST HEART - TOP RIGHT */}
             <div className='absolute top-3 right-3 z-30'>
               <WishlistButton
@@ -412,16 +419,13 @@ const AccessoryScreen = () => {
               />
             </div>
 
-            {isOutOfStock && (
-              <div className='absolute top-3 right-3 z-20'>
-                <span className='px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-md shadow-sm border'>SOLD OUT</span>
-              </div>
-            )}
+             
 
             <ProductImageGallery
               images={displayImages} // <-- use the variable we already made above
               selectedImage={mainImage}
               onSelectImage={setMainImage}
+               isOutOfStock={isOutOfStock}
             />
           </div>
         </div>
@@ -606,7 +610,7 @@ const AccessoryScreen = () => {
               disabled={displayStock === 0}
               className='flex-1 bg-[#FFD814] hover:bg-[#F7CA00] text-gray-900 font-bold py-3 rounded-xl flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed text-base transition active:scale-95'
             >
-              <FaShoppingCart /> Add To Cart
+              <FaShoppingCart /> {isOutOfStock ? 'Out of Stock' : 'Add To Cart'}
             </button>
 
             <button
@@ -614,7 +618,7 @@ const AccessoryScreen = () => {
               disabled={displayStock === 0}
               className='flex-1 bg-[#111827] hover:bg-black text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed text-base transition active:scale-95'
             >
-              Buy Now
+              {isOutOfStock ? 'Out of Stock' : 'Buy Now'}
             </button>
           </div>
         </div>

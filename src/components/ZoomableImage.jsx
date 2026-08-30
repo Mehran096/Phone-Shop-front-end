@@ -13,6 +13,10 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
   const isMouseDownRef = useRef(false);
   const didDragRef = useRef(false);
 
+  // MOBILE PINCH KE LIYE
+  const touchStartDistanceRef = useRef(0);
+  const touchStartZoomRef = useRef(1);
+
   const getBoundaries = useCallback(() => {
     if (!containerRef.current ||!imgRef.current) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
     const container = containerRef.current.getBoundingClientRect();
@@ -29,6 +33,14 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
     return { x: Math.min(Math.max(x, minX), maxX), y: Math.min(Math.max(y, minY), maxY) };
   }, [getBoundaries]);
 
+  // TOUCH DISTANCE NIKALNE KE LIYE
+  const getTouchDistance = (touches) => {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // ===== DESKTOP MOUSE HANDLERS =====
   const handlePointerDown = (e) => {
     if (!containerRef.current || zoom <= 1.01 || e.button!== 0) return;
     e.preventDefault();
@@ -58,6 +70,50 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
     setTimeout(() => { didDragRef.current = false }, 0);
   };
 
+  // ===== MOBILE TOUCH HANDLERS =====
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      // Pinch start
+      touchStartDistanceRef.current = getTouchDistance(e.touches);
+      touchStartZoomRef.current = zoom;
+    }
+    if (e.touches.length === 1 && zoom > 1) {
+      // Single finger drag
+      setIsDragging(true);
+      onDragStart?.();
+      startPosRef.current = {
+        x: e.touches[0].clientX - pan.x,
+        y: e.touches[0].clientY - pan.y
+      };
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+
+    if (e.touches.length === 2) {
+      // PINCH ZOOM
+      const currentDistance = getTouchDistance(e.touches);
+      const scale = currentDistance / touchStartDistanceRef.current;
+      const newZoom = Math.min(Math.max(touchStartZoomRef.current * scale, 1), MAX_ZOOM);
+      setZoom(newZoom);
+    }
+
+    if (e.touches.length === 1 && zoom > 1) {
+      // PAN when zoomed
+      didDragRef.current = true;
+      const newX = e.touches[0].clientX - startPosRef.current.x;
+      const newY = e.touches[0].clientY - startPosRef.current.y;
+      setPan(clampPan(newX, newY));
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    setIsDragging(false);
+    onDragEnd?.();
+    touchStartDistanceRef.current = 0;
+  };
+
   useEffect(() => {
     if (zoom <= 1.01) {
       setPan({ x: 0, y: 0 });
@@ -70,7 +126,6 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
   const handleClick = (e) => {
     if (didDragRef.current) return;
     e.stopPropagation();
-
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const mouseX = e.clientX - rect.left - rect.width / 2;
@@ -89,7 +144,7 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
     }
   };
 
-  // <-- MANUAL WHEEL LISTENER WITH PASSIVE: FALSE
+  // WHEEL FOR DESKTOP
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -114,7 +169,7 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
       });
     };
 
-    el.addEventListener('wheel', handleWheel, { passive: false }); // <-- KEY
+    el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
   }, [zoom, clampPan]);
 
@@ -133,8 +188,10 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onClick={handleClick}
-      // onWheel REMOVED - we handle it manually now
       onContextMenu={handleContextMenu}
     >
       <img
@@ -153,7 +210,7 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
       />
 
       <div className="absolute bottom-6 bg-black/60 text-white text-xs px-3 py-1 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-        {zoom <= 1.01? 'Click to zoom + | Scroll' : 'Click to zoom - | Scroll | Drag to pan'}
+        {zoom <= 1.01? 'Tap/Click to zoom | Pinch/Scroll' : 'Tap/Click to zoom out | Pinch/Scroll | Drag to pan'}
       </div>
 
       {zoom > 1 && (
