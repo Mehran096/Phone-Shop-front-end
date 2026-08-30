@@ -6,6 +6,7 @@ const ProductImageGallery = ({ images = [], selectedImage, onSelectImage, isOutO
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isZoomDragging, setIsZoomDragging] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
   const [touchStartX, setTouchStartX] = useState(null); // <-- SWIPE
 
   const thumbnailRef = useRef(null);
@@ -93,12 +94,12 @@ const ProductImageGallery = ({ images = [], selectedImage, onSelectImage, isOutO
 
   // <-- SWIPE HANDLERS FOR MOBILE
   const handleTouchStart = (e) => {
-    if (isZoomDragging) return; // don't swipe if zoomed
+    if (isZoomed || isZoomDragging) return; // don't swipe if zoomed
     setTouchStartX(e.touches[0].clientX);
   };
 
   const handleTouchEnd = (e) => {
-    if (isZoomDragging || touchStartX === null) return;
+    if (isZoomed || isZoomDragging || touchStartX === null) return;
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX - touchEndX;
 
@@ -218,7 +219,7 @@ const ProductImageGallery = ({ images = [], selectedImage, onSelectImage, isOutO
             <div
               ref={modalSliderRef}
               className={`flex w-full h-full overflow-hidden scroll-smooth ${isZoomDragging? '' : 'snap-x snap-mandatory'}`}
-              style={{ touchAction: isZoomDragging? 'none' : 'pan-y' }}
+              style={{ touchAction: isZoomDragging || isZoomed ? 'none' : 'pan-y' }}
               onClick={(e) => e.stopPropagation()}
               onTouchStart={handleTouchStart} // <-- SWIPE IN MODAL TOO
               onTouchEnd={handleTouchEnd} // <-- SWIPE IN MODAL TOO
@@ -230,6 +231,7 @@ const ProductImageGallery = ({ images = [], selectedImage, onSelectImage, isOutO
                   alt="Product Zoom"
                   onDragStart={() => setIsZoomDragging(true)}
                   onDragEnd={() => setIsZoomDragging(false)}
+                  onZoomChange={setIsZoomed}
                 />
               ))}
             </div>

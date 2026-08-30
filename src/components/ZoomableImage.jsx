@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 const MAX_ZOOM = 2.8;
 const INITIAL_ZOOM = 2.8;
 
-const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
+const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomChange }) => { // <- onZoomChange add
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -13,9 +13,13 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
   const isMouseDownRef = useRef(false);
   const didDragRef = useRef(false);
 
-  // MOBILE PINCH KE LIYE
   const touchStartDistanceRef = useRef(0);
   const touchStartZoomRef = useRef(1);
+
+  // NAYA: Parent ko batana zoom on/off hai
+  useEffect(() => {
+    onZoomChange?.(zoom > 1.01);
+  }, [zoom, onZoomChange]);
 
   const getBoundaries = useCallback(() => {
     if (!containerRef.current ||!imgRef.current) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
@@ -33,7 +37,6 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
     return { x: Math.min(Math.max(x, minX), maxX), y: Math.min(Math.max(y, minY), maxY) };
   }, [getBoundaries]);
 
-  // TOUCH DISTANCE NIKALNE KE LIYE
   const getTouchDistance = (touches) => {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
@@ -73,12 +76,12 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
   // ===== MOBILE TOUCH HANDLERS =====
   const handleTouchStart = (e) => {
     if (e.touches.length === 2) {
-      // Pinch start
+      e.preventDefault(); // IMPORTANT: browser swipe rokne ke liye
       touchStartDistanceRef.current = getTouchDistance(e.touches);
       touchStartZoomRef.current = zoom;
     }
     if (e.touches.length === 1 && zoom > 1) {
-      // Single finger drag
+      e.preventDefault();
       setIsDragging(true);
       onDragStart?.();
       startPosRef.current = {
@@ -89,10 +92,9 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
   };
 
   const handleTouchMove = (e) => {
-    e.preventDefault();
+    e.preventDefault(); // IMPORTANT
 
     if (e.touches.length === 2) {
-      // PINCH ZOOM
       const currentDistance = getTouchDistance(e.touches);
       const scale = currentDistance / touchStartDistanceRef.current;
       const newZoom = Math.min(Math.max(touchStartZoomRef.current * scale, 1), MAX_ZOOM);
@@ -100,7 +102,6 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
     }
 
     if (e.touches.length === 1 && zoom > 1) {
-      // PAN when zoomed
       didDragRef.current = true;
       const newX = e.touches[0].clientX - startPosRef.current.x;
       const newY = e.touches[0].clientY - startPosRef.current.y;
@@ -144,7 +145,6 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd }) => {
     }
   };
 
-  // WHEEL FOR DESKTOP
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
