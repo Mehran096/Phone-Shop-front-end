@@ -41,8 +41,9 @@ const [recentProducts, setRecentProducts] = useState([])
 
   const { data, isLoading, error, refetch } = useGetProductsQuery({
     keyword,
-    brand, // Fix 2: Send brand to API
-    pageNumber,
+    brand,
+    limit: 8,  
+    pageNumber: 1  
   })
 
   const {
@@ -165,13 +166,26 @@ const accessories = accessoriesData?.accessories || [];
           </Link>
         )}
 
-        <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center'>
+        <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 mb-5 text-center'>
           {keyword
             ? `Search Results for "${keyword}"`
             : brand
               ? `${brand} Phones` // Fix 5: Show brand in title
               : 'Latest Phones'}
         </h1>
+
+          {/* ===== VIEW ALL BUTTON - BESTSELLER STYLE ===== */}
+            {!keyword && !brand && (
+              <div className='text-center mb-5'>
+                <Link 
+                  to='/products?filter=latest' 
+                  className='text-blue-600 hover:text-blue-700 font-semibold hover:underline'
+                >
+                  View All →
+                </Link>
+              </div>
+            )}
+            {/* ===== END ===== */}
 
         {isLoading ? (
           <Loader />
@@ -187,14 +201,7 @@ const accessories = accessoriesData?.accessories || [];
               ))}
             </div>
 
-            {/* Add pagination here */}
-<div className='mt-12 flex justify-center'>
-  <Paginate
-    pages={data.pages}
-    page={data.page}
-    onPageChange={handleProductPageChange}
-  />
-</div>
+            
           </>
         )}
       </div>

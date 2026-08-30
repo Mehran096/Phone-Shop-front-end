@@ -59,6 +59,7 @@ import api from './utils/axios';
 import AccessoryScreen from './screens/AccessoryScreen';
 import AccessoryReviewsScreen from './screens/AccessoryReviewsScreen';
 import AccessoryViewListScreen from './screens/AccessoryViewListScreen'
+import LatestBrandPhone from './screens/LatestBrandPhone'
  
 //import AccessoryCategoryListScreen from './screens/AccessoryViewListScreen'
   
@@ -188,7 +189,7 @@ const dispatch = useDispatch()
             <Route path='/accessory/:slug' element={<AccessoryScreen />} />
             <Route path="/accessories/:slug/reviews" element={<AccessoryReviewsScreen />} />
              
-            <Route path='/products' element={<HomeScreen isOnline={isOnline}/>} />
+            <Route path='/products' element={<LatestBrandPhone isOnline={isOnline}/>} />
             
             <Route path='/faq' element={<FAQScreen />} />
             <Route path='/shipping-policy' element={<ShippingPolicyScreen />} />
