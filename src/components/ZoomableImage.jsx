@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 const MAX_ZOOM = 2.8;
-const INITIAL_ZOOM = 2.8;
+const INITIAL_ZOOM = 2.8; // ab use nahi hoga lekin rehne do
 
-const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomChange }) => { // <- onZoomChange add
+const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomChange }) => {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -16,7 +16,7 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomCha
   const touchStartDistanceRef = useRef(0);
   const touchStartZoomRef = useRef(1);
 
-  // NAYA: Parent ko batana zoom on/off hai
+  // Parent ko batana zoom on/off hai
   useEffect(() => {
     onZoomChange?.(zoom > 1.01);
   }, [zoom, onZoomChange]);
@@ -75,11 +75,14 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomCha
 
   // ===== MOBILE TOUCH HANDLERS =====
   const handleTouchStart = (e) => {
+    // SIRF 2 FINGER PINCH KO ALLOW KARO
     if (e.touches.length === 2) {
-      e.preventDefault(); // IMPORTANT: browser swipe rokne ke liye
+      e.preventDefault();
       touchStartDistanceRef.current = getTouchDistance(e.touches);
       touchStartZoomRef.current = zoom;
     }
+
+    // 1 FINGER SIRF PAN KE LIYE JAB ZOOM HO
     if (e.touches.length === 1 && zoom > 1) {
       e.preventDefault();
       setIsDragging(true);
@@ -92,9 +95,10 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomCha
   };
 
   const handleTouchMove = (e) => {
-    e.preventDefault(); // IMPORTANT
+    e.preventDefault();
 
     if (e.touches.length === 2) {
+      // PINCH ZOOM - SIRF YAHI ZOOM KAREGA
       const currentDistance = getTouchDistance(e.touches);
       const scale = currentDistance / touchStartDistanceRef.current;
       const newZoom = Math.min(Math.max(touchStartZoomRef.current * scale, 1), MAX_ZOOM);
@@ -102,6 +106,7 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomCha
     }
 
     if (e.touches.length === 1 && zoom > 1) {
+      // PAN
       didDragRef.current = true;
       const newX = e.touches[0].clientX - startPosRef.current.x;
       const newY = e.touches[0].clientY - startPosRef.current.y;
@@ -124,27 +129,12 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomCha
     }
   }, [zoom]);
 
+  // TAP TO ZOOM BILKUL BAND
   const handleClick = (e) => {
-    if (didDragRef.current) return;
-    e.stopPropagation();
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left - rect.width / 2;
-    const mouseY = e.clientY - rect.top - rect.height / 2;
-
-    if (zoom <= 1.01) {
-      const newZoom = INITIAL_ZOOM;
-      const newPanX = -mouseX * (newZoom - 1);
-      const newPanY = -mouseY * (newZoom - 1);
-      setZoom(newZoom);
-      setPan(clampPan(newPanX, newPanY));
-    } else {
-      const zoomRatio = 1 / zoom;
-      setPan(prevPan => clampPan(prevPan.x * zoomRatio, prevPan.y * zoomRatio));
-      setZoom(1);
-    }
+    return; // KUCH NAHI KAREGA
   };
 
+  // WHEEL FOR DESKTOP
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -210,7 +200,7 @@ const ZoomableImage = ({ src, alt = "Product", onDragStart, onDragEnd, onZoomCha
       />
 
       <div className="absolute bottom-6 bg-black/60 text-white text-xs px-3 py-1 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-        {zoom <= 1.01? 'Tap/Click to zoom | Pinch/Scroll' : 'Tap/Click to zoom out | Pinch/Scroll | Drag to pan'}
+        {zoom <= 1.01? 'Pinch with 2 fingers to zoom | Scroll to zoom' : 'Pinch to zoom out | Drag to pan'}
       </div>
 
       {zoom > 1 && (
