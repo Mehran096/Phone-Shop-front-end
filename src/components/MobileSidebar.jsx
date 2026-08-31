@@ -80,11 +80,11 @@ const MobileSidebar = ({ show, setShow }) => {
       {/* BACKDROP - HIGHER Z INDEX */}
       <div
         onClick={closeSidebar}
-        className={`md:hidden fixed inset-0 bg-black/50 z-[10000] transition-opacity duration-300 ${show? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`lg:hidden fixed inset-0 bg-black/50 z-[10000] transition-opacity duration-300 ${show? "opacity-100" : "opacity-0 pointer-events-none"}`}
       />
 
       {/* SIDEBAR - HIGHEST Z INDEX */}
-      <div className={`md:hidden fixed top-0 left-0 h-full w-[85%] max-w-sm bg-[#0f172a] z-[10001] overflow-y-auto transition-transform duration-300 shadow-2xl ${show? "translate-x-0" : "-translate-x-full"}`}>
+      <div className={`lg:hidden fixed top-0 left-0 h-full w-[85%] max-w-sm bg-[#0f172a] z-[10001] overflow-y-auto transition-transform duration-300 shadow-2xl ${show? "translate-x-0" : "-translate-x-full"}`}>
         
         {/* HEADER - ADDED z-10 and bg to cover content behind */}
         <div className="sticky top-0 bg-[#0a1120] px-4 py-3 flex items-center justify-between border-b border-gray-700 z-10">

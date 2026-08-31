@@ -157,7 +157,7 @@ const dispatch = useDispatch()
               setIsMobileMenuOpen={setIsMobileMenuOpen} />
          {/* MOBILE SEARCH BAR - Only shows on mobile */}
          {showMobileSearch && (
-      <div className='md:hidden bg-gray-900 px-4 py-1 sticky top-0 z-40 border-b border-gray-800'>
+      <div className='xl:hidden bg-gray-900 px-4 py-1 sticky top-0 z-40 border-b border-gray-800'>
         <div className='relative'>
           {isOnline ? (
             <SearchBox />

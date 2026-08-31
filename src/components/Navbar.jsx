@@ -128,7 +128,7 @@ const Navbar = () => {
 
     return (
          <div
-        className='bg-gray-800 border-t border-gray-700 relative w-full overflow-x-auto hide-scrollbar'
+        className='hidden lg:block bg-gray-800 border-t border-gray-700 relative w-full overflow-x-auto hide-scrollbar'
         ref={dropdownRef}
     >
         <div className='container mx-auto px-4 min-w-max'> {/* min-w-max is key */}
