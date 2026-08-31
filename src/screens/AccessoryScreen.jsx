@@ -625,11 +625,8 @@ const AccessoryScreen = () => {
       </div>
 
       {/* SPECS + DESCRIPTION */}
-      <div className='mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
-        <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
-          <h3 className='font-bold text-base sm:text-lg mb-4'>Description</h3>
-          <p className='text-gray-700 leading-relaxed text-sm whitespace-pre-line'>{modelDescription}</p>
-        </div>
+      <div className='mt-6 sm:mt-5 grid grid-cols-1 lg:grid-cols-1 gap-4 sm:gap-6'>
+       
         <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
           <h3 className='font-bold text-base sm:text-lg mb-4'>Specifications</h3>
           {modelSpecs.length > 0 ? (
@@ -642,6 +639,10 @@ const AccessoryScreen = () => {
               ))}
             </div>
           ) : <p className="text-gray-400 text-sm">No specifications added</p>}
+        </div>
+         <div className='bg-white p-4 sm:p-6 rounded-xl shadow-sm'>
+          <h3 className='font-bold text-base sm:text-lg mb-4'>Description</h3>
+          <p className='text-gray-700 leading-relaxed text-sm whitespace-pre-line'>{modelDescription}</p>
         </div>
       </div>
 
