@@ -127,11 +127,11 @@ const Navbar = () => {
 
 
     return (
-        <div
+         <div
         className='bg-gray-800 border-t border-gray-700 relative w-full overflow-x-auto hide-scrollbar'
         ref={dropdownRef}
     >
-        <div className='container mx-auto px-4 min-w-max'>
+        <div className='container mx-auto px-4 min-w-max'> {/* min-w-max is key */}
             <div className='flex items-center h-10 text-sm whitespace-nowrap'>
 
                     {/* PRODUCTS SECTION WITH BRAND HOVER */}
@@ -160,13 +160,13 @@ const Navbar = () => {
 
                                 {/* BRAND MEGA MENU WITH REAL PRODUCTS */}
                                 
-                                    <div className={`absolute top-full left-0 w-screen bg-[#1a1a1a] text-white shadow-2xl z-[9999] border-t border-gray-700
+                                    <div className={`fixed top-[104px] left-0 w-full bg-[#1a1a1a] text-white shadow-2xl z-[9999] border-t border-gray-700
   transition-all duration-300 ease-out origin-top
   ${showBrandMenu === brand
    ? 'opacity-100 translate-y-0 scale-100'
     : 'opacity-0 -translate-y-3 scale-95 pointer-events-none'
   }`}>
-                                        <div className="w-full px-4 py-4 grid-cols-1 md:grid-cols-[180px_1fr_1fr] lg:grid-cols-[200px_1fr_1fr_240px] gap-3 max-w-[1300px] mx-auto">
+                                        <div className="w-full px-4 py-4 grid grid-cols-[200px_1fr_1fr_240px] gap-3 max-w-[1300px] mx-auto">
 
                                             {/* COL 1: LINKS */}
                                             <div className="pr-2">
@@ -231,7 +231,7 @@ const Navbar = () => {
 
 
                                             {/* COL 4: FEATURED BANNER */}
-                                            <div className="hidden lg:block bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-3 h-fit border border-gray-700">
+                                            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-3 h-fit border border-gray-700">
                                                 <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Featured {brand}</p>
 
                                                 {/* Dynamic Banner Image */}
