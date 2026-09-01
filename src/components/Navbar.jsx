@@ -305,7 +305,7 @@ const scroll = (direction) => {
   {/* DEALS */}
   <button 
     onClick={() => navigate('/deals')}
-    className={`text-sm px-3 py-1.5 rounded-md transition-all duration-200 font-semibold
+    className={`text-sm px-2 py-1.5 rounded-md transition-all duration-200 font-semibold
       ${location.pathname === '/deals' 
         ? 'bg-red-600 text-white' 
         : 'text-red-400 hover:text-white hover:bg-red-600/30'}`}
@@ -316,7 +316,7 @@ const scroll = (direction) => {
   {/* BEST SELLERS */}
   <button 
     onClick={() => navigate('/bestsellers')}
-    className={`text-sm px-3 py-1.5 rounded-md flex transition-all duration-200 font-semibold
+    className={`text-sm px-2 py-1.5 rounded-md flex transition-all duration-200 font-semibold
       ${location.pathname === '/bestsellers' 
         ? 'bg-orange-600 text-white' 
         : 'text-orange-400 hover:text-white hover:bg-orange-600/30'}`}
@@ -327,7 +327,7 @@ const scroll = (direction) => {
   {/* NEW ARRIVALS */}
   <button 
     onClick={() => navigate('/new-arrivals')}
-    className={`text-sm px-3 py-1.5 rounded-md transition-all duration-200 font-semibold
+    className={`text-sm px-2 py-1.5 rounded-md transition-all duration-200 font-semibold
       ${location.pathname === '/new-arrivals' 
         ? 'bg-blue-600 text-white' 
         : 'text-blue-400 hover:text-white hover:bg-blue-600/30'}`}
@@ -338,7 +338,7 @@ const scroll = (direction) => {
   {/* LATEST PHONES - NEW BUTTON */}
   <button 
     onClick={() => navigate('/products')}
-    className={`text-sm px-3 py-1.5 rounded-md transition-all duration-200 font-semibold
+    className={`text-sm px-2 py-1.5 rounded-md transition-all duration-200 font-semibold
       ${location.pathname === '/products' 
         ? 'bg-indigo-600 text-white' 
         : 'text-indigo-400 hover:text-white hover:bg-indigo-600/30'}`}
