@@ -42,9 +42,9 @@ const Product = ({ product, userInfo, hideCompare = false, fromRecent = false, s
   const selectedVariant = isFlat? null : product.variants?.[selectedStorageIndex] || product.variants?.[0];
   const firstVariantFirstColor =!isFlat? product.variants?.[0]?.colors?.[0] : null;
 
-  const allVariantColors = useMemo(() => {
+ const allVariantColors = useMemo(() => {
   if (isFlat) return [];
-  return selectedVariant?.colors || [];
+  return selectedVariant?.colors || []; // sirf current storage ke colors
 }, [selectedVariant, isFlat]);
 
   const variantColors = useMemo(() => {
@@ -82,14 +82,14 @@ useEffect(() => {
 }, [product._id, showDiscountBadge, fromRecent, product.storage, product.color, product.variants]) // REMOVED selectedStorageIndex
 
  // 2. STORAGE CHANGE: Auto select first IN-STOCK color of that storage
-useEffect(() => {
-  if (!showDiscountBadge &&!fromRecent && selectedVariant) {
-    const firstInStockIdx = selectedVariant.colors?.findIndex(c => c.countInStock > 0);
-    if (firstInStockIdx!== -1 && firstInStockIdx!== undefined) {
-      setSelectedColorIndex(firstInStockIdx);
-    }
-  }
-}, [selectedStorageIndex, selectedVariant, showDiscountBadge, fromRecent])
+// useEffect(() => {
+//   if (!showDiscountBadge &&!fromRecent && selectedVariant) {
+//     const firstInStockIdx = selectedVariant.colors?.findIndex(c => c.countInStock > 0);
+//     if (firstInStockIdx!== -1 && firstInStockIdx!== undefined) {
+//       setSelectedColorIndex(firstInStockIdx);
+//     }
+//   }
+// }, [selectedStorageIndex, selectedVariant, showDiscountBadge, fromRecent])
 
 useEffect(() => {
   return () => clearTimeout(loadingTimeoutRef.current);
@@ -271,50 +271,16 @@ useEffect(() => {
             key={color.name}
             type="button"
             onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsLoading(true);
-              const colorName = color.name;
-              const currentStorage = product.variants[selectedStorageIndex];
+  e.preventDefault();
+  e.stopPropagation();
+  setIsLoading(true);
 
-              // KEY FIX: Pehle check karo current storage me ye color available hai ya nahi
-              const colorExistsInCurrentStorage = currentStorage?.colors?.some(c =>
-                c.name === colorName && c.countInStock > 0
-              );
+  const newColorIndex = allVariantColors.findIndex(c => c.name === color.name);
+  setSelectedColorIndex(newColorIndex); // direct set
 
-              if(colorExistsInCurrentStorage) {
-                // Agar current storage me hai to sirf color change karo
-                setSelectedColorIndex(actualIdx);
-              } else {
-                // Agar current storage me nahi hai to hi storage change karo
-                if(showDiscountBadge) {
-                  const storageIdx = product.variants.findIndex(v =>
-                    v.colors?.some(c => c.name === colorName && calculateDiscount(c.price, c.discount).isActive && c.countInStock > 0)
-                  );
-                  if(storageIdx!== -1) {
-                    setSelectedStorageIndex(storageIdx);
-                    // storage change hua to color ka global index bhi update karo
-                    const newStorage = product.variants[storageIdx];
-                    const newColorIdx = newStorage.colors.findIndex(c => c.name === colorName);
-                    const globalIdx = allVariantColors.findIndex(c => c.name === colorName);
-                    setSelectedColorIndex(globalIdx!== -1? globalIdx : newColorIdx);
-                  }
-                } else {
-                  const storageIdx = product.variants.findIndex(v =>
-                    v.colors?.some(c => c.name === colorName && c.countInStock > 0)
-                  );
-                  if(storageIdx!== -1) {
-                    setSelectedStorageIndex(storageIdx);
-                    const globalIdx = allVariantColors.findIndex(c => c.name === colorName);
-                    setSelectedColorIndex(globalIdx!== -1? globalIdx : 0);
-                    
-                  }
-                  
-                }
-              }
-              clearTimeout(loadingTimeoutRef.current);
-              loadingTimeoutRef.current = setTimeout(() => setIsLoading(false), 200);
-            }}
+  clearTimeout(loadingTimeoutRef.current);
+  loadingTimeoutRef.current = setTimeout(() => setIsLoading(false), 200);
+}}
             className={`relative rounded-full border-2 transition-all duration-200 w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 ${
               isSelected? 'border-gray-900 scale-110 shadow-md ring-2 ring-gray-300 ring-offset-1'
               : 'border-gray-300 hover:border-gray-500 hover:scale-105'
@@ -346,52 +312,50 @@ useEffect(() => {
       ? product.variants.map((v, i) => ({...v, originalIndex: i})).filter(v => v.colors?.some(c => calculateDiscount(c.price, c.discount).isActive))
         : product.variants.map((v, i) => ({...v, originalIndex: i}))
       ).map((variant) => (
-        <button 
-          key={variant.storage}
-          type="button"
-          onClick={(e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  setIsLoading(true);
-  const newVariant = product.variants[variant.originalIndex];
-  setSelectedStorageIndex(variant.originalIndex);
+        <button
+  key={variant.storage}
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsLoading(true);
 
-  let targetColorIdx = 0;
+    const newStorageIndex = variant.originalIndex;
+    const newVariant = product.variants[newStorageIndex];
+    setSelectedStorageIndex(newStorageIndex);
 
-  if(showDiscountBadge && newVariant) {
-    targetColorIdx = newVariant.colors?.findIndex(c =>
-      calculateDiscount(c.price, c.discount).isActive && c.countInStock > 0
-    );
-  }
+    let newColorIndex = 0;
 
-  if(targetColorIdx === -1 || targetColorIdx === undefined) {
-    targetColorIdx = newVariant?.colors?.findIndex(c => c.countInStock > 0);
-  }
+    if(showDiscountBadge) {
+      // DEALS LOGIC: Discount + InStock wala color dhoondo
+      newColorIndex = newVariant?.colors?.findIndex(c =>
+        calculateDiscount(c.price, c.discount).isActive && c.countInStock > 0
+      );
+      if(newColorIndex === -1 || newColorIndex === undefined) {
+        newColorIndex = newVariant?.colors?.findIndex(c => c.countInStock > 0);
+      }
+    } else {
+      // LATEST/NEW/BESTSELLER LOGIC: Sirf pehla InStock
+      newColorIndex = newVariant?.colors?.findIndex(c => c.countInStock > 0);
+    }
 
-  if(targetColorIdx === -1 || targetColorIdx === undefined) targetColorIdx = 0;
+    if(newColorIndex === -1 || newColorIndex === undefined) newColorIndex = 0;
+    setSelectedColorIndex(newColorIndex); // FORAN SET
 
-  const targetColorName = newVariant?.colors[targetColorIdx]?.name;
-
-  clearTimeout(loadingTimeoutRef.current);
-  loadingTimeoutRef.current = setTimeout(() => {
-    if(!targetColorName) return;
-    const allColors = product.variants?.flatMap(v => v.colors || []) || [];
-    const uniqueColors = [...new Map(allColors.map(c => [c.name, c])).values()];
-    const globalIdx = uniqueColors.findIndex(c => c.name === targetColorName);
-    setSelectedColorIndex(globalIdx!== -1? globalIdx : 0);
-    setIsLoading(false);
-  }, 200);
-
-}}
-          disabled={!variant.colors?.some(c => c.countInStock > 0)}
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
-            selectedStorageIndex === variant.originalIndex
-           ? 'bg-gray-900 text-white border-gray-900'
-              : 'bg-gray-100 text-gray-700 border-gray-200 hover:border-gray-400'
-          } ${!variant.colors?.some(c => c.countInStock > 0)? 'opacity-40 cursor-not-allowed' : '' }`}
-        >
-          {variant.storage}
-        </button>
+    clearTimeout(loadingTimeoutRef.current);
+    loadingTimeoutRef.current = setTimeout(() => {
+      setIsLoading(false);
+    }, 200);
+  }}
+  disabled={!variant.colors?.some(c => c.countInStock > 0)}
+  className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
+    selectedStorageIndex === variant.originalIndex
+? 'bg-gray-900 text-white border-gray-900'
+      : 'bg-gray-100 text-gray-700 border-gray-200 hover:border-gray-400'
+  } ${!variant.colors?.some(c => c.countInStock > 0)? 'opacity-40 cursor-not-allowed' : '' }`}
+>
+  {variant.storage}
+</button>
       ))}
     </div>
   </div>
