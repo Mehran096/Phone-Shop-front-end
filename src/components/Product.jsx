@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEdit, FaStar, FaBalanceScale } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { addToCompare, removeFromCompare } from '../slices/compareSlice';
 import { addToCart } from '../slices/cartSlice';
 import { toast } from 'react-toastify';
@@ -28,8 +28,11 @@ const calculateDiscount = (price, discount = {}) => {
 const Product = ({ product, userInfo, hideCompare = false, fromRecent = false, showDiscountBadge = false}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  
    const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedStorageIndex, setSelectedStorageIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const loadingTimeoutRef = useRef(null);
   const { products: compareProducts } = useSelector((state) => state.compare);
   const activeCompareProducts = compareProducts.filter(Boolean);
   const isCompared = activeCompareProducts.some((item) => item?._id === product._id);
@@ -88,6 +91,11 @@ useEffect(() => {
   }
 }, [selectedStorageIndex, selectedVariant, showDiscountBadge, fromRecent])
 
+useEffect(() => {
+  return () => clearTimeout(loadingTimeoutRef.current);
+}, [])
+
+
  const currentColor = isFlat? null : selectedVariant?.colors?.[selectedColorIndex] || selectedVariant?.colors?.[0] || null;
 
   // KEY FIX: Handle old recent items that have no variants
@@ -130,14 +138,8 @@ useEffect(() => {
     }
 
     const price = Number(currentColor.price || 0);
-    const discount = currentColor.discount;
-    const isDiscountActive = discount?.isActive && discount?.value > 0;
-    const finalPrice = isDiscountActive
-     ? discount.type === 'percentage'
-       ? price - (price * discount.value / 100)
-        : price - discount.value
-      : price;
-    const discountAmount = price - finalPrice;
+   const { isActive: isDiscountActive, finalPrice: cartFinalPrice, discountAmount: cartDiscountAmount } =
+    calculateDiscount(price, currentColor.discount);
 
     const imageUrl = currentColor?.images?.[0]?.url || product.image || '/images/placeholder-phone.jpg';
 
@@ -146,9 +148,9 @@ useEffect(() => {
       name: product.name,
       slug: product.slug,
       image: imageUrl,
-      price: isDiscountActive? finalPrice : price,
+      price: isDiscountActive? cartFinalPrice : price,
       originalPrice: price,
-      discountAmount: discountAmount,
+      discountAmount: cartDiscountAmount,
       discount: currentColor.discount,
       variantType: 'phone',
       variantName: selectedVariant.storage,
@@ -214,13 +216,20 @@ useEffect(() => {
 
       <Link to={productUrl} className='block'>
         <div className='h-32 sm:h-48 overflow-hidden bg-gray-50 flex items-center justify-center relative'>
-          <img src={mainImage} alt={`${product.name} ${currentColor?.name || firstVariantFirstColor?.name || ''}`} className='h-full w-full object-contain p-2 sm:p-3 group-hover:scale-105 transition-transform duration-300' loading="lazy" />
-          {discountPercent > 0 && priceSourceColor?.discount?.endDate && (
-  <div className="absolute top-24 left-2 lg:top-40 lg:left-2 z-20">
-    <CountdownTimer endDate={priceSourceColor.discount.endDate} />
-  </div>
-)}
-        </div>
+  {isLoading? (
+    <div className='w-full h-full bg-gray-200 animate-pulse' /> // Skeleton
+  ) : (
+    <img src={mainImage} alt={`${product.name} ${currentColor?.name || firstVariantFirstColor?.name || ''}`}
+      className='h-full w-full object-contain p-2 sm:p-3 group-hover:scale-105 transition-transform duration-300'
+      loading="lazy" />
+  )}
+
+  {discountPercent > 0 && priceSourceColor?.discount?.endDate && (
+    <div className="absolute top-24 left-2 lg:top-40 lg:left-2 z-20">
+      <CountdownTimer endDate={priceSourceColor.discount.endDate} />
+    </div>
+  )}
+</div>
       </Link>
 
       <div className='p-3 sm:p-4 lg:p-5 flex flex-col flex-1'>
@@ -264,7 +273,47 @@ useEffect(() => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setSelectedColorIndex(actualIdx);
+              setIsLoading(true);
+              const colorName = color.name;
+              const currentStorage = product.variants[selectedStorageIndex];
+
+              // KEY FIX: Pehle check karo current storage me ye color available hai ya nahi
+              const colorExistsInCurrentStorage = currentStorage?.colors?.some(c =>
+                c.name === colorName && c.countInStock > 0
+              );
+
+              if(colorExistsInCurrentStorage) {
+                // Agar current storage me hai to sirf color change karo
+                setSelectedColorIndex(actualIdx);
+              } else {
+                // Agar current storage me nahi hai to hi storage change karo
+                if(showDiscountBadge) {
+                  const storageIdx = product.variants.findIndex(v =>
+                    v.colors?.some(c => c.name === colorName && calculateDiscount(c.price, c.discount).isActive && c.countInStock > 0)
+                  );
+                  if(storageIdx!== -1) {
+                    setSelectedStorageIndex(storageIdx);
+                    // storage change hua to color ka global index bhi update karo
+                    const newStorage = product.variants[storageIdx];
+                    const newColorIdx = newStorage.colors.findIndex(c => c.name === colorName);
+                    const globalIdx = allVariantColors.findIndex(c => c.name === colorName);
+                    setSelectedColorIndex(globalIdx!== -1? globalIdx : newColorIdx);
+                  }
+                } else {
+                  const storageIdx = product.variants.findIndex(v =>
+                    v.colors?.some(c => c.name === colorName && c.countInStock > 0)
+                  );
+                  if(storageIdx!== -1) {
+                    setSelectedStorageIndex(storageIdx);
+                    const globalIdx = allVariantColors.findIndex(c => c.name === colorName);
+                    setSelectedColorIndex(globalIdx!== -1? globalIdx : 0);
+                    
+                  }
+                  
+                }
+              }
+              clearTimeout(loadingTimeoutRef.current);
+              loadingTimeoutRef.current = setTimeout(() => setIsLoading(false), 200);
             }}
             className={`relative rounded-full border-2 transition-all duration-200 w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 ${
               isSelected? 'border-gray-900 scale-110 shadow-md ring-2 ring-gray-300 ring-offset-1'
@@ -300,7 +349,40 @@ useEffect(() => {
         <button 
           key={variant.storage}
           type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedStorageIndex(variant.originalIndex); }}
+          onClick={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  setIsLoading(true);
+  const newVariant = product.variants[variant.originalIndex];
+  setSelectedStorageIndex(variant.originalIndex);
+
+  let targetColorIdx = 0;
+
+  if(showDiscountBadge && newVariant) {
+    targetColorIdx = newVariant.colors?.findIndex(c =>
+      calculateDiscount(c.price, c.discount).isActive && c.countInStock > 0
+    );
+  }
+
+  if(targetColorIdx === -1 || targetColorIdx === undefined) {
+    targetColorIdx = newVariant?.colors?.findIndex(c => c.countInStock > 0);
+  }
+
+  if(targetColorIdx === -1 || targetColorIdx === undefined) targetColorIdx = 0;
+
+  const targetColorName = newVariant?.colors[targetColorIdx]?.name;
+
+  clearTimeout(loadingTimeoutRef.current);
+  loadingTimeoutRef.current = setTimeout(() => {
+    if(!targetColorName) return;
+    const allColors = product.variants?.flatMap(v => v.colors || []) || [];
+    const uniqueColors = [...new Map(allColors.map(c => [c.name, c])).values()];
+    const globalIdx = uniqueColors.findIndex(c => c.name === targetColorName);
+    setSelectedColorIndex(globalIdx!== -1? globalIdx : 0);
+    setIsLoading(false);
+  }, 200);
+
+}}
           disabled={!variant.colors?.some(c => c.countInStock > 0)}
           className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
             selectedStorageIndex === variant.originalIndex
@@ -316,18 +398,22 @@ useEffect(() => {
 )}
 
         <div className='mt-auto pt-1'>
-          {mainPrice? (
-            <div className='flex items-baseline gap-1 sm:gap-2 flex-wrap sm:min-h-[48px]'>
-              {discountPercent > 0 && Number(mainOriginalPrice) > Number(mainPrice)? (
-                <><p className='text-lg sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p><p className='text-sm line-through text-gray-500'>${mainOriginalPriceFormatted}</p><span className='text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-semibold'>{discountPercent}% OFF</span><p className='text-xs text-green-600 mt-0.5 w-full pb-2'>You save ${discountAmount.toFixed(2)}</p></>
-              ) : (
-                <>{!showDiscountBadge &&!fromRecent && (product.variants?.length > 1 || allVariantColors.length > 1) && (<span className='text-[10px] uppercase tracking-wider text-gray-500 font-medium pb-2'>Starting at</span>)}<p className='text-lg sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p></>
-              )}
-            </div>
-          ) : (<p className='text-sm text-gray-400 font-medium'>Contact</p>)}
-
-           
-        </div>
+  {isLoading? (
+    <div className='flex flex-col gap-2'>
+      <div className='h-6 w-24 bg-gray-200 rounded animate-pulse' />  
+      <div className='h-4 w-16 bg-gray-200 rounded animate-pulse' />  
+    </div>
+  ) : mainPrice? (
+    
+    <div className='flex items-baseline gap-1 sm:gap-2 flex-wrap sm:min-h-[48px]'>
+      {discountPercent > 0 && Number(mainOriginalPrice) > Number(mainPrice)? (
+        <><p className='text-lg sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p><p className='text-sm line-through text-gray-500'>${mainOriginalPriceFormatted}</p><span className='text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-semibold'>{discountPercent}% OFF</span><p className='text-xs text-green-600 mt-0.5 w-full pb-2'>You save ${discountAmount.toFixed(2)}</p></>
+      ) : (
+        <>{!showDiscountBadge &&!fromRecent && (product.variants?.length > 1 || allVariantColors.length > 1) && (<span className='text-[10px] uppercase tracking-wider text-gray-500 font-medium pb-2'>Starting at</span>)}<p className='text-lg sm:text-2xl font-bold text-gray-900 leading-none'>${mainPriceFormatted}</p></>
+      )}
+    </div>
+  ) : (<p className='text-sm text-gray-400 font-medium'>Contact</p>)}
+</div>
  
 {/* FOOTER BUTTON SECTION */}
 {!isFlat &&!fromRecent && (
