@@ -12,8 +12,11 @@ const Navbar = () => {
     const [showAccessoryMenu, setShowAccessoryMenu] = useState(false)
     const [showBrandMenu, setShowBrandMenu] = useState(null)
     const [hoveredBrand, setHoveredBrand] = useState(null) // V38.30 KEY 
+    const [showArrows, setShowArrows] = useState(false)
+    const [isOverflowing, setIsOverflowing] = useState(false)
     const dropdownRef = useRef(null)
     const timeoutRef = useRef(null)
+    const hoverTimeoutRef = useRef(null)
     const scrollRef = useRef(null)
 
 const scroll = (direction) => {
@@ -88,6 +91,19 @@ const scroll = (direction) => {
         return () => el?.removeEventListener('mouseleave', handleMouseLeave)
     }, [])
 
+    useEffect(() => {
+  const checkOverflow = () => {
+    if (scrollRef.current) {
+      const { scrollWidth, clientWidth } = scrollRef.current
+      setIsOverflowing(scrollWidth > clientWidth + 5) // 5px buffer
+    }
+  }
+
+  checkOverflow()
+  window.addEventListener('resize', checkOverflow)
+  return () => window.removeEventListener('resize', checkOverflow)
+}, [brands]) // brands change hon to check ho
+
     const handleBrandHover = (brand) => {
         clearTimeout(timeoutRef.current)
         setHoveredBrand(brand)
@@ -140,27 +156,39 @@ const scroll = (direction) => {
         className='hidden lg:block bg-gray-800 border-t border-gray-700 relative w-full hide-scrollbar'
         ref={dropdownRef}
     >
-        <div className='group container mx-auto px-10 overflow-hidden relative'> {/* min-w-max is key */}
-              {/* LEFT ARROW - only md and lg */}
-  {/* LEFT ARROW - only lg, show on hover */}
-<button
-  onClick={() => scroll('left')}
-  className='hidden lg:flex  absolute left-2 top-1/2 -translate-y-1/2 z-50 bg-gray-900/90 hover:bg-gray-900 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300'
->
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-  </svg>
-</button>
+        <div className='group container mx-auto px-10 overflow-hidden relative'
+        onMouseEnter={() => {
+    hoverTimeoutRef.current = setTimeout(() => setShowArrows(true), 200) // 200ms baad show
+  }}
+  onMouseLeave={() => {
+    clearTimeout(hoverTimeoutRef.current)
+    setShowArrows(false)
+  }}
+        >  
+            
+   {/* LEFT ARROW */}
+  <button
+    onClick={() => scroll('left')}
+    className={`hidden lg:flex  absolute left-2 top-1/2 -translate-y-1/2 z-50 bg-gray-900/90 hover:bg-gray-900 text-white p-2 rounded-full shadow-lg transition-all duration-300 ${
+      isOverflowing && showArrows? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
+    }`}
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
 
-{/* RIGHT ARROW - only lg, show on hover */}
-<button
-  onClick={() => scroll('right')}
-  className='hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-50 bg-gray-900/90 hover:bg-gray-900 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300'
->
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-  </svg>
-</button>
+  {/* RIGHT ARROW */}
+  <button
+    onClick={() => scroll('right')}
+    className={`hidden lg:flex  absolute right-2 top-1/2 -translate-y-1/2 z-50 bg-gray-900/90 hover:bg-gray-900 text-white p-2 rounded-full shadow-lg transition-all duration-300 ${
+      isOverflowing && showArrows? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
+    }`}
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
             <div 
   ref={scrollRef} 
   className='flex items-center h-10 text-sm whitespace-nowrap overflow-x-auto scroll-smooth hide-scrollbar'
