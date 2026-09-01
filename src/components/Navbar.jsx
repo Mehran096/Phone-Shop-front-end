@@ -14,12 +14,21 @@ const Navbar = () => {
     const [hoveredBrand, setHoveredBrand] = useState(null) // V38.30 KEY 
     const dropdownRef = useRef(null)
     const timeoutRef = useRef(null)
+    const scrollRef = useRef(null)
 
-
+const scroll = (direction) => {
+  if (scrollRef.current) {
+    const scrollAmount = 500 // kitna scroll karna hai
+    scrollRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    })
+  }
+}
 
     const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Realme', 'Oppo', 'Vivo']
 
-    // REMOVED: const brandPhones = {...} We fetch this now
+     
 
     // RTK Query - only fetches when hoveredBrand is set
     const {
@@ -128,14 +137,37 @@ const Navbar = () => {
 
     return (
          <div
-        className='hidden lg:block bg-gray-800 border-t border-gray-700 relative w-full overflow-x-auto hide-scrollbar'
+        className='hidden lg:block bg-gray-800 border-t border-gray-700 relative w-full hide-scrollbar'
         ref={dropdownRef}
     >
-        <div className='container mx-auto px-4 min-w-max'> {/* min-w-max is key */}
-            <div className='flex items-center h-10 text-sm whitespace-nowrap'>
+        <div className='group container mx-auto px-10 overflow-hidden relative'> {/* min-w-max is key */}
+              {/* LEFT ARROW - only md and lg */}
+  {/* LEFT ARROW - only lg, show on hover */}
+<button
+  onClick={() => scroll('left')}
+  className='hidden lg:flex  absolute left-2 top-1/2 -translate-y-1/2 z-50 bg-gray-900/90 hover:bg-gray-900 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300'
+>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+  </svg>
+</button>
+
+{/* RIGHT ARROW - only lg, show on hover */}
+<button
+  onClick={() => scroll('right')}
+  className='hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-50 bg-gray-900/90 hover:bg-gray-900 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300'
+>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+  </svg>
+</button>
+            <div 
+  ref={scrollRef} 
+  className='flex items-center h-10 text-sm whitespace-nowrap overflow-x-auto scroll-smooth hide-scrollbar'
+>
 
                     {/* PRODUCTS SECTION WITH BRAND HOVER */}
-                    <span className='text-gray-400 mr-4 font-medium whitespace-nowrap'>Products:</span>
+                    <span className='text-gray-400 mr-2 font-medium whitespace-nowrap'>Products:</span>
                     <div className='flex items-center space-x-1'>
                         {brands.map((brand) => (
                             <div
@@ -148,24 +180,24 @@ const Navbar = () => {
                                 className="relative"
                             >
                                 <button
-  onClick={() => handleBrandClick(brand)}
-   className={`text-sm px-2 py-1 border border-transparent rounded-sm transition-all 
-                  duration-100  ${activeBrand === brand || showBrandMenu === brand
-   ?'text-white border-white font-bold'  // bold when active
-    : 'text-gray-200 hover:text-white hover:border-white font-normal'
-    }`}
->
+                                    onClick={() => handleBrandClick(brand)}
+                                    className={`text-sm px-1.5 py-1 border border-transparent rounded-sm transition-all 
+                                                    duration-100  ${activeBrand === brand || showBrandMenu === brand
+                                    ?'text-white border-white font-bold'  // bold when active
+                                        : 'text-gray-200 hover:text-white hover:border-white font-normal'
+                                        }`}
+                                    >
                                     {brand}
                                 </button>
 
                                 {/* BRAND MEGA MENU WITH REAL PRODUCTS */}
                                 
                                     <div className={`fixed top-[104px] left-0 w-full bg-[#1a1a1a] text-white shadow-2xl z-[9999] border-t border-gray-700
-  transition-all duration-300 ease-out origin-top
-  ${showBrandMenu === brand
-   ? 'opacity-100 translate-y-0 scale-100'
-    : 'opacity-0 -translate-y-3 scale-95 pointer-events-none'
-  }`}>
+                                        transition-all duration-300 ease-out origin-top
+                                        ${showBrandMenu === brand
+                                        ? 'opacity-100 translate-y-0 scale-100'
+                                            : 'opacity-0 -translate-y-3 scale-95 pointer-events-none'
+                                        }`}>
                                         <div className="w-full px-4 py-4 grid grid-cols-[200px_1fr_1fr_240px] gap-3 max-w-[1300px] mx-auto">
 
                                             {/* COL 1: LINKS */}
@@ -301,6 +333,17 @@ const Navbar = () => {
         : 'text-blue-400 hover:text-white hover:bg-blue-600/30'}`}
   >
     ✨ New Arrivals
+  </button>
+
+  {/* LATEST PHONES - NEW BUTTON */}
+  <button 
+    onClick={() => navigate('/products')}
+    className={`text-sm px-3 py-1.5 rounded-md transition-all duration-200 font-semibold
+      ${location.pathname === '/products' 
+        ? 'bg-indigo-600 text-white' 
+        : 'text-indigo-400 hover:text-white hover:bg-indigo-600/30'}`}
+  >
+    📱 Latest Phones
   </button>
 </div>
                     </div>
