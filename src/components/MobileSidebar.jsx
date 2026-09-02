@@ -140,6 +140,18 @@ const MobileSidebar = ({ show, setShow }) => {
   >
     <FaClock className="text-sm text-blue-400" /> New Arrivals
   </button>
+
+  {/* LATEST PHONES - NEW BUTTON */}
+  <button 
+  onClick={() => { navigate('/products'); closeSidebar() }}
+     
+    className={`flex items-center gap-2 w-full text-left py-2.5 text-[16px] transition
+      ${location.pathname === '/products' 
+        ? 'text-blue-400 font-semibold'
+        : 'text-white hover:text-blue-400'}`}
+  >
+    📱 Latest Phones
+  </button>
 </div>
 
           {/* ACCESSORY WITH 3 NESTED DROPDOWNS */}
