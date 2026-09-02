@@ -24,6 +24,7 @@ const ACCESSORY_CATEGORIES = [
   { value: "iPhone Cases", label: "iPhone Cases" },
   { value: "Samsung Cases", label: "Samsung Cases" },
   { value: "Google Pixel Cases", label: "Google Pixel Cases" },
+  { value: "Realme Cases", label: "Realme Cases" },
   { value: "Chargers", label: "Chargers" },
   { value: "Fast Chargers", label: "Fast Chargers 20W+" },
   { value: "Cables", label: "Cables" },
