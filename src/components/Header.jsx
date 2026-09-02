@@ -29,6 +29,10 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
     location.pathname.startsWith("/order/") ||
     (location.pathname.startsWith("/products/") && location.pathname.endsWith("/reviews"));
 
+     const hideNavbarRoutes = ['/login', '/register', '/forgot-password'];
+  const shouldHideNavbar = hideNavbarRoutes.includes(location.pathname) || 
+                           location.pathname.startsWith('/reset-password');
+
   const [userDropdown, setUserDropdown] = useState(false)
   const [adminDropdown, setAdminDropdown] = useState(false)
 
@@ -233,10 +237,11 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
   </button>
 </div>
         </div>
-      </nav>
+      </nav> 
+      
+   {/* Brand Navbar - Desktop */}
+{!shouldHideNavbar && <Navbar />}
 
-      {/* Brand Navbar - Desktop */}
-    <Navbar />
       {/* Mobile Menu */}
       <MobileSidebar show={isMobileMenuOpen} setShow={setIsMobileMenuOpen} />
     </header>
