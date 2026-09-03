@@ -21,14 +21,12 @@ const OrderListScreen = () => {
   const filteredOrders = orders?.filter(order => {
     if (cancelCodeFilter === 'ALL') return true
     if (cancelCodeFilter === 'ACTIVE') return !order.isCancelled
+    if (cancelCodeFilter === 'CANCELLED') return order.isCancelled
     return order.cancelCode === cancelCodeFilter
   }) || []
 
   // CHANGED: stats now use ALL ORDERS but respect the dropdown filter
-  const baseOrdersForStats =
-    cancelCodeFilter === 'ALL' ? allOrders :
-      cancelCodeFilter === 'ACTIVE' ? allOrders?.filter(o => !o.isCancelled) :
-        allOrders?.filter(o => o.cancelCode === cancelCodeFilter)
+  const baseOrdersForStats = allOrders
 
 
   const cancelStats = {
@@ -43,27 +41,34 @@ const OrderListScreen = () => {
   }
 
   // Get top 3 cancel reasons FROM THE FILTERED SET
-  const topCancelReasons = Object.entries(cancelStats.byCode)
+  const allCancelReasons = Object.entries(cancelStats.byCode)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 3)
+     
 
-  useEffect(() => {
-    if (userInfo && userInfo.isAdmin) {
-      dispatch(listAllOrders()) // <-- NEW: fetch all for dashboard
-      const pageNumber = searchParams.get('page') || 1
-      const searchKeyword = searchParams.get('keyword') || ''
-      dispatch(listOrders({ pageNumber, keyword: searchKeyword })) // for table
-    } else {
-      navigate('/login')
-    }
+ useEffect(() => {
+  if (userInfo && userInfo.isAdmin) {
+    dispatch(listAllOrders()) 
+    const pageNumber = searchParams.get('page') || 1
+    const searchKeyword = searchParams.get('keyword') || ''
+    const cancelCode = searchParams.get('cancelCode') || 'ALL'  
 
-    if (successDelete) {
-      dispatch(resetDelete())
-    }
+    dispatch(listOrders({ 
+      pageNumber, 
+      keyword: searchKeyword,
+      cancelCode  
+    }))
+  } else {
+    navigate('/login')
+  }
 
-    setKeyword(searchParams.get('keyword') || '')
+  if (successDelete) {
+    dispatch(resetDelete())
+  }
 
-  }, [dispatch, userInfo, navigate, successDelete, searchParams])
+  setKeyword(searchParams.get('keyword') || '')
+  setCancelCodeFilter(searchParams.get('cancelCode') || 'ALL')  
+
+}, [dispatch, userInfo, navigate, successDelete, searchParams])
 
   const deleteHandler = (id) => {
     if (window.confirm('Delete this order? This cannot be undone.')) {
@@ -143,12 +148,13 @@ const OrderListScreen = () => {
                   onChange={(e) => {
                     const val = e.target.value
                     setCancelCodeFilter(val)
-                    setSearchParams({ keyword, page: 1, cancelCode: val })
+                    setSearchParams({ keyword: searchParams.get('keyword') || '', page: 1, cancelCode: val })
                   }}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-56"
                 >
                   <option value="ALL">All Orders</option>
                   <option value="ACTIVE">Active Only</option>
+                  <option value="CANCELLED">Cancelled Only</option>
                   <option value="ADMIN_CANCEL_COD">ADMIN_CANCEL_COD</option>
                   <option value="USER_REQUEST">USER_REQUEST</option>
                   <option value="OUT_OF_STOCK">OUT_OF_STOCK</option>
@@ -205,25 +211,43 @@ const OrderListScreen = () => {
           {/* Dashboard Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Total Orders */}
-            <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-              <p className="text-sm text-gray-500">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-800">{baseOrdersForStats?.length || 0}</p>
-            </div>
+<div 
+  className="bg-white p-5 rounded-lg shadow-md border border-gray-200 cursor-pointer hover:shadow-lg transition"
+  onClick={() => { 
+    setCancelCodeFilter('ALL'); 
+    setSearchParams({ keyword, page: 1, cancelCode: 'ALL' }) 
+  }}
+>
+  <p className="text-sm text-gray-500">Total Orders</p>
+  <p className="text-2xl font-bold text-gray-800">{baseOrdersForStats?.length || 0}</p>
+</div>
 
-            {/* Active Orders */}
-            <div className="bg-white p-5 rounded-lg shadow-md border border-green-200">
-              <p className="text-sm text-gray-500">Active Orders</p>
-              <p className="text-2xl font-bold text-green-600">{cancelStats.activeOrders}</p>
-            </div>
+          {/* Active Orders */}
+<div 
+  className="bg-white p-5 rounded-lg shadow-md border-green-200 cursor-pointer hover:shadow-lg transition"
+  onClick={() => { 
+    setCancelCodeFilter('ACTIVE'); 
+    setSearchParams({ keyword, page: 1, cancelCode: 'ACTIVE' }) 
+  }}
+>
+  <p className="text-sm text-gray-500">Active Orders</p>
+  <p className="text-2xl font-bold text-green-600">{cancelStats.activeOrders}</p>
+</div>
 
             {/* Cancelled Orders */}
-            <div className="bg-white p-5 rounded-lg shadow-md border border-red-200 cursor-pointer hover:shadow-lg" onClick={() => { setCancelCodeFilter('ALL'); setSearchParams({ keyword, page: 1, cancelCode: 'ALL' }) }}>
-              <p className="text-sm text-gray-500">Cancelled Orders</p>
-              <p className="text-2xl font-bold text-red-600">{cancelStats.totalCancelled}</p>
-              <p className="text-xs text-gray-400">
-                {baseOrdersForStats?.length ? ((cancelStats.totalCancelled / baseOrdersForStats.length) * 100).toFixed(1) : 0}% cancel rate
-              </p>
-            </div>
+<div 
+  className="bg-white p-5 rounded-lg shadow-md border-red-200 cursor-pointer hover:shadow-lg" 
+  onClick={() => { 
+    setCancelCodeFilter('CANCELLED'); 
+    setSearchParams({ keyword, page: 1, cancelCode: 'CANCELLED' }) 
+  }}
+>
+  <p className="text-sm text-gray-500">Cancelled Orders</p>
+  <p className="text-2xl font-bold text-red-600">{cancelStats.totalCancelled}</p>
+  <p className="text-xs text-gray-400">
+    {baseOrdersForStats?.length ? ((cancelStats.totalCancelled / baseOrdersForStats.length) * 100).toFixed(1) : 0}% cancel rate
+  </p>
+</div>
 
             {/* Revenue Lost */}
             <div className="bg-white p-5 rounded-lg shadow-md border border-orange-200">
@@ -235,9 +259,9 @@ const OrderListScreen = () => {
           {/* Top Cancel Reasons */}
           {cancelStats.totalCancelled > 0 && (
             <div className="bg-white p-4 rounded-lg shadow-md mb-4 border border-gray-200">
-              <h3 className="text-md font-semibold text-gray-800 mb-3">Top Cancel Reasons</h3>
+              <h3 className="text-md font-semibold text-gray-800 mb-3">All Cancel Reasons</h3>
               <div className="space-y-2">
-                {topCancelReasons.map(([code, count]) => (
+                {allCancelReasons.map(([code, count]) => (
                   <div
                     key={code}
                     className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded"

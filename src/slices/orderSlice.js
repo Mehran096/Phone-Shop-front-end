@@ -150,13 +150,14 @@ export const getOrderDetails = createAsyncThunk(
   }
 )
 
+ 
 // 6. GET ALL ORDERS - ADMIN ONLY
 export const listOrders = createAsyncThunk(
   'order/listOrders',
-  async ({ pageNumber = 1, keyword = '' }, { rejectWithValue }) => {
+  async ({ pageNumber = 1, keyword = '', cancelCode = 'ALL' }, { rejectWithValue }) => {  
     try {
       const { data } = await api.get(
-        `/orders?pageNumber=${pageNumber}&keyword=${keyword}`
+        `/orders?pageNumber=${pageNumber}&keyword=${keyword}&cancelCode=${cancelCode}`  
       )
       return data
     } catch (error) {
