@@ -16,10 +16,11 @@ const AccessoryViewListScreen = () => {
   const filter = searchParams.get('filter') || ''
   const keyword = searchParams.get('keyword') || ''
 
-  const { data, isLoading, error } = useGetAccessoriesQuery({
+  // CHANGED: isFetching add kiya
+  const { data, isLoading, isFetching, error } = useGetAccessoriesQuery({
     keyword,
-    pageNumber, // <-- FIX 2: send pageNumber
-    pageSize: 8, // 8 per page for "View All"
+    pageNumber, 
+    pageSize: 8, 
     type: typeFilter || '',
     brand: brandFilter || '',
     filter,
@@ -66,18 +67,27 @@ const AccessoryViewListScreen = () => {
         <Link to='/' className='text-blue-600 hover:underline text-sm'>← Back to Home</Link>
       </div>
 
-      {isLoading? (
+      {isLoading ? ( // First load
         <Loader />
-      ) : error? (
+      ) : error ? (
         <Message variant='danger'>{error?.data?.message || error.error}</Message>
       ) : products.length === 0 ? (
         <Message>No Accessories Found</Message>
       ) : (
         <>
-          <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
-            {products.map((accessory) => (
-              <AccessoryCard key={accessory._id} accessory={accessory} />
-            ))}
+          {/* NEW: Grid with overlay */}
+          <div className='relative'>
+            {isFetching && ( // Page change loading
+              <div className='absolute inset-0 bg-white bg-opacity-70 z-10 flex items-center justify-center rounded-lg'>
+                <Loader />
+              </div>
+            )}
+
+            <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
+              {products.map((accessory) => (
+                <AccessoryCard key={accessory._id} accessory={accessory} />
+              ))}
+            </div>
           </div>
 
           <div className='mt-10 flex justify-center'>
@@ -85,6 +95,7 @@ const AccessoryViewListScreen = () => {
               pages={pages} 
               page={page} 
               onPageChange={handlePageChange} 
+              isLoading={isFetching} // <-- Paginate ko bhi pass kiya
             />
           </div>
         </>

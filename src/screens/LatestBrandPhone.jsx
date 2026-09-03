@@ -16,7 +16,8 @@ const LatestBrandPhone = () => {
   const filter = searchParams.get('filter') || ''; // latest
   const pageNumber = Number(searchParams.get('pageNumber')) || 1;
 
-  const { data, isLoading, error } = useGetProductsQuery({ 
+  // CHANGED: added isFetching
+  const { data, isLoading, isFetching, error } = useGetProductsQuery({ 
     keyword,
     brand,
     isLatest: filter === 'latest' ? 'true' : '',
@@ -50,15 +51,24 @@ const LatestBrandPhone = () => {
         <Message variant='danger'>{error?.data?.message || error.error}</Message>
       ) : (
         <>
-          {data?.products?.length === 0 ? (
-            <Message>No products found</Message>
-          ) : (
-            <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
-              {data?.products?.map((product) => (
-                <Product key={product._id} product={product} userInfo={userInfo} />
-              ))}
-            </div>
-          )}
+          {/* NEW: Loading overlay jab page change ho raha ho */}
+          <div className='relative'>
+            {isFetching && (
+              <div className='absolute inset-0 bg-white bg-opacity-70 z-40 flex items-center justify-center rounded-lg'>
+                <Loader />
+              </div>
+            )}
+
+            {data?.products?.length === 0 ? (
+              <Message>No products found</Message>
+            ) : (
+              <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+                {data?.products?.map((product) => (
+                  <Product key={product._id} product={product} userInfo={userInfo} />
+                ))}
+              </div>
+            )}
+          </div>
           
           {data?.pages > 1 && (
             <div className='mt-12 flex justify-center'>
@@ -66,6 +76,7 @@ const LatestBrandPhone = () => {
                 pages={data?.pages} 
                 page={data?.page} 
                 onPageChange={handlePageChange}
+                isLoading={isFetching} // <-- Paginate ko bhi bata do
               />
             </div>
           )}

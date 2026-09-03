@@ -1,4 +1,4 @@
-const Paginate = ({ pages = 1, page = 1, onPageChange }) => {
+const Paginate = ({ pages = 1, page = 1, onPageChange, isLoading = false }) => {
   const currentPage = Number(page) || 1
   const totalPages = Number(pages) || 1
 
@@ -7,7 +7,7 @@ const Paginate = ({ pages = 1, page = 1, onPageChange }) => {
   const baseBtn = 'px-3 py-2 text-sm font-medium border rounded-md transition'
   const activeBtn = 'bg-blue-600 text-white border-blue-600'
   const inactiveBtn = 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-
+  const disabledBtn = 'opacity-50 cursor-not-allowed'
   const getPageNumbers = () => {
     const delta = 2
     const range = []
@@ -27,12 +27,41 @@ const Paginate = ({ pages = 1, page = 1, onPageChange }) => {
         Page <span className='font-medium'>{currentPage}</span> of <span className='font-medium'>{totalPages}</span>
       </div>
       <div className='flex flex-wrap items-center gap-2'>
-        {currentPage > 1 && <button onClick={() => onPageChange(currentPage - 1)} className={`${baseBtn} ${inactiveBtn}`}>Prev</button>}
+        {/* Prev Button */}
+        {currentPage > 1 && 
+          <button 
+            onClick={() => !isLoading && onPageChange(currentPage - 1)}
+            disabled={isLoading}
+            className={`${baseBtn} ${inactiveBtn} ${isLoading ? disabledBtn : ''}`}
+          >
+            Prev
+          </button>
+        }
+
+        {/* Page Numbers */}
         {getPageNumbers().map((pageNum, idx) =>
-          pageNum === '...' ? <span key={`dots-${idx}`} className='px-3 py-2'>...</span> :
-          <button key={pageNum} onClick={() => onPageChange(pageNum)} className={`${baseBtn} ${pageNum === currentPage ? activeBtn : inactiveBtn}`}>{pageNum}</button>
+          pageNum === '...' ? 
+            <span key={`dots-${idx}`} className='px-3 py-2'>...</span> :
+            <button 
+              key={pageNum} 
+              onClick={() => !isLoading && onPageChange(pageNum)} 
+              disabled={isLoading} 
+              className={`${baseBtn} ${pageNum === currentPage ? activeBtn : inactiveBtn} ${isLoading ? disabledBtn : ''}`}
+            >
+              {pageNum}
+            </button>
         )}
-        {currentPage < totalPages && <button onClick={() => onPageChange(currentPage + 1)} className={`${baseBtn} ${inactiveBtn}`}>Next</button>}
+
+        {/* Next Button */}
+        {currentPage < totalPages && 
+          <button 
+            onClick={() => !isLoading && onPageChange(currentPage + 1)} 
+            disabled={isLoading} 
+            className={`${baseBtn} ${inactiveBtn} ${isLoading ? disabledBtn : ''}`}
+          >
+            Next
+          </button>
+        }
       </div>
     </div>
   )
