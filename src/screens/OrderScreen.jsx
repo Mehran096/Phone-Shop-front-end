@@ -49,7 +49,12 @@ const [cancelCode, setCancelCode] = useState('ADMIN_CANCEL_COD')
 
   const totalDiscount =
     order?.orderItems?.reduce(
-      (acc, item) => acc + (Number(item.discountAmount) || 0) * (Number(item.qty) || 0),
+      (acc, item) => {
+        const originalPrice = Number(item.originalPrice) || Number(item.price) || 0
+        const price = Number(item.price) || 0
+        const qty = Number(item.qty) || 0
+        return acc + (originalPrice - price) * qty
+      },
       0
     ) || 0;
 
@@ -286,7 +291,8 @@ const confirmCancel = () => {
                       if (item.variantName) params.append('variant', item.variantName) // holder, glass, cable etc
                       if (item.variantSubName) params.append('variantSub', item.variantSubName) // White-2-Pack, 256GB etc
 
-                      if (item.qty && item.qty > 1) params.append('qty', item.qty)
+                      if (item.qty) params.append('qty', item.qty)
+                      if (item.tier) params.append('tier', item.tier)
 
                       return `${base}?${params.toString()}`
                     }
@@ -326,13 +332,13 @@ const confirmCancel = () => {
                           </div>
 
                           <div className="mt-2 space-y-1">
-                            {discountAmount > 0 && (
+                            {originalPrice > price && (
                               <>
                                 <div className="text-sm text-gray-500 line-through">
                                   Original: ${originalPrice.toFixed(2)}
                                 </div>
                                 <div className="text-sm font-medium text-green-600">
-                                  Discount: -${discountAmount.toFixed(2)}
+                                  Discount: -${((originalPrice - price) * qty).toFixed(2)}
                                 </div>
                               </>
                             )}

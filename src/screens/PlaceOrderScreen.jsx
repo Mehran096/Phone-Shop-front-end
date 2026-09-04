@@ -70,7 +70,8 @@ const taxPrice = addDecimals(
   if (item.model) params.append('model', item.model)
   if (item.variantName) params.append('variant', item.variantName)
   if (item.variantSubName) params.append('variantSub', item.variantSubName)
-  if (item.qty && item.qty > 1) params.append('qty', item.qty) // optional
+  if (item.qty) params.append('qty', item.qty)
+  if (item.qty) params.append('tier', item.tier || item.qty)
 
   return `${base}?${params.toString()}`
 }
@@ -96,6 +97,7 @@ const taxPrice = addDecimals(
           originalPrice: Number(item.originalPrice),
           discountAmount: Number(item.discountAmount || 0),
           qty: item.qty,
+          tier: item.tier || item.qty,
           color: item.color,
           storage: item.storage, // will be undefined for accessories, that's fine
 

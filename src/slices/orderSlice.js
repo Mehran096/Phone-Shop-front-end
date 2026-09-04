@@ -19,6 +19,7 @@ export const createOrder = createAsyncThunk(
         originalPrice: Number(item.originalPrice),
         discountAmount: Number(item.discountAmount || 0),  
         qty: item.qty,
+        tier: item.tier || item.qty || 1,
         color: item.color,
         storage: item.storage, // only for products
 
@@ -61,6 +62,7 @@ export const createCheckoutSession = createAsyncThunk(
         originalPrice: Number(item.originalPrice),
         discountAmount: Number(item.discountAmount || 0),  
         qty: item.qty,
+        tier: item.tier || item.qty || 1,
         color: item.color,
         storage: item.storage,
 

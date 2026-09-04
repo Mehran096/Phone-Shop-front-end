@@ -23,7 +23,7 @@ const FrequentlyBoughtTogether = ({
   useEffect(() => {
     if (frequentlyBought?.length > 0) {
       setSelectedItems(frequentlyBought.map(item => item._id))
-      console.log('FBT API Data:', frequentlyBought)
+      //console.log('FBT API Data:', frequentlyBought)
     }
   }, [frequentlyBought])
 
