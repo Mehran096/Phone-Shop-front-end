@@ -462,12 +462,12 @@ const AccessoryScreen = () => {
             <p className="text-lg font-bold text-green-600">
               Estimated Total: ${totalPrice}
             </p>
-
+            {/* 
             {Number(totalSavings) > 0 && (
               <p className="text-xs text-red-500 font-semibold">
                 You save ${totalSavings} ({bulkSavingsPercent}%) off ${originalTotal}
               </p>
-            )}
+            )} */}
 
             <p className='text-xs text-gray-500 mt-1'>per item for qty {qty}</p>
             <p className='text-xs text-gray-400 mt-1'>SKU: {displaySKU}</p>

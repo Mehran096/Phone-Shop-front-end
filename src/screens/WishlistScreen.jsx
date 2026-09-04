@@ -75,65 +75,65 @@ const WishlistScreen = () => {
   }
 
   const getItemData = (item) => {
-    if (item.type === 'product' && item.product) {
-      const p = item.product
-      const vIdx = item.productVariantIndex ?? 0
-      const cIdx = item.productColorIndex ?? 0
-      const variant = p.variants?.[vIdx]
-      const color = variant?.colors?.[cIdx]
+  if (item.type === 'product' && item.product) {
+    const p = item.product
+    const vIdx = item.productVariantIndex?? 0
+    const cIdx = item.productColorIndex?? 0
+    const variant = p.variants?.[vIdx]
+    const color = variant?.colors?.[cIdx]
 
-      if (!variant || !color) return null
+    if (!variant ||!color) return null
 
-      const price = Number(color?.price || 0)
-      const originalPrice = Number(color?.originalPrice || price)
-      const discountAmount = Number(color?.discountAmount || 0)
-      const savingsPercent = color?.discount?.value || 0
+    const price = Number(color?.price || 0)
+    const originalPrice = Number(color?.originalPrice || price)
+    const discountAmount = originalPrice - price // <-- calc karo
+    const savingsPercent = originalPrice > 0? Math.round((discountAmount / originalPrice) * 100) : 0 // <-- calc karo
 
-      return {
-        type: 'product',
-        id: p._id,
-        slug: p.slug,
-        name: p.name,
-        image: color?.images?.[0]?.url || p.images?.[0]?.url || '/placeholder.jpg',
-        price,
-        originalPrice,
-        discountAmount,
-        savingsPercent,
-        link: getProductLink(item),
-        subText: `Color: ${color?.name || 'N/A'} | Storage: ${variant?.storage || 'N/A'}`
-      }
+    return {
+      type: 'product',
+      id: p._id,
+      slug: p.slug,
+      name: p.name,
+      image: color?.images?.[0]?.url || p.images?.[0]?.url || '/placeholder.jpg',
+      price,
+      originalPrice,
+      discountAmount,
+      savingsPercent,
+      link: getProductLink(item),
+      subText: `Color: ${color?.name || 'N/A'} | Storage: ${variant?.storage || 'N/A'}`
     }
-
-    if (item.type === 'accessory' && item.accessory) {
-      const a = item.accessory
-      const mIdx = item.modelIndex ?? 0
-      const vIdx = item.accessoryVariantIndex ?? 0
-      const model = a.models?.[mIdx]
-      const variant = model?.variants?.[vIdx]
-
-      if (!model || !variant) return null
-
-      const price = Number(variant.price || 0)
-      const originalPrice = Number(variant.originalPrice || price)
-      const discountAmount = Number(variant.discountAmount || 0)
-      const savingsPercent = variant?.discount?.value || 0
-
-      return {
-        type: 'accessory',
-        id: a._id,
-        slug: a.slug,
-        name: `${a.name} - ${model.modelName} ${variant.name}`,
-        image: variant.images?.[0]?.url || a.image || '/placeholder.jpg',
-        price,
-        originalPrice,
-        discountAmount,
-        savingsPercent,
-        link: getProductLink(item),
-        subText: `Model: ${model.modelName} | ${variant.name}`
-      }
-    }
-    return null
   }
+
+  if (item.type === 'accessory' && item.accessory) {
+    const a = item.accessory
+    const mIdx = item.modelIndex?? 0
+    const vIdx = item.accessoryVariantIndex?? 0
+    const model = a.models?.[mIdx]
+    const variant = model?.variants?.[vIdx]
+
+    if (!model ||!variant) return null
+
+    const price = Number(variant.price || 0)
+    const originalPrice = Number(variant.originalPrice || price)
+    const discountAmount = originalPrice - price // <-- KEY FIX 1
+    const savingsPercent = originalPrice > 0? Math.round((discountAmount / originalPrice) * 100) : 0 // <-- KEY FIX 2
+
+    return {
+      type: 'accessory',
+      id: a._id,
+      slug: a.slug,
+      name: `${a.name} - ${model.modelName} ${variant.name}`,
+      image: variant.images?.[0]?.url || a.image || '/placeholder.jpg',
+      price,
+      originalPrice,
+      discountAmount,
+      savingsPercent,
+      link: getProductLink(item),
+      subText: `Model: ${model.modelName} | ${variant.name}`
+    }
+  }
+  return null
+}
 
 
 

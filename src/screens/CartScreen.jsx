@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { FaShoppingCart, FaChevronDown, FaTrash, FaTag } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { calculateBulkPrice } from '../utils/calculateBulkPrice'
 
 const ACCESSORY_TYPE_LABELS = {
   case: 'Case', charger: 'Charger', cable: 'Cable',
@@ -39,21 +40,35 @@ function CartScreen() {
     }));
   };
 
-  const updateQtyHandler = (item, qty) => {
-    dispatch(updateCartQty({
-      product: item.product,
-      model: item.model,
-      color: item.color,
-      storage: item.storage,
-      variantType: item.variantType,
-      variantName: item.variantName,
-      variantSubName: item.variantSubName,
-      qty: Number(qty),
-    }));
-  };
+  const updateQtyHandler = (item, newQty) => {
+  if (newQty < 1) return;
+  
+  const basePrice = Number(item.price); 
+  const bulkPricing = item.bulkPricing || [];
+  
+  const { pricePerItem, totalPrice, appliedTier } = calculateBulkPrice(
+    basePrice,
+    Number(newQty),
+    bulkPricing
+  );
+
+  dispatch(updateCartQty({
+    product: item.product,
+    model: item.model,
+    color: item.color,
+    storage: item.storage,
+    variantType: item.variantType,
+    variantName: item.variantName,
+    variantSubName: item.variantSubName,
+    qty: Number(newQty),
+    displayPrice: pricePerItem, // <- pricePerItem ki jaga displayPrice
+    totalPrice: totalPrice,     // <- direct totalPrice bhejo
+    appliedBulkTier: appliedTier
+  }));
+};
 
   // FIX: Use totalPrice from cartSlice which already has bulk calc
-  const cartSubtotal = cartItems?.reduce((acc, item) => acc + Number(item.price * item.qty), 0);
+  const cartSubtotal = cartItems?.reduce((acc, item) => acc + Number(item.totalPrice || item.price * item.qty), 0);
 
   const originalSubtotal = cartItems.reduce(
     (acc, item) => acc + (Number(item.originalPrice || item.price) * item.qty),
@@ -203,7 +218,7 @@ function CartScreen() {
                       {/* BULK PRICE DISPLAY */}
 <div className="mt-2">
   <p className="text-lg font-bold text-red-600">
-    ${Number(item.price).toFixed(2)} <span className="text-sm font-normal text-gray-500">each</span>
+   ${Number(item.displayPrice || item.price).toFixed(2)} <span className="text-sm font-normal text-gray-500">each</span>
   </p>
 
   {Number(item.originalPrice) > Number(item.price) && (  
@@ -212,12 +227,12 @@ function CartScreen() {
         ${Number(item.originalPrice).toFixed(2)}
       </p>
       <p className="text-sm text-green-600 font-medium">
-        You save ${((Number(item.originalPrice) - Number(item.price)) * item.qty).toFixed(2)} 
+        You save ${((Number(item.originalPrice) - Number(item.price)) * item.qty).toFixed(2)} from ${originalSubtotal.toFixed(2)}
       </p>
     </>
   )}
   <p className="text-sm font-bold text-gray-900 mt-1">
-    Item Total: ${(Number(item.price) * item.qty).toFixed(2)} 
+    Item Total: ${Number(item.totalPrice || item.price * item.qty).toFixed(2)}
   </p>
 </div>
                     </div>

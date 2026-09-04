@@ -393,8 +393,8 @@ const AccessoryEditScreen = () => {
     value={v.bulkBase || 'discounted'}
     onChange={(e) => updateVariant(mIdx, vIdx, 'bulkBase', e.target.value)}
   >
-    <option value="discounted">Bulk from Discounted Price - Stacked</option>
-    <option value="original">Bulk from Original Price - No Stack</option>
+    <option value="discounted">Bulk from Discounted Price - Stacked. Best for sales</option>
+    {/* <option value="original">Bulk from Original Price - No Stack</option> */}
   </select>
 </div>
 
@@ -422,7 +422,7 @@ const AccessoryEditScreen = () => {
                     </div>
 
                     <div className="p-3 bg-purple-50 rounded mb-3">
-                      <h6 className="font-semibold text-xs mb-2">Bulk Pricing - Like Bol.com</h6>
+                      <h6 className="font-semibold text-xs mb-2">Bulk Pricing</h6>
                       <p className="text-[11px] text-gray-500 mb-2">Price = price per item</p>
                       {v.bulkPricing.map((b, bIdx) => (
                         <div key={bIdx} className="flex flex-col sm:flex-row gap-2 mb-2 items-stretch">

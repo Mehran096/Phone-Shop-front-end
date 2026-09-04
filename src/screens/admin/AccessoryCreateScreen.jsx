@@ -319,7 +319,7 @@ const AccessoryCreateScreen = () => {
     onChange={(e) => updateVariant(mIdx, vIdx, 'bulkBase', e.target.value)}
   >
     <option value="discounted">Bulk from Discounted Price - Stacked. Best for sales</option>
-    <option value="original">Bulk from Original Price - No Stack. Protect margin</option>
+    {/* <option value="original">Bulk from Original Price - No Stack. Protect margin</option> */}
   </select>
   <p className="text-[11px] text-gray-500 mt-1">
     Stacked: $9.99 → 10% off = $8.99 → Bulk 17% = $7.45
@@ -352,7 +352,7 @@ const AccessoryCreateScreen = () => {
                     </div>
 
                     <div className="p-3 bg-purple-50 rounded mb-3">
-                      <h6 className="font-semibold text-xs mb-2">Bulk Pricing - Like Bol.com</h6>
+                      <h6 className="font-semibold text-xs mb-2">Bulk Pricing</h6>
                       <p className="text-[11px] text-gray-500 mb-2">Price = price per item. Qty 3 should be cheaper than Qty 1</p>
                       {v.bulkPricing.map((b, bIdx) => (
                         <div key={bIdx} className="flex flex-col sm:flex-row gap-2 mb-2 items-stretch">
