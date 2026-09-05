@@ -235,6 +235,22 @@ const seoDescription = accessory? `Read ${totalReviews} verified customer review
 
         const [showAll, setShowAll] = useState(false)
 
+        // FIX: Background scroll lock when modal is open
+    useEffect(() => {
+        if (showAll) {
+            document.body.style.overflow = 'hidden';
+            document.body.style.paddingRight = '15px'; // to stop the scrollbar jump
+        } else {
+            document.body.style.overflow = 'unset';
+            document.body.style.paddingRight = '0px';
+        }
+
+        return () => { // cleanup
+            document.body.style.overflow = 'unset';
+            document.body.style.paddingRight = '0px';
+        };
+    }, [showAll]);
+
         return (
             <>
              
