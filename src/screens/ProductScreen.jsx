@@ -1210,7 +1210,7 @@ const buyNowHandler = () => {
                           size="sm"
                           value={String(qty)}
                           onChange={(val) => setQty(Number(val))}
-                          options={Array.from({ length: Math.min(selectedColor?.countInStock ?? 5, 5) }, (_, i) => String(i + 1))}
+                          options={Array.from({ length: Math.min(selectedColor?.countInStock ?? 100, 100) }, (_, i) => String(i + 1))}
                         />
                       </div>
 

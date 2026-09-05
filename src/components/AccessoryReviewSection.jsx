@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { FaStar, FaThumbsUp, FaThumbsDown, FaTrash, FaUpload, FaX, FaPen, FaCheck, FaGripVertical } from 'react-icons/fa6'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+ 
 import {
   useCreateAccessoryReviewMutation,
   useGetAccessoryReviewsQuery,
@@ -16,6 +17,7 @@ import {
   useUpdateReplyMutation,
   useDeleteReplyMutation,
 } from '../slices/accessoriesApiSlice'
+import Rating from './Rating'
 
 const timeAgo = (date) => {
   const seconds = Math.floor((new Date() - new Date(date)) / 1000)
@@ -410,20 +412,18 @@ const AccessoryReviewSection = ({ accessory }) => {
         <h3 className="text-lg font-semibold mb-5">Customer Reviews Summary</h3>
         <div className="flex flex-col md:flex-row gap-10">
           <div className="md:w-56 text-center">
-            <div className="text-5xl font-bold">
-              {(reviewData?.rating || accessory.rating || 0).toFixed(1)}
-            </div>
-            <div className="flex justify-center text-yellow-400 text-3xl mt-2">
-              {[1, 2, 3, 4, 5].map((i) =>
-                <span key={i}>
-                  {(reviewData?.rating || accessory.rating || 0) >= i ? "★" : "☆"}
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-500 mt-3">
-              {reviewData?.totalReviews || accessory.numReviews || 0} customer reviews
-            </p>
-          </div>
+  <div className="text-5xl font-bold">
+    {(reviewData?.rating || accessory.rating || 0).toFixed(1)}
+  </div>
+  <div className="flex justify-center mt-2">
+    <Rating 
+      value={Number(reviewData?.rating || accessory.rating || 0)} 
+    />
+  </div>
+  <p className="text-sm text-gray-500 mt-3">
+    {(reviewData?.totalReviews || accessory.numReviews || 0)} customer reviews
+  </p>
+</div>
           <div className="flex-1">
             {ratingBreakdown.map(({ star, count, percent }) => (
               <div key={star} className="flex items-center gap-3 mb-2">

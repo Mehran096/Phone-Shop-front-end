@@ -76,10 +76,10 @@ function CartScreen() {
   );
 
   // FIX: Calculate savings using displayPrice vs originalPrice
-  const totalSavings = cartItems.reduce(
-    (acc, item) => acc + ((Number(item.originalPrice || 0) - Number(item.price)) * item.qty),
-    0
-  );
+const totalSavings = cartItems.reduce(
+  (acc, item) => acc + ((Number(item.originalPrice || 0) - Number(item.displayPrice || item.price)) * item.qty),
+  0
+);
 
   const cartItemsCount = cartItems?.reduce((acc, item) => acc + item.qty, 0);
 
@@ -118,7 +118,7 @@ function CartScreen() {
           type="button"
           disabled={options.length === 0}
           onClick={() => setOpen(!open)}
-          className='flex items-center justify-between border rounded-lg gap-1 px-3 h-10 w-full border-gray-300 rounded-md bg-white shadow-sm font-medium text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed'
+          className='flex items-center justify-between border rounded-lg gap-1 px-3 h-10 w-full border-gray-300 bg-white shadow-sm font-medium text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed'
         >
           <span>{value}</span>
           <FaChevronDown className={`text-gray-500 transition-transform text-xs ${open ? 'rotate-180' : ''}`} />
@@ -217,20 +217,30 @@ function CartScreen() {
                        
                       {/* BULK PRICE DISPLAY */}
 <div className="mt-2">
-  <p className="text-lg font-bold text-red-600">
-   ${Number(item.displayPrice || item.price).toFixed(2)} <span className="text-sm font-normal text-gray-500">each</span>
-  </p>
-
   {Number(item.originalPrice) > Number(item.price) && (  
     <>
       <p className="text-sm text-gray-500 line-through">
-        ${Number(item.originalPrice).toFixed(2)}
+        Original Price = ${Number(item.originalPrice).toFixed(2)}
       </p>
-      <p className="text-sm text-green-600 font-medium">
+
+      <p className="text-lg font-bold text-red-600">
+   Discount Price = ${Number(item.displayPrice || item.price).toFixed(2)}
+   {/* <span className="text-sm font-normal text-gray-500">each</span> */}
+  </p>
+      {/* <p className="text-sm text-green-600 font-medium">
         You save ${((Number(item.originalPrice) - Number(item.price)) * item.qty).toFixed(2)} from ${originalSubtotal.toFixed(2)}
-      </p>
+      </p> */}
     </>
   )}
+
+  
+
+  <p className="text-lg font-bold text-red-600">
+   ${Number(item.displayPrice || item.price).toFixed(2)} × {item.qty} = ${Number(item.totalPrice || item.price * item.qty).toFixed(2)}
+   {/* <span className="text-sm font-normal text-gray-500">each</span> */}
+  </p>
+
+  
   <p className="text-sm font-bold text-gray-900 mt-1">
     Item Total: ${Number(item.totalPrice || item.price * item.qty).toFixed(2)}
   </p>
@@ -245,7 +255,7 @@ function CartScreen() {
                       <CustomDropdown
                         value={item.qty}
                         onChange={(val) => updateQtyHandler(item, Number(val))}
-                        options={Array.from({ length: Math.min(item.countInStock || 10, 10) }, (_, i) => i + 1)}
+                        options={Array.from({ length: Math.min(item.countInStock || 100, 100) }, (_, i) => i + 1)}
                       />
                     </div>
                     <button
@@ -279,7 +289,7 @@ function CartScreen() {
                             ${originalSubtotal.toFixed(2)}
                           </div>
                           <div className="text-xs text-green-600 font-medium">
-                            You save ${totalSavings.toFixed(2)}
+                            You save ${totalSavings.toFixed(2)} from ${originalSubtotal.toFixed(2)} = ${cartSubtotal.toFixed(2)}
                           </div>
                         </>
                       )}

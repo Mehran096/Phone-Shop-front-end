@@ -1,17 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useGetAccessoryBySlugQuery } from '../slices/accessoriesApiSlice';
 import { addToCart } from '../slices/cartSlice';
 import { calculateBulkPrice } from '../utils/calculateBulkPrice'
 import { toast } from 'react-toastify';
-import { FaShoppingCart, FaCheck, FaArrowLeft, FaStar, FaTag } from 'react-icons/fa';
+import { FaShoppingCart, FaCheck, FaArrowLeft, FaTag, FaChevronDown } from 'react-icons/fa';
 import { Helmet } from 'react-helmet-async';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import ProductImageGallery from '../components/ProductImageGallery';
 import WishlistButton from '../components/WishlistButton'
 import AccessoryReviewSection from '../components/AccessoryReviewSection'
+import Rating from '../components/Rating'
 
 const ACCESSORY_TYPE_LABELS = {
   case: 'Case', charger: 'Charger', cable: 'Cable', glass: 'Glass', audio: 'Audio', holder: 'Holder', other: 'Other'
@@ -348,6 +349,47 @@ const AccessoryScreen = () => {
     navigate('/cart'); // Buy Now goes straight to cart
   };
 
+const CustomDropdown = ({ value, onChange, options }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button
+        type="button"
+        disabled={options.length === 0}
+        onClick={() => setOpen(!open)}
+        className='flex items-center justify-between border-2 rounded-lg gap-1 px-3 h-11 w-full border-gray-200 bg-white shadow-sm font-medium text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed'
+      >
+        <span>{value}</span>
+        <FaChevronDown className={`text-gray-500 transition-transform text-xs ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-1 left-0 w-full bg-white border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto 
+        [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { onChange(opt); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm font-medium text-gray-900 hover:bg-blue-50 ${Number(value) === Number(opt) ? 'bg-blue-50 text-blue-600' : ''}`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
   const typeLabel = ACCESSORY_TYPE_LABELS[accessory?.accessoryType];
 
   return (
@@ -436,14 +478,12 @@ const AccessoryScreen = () => {
           <h1 className='text-xl sm:text-2xl font-bold mb-3'>{displayTitle}</h1>
 
           <div className='flex items-center gap-2 mb-4'>
-            <div className='flex text-yellow-400 text-sm sm:text-lg'>
-              {[...Array(5)].map((_, i) => (
-                <FaStar key={i} className={i < Math.round(accessory?.rating || 0) ? 'text-yellow-400' : 'text-gray-300'} />
-              ))}
-            </div>
-            <span className='text-sm'>({accessory?.numReviews || 0} reviews)</span>
-            <a href="#reviews" className="text-blue-600 text-sm hover:underline">Write a review</a>
-          </div>
+  <Rating 
+    value={Number(accessory?.rating || 0)} 
+    text={`(${accessory?.numReviews || 0} reviews)`}
+  />
+  <a href="#reviews" className='text-blue-600 text-sm hover:underline'>Write a review</a>
+</div>
 
           {/* PRICE WITH ORIGINAL + CUT PRICE */}
           <div className='mb-4'>
@@ -460,14 +500,18 @@ const AccessoryScreen = () => {
             </div>
 
             <p className="text-lg font-bold text-green-600">
-              Estimated Total: ${totalPrice}
+              Estimated Total: ${totalPrice.toFixed(2)}
             </p>
-            {/* 
+            
             {Number(totalSavings) > 0 && (
               <p className="text-xs text-red-500 font-semibold">
-                You save ${totalSavings} ({bulkSavingsPercent}%) off ${originalTotal}
+                You save ${totalSavings}  from ${originalTotal}
+
+                {/* ({bulkSavingsPercent}%)  */}
+
+                
               </p>
-            )} */}
+            )}
 
             <p className='text-xs text-gray-500 mt-1'>per item for qty {qty}</p>
             <p className='text-xs text-gray-400 mt-1'>SKU: {displaySKU}</p>
@@ -580,27 +624,24 @@ const AccessoryScreen = () => {
           })()}
 
           {/* QTY SELECTOR */}
-          {displayStock > 0 && (
-            <div className='mb-4'>
-              <label className='block text-sm font-medium mb-1'>Quantity</label>
-              <select
-                value={qty}
-                onChange={(e) => {
-                  const newQty = Number(e.target.value);
-                  setQty(newQty);
-                  setSelectedTierQty(newQty);
-                  const params = new URLSearchParams(searchParams);
-                  params.set('qty', newQty);
-                  params.set('tier', newQty);
-                  setSearchParams(params);
-                }}
-                className='border-2 rounded-lg p-2 w-full text-sm'
-              >
-                {[...Array(Math.min(displayStock, 20)).keys()].map(x => <option key={x + 1} value={x + 1}>{x + 1}</option>)}
-              </select>
-              <p className='text-sm font-bold text-green-600 mt-2'>Estimated Total: ${totalPrice}</p>
-            </div>
-          )}
+{displayStock > 0 && (
+  <div className='mb-4'>
+    <label className='block text-sm font-medium mb-1'>Quantity</label>
+    <CustomDropdown
+      value={qty}
+      onChange={(newQty) => {
+        setQty(newQty);
+        setSelectedTierQty(newQty);
+        const params = new URLSearchParams(searchParams);
+        params.set('qty', newQty);
+        params.set('tier', newQty);
+        setSearchParams(params);
+      }}
+      options={Array.from({ length: Math.min(displayStock, 100) }, (_, i) => i + 1)}
+    />
+    <p className='text-sm font-bold text-green-600 mt-2'>Estimated Total: ${totalPrice.toFixed(2)}</p>
+  </div>
+)}
 
           
           {/* ADD TO CART + BUY NOW */}
