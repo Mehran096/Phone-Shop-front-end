@@ -505,7 +505,7 @@ const CustomDropdown = ({ value, onChange, options }) => {
             
             {Number(totalSavings) > 0 && (
               <p className="text-xs text-red-500 font-semibold">
-                You save ${totalSavings}  from ${originalTotal}
+                You save ${totalSavings}  from ${originalTotal} = ${totalPrice.toFixed(2)}
 
                 {/* ({bulkSavingsPercent}%)  */}
 
