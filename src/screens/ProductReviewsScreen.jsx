@@ -195,6 +195,22 @@ const ProductReviewsScreen = () => {
     if (!photos || photos.length === 0) return null
     const [showAll, setShowAll] = useState(false)
 
+    // FIX: Background scroll lock when modal is open
+    useEffect(() => {
+        if (showAll) {
+            document.body.style.overflow = 'hidden';
+            document.body.style.paddingRight = '15px'; // to stop the scroll jump
+        } else {
+            document.body.style.overflow = 'unset';
+            document.body.style.paddingRight = '0px';
+        }
+
+        return () => { // cleanup
+            document.body.style.overflow = 'unset';
+            document.body.style.paddingRight = '0px';
+        };
+    }, [showAll]);
+
     return (
         <>
             <div className="mt-6 bg-white border rounded-xl shadow-sm p-6">
@@ -217,9 +233,16 @@ const ProductReviewsScreen = () => {
 
             {/* FULL GALLERY MODAL */}
             {showAll && (
-                <div className="fixed inset-0 bg-black/90 z-[100] overflow-y-auto" onClick={() => setShowAll(false)}>
-                    <div className="max-w-5xl mx-auto p-6" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-6 text-white">
+                <div 
+                    className="fixed inset-0 bg-black/90 z-[100] overflow-y-auto" 
+                    onClick={() => setShowAll(false)}
+                >
+                    <div 
+                        className="max-w-5xl mx-auto p-6" 
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-6 text-white sticky top-0 bg-black/90 py-4 z-10">
+                            {/* ^^^ sticky header */}
                             <h2 className="text-2xl font-bold">All Customer Photos ({photos.length})</h2>
                             <button onClick={() => setShowAll(false)}><FaTimes size={24} /></button>
                         </div>
