@@ -280,23 +280,30 @@ const seoDescription = accessory? `Read ${totalReviews} verified customer review
                 </div>
 
                 {/* FULL GALLERY MODAL */}
-                {showAll && (
-                    <div className="fixed inset-0 bg-black/90 z-[100] overflow-y-auto" onClick={() => setShowAll(false)}>
-                        <div className="max-w-5xl mx-auto p-6" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex justify-between items-center mb-6 text-white">
-                                <h2 className="text-2xl font-bold">All Customer Photos ({photos.length})</h2>
-                                <button onClick={() => setShowAll(false)}><FaTimes size={24} /></button>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                {photos.map((photo, i) => (
-                                    <div key={i} onClick={() => setSelectedImage(photo.url || photo)} className="aspect-square bg-white p-2 rounded-lg cursor-pointer">
-                                        <img src={photo.url || photo} className="w-full h-full object-contain" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+{showAll && (
+    <div 
+        className="fixed inset-0 bg-black/90 z-[100] overflow-y-auto" 
+        onClick={() => setShowAll(false)}
+    >
+        <div 
+            className="max-w-5xl mx-auto p-6" 
+            onClick={(e) => e.stopPropagation()}  
+        >
+            <div className="flex justify-between items-center mb-6 text-white sticky top-0 bg-black/90 py-4 z-10"> 
+                
+                <h2 className="text-2xl font-bold">All Customer Photos ({photos.length})</h2>
+                <button onClick={() => setShowAll(false)}><FaTimes size={24} /></button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {photos.map((photo, i) => (
+                    <div key={i} onClick={() => setSelectedImage(photo.url || photo)} className="aspect-square bg-white p-2 rounded-lg cursor-pointer">
+                        <img src={photo.url || photo} className="w-full h-full object-contain" />
                     </div>
-                )}
+                ))}
+            </div>
+        </div>
+    </div>
+)}
             </>
         )
     }
