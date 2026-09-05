@@ -153,12 +153,15 @@ const AccessoryReviewSection = ({ accessory }) => {
  const removeImage = (id, isEdit = false) => {
   if (isEdit) {
     const imgToRemove = editImages.find(i => i.id === id)
-    if(imgToRemove?.url && imgToRemove.url.startsWith('blob:')) URL.revokeObjectURL(imgToRemove.url) // FIXED
-    setEditImages(prev => prev.filter((i) => i.id!== id)) // FIXED
+    if(imgToRemove?.url && imgToRemove.url.startsWith('blob:')) URL.revokeObjectURL(imgToRemove.url)
+    setEditImages(prev => prev.filter((i) => i.id!== id))
   } else {
-    URL.revokeObjectURL(imagePreviews[index])
-    setImagePreviews(imagePreviews.filter((_, i) => i!== index))
-    setReviewImageFiles(reviewImageFiles.filter((_, i) => i!== index))
+    // FIX: id yahan index hai
+    const urlToRemove = imagePreviews[id]
+    if(urlToRemove?.startsWith('blob:')) URL.revokeObjectURL(urlToRemove)
+
+    setImagePreviews(prev => prev.filter((_, i) => i!== id))
+    setReviewImageFiles(prev => prev.filter((_, i) => i!== id))
   }
 }
   //image reOrder - sorting - drag n drop
@@ -216,7 +219,7 @@ const AccessoryReviewSection = ({ accessory }) => {
 
     try {
       const uploadedImages = await uploadImagesAndGetUrls(reviewImageFiles)
-      console.log('SENDING TO BACKEND:', uploadedImages) // V33.80 DEBUG
+      //console.log('SENDING TO BACKEND:', uploadedImages) // V33.80 DEBUG
 
       await createReview({
         slug: accessory.slug,
