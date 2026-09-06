@@ -31,7 +31,8 @@ const Header = ({ isOnline, isMobileMenuOpen, setIsMobileMenuOpen, }) => {
 
      const hideNavbarRoutes = ['/login', '/register', '/forgot-password'];
   const shouldHideNavbar = hideNavbarRoutes.includes(location.pathname) || 
-                           location.pathname.startsWith('/reset-password');
+                           location.pathname.startsWith('/reset-password') ||
+                           location.pathname.startsWith('/admin');
 
   const [userDropdown, setUserDropdown] = useState(false)
   const [adminDropdown, setAdminDropdown] = useState(false)
