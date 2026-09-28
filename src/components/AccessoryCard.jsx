@@ -96,7 +96,7 @@ const AccessoryCard = ({ accessory, onAddToCart }) => {
 
         {/* CONTENT */}
         <div className="p-3 sm:p-4 flex flex-col flex-1">
-          <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2 mb-1 group-hover:text-green-600 leading-tight h-12">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2 mb-1 group-hover:text-green-600 leading-tight h-14">
             {accessory.name}
           </h3>
           <p className="text-xs text-gray-500 mb-2">{accessory.brand}</p>
