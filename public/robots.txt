@@ -10,4 +10,4 @@ Disallow: /admin
 Disallow: /*?sort=
 Disallow: /*?price=
 
-Sitemap: https://phone-store.asia/api/sitemap.xml
+Sitemap: https://phone-store.asia/sitemap.xml
