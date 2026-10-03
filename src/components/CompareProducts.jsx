@@ -486,6 +486,14 @@ const getComparisonValues = (key, parser) => {
 
   const CHIPSET_RANKS = {
     // Apple
+    "Apple A23 Pro": 109,
+    "Apple A23": 108,
+    "Apple A22 Pro": 107,
+    "Apple A22": 106,
+    "Apple A21 Pro": 105,
+    "Apple A21": 104,
+    "Apple A20 Pro": 103,
+    "Apple A20": 102,
     "Apple A19 Pro": 101,
     "Apple A19": 100,
     "Apple A18 Pro": 98,
@@ -496,18 +504,24 @@ const getComparisonValues = (key, parser) => {
     "Apple A14 Bionic": 82,
     "Apple A13 Bionic": 78,
 
-    // Snapdragon
+    // Snapdragon - Flagship
     "Snapdragon 8 Elite": 99,
+    "Snapdragon 8 Elite for Galaxy": 99,
     "Snapdragon 8 Gen 4": 97,
     "Snapdragon 8 Gen 3": 95,
     "Snapdragon 8s Gen 3": 93,
     "Snapdragon 8 Gen 2": 91,
+    "Snapdragon 8 Gen 2 for Galaxy": 91,
     "Snapdragon 8+ Gen 1": 89,
     "Snapdragon 8 Gen 1": 87,
     "Snapdragon 7+ Gen 3": 86,
     "Snapdragon 888": 83,
     "Snapdragon 870": 80,
     "Snapdragon 865": 76,
+
+    // Snapdragon - Mid / Low
+    "Snapdragon 6 Gen 1": 63,
+    "Qualcomm Snapdragon 6 Gen 1": 63,
 
     // MediaTek
     "Dimensity 9400": 98,
@@ -517,10 +531,13 @@ const getComparisonValues = (key, parser) => {
     "Dimensity 9200": 91,
     "Dimensity 9000": 88,
     "Dimensity 8400": 87,
+    "Dimensity 8350": 83,
+    "MediaTek Dimensity 8350": 83,
     "Dimensity 8300": 84,
 
     // Google
     "Google Tensor G5": 96,
+    "Tensor G5": 96,
     "Google Tensor G4": 92,
     "Google Tensor G3": 88,
     "Google Tensor G2": 84,

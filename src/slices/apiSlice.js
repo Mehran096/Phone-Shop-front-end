@@ -16,7 +16,8 @@ export const apiSlice = createApi({
         'Accessories',     // for list page
         'Accessory',       // for single product + header rating
         'AccessoryReviews',// for review list with pagination
-        'Replies'          // for replies to reviews
+        'Replies',          // for replies to reviews
+        'Blog',            // for list page
     ],
   endpoints: () => ({}),
 })

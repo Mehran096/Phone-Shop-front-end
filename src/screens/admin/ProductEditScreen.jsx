@@ -8,6 +8,17 @@ import { HiOutlineArrowsUpDown } from 'react-icons/hi2';
 import Loader from '../../components/Loader';
 import Message from '../../components/Message';
 
+// FIX 1: Helper to show ISO date in input[type=date]
+const formatDateForInput = (dateValue) => {
+  if (!dateValue) return "";
+  const d = new Date(dateValue);
+  if (isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const ProductEditScreen = () => {
   const { id: productId } = useParams();
   const navigate = useNavigate();
@@ -32,12 +43,20 @@ const ProductEditScreen = () => {
       setCategory(product.category);
       setKeywords(product.keywords?.join(', ') || '');
       setVariants(product.variants.map(v => ({
-     ...v,
+    ...v,
         specsJson: JSON.stringify(v.specs, null, 2),
         colors: v.colors.map(c => ({
-      ...c,
-          files: [], // new uploads
-          images: c.images || [] // existing from DB
+     ...c,
+          files: [],
+          images: c.images || [],
+          // FIX 2: Format dates when loading
+          discount: {
+            type: c.discount?.type || "percentage",
+            value: c.discount?.value || "",
+            startDate: formatDateForInput(c.discount?.startDate),
+            endDate: formatDateForInput(c.discount?.endDate),
+            isActive: c.discount?.isActive || false
+          }
         }))
       })));
     }
@@ -72,22 +91,19 @@ const ProductEditScreen = () => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
     setVariants(prev => prev.map((v, i) => i === vIndex? {
- ...v, colors: v.colors.map((c, j) => j === cIndex? {...c, files: [...(c.files || []),...files] } : c)
+...v, colors: v.colors.map((c, j) => j === cIndex? {...c, files: [...(c.files || []),...files] } : c)
     } : v));
     e.target.value = '';
   };
 
   const removeImageHandler = (vIndex, cIndex, imgIndex, type) => {
     const item = variants[vIndex].colors[cIndex][type][imgIndex];
-    
-    // If deleting old image, add to delete queue
     if (type === 'images' && item?.imagePublicId) {
       setImagesToDelete(prev => [...prev, item.imagePublicId]);
     }
-
     setVariants(prev => prev.map((v, i) => i === vIndex? {
- ...v, colors: v.colors.map((c, j) => j === cIndex? {
-   ...c,
+...v, colors: v.colors.map((c, j) => j === cIndex? {
+  ...c,
         [type]: c[type].filter((_, idx) => idx!== imgIndex),
       } : c)
     } : v));
@@ -111,7 +127,6 @@ const ProductEditScreen = () => {
     try {
       setUploading(true);
       const formData = new FormData();
-      
       variants.forEach(v => {
         v.colors.forEach(c => { c.files?.forEach(file => formData.append('images', file)); })
       });
@@ -125,8 +140,8 @@ const ProductEditScreen = () => {
 
       let uploadIndex = 0;
       const finalVariants = variants
-   .filter(v => v.storage && v.colors.some(c => c.name && c.price))
-   .map(v => ({
+  .filter(v => v.storage && v.colors.some(c => c.name && c.price))
+  .map(v => ({
           storage: v.storage,
           description: v.description,
           specs: v.specs,
@@ -136,12 +151,19 @@ const ProductEditScreen = () => {
             }) || [];
             const oldImages = c.images.filter(i => i.url &&!i.url.startsWith('blob:'));
             return {
-              name: c.name, 
+              name: c.name,
               hexCode: c.hexCode || '',
               images: [...oldImages,...newImages],
               price: Number(c.price),
-              discount: { type: c.discount?.type || "percentage", value: Number(c.discount?.value) || 0, startDate: c.discount?.startDate || null, endDate: c.discount?.endDate || null, isActive: c.discount?.isActive?? false },
-              countInStock: Number(c.countInStock), 
+              discount: {
+                type: c.discount?.type || "percentage",
+                value: Number(c.discount?.value) || 0,
+                // FIX 3: Save as ISO, backend expects ISO for countdown
+                startDate: c.discount?.startDate? new Date(c.discount.startDate).toISOString() : null,
+                endDate: c.discount?.endDate? new Date(c.discount.endDate).toISOString() : null,
+                isActive: c.discount?.isActive?? false
+              },
+              countInStock: Number(c.countInStock),
               sku: c.sku
             }
           })
@@ -249,7 +271,6 @@ const ProductEditScreen = () => {
                       <input type='file' multiple accept="image/*" onChange={(e) => uploadFileHandler(vIndex, cIndex, e)} className='hidden' />
                     </label>
 
-                    {/* ROW 1: EXISTING IMAGES */}
                     {color.images?.length > 0 && (
                       <div className="mb-3">
                         <p className="text-xs font-semibold text-gray-600 mb-2">Existing Images</p>
@@ -260,8 +281,8 @@ const ProductEditScreen = () => {
                                 {color.images.map((img, imgIndex) => (
                                   <Draggable key={img.imagePublicId + imgIndex} draggableId={img.imagePublicId + imgIndex} index={imgIndex}>
                                     {(provided, snapshot) => (
-                                      <div 
-                                        ref={provided.innerRef} 
+                                      <div
+                                        ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         className={`relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 ${snapshot.isDragging? 'ring-2 ring-blue-500' : ''}`}
                                       >
@@ -269,9 +290,9 @@ const ProductEditScreen = () => {
                                           <HiOutlineArrowsUpDown className="text-white text-[10px]" />
                                         </div>
                                         <img src={img.url} className="w-full h-full object-contain rounded-lg border bg-white p-1" />
-                                        <button 
-                                          type="button" 
-                                          onClick={() => removeImageHandler(vIndex, cIndex, imgIndex, 'images')} 
+                                        <button
+                                          type="button"
+                                          onClick={() => removeImageHandler(vIndex, cIndex, imgIndex, 'images')}
                                           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20"
                                         >
                                           <FaTimes size={10} />
@@ -288,7 +309,6 @@ const ProductEditScreen = () => {
                       </div>
                     )}
 
-                    {/* ROW 2: NEW IMAGES */}
                     {color.files?.length > 0 && (
                       <div>
                         <p className="text-xs font-semibold text-green-600 mb-2">New Images</p>
@@ -299,8 +319,8 @@ const ProductEditScreen = () => {
                                 {color.files.map((file, imgIndex) => (
                                   <Draggable key={file.name + imgIndex} draggableId={file.name + imgIndex} index={imgIndex}>
                                     {(provided, snapshot) => (
-                                      <div 
-                                        ref={provided.innerRef} 
+                                      <div
+                                        ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         className={`relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 ${snapshot.isDragging? 'ring-2 ring-green-500' : ''}`}
                                       >
@@ -309,9 +329,9 @@ const ProductEditScreen = () => {
                                         </div>
                                         <img src={URL.createObjectURL(file)} className="w-full h-full object-contain rounded-lg border bg-white p-1" />
                                         <span className='absolute top-1 right-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold'>NEW</span>
-                                        <button 
-                                          type="button" 
-                                          onClick={() => removeImageHandler(vIndex, cIndex, imgIndex, 'files')} 
+                                        <button
+                                          type="button"
+                                          onClick={() => removeImageHandler(vIndex, cIndex, imgIndex, 'files')}
                                           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20"
                                         >
                                           <FaTimes size={10} />
@@ -328,9 +348,9 @@ const ProductEditScreen = () => {
                       </div>
                     )}
 
-                    <button 
-                    type='button' 
-                    onClick={() => addColorHandler(vIndex)} 
+                    <button
+                    type='button'
+                    onClick={() => addColorHandler(vIndex)}
                     className='mt-3 px-4 py-2.5 text-sm bg-green-50 text-green-600 rounded-lg border-2 border-dashed border-green-200 w-full flex items-center justify-center gap-2 hover:bg-green-100 transition-colors font-medium'
                   >
                     <FaPlus size={12} /> Add Color

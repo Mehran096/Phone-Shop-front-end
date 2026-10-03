@@ -24,6 +24,13 @@ import AccessoryCreateScreen from './screens/admin/AccessoryCreateScreen';
 import AccessoryEditScreen from './screens/admin/AccessoryEditScreen';
 import AccessoryDetailScreen from './screens/admin/AccessoryDetailScreen';
 
+import BlogListScreen from './screens/admin/BlogListScreen';
+import BlogCreateScreen from './screens/admin/BlogCreateScreen';
+import BlogEditScreen from './screens/admin/BlogEditScreen';
+
+import BlogScreen from './screens/BlogScreen';
+import BlogDetailScreen from './screens/BlogDetailScreen';
+
 
 import UserListScreen from './screens/admin/UserListScreen';
 import UserEditScreen from './screens/admin/UserEditScreen';
@@ -188,6 +195,9 @@ const dispatch = useDispatch()
             <Route path='/accessories' element={<AccessoryViewListScreen />} />
             <Route path='/accessory/:slug' element={<AccessoryScreen />} />
             <Route path="/accessories/:slug/reviews" element={<AccessoryReviewsScreen />} />
+
+            <Route path="/blogs" element={<BlogScreen />} />
+            <Route path="/blogs/:slug" element={<BlogDetailScreen />} />
              
             <Route path='/products' element={<LatestBrandPhone isOnline={isOnline}/>} />
             
@@ -219,11 +229,16 @@ const dispatch = useDispatch()
               <Route path="/admin/productlist" element={<ProductListScreen />} />
               <Route path="/admin/product/create" element={<ProductCreateScreen />} />
               <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />
-              {/* Accessories - NEW */}
+              {/* Accessories - */}
               <Route path='/admin/accessorylist' element={<AccessoryListScreen />} />
               <Route path='/admin/accessory/create' element={<AccessoryCreateScreen />} />
               <Route path='/admin/accessory/:id/edit' element={<AccessoryEditScreen />} />
               <Route path='/admin/accessory/:id' element={<AccessoryDetailScreen />} />
+
+             
+              <Route path='admin/bloglist' element={<BlogListScreen />} />
+              <Route path='admin/blog/create' element={<BlogCreateScreen />} />
+              <Route path='admin/blog/:id/edit' element={<BlogEditScreen />} />
 
               <Route path="/admin/orderlist" element={<OrderListScreen />} />
               <Route path="/admin/userlist" element={<UserListScreen />} />
