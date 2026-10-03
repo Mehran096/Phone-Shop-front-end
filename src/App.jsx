@@ -67,6 +67,8 @@ import AccessoryScreen from './screens/AccessoryScreen';
 import AccessoryReviewsScreen from './screens/AccessoryReviewsScreen';
 import AccessoryViewListScreen from './screens/AccessoryViewListScreen'
 import LatestBrandPhone from './screens/LatestBrandPhone'
+
+import AdminLayout from './components/admin/AdminLayout';
  
 //import AccessoryCategoryListScreen from './screens/AccessoryViewListScreen'
   
@@ -78,7 +80,7 @@ import LatestBrandPhone from './screens/LatestBrandPhone'
 
 function App() {
   const { pathname, search } = useLocation()
- 
+ const isAdminPage = pathname.startsWith('/admin');
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 const dispatch = useDispatch()
@@ -160,10 +162,12 @@ const dispatch = useDispatch()
   return (
     <>
       <div className="flex flex-col min-h-screen">
+        {!isAdminPage && (
         <Header isOnline={isOnline} isMobileMenuOpen={isMobileMenuOpen}
               setIsMobileMenuOpen={setIsMobileMenuOpen} />
+        )}
          {/* MOBILE SEARCH BAR - Only shows on mobile */}
-         {showMobileSearch && (
+         {!isAdminPage && showMobileSearch && (
       <div className='xl:hidden bg-gray-900 px-4 py-1 sticky top-0 z-40 border-b border-gray-800'>
         <div className='relative'>
           {isOnline ? (
@@ -224,7 +228,8 @@ const dispatch = useDispatch()
             <Route path="/" element={<HomeScreen isOnline={isOnline} />} />
 
             {/* Admin Routes */}
-            <Route path="" element={<AdminRoute />}>
+          <Route path="" element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/productlist" element={<ProductListScreen />} />
               <Route path="/admin/product/create" element={<ProductCreateScreen />} />
@@ -236,21 +241,22 @@ const dispatch = useDispatch()
               <Route path='/admin/accessory/:id' element={<AccessoryDetailScreen />} />
 
              
-              <Route path='admin/bloglist' element={<BlogListScreen />} />
-              <Route path='admin/blog/create' element={<BlogCreateScreen />} />
-              <Route path='admin/blog/:id/edit' element={<BlogEditScreen />} />
+              <Route path='/admin/bloglist' element={<BlogListScreen />} />
+              <Route path='/admin/blog/create' element={<BlogCreateScreen />} />
+              <Route path='/admin/blog/:id/edit' element={<BlogEditScreen />} />
 
               <Route path="/admin/orderlist" element={<OrderListScreen />} />
               <Route path="/admin/userlist" element={<UserListScreen />} />
               <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
             </Route>
+          </Route>
 
 
           </Routes>
           <ToastContainer />
         </main>
-        {showCompareBar && <CompareBar />}
-        <Footer />
+        {!isAdminPage && showCompareBar && <CompareBar />}
+        {!isAdminPage && <Footer />}
       </div>
     </>
   );

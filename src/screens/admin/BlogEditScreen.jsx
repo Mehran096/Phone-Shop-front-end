@@ -12,17 +12,22 @@ const BlogEditScreen = () => {
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [coverImage, setCoverImage] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState('Mobile Guide');
   const [tags, setTags] = useState('');
+  const [status, setStatus] = useState('published');
 
   const [updateBlog, { isLoading }] = useUpdateBlogMutation();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (blog) {
-      setTitle(blog.title); setExcerpt(blog.excerpt); setContent(blog.content);
-      setCoverImage(blog.coverImage || ''); setCategory(blog.category);
+      setTitle(blog.title);
+      setExcerpt(blog.excerpt || '');
+      setContent(blog.content);
+      setCoverImage(blog.coverImage || '');
+      setCategory(blog.category || 'Mobile Guide');
       setTags(blog.tags?.join(', ') || '');
+      setStatus(blog.status || 'published');
     }
   }, [blog]);
 
@@ -30,7 +35,7 @@ const BlogEditScreen = () => {
     e.preventDefault();
     try {
       const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
-      await updateBlog({ id, title, excerpt, content, coverImage, category, tags: tagArray }).unwrap();
+      await updateBlog({ id, title, excerpt, content, coverImage, category, tags: tagArray, status }).unwrap();
       toast.success('Blog updated');
       navigate('/admin/bloglist');
     } catch (err) {
@@ -38,23 +43,75 @@ const BlogEditScreen = () => {
     }
   };
 
-  if (!blog) return <div className="p-6 text-center">Loading blog...</div>;
+  if (!blog) return <div className="p-6 text-center text-gray-900">Loading blog...</div>;
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
-      <Link to="/admin/bloglist" className="text-sm text-gray-600 hover:text-black mb-4 inline-block">← Go Back</Link>
-      <div className="bg-white p-6 rounded-xl shadow-sm">
-        <h1 className="text-2xl font-bold mb-6">Edit Blog</h1>
-        <form onSubmit={submitHandler} className="space-y-4">
-          <div><label className="block text-sm font-medium mb-1">Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm" /></div>
-          <div><label className="block text-sm font-medium mb-1">Excerpt</label><textarea rows={2} value={excerpt} onChange={e => setExcerpt(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm" /></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium mb-1">Category</label><select value={category} onChange={e => setCategory(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm"><option>Mobile Guide</option><option>Phone Review</option><option>Accessories</option><option>Buying Tips</option><option>Comparison</option><option>News</option></select></div>
-            <div><label className="block text-sm font-medium mb-1">Tags</label><input type="text" value={tags} onChange={e => setTags(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm" /></div>
+    <div className="max-w-4xl mx-auto">
+      <Link to="/admin/bloglist" className="text-sm text-gray-400 hover:text-white mb-4 inline-flex items-center gap-1">← Back to Blogs</Link>
+
+      <div className="bg-white text-gray-900 p-5 md:p-8 rounded-2xl shadow-sm">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Edit Blog</h1>
+        <p className="text-sm text-gray-500 mb-6">Update blog content, image and SEO</p>
+
+        <form onSubmit={submitHandler} className="space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Title *</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required
+              className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:ring-2 focus:ring-black focus:border-black outline-none" />
           </div>
-          <div><label className="block text-sm font-medium mb-1">Cover Image URL</label><input type="text" value={coverImage} onChange={e => setCoverImage(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm" /></div>
-          <div><label className="block text-sm font-medium mb-1">Content</label><textarea rows={14} value={content} onChange={e => setContent(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm font-mono" /></div>
-          <button type="submit" disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium">{isLoading? 'Updating...' : 'Update Blog'}</button>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Excerpt</label>
+            <textarea rows={3} value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Short summary for listing..."
+              className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:ring-2 focus:ring-black outline-none" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Category</label>
+              <select value={category} onChange={e => setCategory(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 bg-white">
+                <option>Mobile Guide</option><option>Phone Review</option><option>Accessories</option>
+                <option>Buying Tips</option><option>Comparison</option><option>News</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 bg-white">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tags (comma)</label>
+              <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="iPhone, Samsung, Tips"
+                className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:ring-2 focus:ring-black outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Cover Image URL</label>
+            <input type="text" value={coverImage} onChange={e => setCoverImage(e.target.value)} placeholder="https://..."
+              className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:ring-2 focus:ring-black outline-none" />
+            {coverImage && (
+              <img src={coverImage} alt="preview" className="mt-3 h-40 w-full object-cover rounded-xl border" />
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Content *</label>
+            <textarea rows={16} value={content} onChange={e => setContent(e.target.value)} required
+              placeholder="Write full blog content here (supports HTML/Markdown)..."
+              className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 font-mono leading-relaxed focus:ring-2 focus:ring-black outline-none" />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="button" onClick={()=>navigate('/admin/bloglist')} className="sm:w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-medium text-sm">Cancel</button>
+            <button type="submit" disabled={isLoading} className="flex-1 bg-black hover:bg-gray-800 text-white py-3 rounded-xl font-medium text-sm disabled:opacity-60">
+              {isLoading? 'Updating...' : 'Update Blog'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

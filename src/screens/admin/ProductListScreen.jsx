@@ -2,9 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus, FaTimes, FaSearch } from 'react-icons/fa';
 import { useGetProductsQuery, useDeleteProductMutation, useCreateProductMutation } from '../../slices/productsApiSlice';
-import Loader from '../../components/Loader';
-import Message from '../../components/Message';
-import Paginate from '../../components/Paginate';
 import { toast } from 'react-toastify';
 
 const ProductListScreen = () => {
@@ -31,174 +28,109 @@ const ProductListScreen = () => {
     }
   };
 
-  const createProductHandler = () => {
-    navigate('/admin/product/create');
-  };
-
   const submitHandler = (e) => {
     e.preventDefault();
-    if (searchKeyword.trim()) {
-      setSearchParams({ keyword: searchKeyword, pageNumber: 1 });
-    } else {
-      setSearchParams({});
-    }
+    if (searchKeyword.trim()) setSearchParams({ keyword: searchKeyword, pageNumber: 1 });
+    else setSearchParams({});
   };
 
-  //for pagination
   const handlePageChange = (pageNum) => {
-  const newParams = new URLSearchParams()
-  if (keyword) newParams.set('keyword', keyword)
-  newParams.set('pageNumber', pageNum)
-  setSearchParams(newParams)
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
+    const newParams = new URLSearchParams()
+    if (keyword) newParams.set('keyword', keyword)
+    newParams.set('pageNumber', pageNum)
+    setSearchParams(newParams)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const clearSearch = () => {
     setSearchKeyword('');
     setSearchParams({});
   };
 
-  return (
-    <div className='container mx-auto px-4 py-6'>
-      {/* Header + Search + Create */}
-      <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6'>
-        <h1 className='text-2xl font-bold text-gray-800'>Products</h1>
-        
-        <div className='flex flex-col sm:flex-row gap-3 w-full md:w-auto'>
-          <form onSubmit={submitHandler} className='flex gap-2 flex-1'>
-            <div className='relative flex-1'>
-              <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' />
-              <input
-                type='text'
-                placeholder='Search products...'
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className='w-full pl-10 pr-10 py-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-              />
-              {searchKeyword && (
-                <button
-                  type='button'
-                  onClick={clearSearch}
-                  className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600'
-                >
-                  <FaTimes />
-                </button>
-              )}
-            </div>
-            <button
-              type='submit'
-              className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition'
-            >
-              Search
-            </button>
-          </form>
+  if (isLoading) return <div className="bg-white text-gray-900 p-10 rounded-2xl text-center">Loading products...</div>
+  if (error) return <div className="bg-white text-red-600 p-6 rounded-2xl">{error?.data?.message || error.error}</div>
 
-          <button
-            onClick={createProductHandler}
-            disabled={loadingCreate}
-            className='flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap'
-          >
-            <FaPlus /> Create Product
-          </button>
+  return (
+    <div className="space-y-5">
+      {/* HEADER */}
+      <div className="bg-white text-gray-900 p-5 rounded-2xl shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold text-gray-900">Products ({data?.totalProducts || data?.products?.length || 0})</h1>
+          <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <form onSubmit={submitHandler} className="flex flex-1 lg:w-80">
+              <div className="relative flex-1">
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+                <input type="text" placeholder="Search products..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)}
+                  className="w-full pl-9 pr-9 py-2.5 border border-gray-300 rounded-l-xl text-sm text-gray-900 focus:ring-2 focus:ring-black outline-none" />
+                {searchKeyword && (
+                  <button type="button" onClick={clearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><FaTimes /></button>
+                )}
+              </div>
+              <button type="submit" className="bg-black text-white px-4 rounded-r-xl text-sm hover:bg-gray-800">Search</button>
+            </form>
+            <button onClick={()=>navigate('/admin/product/create')} disabled={loadingCreate}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl hover:bg-gray-800 text-sm font-medium whitespace-nowrap">
+              <FaPlus /> Create
+            </button>
+          </div>
+        </div>
+        {(loadingCreate || loadingDelete) && <p className="text-xs text-gray-500 mt-3">Processing...</p>}
+      </div>
+
+      {/* DESKTOP TABLE */}
+      <div className="hidden md:block bg-white text-gray-900 rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50"><tr className="text-left text-xs text-gray-500 uppercase">
+              <th className="px-6 py-3">ID</th><th className="px-6 py-3">Name</th><th className="px-6 py-3">Price</th><th className="px-6 py-3">Category</th><th className="px-6 py-3">Brand</th><th className="px-6 py-3 text-right">Action</th>
+            </tr></thead>
+            <tbody className="divide-y">
+              {data.products.map((product) => (
+                <tr key={product._id} className="hover:bg-gray-50 text-sm text-gray-900">
+                  <td className="px-6 py-4 font-mono text-xs">{product._id.substring(18,24)}...</td>
+                  <td className="px-6 py-4 font-semibold max-w-[250px] truncate" title={product.name}>{product.name}</td>
+                  <td className="px-6 py-4 font-bold">${product.variants?.[0]?.colors?.[0]?.price?.toLocaleString()?? 'N/A'}</td>
+                  <td className="px-6 py-4"><span className="bg-gray-100 px-2.5 py-1 rounded-full text-xs">{product.category}</span></td>
+                  <td className="px-6 py-4">{product.brand}</td>
+                  <td className="px-6 py-4 text-right space-x-2">
+                    <Link to={`/admin/product/${product._id}/edit`} className="inline-flex bg-gray-100 hover:bg-black hover:text-white p-2 rounded-lg transition"><FaEdit/></Link>
+                    <button onClick={()=>deleteHandler(product._id)} className="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white p-2 rounded-lg transition"><FaTrash/></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Loaders */}
-      {loadingCreate && <Loader />}
-      {loadingDelete && <Loader />}
-
-      {/* Main Content */}
-      {isLoading ? (
-        <Loader />
-      ) : error ? (
-        <Message variant='error'>{error?.data?.message || error.error}</Message>
-      ) : (
-        <>
-          {/* Desktop Table - Hidden on mobile */}
-          <div className='hidden md:block overflow-x-auto bg-white rounded-lg shadow'>
-            <table className='w-full table-auto'>
-              <thead className='bg-gray-50 border-b'>
-                <tr>
-                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>ID</th>
-                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>NAME</th>
-                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>PRICE</th>
-                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>CATEGORY</th>
-                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'>BRAND</th>
-                  <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700'></th>
-                </tr>
-              </thead>
-              <tbody className='divide-y divide-gray-200'>
-                {data.products.map((product) => (
-                  <tr key={product._id} className='hover:bg-gray-50'>
-                    <td className='px-4 py-3 text-sm text-gray-600'>{product._id.substring(18, 24)}...</td>
-                    <td className='px-4 py-3 text-sm font-medium text-gray-900'>{product.name}</td>
-                    <td className='px-4 py-3 text-sm text-gray-600'>
-   ${product.variants?.[0]?.colors?.[0]?.price?.toLocaleString()?? 'N/A'}
-</td>
-
-                    <td className='px-4 py-3 text-sm text-gray-600'>{product.category}</td>
-                    <td className='px-4 py-3 text-sm text-gray-600'>{product.brand}</td>
-                    <td className='px-4 py-3 flex gap-2'>
-                      <Link to={`/admin/product/${product._id}/edit`}>
-                        <button className='p-2 text-blue-600 hover:bg-blue-50 rounded transition'>
-                          <FaEdit />
-                        </button>
-                      </Link>
-                      <button
-                        className='p-2 text-red-600 hover:bg-red-50 rounded transition'
-                        onClick={() => deleteHandler(product._id)}
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* MOBILE CARDS */}
+      <div className="md:hidden grid gap-3">
+        {data.products.map((product) => (
+          <div key={product._id} className="bg-white text-gray-900 p-4 rounded-2xl shadow-sm border">
+            <div className="flex justify-between items-start gap-3 mb-2">
+              <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
+              <span className="font-bold text-black shrink-0">${product.variants?.[0]?.colors?.[0]?.price?.toLocaleString()?? 'N/A'}</span>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full text-xs">{product.brand}</span>
+              <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full text-xs">{product.category}</span>
+              <span className="font-mono text-[10px] text-gray-400">#{product._id.substring(18,24)}</span>
+            </div>
+            <div className="flex gap-2">
+              <Link to={`/admin/product/${product._id}/edit`} className="flex-1 bg-black text-white py-2.5 rounded-xl text-sm text-center">Edit</Link>
+              <button onClick={()=>deleteHandler(product._id)} className="flex-1 bg-red-50 text-red-600 py-2.5 rounded-xl text-sm">Delete</button>
+            </div>
           </div>
-
-          {/* Mobile Cards - Hidden on desktop */}
-          <div className='md:hidden space-y-4'>
-            {data.products.map((product) => (
-              <div key={product._id} className='bg-white p-4 rounded-lg shadow'>
-                <div className='flex justify-between items-start mb-2 gap-2'>
-                  <h3 className='font-semibold text-lg leading-tight'>{product.name}</h3>
-                  <span className='text-xl font-bold text-blue-600 shrink-0'>
-  ${product.variants?.[0]?.colors?.[0]?.price?.toLocaleString() ?? 'N/A'}  
-</span>
-                </div>
-                <div className='text-sm text-gray-600 space-y-1 mb-3'>
-                  <p><span className='font-medium'>Brand:</span> {product.brand}</p>
-                  <p><span className='font-medium'>Category:</span> {product.category}</p>
-                  <p className='font-mono text-xs'><span className='font-medium font-sans'>ID:</span> {product._id.substring(18, 24)}...</p>
-                </div>
-                <div className='flex gap-2'>
-                  <Link
-                    to={`/admin/product/${product._id}/edit`}
-                    className='flex-1 bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-center text-sm flex items-center justify-center gap-1'
-                  >
-                    <FaEdit /> Edit
-                  </Link>
-                  <button
-                    onClick={() => deleteHandler(product._id)}
-                    className='flex-1 bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm flex items-center justify-center gap-1'
-                  >
-                    <FaTrash /> Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Paginate */}
-      <div className='mt-6'>
-        <Paginate
-          pages={data.pages}
-          page={data.page}
-          onPageChange={handlePageChange}  
-        />
+        ))}
       </div>
-        </>
+
+      {/* PAGINATION */}
+      {data.pages > 1 && (
+        <div className="bg-white text-gray-900 p-4 rounded-2xl shadow-sm flex flex-wrap justify-center gap-2">
+          {[...Array(data.pages).keys()].map(x=> (
+            <button key={x+1} onClick={()=>handlePageChange(x+1)} className={`px-3 py-1.5 rounded-xl text-sm ${x+1===data.page? 'bg-black text-white' : 'bg-white border text-gray-700'}`}>{x+1}</button>
+          ))}
+        </div>
       )}
     </div>
   );

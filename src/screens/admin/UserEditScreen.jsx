@@ -19,7 +19,7 @@ const UserEditScreen = () => {
       dispatch({ type: 'auth/resetUserUpdate' })
       navigate('/admin/userlist')
     } else {
-      if (!userDetails || userDetails._id !== id) {
+      if (!userDetails || userDetails._id!== id) {
         dispatch(getUserDetails(id))
       } else {
         setName(userDetails.name)
@@ -34,64 +34,44 @@ const UserEditScreen = () => {
     dispatch(updateUser({ id, name, email, isAdmin }))
   }
 
-  const inputClass = "mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-const labelClass = "block text-sm font-medium text-gray-700"
+  const inputClass = "w-full p-3 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white focus:ring-2 focus:ring-black outline-none"
+  const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5"
+
+  if (loading) return <div className="bg-white text-gray-900 p-10 rounded-2xl text-center">Loading user...</div>
+  if (error) return <div className="bg-white text-red-600 p-6 rounded-2xl">{error}</div>
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Link to="/admin/userlist" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-        ← Go Back
-      </Link>
-      
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold mb-6">Edit User</h1>
+    <div className="max-w-2xl mx-auto space-y-5">
+      <Link to="/admin/userlist" className="text-gray-400 hover:text-white text-sm inline-flex items-center gap-1">← Back to Users</Link>
+      <h1 className="text-xl md:text-2xl font-bold text-white">Edit User</h1>
 
-        {loading ? (
-          <div>Loading...</div>
-        ) : error ? (
-          <div className="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
+      <div className="bg-white text-gray-900 p-5 md:p-6 rounded-2xl shadow-sm border">
+        <form onSubmit={submitHandler} className="space-y-5">
+          <div>
+            <label className={labelClass}>Name *</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} required placeholder="John Doe"/>
           </div>
-        ) : (
-          <form onSubmit={submitHandler} className="space-y-4">
+
+          <div>
+            <label className={labelClass}>Email *</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} required placeholder="john@email.com"/>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-xl border flex items-center justify-between">
             <div>
-              <label className={labelClass}>Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputClass}
-              />
+              <p className="text-sm font-bold text-gray-900">Admin Access</p>
+              <p className="text-xs text-gray-500">Give full admin panel access</p>
             </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} className="sr-only peer"/>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+            </label>
+          </div>
 
-            <div>
-              <label className={labelClass}>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={isAdmin}
-                onChange={(e) => setIsAdmin(e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label className="ml-2 block text-sm text-gray-700">Is Admin</label>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700"
-            >
-              Update
-            </button>
-          </form>
-        )}
+          <button type="submit" className="w-full py-3.5 bg-black text-white rounded-2xl font-bold hover:bg-gray-800 transition">
+            Update User
+          </button>
+        </form>
       </div>
     </div>
   )
