@@ -28,6 +28,15 @@ const slides = [
     desktopImg: '/assets/google.png', 
     mobileImg: '/assets/google.png',
     link: '/products?brand=Google',
+  },
+  {
+    id: 4,
+    brand: 'Apple',
+    title: 'iPhone 17 Pro Max',
+    features: ['A20 Pro Chip', 'Titanium frame', '50MP Fusion Camera'],
+    desktopImg: '/assets/apple 18.png',
+    mobileImg: '/assets/apples 18.png',
+    link: '/products?brand=Apple',
   }
 ]
 

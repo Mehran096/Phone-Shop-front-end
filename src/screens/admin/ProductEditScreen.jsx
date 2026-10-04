@@ -33,9 +33,9 @@ const ProductEditScreen = () => {
       setName(product.name); setBrand(product.brand); setCategory(product.category);
       setKeywords(product.keywords?.join(', ') || '');
       setVariants(product.variants.map(v => ({
-      ...v, specsJson: JSON.stringify(v.specs, null, 2),
+    ...v, specsJson: JSON.stringify(v.specs, null, 2),
         colors: v.colors.map(c => ({
-        ...c, files: [], images: c.images || [],
+      ...c, files: [], images: c.images || [],
           discount: { type: c.discount?.type || "percentage", value: c.discount?.value || "", startDate: formatDateForInput(c.discount?.startDate), endDate: formatDateForInput(c.discount?.endDate), isActive: c.discount?.isActive || false }
         }))
       })));
@@ -74,72 +74,74 @@ const ProductEditScreen = () => {
     } catch (err) { setUploading(false); toast.error(err?.data?.message || err.error); }
   };
 
-  const labelClass = 'block text-sm font-semibold text-gray-700 mb-1.5';
-  const inputClass = 'w-full p-3 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white focus:ring-2 focus:ring-black outline-none';
-  const cardClass = 'bg-white text-gray-900 p-5 md:p-6 rounded-2xl shadow-sm border';
+  const labelClass = 'block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5';
+  const inputClass = 'w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white focus:ring-2 focus:ring-black outline-none';
+  const cardClass = 'bg-white text-gray-900 p-4 sm:p-5 md:p-6 rounded-2xl shadow-sm border';
 
-  if (isLoading) return <div className="bg-white text-gray-900 p-10 rounded-2xl text-center">Loading product...</div>;
-  if (error) return <div className="bg-white text-red-600 p-6 rounded-2xl">{error?.data?.message || error.error}</div>;
+  if (isLoading) return <div className="bg-white text-gray-900 p-10 rounded-2xl text-center mx-2">Loading product...</div>;
+  if (error) return <div className="bg-white text-red-600 p-6 rounded-2xl mx-2">{error?.data?.message || error.error}</div>;
 
   return (
-    <div className='max-w-5xl mx-auto space-y-5'>
-      <Link to='/admin/productlist' className='text-gray-400 hover:text-white text-sm inline-flex items-center gap-1'>← Back to Products</Link>
-      <h1 className='text-xl md:text-2xl font-bold text-white'>Edit: <span className="text-gray-300 font-normal">{name}</span></h1>
+    <div className='max-w-5xl mx-auto space-y-4 pb-6'>
+      <Link to='/admin/productlist' className='text-gray-400 hover:text-white text-sm inline-flex items-center gap-1 px-1'>← Back to Products</Link>
+      <h1 className='text-lg sm:text-xl md:text-2xl font-bold text-white px-1 line-clamp-2'>Edit: <span className="text-gray-300 font-normal">{name}</span></h1>
 
-      <form onSubmit={submitHandler} className='space-y-5'>
+      <form onSubmit={submitHandler} className='space-y-4'>
         <div className={cardClass}>
-          <h2 className='font-bold text-gray-900 mb-4'>Basic Info</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className={labelClass}>Name *</label><input type='text' value={name} onChange={e=>setName(e.target.value)} className={inputClass} required /></div>
-            <div><label className={labelClass}>Brand *</label><input type='text' value={brand} onChange={e=>setBrand(e.target.value)} className={inputClass} required /></div>
-            <div><label className={labelClass}>Category *</label><input type='text' value={category} onChange={e=>setCategory(e.target.value)} className={inputClass} required /></div>
-            <div><label className={labelClass}>Keywords</label><input type='text' value={keywords} onChange={e=>setKeywords(e.target.value)} className={inputClass} placeholder="comma, separated" /></div>
+          <h2 className='font-bold text-gray-900 mb-4 text-sm sm:text-base'>Basic Info</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div><label className={labelClass}>Name *</label><input type='text' value={name} onChange={e=>setName(e.target.value)} className={inputClass} required placeholder="iPhone 16 Pro Max"/></div>
+            <div><label className={labelClass}>Brand *</label><input type='text' value={brand} onChange={e=>setBrand(e.target.value)} className={inputClass} required placeholder="Apple"/></div>
+            <div><label className={labelClass}>Category *</label><input type='text' value={category} onChange={e=>setCategory(e.target.value)} className={inputClass} required placeholder="Smartphones"/></div>
+            <div><label className={labelClass}>Keywords</label><input type='text' value={keywords} onChange={e=>setKeywords(e.target.value)} className={inputClass} placeholder="iphone, apple"/></div>
           </div>
         </div>
 
         <div className={cardClass}>
-          <div className="flex justify-between items-center mb-4"><h2 className='font-bold text-gray-900'>Variants</h2><button type='button' onClick={addVariantHandler} className='px-4 py-2 text-sm bg-black text-white rounded-xl flex items-center gap-2'><FaPlus size={10}/> Add Variant</button></div>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4"><h2 className='font-bold text-gray-900 text-sm sm:text-base'>Variants ({variants.length})</h2><button type='button' onClick={addVariantHandler} className='w-full sm:w-auto px-4 py-2.5 text-sm bg-black text-white rounded-xl flex items-center justify-center gap-2'><FaPlus size={10}/> Add Variant</button></div>
           {variants.map((variant, vIndex) => (
-            <div key={vIndex} className='border border-gray-200 p-4 mb-4 rounded-2xl bg-gray-50'>
-              <div className='flex justify-between items-center mb-3'><h3 className='font-semibold text-sm text-gray-900'>Variant {vIndex+1}</h3>{variants.length>1 && <button type='button' onClick={()=>removeVariantHandler(vIndex)} className='text-red-500 text-xs'>Remove Variant</button>}</div>
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3'><div><label className={labelClass}>Storage *</label><input type='text' value={variant.storage} onChange={e=>updateVariant(vIndex,'storage',e.target.value)} className={inputClass}/></div><div><label className={labelClass}>Description</label><input type='text' value={variant.description} onChange={e=>updateVariant(vIndex,'description',e.target.value)} className={inputClass}/></div></div>
-              <div className='mb-3'><label className={labelClass}>Specs JSON *</label><textarea rows={6} value={variant.specsJson} onChange={(e)=>{ const specsJson=e.target.value; let specs={}; try{ specs=JSON.parse(specsJson)}catch{} updateVariant(vIndex,'specsJson',specsJson); updateVariant(vIndex,'specs',specs); }} className={inputClass + ' font-mono text-xs'}/></div>
-              <h4 className='font-bold text-xs text-gray-700 mb-2 uppercase'>Colors / SKUs</h4>
-              {variant.colors.map((color, cIndex) => (
-                <div key={cIndex} className="border-l-4 border-black pl-3 mb-4 bg-white p-4 rounded-xl">
-                  <div className='flex justify-between items-center mb-3'><label className="text-sm font-semibold text-gray-900">Color {cIndex+1}</label>{variant.colors.length>1 && <button type='button' onClick={()=>removeColorHandler(vIndex,cIndex)} className='text-red-500 text-xs'>Remove</button>}</div>
-                  <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3'>
-                    <input placeholder="Color Name *" value={color.name} onChange={e=>updateColor(vIndex,cIndex,'name',e.target.value)} className={inputClass}/>
-                    <div className="flex gap-2 items-center border border-gray-300 rounded-xl px-3"><input type="color" value={color.hexCode} onChange={e=>updateColor(vIndex,cIndex,'hexCode',e.target.value)} className="w-8 h-8"/><span className="text-xs text-gray-700">{color.hexCode}</span></div>
-                    <input type='number' placeholder="Price *" value={color.price} onChange={e=>updateColor(vIndex,cIndex,'price',e.target.value)} className={inputClass}/>
-                    <input type='number' placeholder="Stock *" value={color.countInStock} onChange={e=>updateColor(vIndex,cIndex,'countInStock',e.target.value)} className={inputClass}/>
-                    <input placeholder="SKU" value={color.sku} onChange={e=>updateColor(vIndex,cIndex,'sku',e.target.value)} className={inputClass}/>
-                  </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3 p-3 bg-yellow-50 rounded-xl">
-                    <select value={color.discount?.type} onChange={e=>updateColor(vIndex,cIndex,"discount.type",e.target.value)} className={inputClass}><option value="percentage">% Percentage</option><option value="fixed">Fixed</option></select>
-                    <input type="number" placeholder="Discount Value" value={color.discount?.value} onChange={e=>updateColor(vIndex,cIndex,"discount.value",e.target.value)} className={inputClass}/>
-                    <input type="date" value={color.discount?.startDate||""} onChange={e=>updateColor(vIndex,cIndex,"discount.startDate",e.target.value)} className={inputClass}/>
-                    <input type="date" value={color.discount?.endDate||""} onChange={e=>updateColor(vIndex,cIndex,"discount.endDate",e.target.value)} className={inputClass}/>
-                    <label className="flex items-center gap-2 text-sm text-gray-700 col-span-2 lg:col-span-4"><input type="checkbox" checked={color.discount?.isActive} onChange={e=>updateColor(vIndex,cIndex,"discount.isActive",e.target.checked)}/> Active Discount</label>
-                  </div>
-                  <label className='flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 rounded-xl border-2 border-dashed cursor-pointer text-sm w-full mb-3 text-gray-700'><FaPlus/> Add Images<input type='file' multiple accept="image/*" onChange={(e)=>uploadFileHandler(vIndex,cIndex,e)} className='hidden'/></label>
+            <div key={vIndex} className='border border-gray-200 p-3 sm:p-4 mb-4 rounded-2xl bg-gray-50'>
+              <div className='flex justify-between items-center mb-3'><h3 className='font-bold text-sm text-gray-900'>Variant {vIndex+1}</h3>{variants.length>1 && <button type='button' onClick={()=>removeVariantHandler(vIndex)} className='text-red-500 text-xs bg-red-50 px-3 py-1 rounded-full'>Remove</button>}</div>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3'>
+                <div><label className={labelClass}>Storage *</label><input type='text' placeholder='256GB' value={variant.storage} onChange={e=>updateVariant(vIndex,'storage',e.target.value)} className={inputClass}/></div>
+                <div><label className={labelClass}>Description</label><input type='text' placeholder='256GB Variant' value={variant.description} onChange={e=>updateVariant(vIndex,'description',e.target.value)} className={inputClass}/></div>
+              </div>
+              <div className='mb-3'><label className={labelClass}>Specs JSON *</label><textarea rows={5} value={variant.specsJson} onChange={(e)=>{ const specsJson=e.target.value; let specs={}; try{ specs=JSON.parse(specsJson)}catch{} updateVariant(vIndex,'specsJson',specsJson); updateVariant(vIndex,'specs',specs); }} className={inputClass + ' font-mono text-xs'}/></div>
 
-                  {/* EXISTING - FIXED CROSS */}
+              {variant.colors.map((color, cIndex) => (
+                <div key={cIndex} className="border-l-4 border-black pl-3 mb-4 bg-white p-3 sm:p-4 rounded-xl shadow-sm">
+                  <div className='flex justify-between items-center mb-3'><span className="text-xs sm:text-sm font-bold text-gray-900 bg-gray-100 px-2.5 py-1 rounded-full">Color {cIndex+1}</span>{variant.colors.length>1 && <button type='button' onClick={()=>removeColorHandler(vIndex,cIndex)} className='text-red-500 text-xs'>Remove Color</button>}</div>
+
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3'>
+                    <div><label className={labelClass}>Color Name *</label><input placeholder="Black Titanium" value={color.name} onChange={e=>updateColor(vIndex,cIndex,'name',e.target.value)} className={inputClass}/></div>
+                    <div><label className={labelClass}>Hex</label><div className="flex gap-2 items-center border border-gray-300 rounded-xl px-3 py-2"><input type="color" value={color.hexCode||'#000'} onChange={e=>updateColor(vIndex,cIndex,'hexCode',e.target.value)} className="w-8 h-8 rounded"/><span className="text-xs text-gray-700">{color.hexCode}</span></div></div>
+                    <div><label className={labelClass}>Price *</label><input type='number' placeholder="1199" value={color.price} onChange={e=>updateColor(vIndex,cIndex,'price',e.target.value)} className={inputClass}/></div>
+                    <div><label className={labelClass}>Stock *</label><input type='number' placeholder="50" value={color.countInStock} onChange={e=>updateColor(vIndex,cIndex,'countInStock',e.target.value)} className={inputClass}/></div>
+                    <div className="sm:col-span-2"><label className={labelClass}>SKU</label><input placeholder="IPH16-256-BLK" value={color.sku} onChange={e=>updateColor(vIndex,cIndex,'sku',e.target.value)} className={inputClass}/></div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-3 p-3 bg-yellow-50 rounded-xl border">
+                    <div><label className={labelClass}>Discount Type</label><select value={color.discount?.type} onChange={e=>updateColor(vIndex,cIndex,"discount.type",e.target.value)} className={inputClass}><option value="percentage">% Percentage</option><option value="fixed">Fixed $</option></select></div>
+                    <div><label className={labelClass}>Value</label><input type="number" placeholder="10" value={color.discount?.value} onChange={e=>updateColor(vIndex,cIndex,"discount.value",e.target.value)} className={inputClass}/></div>
+                    <div><label className={labelClass}>Start Date</label><input type="date" value={color.discount?.startDate||""} onChange={e=>updateColor(vIndex,cIndex,"discount.startDate",e.target.value)} className={inputClass}/></div>
+                    <div><label className={labelClass}>End Date</label><input type="date" value={color.discount?.endDate||""} onChange={e=>updateColor(vIndex,cIndex,"discount.endDate",e.target.value)} className={inputClass}/></div>
+                    <label className="flex items-center gap-2 text-sm text-gray-700 col-span-2"><input type="checkbox" checked={color.discount?.isActive} onChange={e=>updateColor(vIndex,cIndex,"discount.isActive",e.target.checked)} className="w-4 h-4 rounded"/> Active Discount</label>
+                  </div>
+
+                  <label className='flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 rounded-xl border-2 border-dashed cursor-pointer text-sm w-full mb-3 text-gray-700 font-medium hover:bg-gray-200'><FaPlus size={10}/> Add Images<input type='file' multiple accept="image/*" onChange={(e)=>uploadFileHandler(vIndex,cIndex,e)} className='hidden'/></label>
+
                   {color.images?.length>0 && (
-                    <div className="mb-4">
-                      <p className="text-xs font-semibold text-gray-600 mb-2">Existing Images ({color.images.length})</p>
+                    <div className="mb-4 bg-gray-50 p-3 rounded-xl border overflow-visible">
+                      <p className="text-xs font-bold text-gray-600 mb-2">Existing ({color.images.length}) - Drag to reorder</p>
                       <DragDropContext onDragEnd={(r)=>onDragEnd(r,vIndex,cIndex,'images')}>
                         <Droppable droppableId={`old-${vIndex}-${cIndex}`} direction="horizontal">
                           {(provided)=>(
-                            <div className="flex gap-4 overflow-x-auto overflow-y-visible pt-3 pb-3 px-2" {...provided.droppableProps} ref={provided.innerRef}>
+                            <div className="flex gap-4 flex-wrap pt-3 pb-2 px-2 overflow-y-visible" {...provided.droppableProps} ref={provided.innerRef}>
                               {color.images.map((img,i)=>(<Draggable key={img.imagePublicId+i} draggableId={img.imagePublicId+i} index={i}>{(provided,snapshot)=>(
-                                <div ref={provided.innerRef} {...provided.draggableProps} className={`relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 overflow-visible ${snapshot.isDragging?'ring-2 ring-black rounded-xl':''}`}>
+                                <div ref={provided.innerRef} {...provided.draggableProps} className={`relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 overflow-visible ${snapshot.isDragging?'ring-2 ring-black rounded-xl':''}`}>
                                   <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded z-10'><HiOutlineArrowsUpDown className="text-white text-[10px]"/></div>
                                   <img src={img.url} className="w-full h-full object-contain rounded-xl border bg-white p-1"/>
-                                  <button type="button" onClick={()=>removeImageHandler(vIndex,cIndex,i,'images')}
-                                    className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg z-20 border-2 border-white">
-                                    <FaTimes size={11}/>
-                                  </button>
+                                  <button type="button" onClick={()=>removeImageHandler(vIndex,cIndex,i,'images')} className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg z-20 border-2 border-white"><FaTimes size={11}/></button>
                                 </div>
                               )}</Draggable>))}{provided.placeholder}
                             </div>
@@ -149,23 +151,19 @@ const ProductEditScreen = () => {
                     </div>
                   )}
 
-                  {/* NEW - FIXED CROSS */}
                   {color.files?.length>0 && (
-                    <div className="mb-3">
-                      <p className="text-xs font-semibold text-green-600 mb-2">New Images ({color.files.length})</p>
+                    <div className="mb-3 bg-green-50 p-3 rounded-xl border overflow-visible">
+                      <p className="text-xs font-bold text-green-700 mb-2">New ({color.files.length})</p>
                       <DragDropContext onDragEnd={(r)=>onDragEnd(r,vIndex,cIndex,'files')}>
                         <Droppable droppableId={`new-${vIndex}-${cIndex}`} direction="horizontal">
                           {(provided)=>(
-                            <div className="flex gap-4 overflow-x-auto overflow-y-visible pt-3 pb-3 px-2" {...provided.droppableProps} ref={provided.innerRef}>
+                            <div className="flex gap-4 flex-wrap pt-3 pb-2 px-2 overflow-y-visible" {...provided.droppableProps} ref={provided.innerRef}>
                               {color.files.map((file,i)=>(<Draggable key={file.name+i} draggableId={file.name+i} index={i}>{(provided,snapshot)=>(
-                                <div ref={provided.innerRef} {...provided.draggableProps} className={`relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 overflow-visible ${snapshot.isDragging?'ring-2 ring-green-500 rounded-xl':''}`}>
+                                <div ref={provided.innerRef} {...provided.draggableProps} className={`relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 overflow-visible ${snapshot.isDragging?'ring-2 ring-green-500 rounded-xl':''}`}>
                                   <div {...provided.dragHandleProps} className='absolute top-1 left-1 bg-black/60 p-1 rounded z-10'><HiOutlineArrowsUpDown className="text-white text-[10px]"/></div>
                                   <img src={URL.createObjectURL(file)} className="w-full h-full object-contain rounded-xl border bg-white p-1"/>
-                                  <span className='absolute top-1 right-1 bg-green-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold z-10'>NEW</span>
-                                  <button type="button" onClick={()=>removeImageHandler(vIndex,cIndex,i,'files')}
-                                    className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg z-20 border-2 border-white">
-                                    <FaTimes size={11}/>
-                                  </button>
+                                  <span className='absolute -top-2 -left-2 bg-green-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold z-10'>NEW</span>
+                                  <button type="button" onClick={()=>removeImageHandler(vIndex,cIndex,i,'files')} className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg z-20 border-2 border-white"><FaTimes size={11}/></button>
                                 </div>
                               )}</Draggable>))}{provided.placeholder}
                             </div>
@@ -175,14 +173,14 @@ const ProductEditScreen = () => {
                     </div>
                   )}
 
-                  <button type='button' onClick={()=>addColorHandler(vIndex)} className='mt-3 w-full py-2.5 text-sm bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-200 flex items-center justify-center gap-2 font-medium'><FaPlus size={10}/> Add Another Color</button>
+                  <button type='button' onClick={()=>addColorHandler(vIndex)} className='mt-2 w-full py-2.5 text-sm bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-200 flex items-center justify-center gap-2 font-medium'><FaPlus size={10}/> Add Another Color</button>
                 </div>
               ))}
             </div>
           ))}
         </div>
 
-        <button type='submit' disabled={loadingUpdate||uploading} className={`w-full py-3.5 rounded-2xl font-bold text-white ${loadingUpdate||uploading?'bg-gray-400':'bg-black hover:bg-gray-800'}`}>
+        <button type='submit' disabled={loadingUpdate||uploading} className={`w-full py-3.5 rounded-2xl font-bold text-white text-sm sm:text-base ${loadingUpdate||uploading?'bg-gray-400':'bg-black hover:bg-gray-800'}`}>
           {loadingUpdate||uploading? 'Updating...' : 'Update Product'}
         </button>
       </form>
