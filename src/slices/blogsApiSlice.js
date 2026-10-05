@@ -11,21 +11,23 @@ export const blogsApiSlice = apiSlice.injectEndpoints({
         if (search && search.trim() !== "") {
           params.append('search', search.trim());
         }
-        params.append('page', page);
-        params.append('limit', limit);
+        params.append('page', page.toString());
+        params.append('limit', limit.toString());
         return { url: `/blogs?${params.toString()}` };
       },
       providesTags: (result) =>
         result?.blogs
-          ? [...result.blogs.map(({ _id }) => ({ type: 'Blog', id: _id })), { type: 'Blog', id: 'LIST' }]
+          ? [
+              ...result.blogs.map(({ _id }) => ({ type: 'Blog', id: _id })),
+              { type: 'Blog', id: 'LIST' },
+            ]
           : [{ type: 'Blog', id: 'LIST' }],
-      keepUnusedDataFor: 5,
+      keepUnusedDataFor: 300, // FIXED: was 5 sec, now 5 min - prevents flicker but you can still refetch
     }),
 
     getBlogBySlug: builder.query({
       query: (slug) => ({ url: `/blogs/${slug}` }),
       providesTags: (result, error, slug) => [{ type: 'Blog', id: slug }],
-      keepUnusedDataFor: 5,
     }),
 
     getAllBlogsAdmin: builder.query({
@@ -34,13 +36,29 @@ export const blogsApiSlice = apiSlice.injectEndpoints({
     }),
 
     createBlog: builder.mutation({
-      query: (data) => ({ url: '/blogs', method: 'POST', body: data }),
+      query: (data) => {
+        // FIX: ensure coverImage is always object {url, publicId}
+        const payload = { ...data };
+        if (typeof payload.coverImage === 'string') {
+          payload.coverImage = { url: payload.coverImage, publicId: "" };
+        }
+        return { url: '/blogs', method: 'POST', body: payload };
+      },
       invalidatesTags: [{ type: 'Blog', id: 'LIST' }],
     }),
 
     updateBlog: builder.mutation({
-      query: ({ id, ...data }) => ({ url: `/blogs/${id}`, method: 'PUT', body: data }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Blog', id }, { type: 'Blog', id: 'LIST' }],
+      query: ({ id, ...data }) => {
+        const payload = { ...data };
+        if (typeof payload.coverImage === 'string') {
+          payload.coverImage = { url: payload.coverImage, publicId: "" };
+        }
+        return { url: `/blogs/${id}`, method: 'PUT', body: payload };
+      },
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Blog', id },
+        { type: 'Blog', id: 'LIST' },
+      ],
     }),
 
     deleteBlog: builder.mutation({

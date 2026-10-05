@@ -1,21 +1,15 @@
 import { useParams, Link } from 'react-router-dom';
 import { useGetBlogBySlugQuery } from '../slices/blogsApiSlice';
 
-// Helper: auto-link phone-store.asia in content
 const linkifyContent = (html) => {
   if (!html) return "";
-  // Avoid double-linking if already inside <a> tag
-  return html.replace(
-    /phone-store\.asia/gi,
-    (match) => {
-      // If previous 6 chars contain href, skip (already linked)
+  return html
+   .replace(/phone-store\.asia/gi, (match) => {
       return `<a href="https://phone-store.asia" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold hover:underline">${match}</a>`;
-    }
-  ).replace(
-    // Fix double link: <a...><a href...>phone-store.asia</a></a> -> single
-    /<a[^>]*><a[^>]*>(phone-store\.asia)<\/a><\/a>/gi,
-    '<a href="https://phone-store.asia" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold hover:underline">$1</a>'
-  );
+    })
+   .replace(/<a[^>]*><a[^>]*>(phone-store\.asia)<\/a><\/a>/gi,
+      '<a href="https://phone-store.asia" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold hover:underline">$1</a>'
+    );
 };
 
 const BlogDetailScreen = () => {
@@ -26,6 +20,16 @@ const BlogDetailScreen = () => {
   if (error) return <div className="p-6 md:p-10 text-center text-sm">Blog not found - <Link to="/blogs" className="text-blue-600 underline">Go Back</Link></div>;
 
   const processedContent = linkifyContent(blog?.content);
+
+  // FIXED: get correct image url from object or string
+  const getImageUrl = (b) => {
+    if (!b) return "";
+    if (typeof b.coverImage === 'string' && b.coverImage) return b.coverImage;
+    if (b.coverImage?.url) return b.coverImage.url;
+    return `https://picsum.photos/seed/${b._id || b.slug}/1200/800`;
+  };
+
+  const coverImageUrl = getImageUrl(blog);
 
   return (
     <div className="bg-white min-h-screen">
@@ -46,13 +50,14 @@ const BlogDetailScreen = () => {
           <span>{blog.views} views</span>
         </div>
 
-        {blog.coverImage && (
+        {coverImageUrl && (
           <img
-            src={blog.coverImage}
+            src={coverImageUrl}
             alt={blog.title}
             onError={(e) => {
               e.currentTarget.onerror = null;
-              e.currentTarget.src = `https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&auto=format&fit=crop&q=80&sig=${blog._id}`;
+              // FIXED: unique fallback, not same WhatsApp image
+              e.currentTarget.src = `https://picsum.photos/seed/${blog._id || blog.slug}/1200/800`;
             }}
             className="w-full h-[200px] sm:h-[280px] md:h-[380px] object-cover rounded-lg md:rounded-xl mt-4 md:mt-6 bg-gray-100"
           />

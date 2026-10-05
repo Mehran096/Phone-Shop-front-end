@@ -24,7 +24,9 @@ const BlogEditScreen = () => {
       setTitle(blog.title);
       setExcerpt(blog.excerpt || '');
       setContent(blog.content);
-      setCoverImage(blog.coverImage || '');
+      // FIXED: extract URL from object
+      const imgUrl = typeof blog.coverImage === 'string'? blog.coverImage : blog.coverImage?.url || '';
+      setCoverImage(imgUrl);
       setCategory(blog.category || 'Mobile Guide');
       setTags(blog.tags?.join(', ') || '');
       setStatus(blog.status || 'published');
@@ -35,7 +37,19 @@ const BlogEditScreen = () => {
     e.preventDefault();
     try {
       const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
-      await updateBlog({ id, title, excerpt, content, coverImage, category, tags: tagArray, status }).unwrap();
+      // FIXED: always send as object
+      const coverImageObj = coverImage? { url: coverImage, publicId: blog?.coverImage?.publicId || "" } : { url: "", publicId: "" };
+
+      await updateBlog({
+        id,
+        title,
+        excerpt,
+        content,
+        coverImage: coverImageObj,
+        category,
+        tags: tagArray,
+        status
+      }).unwrap();
       toast.success('Blog updated');
       navigate('/admin/bloglist');
     } catch (err) {
@@ -95,8 +109,16 @@ const BlogEditScreen = () => {
             <input type="text" value={coverImage} onChange={e => setCoverImage(e.target.value)} placeholder="https://..."
               className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:ring-2 focus:ring-black outline-none" />
             {coverImage && (
-              <img src={coverImage} alt="preview" className="mt-3 h-40 w-full object-cover rounded-xl border" />
+              <img
+                src={coverImage}
+                alt="preview"
+                className="mt-3 h-40 w-full object-cover rounded-xl border bg-gray-100"
+                onError={(e) => {
+                  e.currentTarget.src = `https://picsum.photos/seed/edit-${id}/800/400`;
+                }}
+              />
             )}
+            <p className="text-[10px] text-gray-400 mt-1">Tip: Use unique URL like https://picsum.photos/seed/YOUR-TITLE/800/600 for unique image</p>
           </div>
 
           <div>

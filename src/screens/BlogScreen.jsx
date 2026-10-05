@@ -1,3 +1,4 @@
+// FIXED BlogScreen - full file
 import { Link, useSearchParams } from 'react-router-dom';
 import { useGetBlogsQuery } from '../slices/blogsApiSlice';
 import { useState, useEffect } from 'react';
@@ -12,7 +13,6 @@ const BlogScreen = () => {
   const [allBlogs, setAllBlogs] = useState([]);
   const limit = 9;
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       const trimmed = searchInput.trim();
@@ -33,7 +33,6 @@ const BlogScreen = () => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Reset on category change
   useEffect(() => {
     setPage(1);
     setAllBlogs([]);
@@ -41,7 +40,6 @@ const BlogScreen = () => {
 
   const { data, isLoading, isFetching, error } = useGetBlogsQuery({ category, search, page, limit });
 
-  // Accumulate for Load More
   useEffect(() => {
     if (data?.blogs) {
       if (page === 1) setAllBlogs(data.blogs);
@@ -62,6 +60,15 @@ const BlogScreen = () => {
   };
 
   const showSkeleton = (isLoading || isFetching) && page === 1;
+
+  // Helper to get correct image URL
+  const getImageUrl = (blog) => {
+    if (!blog) return `https://picsum.photos/seed/fallback/600/400`;
+    if (typeof blog.coverImage === 'string' && blog.coverImage) return blog.coverImage;
+    if (blog.coverImage?.url) return blog.coverImage.url;
+    // unique fallback per blog, not same WhatsApp image
+    return `https://picsum.photos/seed/${blog._id || blog.slug}/600/400`;
+  };
 
   return (
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-8">
@@ -114,13 +121,14 @@ const BlogScreen = () => {
           {allBlogs.map(blog => (
             <Link key={blog._id} to={`/blogs/${blog.slug}`} className="bg-white rounded-lg shadow-sm border flex flex-row sm:flex-col overflow-hidden">
               <img
-                src={blog.coverImage || 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=600&auto=format&fit=crop&q=80'}
+                src={getImageUrl(blog)}
                 alt={blog.title}
                 loading="lazy"
                 className="h-[90px] w-[110px] sm:h-48 sm:w-full object-cover flex-shrink-0 bg-gray-100"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = `https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80&${blog._id}`;
+                  // FIXED: unique fallback, not same WhatsApp image
+                  e.currentTarget.src = `https://picsum.photos/seed/${blog._id}/600/400`;
                 }}
               />
               <div className="p-2.5 md:p-4 flex flex-col justify-between flex-1">
